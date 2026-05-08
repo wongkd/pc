@@ -1,0 +1,37 @@
+name: 自动发布报价系统
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 第一步：拉取代码
+        uses: actions/checkout@v4
+
+      - name: 第二步：安装 Node.js 环境
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 第三步：安装零件（依赖包）
+        run: npm install
+
+      - name: 第四步：工厂打包（跳过报错检查）
+        run: npx vite build
+
+      - name: 第五步：上传成品
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: 第六步：正式发布到互联网
+        uses: actions/deploy-pages@v4
