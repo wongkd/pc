@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { BaseInfoSection } from './components/BaseInfoSection'
 import { HardwareLibrarySection } from './components/HardwareLibrarySection'
+import { LoginPanel } from './components/LoginPanel'
 import { NotesSection } from './components/NotesSection'
 import { QuoteCustomerView } from './components/QuoteCustomerView'
 import { QuoteItemsSection } from './components/QuoteItemsSection'
@@ -8,6 +9,7 @@ import { QuotePreview } from './components/QuotePreview'
 import { QuoteToolbar } from './components/QuoteToolbar'
 import { useHardwareLibrary } from './hooks/useHardwareLibrary'
 import { useHtml2Canvas } from './hooks/useHtml2Canvas'
+import { clearToken, fetchLibrary, isLoggedIn } from './utils/api'
 import type {
   AppStorageData,
   BrandInfo,
@@ -232,8 +234,33 @@ function App() {
   const [merchantTemplates, setMerchantTemplates] = useState(initialTemplates)
   const [hardwareLibraryExpanded, setHardwareLibraryExpanded] = useState(false)
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null)
+  const [loggedIn, setLoggedIn] = useState(isLoggedIn())
+  const [cloudLoading, setCloudLoading] = useState(false)
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportPng, exportPdf } = useHtml2Canvas()
+
+  // 登录后从云端加载硬件库
+  useEffect(() => {
+    if (!loggedIn) return
+    setCloudLoading(true)
+    fetchLibrary().then((items) => {
+      if (items.length > 0) {
+        // 转换云数据为本地格式
+        const mapped = items.map((i: any) => ({
+          id: String(i.id),
+          category: i.category || i.name || '',
+          description: i.name || i.description || '',
+          price: Number(i.price) || 0,
+          image: i.image || '',
+          lastRefreshed: i.refreshed_at || '',
+          sourcePlatform: i.platform || '',
+        }))
+        setHardwareLibrary(mapped)
+      }
+    }).catch(() => {}).finally(() => setCloudLoading(false))
+  }, [loggedIn])
+
+  const handleLogout = () => { clearToken(); setLoggedIn(false); setHardwareLibrary([]) }
 
   useEffect(() => {
     saveToStorage<AppStorageData>(STORAGE_KEY, {
@@ -435,8 +462,17 @@ function App() {
 
   return (
     <div className="shell">
+      {!loggedIn ? (
+        <LoginPanel onLogin={() => setLoggedIn(true)} />
+      ) : (
+      <>
+      {loggedIn && <button className="logout-btn" onClick={handleLogout}>注销</button>}
       <div className="layout">
         <section className="panel editor-panel">
+          {cloudLoading ? (
+            <div className="panel-section" style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>正在加载云端硬件库…</div>
+          ) : (
+          <>
           <QuoteItemsSection
             title={meta.projectTitle}
             items={quoteItems}
@@ -495,6 +531,8 @@ function App() {
               onDeleteItem={library.deleteLibraryItem}
             />
           </details>
+          </>
+          )}
         </section>
 
         <section className="panel preview-workbench">
@@ -537,6 +575,8 @@ function App() {
           </div>
         </section>
       </div>
+      </>
+      )}
     </div>
   )
 }
