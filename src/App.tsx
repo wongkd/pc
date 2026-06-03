@@ -9,7 +9,7 @@ import { QuotePreview } from './components/QuotePreview'
 import { QuoteToolbar } from './components/QuoteToolbar'
 import { useHardwareLibrary } from './hooks/useHardwareLibrary'
 import { useHtml2Canvas } from './hooks/useHtml2Canvas'
-import { clearToken, fetchLibrary, isLoggedIn, changePassword as apiChangePassword } from './utils/api'
+import { clearToken, fetchLibrary, fetchTemplates, saveTemplateToCloud, deleteTemplateFromCloud, isLoggedIn, changePassword as apiChangePassword } from './utils/api'
 import type {
   AppStorageData,
   BrandInfo,
@@ -243,23 +243,28 @@ function App() {
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportPng, exportPdf } = useHtml2Canvas()
 
-  // 登录后从云端加载硬件库
+  // 登录后从云端加载硬件库和模板
   useEffect(() => {
     if (!loggedIn) return
     setCloudLoading(true)
-    fetchLibrary().then((items) => {
-      if (items.length > 0) {
-        // 转换云数据为本地格式
-        const mapped = items.map((i: any) => ({
-          id: String(i.id),
-          category: i.category || i.name || '',
-          description: i.name || i.description || '',
-          price: Number(i.price) || 0,
-          image: i.image || '',
-          lastRefreshed: i.refreshed_at || '',
-          sourcePlatform: i.platform || '',
+    Promise.all([
+      fetchLibrary(),
+      fetchTemplates(),
+    ]).then(([libItems, tmplItems]) => {
+      if (libItems.length > 0) {
+        const mapped = libItems.map((i: any) => ({
+          id: String(i.id), category: i.category || '', description: i.name || i.description || '',
+          price: Number(i.price) || 0, image: i.image || '', lastRefreshed: i.refreshed_at || '', sourcePlatform: i.platform || '',
         }))
         setHardwareLibrary(mapped)
+      }
+      if (tmplItems.length > 0) {
+        const templates = tmplItems.map((t: any) => {
+          let data = { brand: {}, meta: {} }
+          try { data = JSON.parse(t.data) } catch {}
+          return { id: String(t.id), name: t.name, brand: data.brand || {}, updatedAt: t.updated_at || '' }
+        })
+        setMerchantTemplates(templates)
       }
     }).catch(() => {}).finally(() => setCloudLoading(false))
   }, [loggedIn])
@@ -369,8 +374,8 @@ function App() {
       brand: { ...brand },
       updatedAt: new Date().toISOString(),
     }
-
     setMerchantTemplates((current) => [nextTemplate, ...current])
+    if (loggedIn) saveTemplateToCloud(name, { brand }).catch(() => {})
   }
 
   const handleApplyMerchantTemplate = (id: string) => {
@@ -387,6 +392,7 @@ function App() {
 
   const handleDeleteMerchantTemplate = (id: string) => {
     setMerchantTemplates((current) => current.filter((item) => item.id !== id))
+    if (loggedIn) deleteTemplateFromCloud(Number(id)).catch(() => {})
   }
 
   const handleLogoUpload = (file: File | null) => {

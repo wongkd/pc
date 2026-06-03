@@ -62,3 +62,19 @@ export async function changePassword(oldPassword: string, newPassword: string) {
   const r = await fetch(`${API_BASE}/api/auth/change-password`, { method: 'PUT', headers: headers(), body: JSON.stringify({ oldPassword, newPassword }) })
   return r.json()
 }
+
+export async function fetchTemplates(): Promise<any[]> {
+  const r = await fetch(`${API_BASE}/api/templates`, { headers: headers() })
+  const data = await r.json()
+  return Array.isArray(data) ? data : []
+}
+
+export async function saveTemplateToCloud(name: string, data: any) {
+  const r = await fetch(`${API_BASE}/api/templates`, { method: 'POST', headers: headers(), body: JSON.stringify({ name, data }) })
+  return r.json()
+}
+
+export async function deleteTemplateFromCloud(id: number) {
+  const r = await fetch(`${API_BASE}/api/templates`, { method: 'DELETE', headers: headers(), body: JSON.stringify({ id }) })
+  return r.json()
+}
