@@ -475,6 +475,112 @@ button:disabled {
   gap: 10px;
 }
 
+.info-3col {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.base-info-compact {
+  padding: 14px 16px !important;
+}
+
+.info-card-sm {
+  padding: 10px 12px !important;
+  border-radius: 12px !important;
+}
+
+.info-card-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #465362;
+  margin-bottom: 6px;
+}
+
+.info-compact-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.info-compact-row input {
+  flex: 1;
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+  min-width: 0;
+}
+
+.info-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.info-compact-item {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.info-compact-name {
+  flex: 1;
+  font-size: 12px;
+  font-weight: 500;
+  color: #17212d;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.info-compact-item .btn {
+  padding: 3px 8px !important;
+  font-size: 10px !important;
+}
+
+@media (max-width: 900px) {
+  .info-3col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .info-two-col {
+    grid-template-columns: 1fr;
+  }
+  .info-3col {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* notes collapse */
+.notes-collapse {
+  margin-top: 0 !important;
+  border-top: none !important;
+}
+
+.info-collapse + .notes-collapse {
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+/* compact section input overrides */
+.base-info-compact .info-card-sm input,
+.base-info-compact .info-card-sm select,
+.base-info-compact .info-card-sm textarea {
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+.base-info-compact .info-card-sm .field {
+  gap: 3px !important;
+}
+.base-info-compact .info-card-sm .field label {
+  font-size: 10px !important;
+}
+
 .info-card {
   border: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 16px;
@@ -1641,6 +1747,54 @@ button:disabled {
   background: rgba(255, 255, 255, 0.9);
   font-size: 11px;
   color: #94a3b8;
+  cursor: pointer;
+}
+
+/* 改密弹窗 */
+.pwd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(15, 23, 42, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pwd-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.15);
+}
+
+.pwd-card h3 {
+  margin: 0 0 14px;
+  font-size: 16px;
+}
+
+.pwd-card input {
+  margin-bottom: 10px;
+  padding: 10px 12px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
+}
+
+.pwd-msg {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+
+.pwd-card button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2480ff, #1fb6c9);
+  color: #fff;
+  font-weight: 700;
   cursor: pointer;
 }
 

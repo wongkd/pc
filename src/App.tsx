@@ -9,7 +9,7 @@ import { QuotePreview } from './components/QuotePreview'
 import { QuoteToolbar } from './components/QuoteToolbar'
 import { useHardwareLibrary } from './hooks/useHardwareLibrary'
 import { useHtml2Canvas } from './hooks/useHtml2Canvas'
-import { clearToken, fetchLibrary, isLoggedIn } from './utils/api'
+import { clearToken, fetchLibrary, isLoggedIn, changePassword as apiChangePassword } from './utils/api'
 import type {
   AppStorageData,
   BrandInfo,
@@ -236,6 +236,10 @@ function App() {
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null)
   const [loggedIn, setLoggedIn] = useState(isLoggedIn())
   const [cloudLoading, setCloudLoading] = useState(false)
+  const [showPwdModal, setShowPwdModal] = useState(false)
+  const [pwdOld, setPwdOld] = useState('')
+  const [pwdNew, setPwdNew] = useState('')
+  const [pwdMsg, setPwdMsg] = useState('')
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportPng, exportPdf } = useHtml2Canvas()
 
@@ -261,6 +265,13 @@ function App() {
   }, [loggedIn])
 
   const handleLogout = () => { clearToken(); setLoggedIn(false); setHardwareLibrary([]) }
+  const handleChangePwd = async () => {
+    setPwdMsg('')
+    if (!pwdOld || !pwdNew || pwdNew.length < 6) { setPwdMsg('新密码至少6位'); return }
+    const r = await apiChangePassword(pwdOld, pwdNew)
+    if (r.ok) { setPwdMsg('修改成功'); setTimeout(() => { setShowPwdModal(false); setPwdOld(''); setPwdNew(''); setPwdMsg('') }, 1500) }
+    else setPwdMsg(r.error || '修改失败')
+  }
 
   useEffect(() => {
     saveToStorage<AppStorageData>(STORAGE_KEY, {
@@ -467,6 +478,18 @@ function App() {
       ) : (
       <>
       {loggedIn && <button className="logout-btn" onClick={handleLogout}>注销</button>}
+      {loggedIn && <button className="logout-btn" style={{ right: 70 }} onClick={() => setShowPwdModal(true)}>改密</button>}
+      {showPwdModal && (
+        <div className="pwd-overlay" onClick={() => setShowPwdModal(false)}>
+          <div className="pwd-card" onClick={(e) => e.stopPropagation()}>
+            <h3>修改密码</h3>
+            <input type="password" placeholder="旧密码" value={pwdOld} onChange={(e) => setPwdOld(e.target.value)} />
+            <input type="password" placeholder="新密码（至少6位）" value={pwdNew} onChange={(e) => setPwdNew(e.target.value)} />
+            {pwdMsg && <p className="pwd-msg" style={{ color: pwdMsg.includes('成功') ? '#16a34a' : '#ef4444' }}>{pwdMsg}</p>}
+            <button onClick={handleChangePwd}>确认修改</button>
+          </div>
+        </div>
+      )}
       <div className="layout">
         <section className="panel editor-panel">
           {cloudLoading ? (

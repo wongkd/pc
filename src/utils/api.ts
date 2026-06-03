@@ -57,3 +57,8 @@ export async function normalizeTitles(titles: string[]): Promise<any[]> {
   const d = await r.json()
   return d.ok ? d.items : []
 }
+
+export async function changePassword(oldPassword: string, newPassword: string) {
+  const r = await fetch(`${API_BASE}/api/auth/change-password`, { method: 'PUT', headers: headers(), body: JSON.stringify({ oldPassword, newPassword }) })
+  return r.json()
+}

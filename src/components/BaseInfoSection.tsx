@@ -18,93 +18,55 @@ interface BaseInfoSectionProps {
 }
 
 export function BaseInfoSection({
-  brand,
-  meta,
-  templates,
-  onBrandChange,
-  onMetaChange,
-  onLogoUpload,
-  onSaveTemplate,
-  onApplyTemplate,
-  onDeleteTemplate,
+  brand, meta, templates, onBrandChange, onMetaChange,
+  onLogoUpload, onSaveTemplate, onApplyTemplate, onDeleteTemplate,
 }: BaseInfoSectionProps) {
   const [templateName, setTemplateName] = useState('')
 
   const handleSave = () => {
     const name = templateName.trim()
-    if (!name) {
-      window.alert('请先填写模板名称。')
-      return
-    }
-    onSaveTemplate(name)
-    setTemplateName('')
+    if (!name) { window.alert('请先填写模板名称。'); return }
+    onSaveTemplate(name); setTemplateName('')
   }
 
   return (
-    <section className="panel-section panel-section-secondary">
-      <div className="info-two-col">
-        {/* left: template */}
-        <div className="info-card">
-          <div className="section-head">
-            <h2>商家信息模板</h2>
-          </div>
-          <div className="template-save-row">
-            <div className="field">
-              <input
-                value={templateName}
-                placeholder="模板名称，例如：企稳稳科技默认模板"
-                onChange={(event) => setTemplateName(event.target.value)}
-              />
-            </div>
-            <button className="btn secondary small" type="button" onClick={handleSave}>
-              保存模板
-            </button>
+    <section className="panel-section panel-section-secondary base-info-compact">
+      {/* 三列紧凑卡片 */}
+      <div className="info-3col">
+        <div className="info-card info-card-sm">
+          <div className="info-card-title">商家模板</div>
+          <div className="info-compact-row">
+            <input value={templateName} placeholder="模板名称…" onChange={(e) => setTemplateName(e.target.value)} />
+            <button className="btn ghost small" type="button" onClick={handleSave}>保存</button>
           </div>
           {templates.length > 0 && (
-            <div className="stack template-list" style={{ marginTop: 8 }}>
-              {templates.map((template) => (
-                <div className="template-card" key={template.id}>
-                  <div className="template-card-main">
-                    <strong>{template.name}</strong>
-                    <span>
-                      {template.brand.contactPerson || '未填写联系人'}
-                      {template.brand.contactPhone ? ` / ${template.brand.contactPhone}` : ''}
-                    </span>
-                  </div>
-                  <div className="template-card-actions">
-                    <button className="btn ghost small" type="button" onClick={() => onApplyTemplate(template.id)}>
-                      套用
-                    </button>
-                    <button className="btn secondary small" type="button" onClick={() => onDeleteTemplate(template.id)}>
-                      删除
-                    </button>
-                  </div>
+            <div className="info-compact-list">
+              {templates.map((t) => (
+                <div className="info-compact-item" key={t.id}>
+                  <span className="info-compact-name">{t.name}</span>
+                  <button className="btn ghost small" type="button" onClick={() => onApplyTemplate(t.id)}>套用</button>
+                  <button className="btn secondary small" type="button" onClick={() => onDeleteTemplate(t.id)}>删除</button>
                 </div>
               ))}
             </div>
           )}
-          {templates.length === 0 && (
-            <div className="empty-state" style={{ padding: '14px', marginTop: 8, fontSize: 12 }}>
-              暂无模板，填写商家信息后保存一份模板方便复用。
-            </div>
-          )}
         </div>
-
-        {/* right: customer info */}
-        <div className="info-card">
+        <div className="info-card info-card-sm">
           <CustomerInfoSection meta={meta} onChange={onMetaChange} />
+        </div>
+        <div className="info-card info-card-sm">
           <QuoteInfoSection meta={meta} onChange={onMetaChange} />
         </div>
       </div>
 
-      {/* collapsible: brand + contact */}
-      <details className="info-collapse" style={{ marginTop: 10 }}>
+      {/* 品牌与联系方式 折叠 */}
+      <details className="info-collapse">
         <summary>品牌与联系方式</summary>
-        <div className="info-two-col" style={{ paddingTop: 10 }}>
-          <div className="info-card">
+        <div className="info-two-col" style={{ paddingTop: 8, gap: 6 }}>
+          <div className="info-card info-card-sm">
             <BrandSection brand={brand} onChange={onBrandChange} onLogoUpload={onLogoUpload} />
           </div>
-          <div className="info-card">
+          <div className="info-card info-card-sm">
             <ContactSection brand={brand} onChange={onBrandChange} />
           </div>
         </div>

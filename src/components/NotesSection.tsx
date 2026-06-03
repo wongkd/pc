@@ -5,20 +5,14 @@ interface NotesSectionProps {
 
 export function NotesSection({ notes, onChange }: NotesSectionProps) {
   return (
-    <section className="panel-section panel-section-tertiary">
-      <div className="section-head">
-        <div className="section-head-copy">
-          <span className="eyebrow">补充内容</span>
-          <h2>条款与备注</h2>
-          <p>填写质保、交付、备注条款及其他需要展示在报价单上的补充说明。</p>
-        </div>
-      </div>
-      <div className="notes-shell">
+    <details className="info-collapse notes-collapse">
+      <summary>条款与备注</summary>
+      <div style={{ padding: '8px 4px 4px' }}>
         <div className="field">
-          <label htmlFor="notes">条款与备注内容</label>
-          <textarea id="notes" value={notes} onChange={(event) => onChange(event.target.value)} />
+          <textarea id="notes" value={notes} onChange={(event) => onChange(event.target.value)}
+            placeholder="质保政策、交付说明、备注条款…" rows={4} />
         </div>
       </div>
-    </section>
+    </details>
   )
 }
