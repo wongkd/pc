@@ -16,6 +16,20 @@ const CATEGORY_OPTIONS = [
   '其他',
 ] as const
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  CPU: '\u{1F4BB}',
+  主板: '\u{1F527}',
+  内存: '\u{1F9E0}',
+  显卡: '\u{1F3AE}',
+  硬盘: '\u{1F4BE}',
+  电源: '\u{26A1}',
+  散热器: '\u{2744}\u{FE0F}',
+  机箱: '\u{1F5B3}\u{FE0F}',
+  风扇: '\u{1F32C}\u{FE0F}',
+  显示器: '\u{1F5A5}\u{FE0F}',
+  其他: '\u{1F4E6}',
+}
+
 function pickSuggestions(
   keyword: string,
   library: readonly HardwareLibraryItem[],
@@ -56,6 +70,30 @@ export function QuoteItemsSection({
 }: QuoteItemsSectionProps) {
   const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
 
+  const categories = useMemo(() => {
+    const map = new Map<string, QuoteItem[]>()
+    for (const item of items) {
+      const cat = CATEGORY_OPTIONS.includes(item.category as (typeof CATEGORY_OPTIONS)[number])
+        ? item.category
+        : '其他'
+      const list = map.get(cat) ?? []
+      list.push(item)
+      map.set(cat, list)
+    }
+
+    const ordered: string[] = CATEGORY_OPTIONS.filter((c) => map.has(c)) as string[]
+    for (const c of map.keys()) {
+      if (!ordered.includes(c)) ordered.push(c)
+    }
+    return { map, ordered }
+  }, [items])
+
+  const [activeCategory, setActiveCategory] = useState<string>(
+    categories.ordered[0] ?? CATEGORY_OPTIONS[0],
+  )
+
+  const activeItems = categories.map.get(activeCategory) ?? []
+
   return (
     <section className="panel-section panel-section-primary">
       <div className="section-head section-head-emphasis">
@@ -73,37 +111,72 @@ export function QuoteItemsSection({
         </div>
       </div>
 
-      <div className="stack">
-        {items.length === 0 ? (
-          <div className="empty-state">当前还没有报价项目，可手动新增或从硬件库加入。</div>
-        ) : (
-          items.map((item, index) => {
-            const subtotal = item.quantity * item.unitPrice
-            const normalizedCategory = CATEGORY_OPTIONS.includes(
-              item.category as (typeof CATEGORY_OPTIONS)[number],
-            )
-              ? item.category
-              : '其他'
+      {items.length === 0 ? (
+        <div className="empty-state">当前还没有报价项目，可手动新增或从硬件库加入。</div>
+      ) : (
+        <div className="split-layout">
+          <nav className="split-nav">
+            {categories.ordered.map((cat) => {
+              const catItems = categories.map.get(cat) ?? []
+              const catTotal = catItems.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
+              return (
+                <button
+                  key={cat}
+                  className={`split-nav-item ${cat === activeCategory ? 'active' : ''}`}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                >
+                  <span className="split-nav-emoji">{CATEGORY_EMOJI[cat] ?? '\u{1F4E6}'}</span>
+                  <span className="split-nav-label">{cat}</span>
+                  <span className="split-nav-count">{catItems.length}</span>
+                  <span className="split-nav-total">{formatMoney(catTotal)}</span>
+                </button>
+              )
+            })}
+          </nav>
 
-            return (
-              <QuoteItemCard
-                key={item.id}
-                item={item}
-                index={index}
-                total={items.length}
-                normalizedCategory={normalizedCategory}
-                subtotal={subtotal}
-                highlighted={highlightedItemId === item.id}
-                libraryItems={libraryItems}
-                onChangeItem={onChangeItem}
-                onMoveUp={() => onMoveItemUp(item.id)}
-                onMoveDown={() => onMoveItemDown(item.id)}
-                onDelete={() => onDeleteItem(item.id)}
-              />
-            )
-          })
-        )}
-      </div>
+          <div className="split-content">
+            <div className="split-content-head">
+              <span>
+                {CATEGORY_EMOJI[activeCategory] ?? ''} {activeCategory}
+              </span>
+              <span className="split-content-head-meta">
+                {activeItems.length} 项 · 合计 {formatMoney(activeItems.reduce((s, i) => s + i.quantity * i.unitPrice, 0))}
+              </span>
+            </div>
+
+            <div className="stack">
+              {activeItems.map((item, index) => {
+                const subtotal = item.quantity * item.unitPrice
+                return (
+                  <QuoteItemCard
+                    key={item.id}
+                    item={item}
+                    index={index}
+                    total={activeItems.length}
+                    normalizedCategory={activeCategory}
+                    subtotal={subtotal}
+                    highlighted={highlightedItemId === item.id}
+                    libraryItems={libraryItems}
+                    onChangeItem={onChangeItem}
+                    onMoveUp={() => onMoveItemUp(item.id)}
+                    onMoveDown={() => onMoveItemDown(item.id)}
+                    onDelete={() => onDeleteItem(item.id)}
+                  />
+                )
+              })}
+            </div>
+
+            <button
+              className="split-add-btn"
+              type="button"
+              onClick={onAddItem}
+            >
+              + 新增 {activeCategory}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="quote-items-summary">
         <div className="quote-items-summary-row total">
@@ -115,7 +188,7 @@ export function QuoteItemsSection({
   )
 }
 
-/* ──────────── Compact Card with Autocomplete ──────────── */
+/* ──────────── Card ──────────── */
 
 interface QuoteItemCardProps {
   item: QuoteItem
@@ -135,7 +208,7 @@ function QuoteItemCard({
   item,
   index,
   total,
-  normalizedCategory,
+  normalizedCategory: _normalizedCategory,
   subtotal,
   highlighted,
   libraryItems,
@@ -161,67 +234,51 @@ function QuoteItemCard({
     setSuggestOpen(false)
   }
 
-  const showSuggestions =
-    suggestOpen && suggestions.length > 0 && inputFocused
+  const showSuggestions = suggestOpen && suggestions.length > 0 && inputFocused
 
   return (
-    <div className={`quote-item-compact ${highlighted ? 'is-highlighted' : ''}`}>
-      {/* row 1: category tag + name + delete */}
-      <div className="qic-row qic-row-top">
-        <div className="qic-left">
-          <select
-            className="qic-category"
-            value={normalizedCategory}
-            onChange={(e) => onChangeItem(item.id, 'category', e.target.value)}
-          >
-            {CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
-              </option>
-            ))}
-          </select>
-
-          <div className="qic-name-wrap">
-            <input
-              className="qic-name"
-              placeholder="输入硬件名称…"
-              value={item.name}
-              onFocus={() => {
-                setInputFocused(true)
-                if (item.name.length >= 2) setSuggestOpen(true)
-              }}
-              onBlur={() => setTimeout(() => { setInputFocused(false); setSuggestOpen(false) }, 150)}
-              onChange={(e) => {
-                onChangeItem(item.id, 'name', e.target.value)
-                if (e.target.value.length >= 2) setSuggestOpen(true)
-                else setSuggestOpen(false)
-              }}
-            />
-            {showSuggestions && (
-              <ul className="qic-suggest-list">
-                {suggestions.map((lib) => (
-                  <li
-                    key={lib.id}
-                    className="qic-suggest-item"
-                    onMouseDown={(e) => e.preventDefault()}
-                    onClick={() => handleApplySuggestion(lib)}
-                  >
-                    <span className="qic-suggest-name">{lib.description}</span>
-                    <span className="qic-suggest-price">{formatMoney(lib.price)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+    <div className={`qic-card ${highlighted ? 'is-highlighted' : ''}`}>
+      <div className="qic-card-row">
+        <div className="qic-name-wrap">
+          <input
+            className="qic-name"
+            placeholder="输入硬件名称…"
+            value={item.name}
+            onFocus={() => {
+              setInputFocused(true)
+              if (item.name.length >= 2) setSuggestOpen(true)
+            }}
+            onBlur={() =>
+              setTimeout(() => {
+                setInputFocused(false)
+                setSuggestOpen(false)
+              }, 150)
+            }
+            onChange={(e) => {
+              onChangeItem(item.id, 'name', e.target.value)
+              if (e.target.value.length >= 2) setSuggestOpen(true)
+              else setSuggestOpen(false)
+            }}
+          />
+          {showSuggestions && (
+            <ul className="qic-suggest-list">
+              {suggestions.map((lib) => (
+                <li
+                  key={lib.id}
+                  className="qic-suggest-item"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => handleApplySuggestion(lib)}
+                >
+                  <span className="qic-suggest-name">{lib.description}</span>
+                  <span className="qic-suggest-price">{formatMoney(lib.price)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
-
-        <button className="qic-delete" type="button" onClick={onDelete} title="删除">
-          ×
-        </button>
       </div>
 
-      {/* row 2: quantity / unit price / subtotal */}
-      <div className="qic-row qic-row-bottom">
+      <div className="qic-card-row qic-card-meta">
         <div className="qic-field">
           <label>数量</label>
           <input
@@ -244,8 +301,7 @@ function QuoteItemCard({
             onChange={(e) => onChangeItem(item.id, 'unitPrice', Number(e.target.value))}
           />
         </div>
-        <div className="qic-field qic-field-subtotal">
-          <label>小计</label>
+        <div className="qic-subtotal-badge">
           <span className="qic-subtotal">{formatMoney(subtotal)}</span>
         </div>
         <div className="qic-actions">
@@ -256,7 +312,7 @@ function QuoteItemCard({
             onClick={onMoveUp}
             title="上移"
           >
-            ↑
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 2L2 7h8z" fill="currentColor"/></svg>
           </button>
           <button
             className="qic-btn"
@@ -265,7 +321,12 @@ function QuoteItemCard({
             onClick={onMoveDown}
             title="下移"
           >
-            ↓
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 10L10 5H2z" fill="currentColor"/></svg>
+          </button>
+          <button className="qic-btn qic-btn-del" type="button" onClick={onDelete} title="删除">
+            <svg width="12" height="12" viewBox="0 0 12 12">
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+            </svg>
           </button>
         </div>
       </div>
