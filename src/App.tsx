@@ -376,8 +376,8 @@ function App() {
     reader.readAsDataURL(file)
   }
 
-  const addQuoteItem = () => {
-    const nextItem = createQuoteSkeletonItem('其他')
+  const addQuoteItem = (category = '其他') => {
+    const nextItem = createQuoteSkeletonItem(category)
     setQuoteItems((current) => [...current, nextItem])
     setHighlightedItemId(nextItem.id)
   }

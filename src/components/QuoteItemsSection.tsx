@@ -50,7 +50,7 @@ interface QuoteItemsSectionProps {
   items: QuoteItem[]
   libraryItems: readonly HardwareLibraryItem[]
   highlightedItemId?: string | null
-  onAddItem: () => void
+  onAddItem: (category?: string) => void
   onDeleteItem: (id: string) => void
   onMoveItemUp: (id: string) => void
   onMoveItemDown: (id: string) => void
@@ -105,7 +105,7 @@ export function QuoteItemsSection({
             <span>共 {items.length} 项</span>
             <span>合计 {formatMoney(totalAmount)}</span>
           </div>
-          <button className="btn primary small" type="button" onClick={onAddItem}>
+          <button className="btn primary small" type="button" onClick={() => onAddItem()}>
             新增项目
           </button>
         </div>
@@ -170,7 +170,7 @@ export function QuoteItemsSection({
             <button
               className="split-add-btn"
               type="button"
-              onClick={onAddItem}
+              onClick={() => onAddItem(activeCategory)}
             >
               + 新增 {activeCategory}
             </button>
