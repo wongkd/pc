@@ -460,9 +460,11 @@ function App() {
       {!loggedIn ? (
         <LoginPanel onLogin={() => setLoggedIn(true)} />
       ) : (
-      <>
-      {loggedIn && <button className="logout-btn" onClick={handleLogout}>注销</button>}
-      {loggedIn && <button className="logout-btn" style={{ right: 70 }} onClick={() => setShowPwdModal(true)}>改密</button>}
+      <div className="app-shell">
+      <div className="auth-btns no-print">
+        <button onClick={() => setShowPwdModal(true)}>改密</button>
+        <button onClick={handleLogout}>注销</button>
+      </div>
       {showPwdModal && (
         <div className="pwd-overlay" onClick={() => setShowPwdModal(false)}>
           <div className="pwd-card" onClick={(e) => e.stopPropagation()}>
@@ -580,7 +582,7 @@ function App() {
           </div>
         </section>
       </div>
-      </>
+      </div>
       )}
     </div>
   )

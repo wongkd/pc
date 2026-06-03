@@ -1750,6 +1750,29 @@ button:disabled {
   cursor: pointer;
 }
 
+/* auth buttons: inline, non-fixed */
+.auth-btns {
+  display: flex;
+  gap: 6px;
+  margin-left: 10px;
+}
+
+.auth-btns button {
+  padding: 4px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 11px;
+  color: #94a3b8;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.auth-btns button:hover {
+  color: #17212d;
+  border-color: rgba(15, 23, 42, 0.2);
+}
+
 /* 改密弹窗 */
 .pwd-overlay {
   position: fixed;
@@ -3256,16 +3279,31 @@ td {
     background: #fff;
     padding: 0;
     color: #111827;
+    font-size: 10pt;
   }
 
+  .shell, .layout, .panel, .app-shell {
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .no-print, .auth-btns, .logout-btn, .pwd-overlay,
+  .editor-panel, .editor-library-shell, .info-collapse,
   .app-toolbar {
     display: none !important;
+  }
+
+  .preview-workbench {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .preview-workbench-head,
   .quote-toolbar,
   .preview-workbench-body {
-    padding: 0 !important;
+    padding: 4px !important;
     border: none !important;
     background: transparent !important;
     box-shadow: none !important;
