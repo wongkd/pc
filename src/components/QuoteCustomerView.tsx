@@ -11,79 +11,128 @@ interface QuoteCustomerViewProps {
 }
 
 function isBlankQuoteItem(item: QuoteItem) {
-  return !item.name.trim() && !item.details.trim() && item.unitPrice === 0 && !(item.image ?? '').trim()
+  return (
+    !item.name.trim() &&
+    !item.details.trim() &&
+    item.unitPrice === 0 &&
+    !(item.image ?? '').trim()
+  )
 }
 
-const platformIcons: Record<string, string> = {
-  京东: 'JD', 天猫: 'TM', 拼多多: 'PDD', 抖音: 'DY', 快手: 'KS', '1688': '88',
+function ProductImage({ image, alt }: { image?: string; alt: string }) {
+  if (image) {
+    return (
+      <div className="customer-item-image">
+        <img src={image} alt={alt} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="customer-item-image customer-item-image-placeholder" aria-hidden="true">
+      <span>暂无图片</span>
+    </div>
+  )
 }
 
 export function QuoteCustomerView({ brand, meta, items, orientation }: QuoteCustomerViewProps) {
   const visibleItems = items.filter((item) => !isBlankQuoteItem(item))
   const total = sumQuoteItems(visibleItems)
+  const [contactOpen, setContactOpen] = useState(false)
 
   return (
-    <div className="cv-dark-bg">
-      {/* 品牌头 */}
-      <div className="cv-dark-header">
-        <div className="cv-dark-logo">
-          {brand.logoDataUrl ? <img src={brand.logoDataUrl} alt="" /> : <span className="cv-dark-logo-text">PC</span>}
-        </div>
-        <div>
-          <div className="cv-dark-shop">{brand.companyName || '未填写店铺'}</div>
-          <div className="cv-dark-slogan">{brand.slogan || '专业电脑配置报价'}</div>
-        </div>
-      </div>
-
-      {/* 标题区 */}
-      <div className="cv-dark-title">
-        <div className="cv-dark-project">{meta.projectTitle || '报价方案'}</div>
-        <div className="cv-dark-meta">
-          {meta.quoteNo && <span>#{meta.quoteNo}</span>}
-          {meta.quoteDate && <span>{formatDisplayDate(meta.quoteDate)}</span>}
-          {meta.customerName && <span>{meta.customerName}</span>}
-        </div>
-      </div>
-
-      {/* 商品列表 */}
-      <div className="cv-dark-list">
-        {visibleItems.length === 0 ? (
-          <div className="cv-dark-empty">暂无商品清单</div>
-        ) : (
-          visibleItems.map((item) => (
-            <div className="cv-dark-item" key={item.id}>
-              <div className="cv-dark-thumb">
-                {item.image ? <img src={item.image} alt="" /> : <span className="cv-dark-thumb-place">{item.category?.[0] || '?'}</span>}
-              </div>
-              <div className="cv-dark-info">
-                <div className="cv-dark-name">{item.name || item.category}</div>
-                {item.details ? <div className="cv-dark-specs">{item.details}</div> : null}
-                <div className="cv-dark-meta-row">
-                  {item.category && <span className="cv-dark-tag">{item.category}</span>}
-                  {item.sourcePlatform && <span className="cv-dark-platform">{platformIcons[item.sourcePlatform] || item.sourcePlatform}</span>}
-                </div>
-              </div>
-              <div className="cv-dark-price-col">
-                <div className="cv-dark-price">{formatMoney(item.quantity * item.unitPrice)}</div>
-                {item.quantity > 1 && (
-                  <div className="cv-dark-unit">{formatMoney(item.unitPrice)}×{item.quantity}</div>
-                )}
-              </div>
+    <section className="panel customer-view-shell">
+      <div className={`customer-view ${orientation}`}>
+        <header className="customer-view-header">
+          <div className="customer-view-brand">
+            <div className="customer-view-logo">
+              {brand.logoDataUrl ? <img src={brand.logoDataUrl} alt="店铺标识" /> : <span>LOGO</span>}
             </div>
-          ))
-        )}
-      </div>
-
-      {/* 悬浮总价栏 */}
-      <div className="cv-dark-footer">
-        <div className="cv-dark-footer-inner">
-          <div className="cv-dark-total-label">
-            <span>合计</span>
-            <span className="cv-dark-total-count">{visibleItems.length}件硬件</span>
+            <div className="customer-view-brand-copy">
+              <strong>{brand.companyName || '未填写店铺名称'}</strong>
+              <span>{brand.slogan || '专业工作站与电脑配置报价服务'}</span>
+            </div>
           </div>
-          <div className="cv-dark-total-price">{formatMoney(total)}</div>
-        </div>
+        </header>
+
+        <section className="customer-view-summary">
+          <div className="customer-view-title-row">
+            <div>
+              <h3>{meta.projectTitle || '待填写方案名称'}</h3>
+              <p className="customer-view-title-note">客户配置清单，供确认配置与报价参考。</p>
+            </div>
+            <span className="customer-view-price">{formatMoney(total)}</span>
+          </div>
+          <div className="customer-view-meta">
+            <span>报价单号：{meta.quoteNo || '未填写'}</span>
+            <span>报价日期：{formatDisplayDate(meta.quoteDate)}</span>
+            <span>客户名称：{meta.customerName || '未填写'}</span>
+          </div>
+        </section>
+
+        <section className="customer-view-list">
+          {visibleItems.length === 0 ? (
+            <div className="empty-state">暂无商品清单，请先补充报价项目内容。</div>
+          ) : (
+            visibleItems.map((item) => {
+              const subtotal = item.quantity * item.unitPrice
+
+              return (
+                <article className="customer-item-card" key={item.id}>
+                  <ProductImage image={item.image} alt={item.name || item.category || '商品图片'} />
+                  <div className="customer-item-body">
+                    <div className="customer-item-top">
+                      <span className="customer-item-category">{item.category || '其他'}</span>
+                      <span className="customer-item-subtotal">{formatMoney(subtotal)}</span>
+                    </div>
+                    <h4>{item.name || item.category || '其他'}</h4>
+                    {item.details ? <p>{item.details}</p> : null}
+                    <div className="customer-item-bottom">
+                      <div className="customer-item-meta-inline">
+                        <span className="customer-item-meta-label">数量</span>
+                        <strong>{item.quantity}</strong>
+                      </div>
+                      <div className="customer-item-meta-inline">
+                        <span className="customer-item-meta-label">单价</span>
+                        <strong>{formatMoney(item.unitPrice)}</strong>
+                      </div>
+                      <div className="customer-item-meta-inline">
+                        <span className="customer-item-meta-label">小计</span>
+                        <strong>{formatMoney(subtotal)}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              )
+            })
+          )}
+        </section>
+
+        <footer className="customer-view-footer">
+          <div className={`customer-view-contact-panel ${contactOpen ? 'open' : ''}`}>
+            <div className="customer-view-merchant-grid">
+              <span>联系人：{brand.contactPerson || '未填写'}</span>
+              <span>电话：{brand.contactPhone || '未填写'}</span>
+              <span>微信：{brand.contactWechat || '未填写'}</span>
+              <span>地址：{brand.contactAddress || '未填写'}</span>
+            </div>
+          </div>
+
+          <div className="customer-view-footer-bar">
+            <div className="customer-view-footer-total">
+              <span>合计总价</span>
+              <strong>{formatMoney(total)}</strong>
+            </div>
+            <button
+              className="btn primary customer-view-footer-btn"
+              type="button"
+              onClick={() => setContactOpen((current) => !current)}
+            >
+              {contactOpen ? '收起联系方式' : '联系商家'}
+            </button>
+          </div>
+        </footer>
       </div>
-    </div>
+    </section>
   )
 }
