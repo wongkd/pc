@@ -23,6 +23,7 @@ function isBlankQuoteItem(item: QuoteItem) {
 export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
   ({ brand, meta, notes, items, orientation }, ref) => {
     const visibleItems = items.filter((item) => !isBlankQuoteItem(item))
+    const totalAmount = visibleItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
 
     const termRows = [
       [
@@ -177,6 +178,18 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                       ))
                     )}
                   </tbody>
+                  {visibleItems.length > 0 && (
+                    <tfoot>
+                      <tr>
+                        <td colSpan={4} className="col-right" style={{ fontWeight: 600 }}>
+                          合计
+                        </td>
+                        <td className="col-right" style={{ fontWeight: 700, fontSize: '1.05em' }}>
+                          {formatMoney(totalAmount)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
               </section>
 
@@ -217,6 +230,18 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                       ))
                     )}
                   </tbody>
+                  {visibleItems.length > 0 && (
+                    <tfoot>
+                      <tr>
+                        <td colSpan={4} className="col-right">
+                          合计
+                        </td>
+                        <td className="col-right">
+                          {formatMoney(totalAmount)}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  )}
                 </table>
               </section>
 
@@ -250,6 +275,13 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                   ))
                 )}
               </section>
+
+              {visibleItems.length > 0 && (
+                <div className="quote-mobile-total">
+                  <span>合计总价</span>
+                  <strong>{formatMoney(totalAmount)}</strong>
+                </div>
+              )}
 
               <section className="terms-grid terms-grid-compact quote-print-terms screen-only">
                 {termRows.flat().map((item) => (
