@@ -1417,6 +1417,15 @@ button:disabled {
   vertical-align: middle;
 }
 
+.hl-group-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
 .hl-row td {
   padding: 6px 10px;
   border-bottom: 1px solid rgba(15, 23, 42, 0.03);
@@ -1424,12 +1433,6 @@ button:disabled {
 
 .hl-row:hover td {
   background: rgba(44, 124, 246, 0.02);
-}
-
-.hl-cat {
-  color: #64748b;
-  font-weight: 500;
-  white-space: nowrap;
 }
 
 .hl-desc {
@@ -1493,7 +1496,7 @@ button:disabled {
 }
 
 .hl-add-cat {
-  width: 80px;
+  width: 90px;
   flex: none;
 }
 
