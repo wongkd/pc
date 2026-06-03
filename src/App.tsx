@@ -451,11 +451,13 @@ function App() {
             items={quoteItems}
             libraryItems={hardwareLibrary}
             highlightedItemId={highlightedItemId}
+            onTitleChange={(value) => handleMetaChange('projectTitle', value)}
             onAddItem={addQuoteItem}
             onDeleteItem={deleteQuoteItem}
             onMoveItemUp={(id) => moveQuoteItem(id, -1)}
             onMoveItemDown={(id) => moveQuoteItem(id, 1)}
             onChangeItem={updateQuoteItem}
+            onClearAll={() => setQuoteItems([])}
           />
 
           <BaseInfoSection

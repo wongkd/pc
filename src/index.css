@@ -612,6 +612,24 @@ button:disabled {
   min-width: 0;
 }
 
+.section-title-input {
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  font-weight: 700;
+  color: #17212d;
+  letter-spacing: -0.04em;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  box-shadow: none;
+  outline: none;
+}
+
+.section-title-input:focus {
+  border-bottom: 2px solid rgba(44, 124, 246, 0.4);
+}
+
 .section-head-emphasis h2 {
   font-size: 26px;
 }
@@ -857,25 +875,19 @@ button:disabled {
   color: #17212d;
 }
 
-.split-nav-count {
-  font-size: 10px;
-  color: #94a3b8;
-  background: rgba(15, 23, 42, 0.04);
-  padding: 1px 6px;
-  border-radius: 999px;
-  min-width: 18px;
-  text-align: center;
+.split-nav-check {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
-.split-nav-total {
+.split-nav-hint {
   font-size: 10px;
   color: #94a3b8;
-  margin-top: 1px;
-  display: none;
-}
-
-.split-nav-item.active .split-nav-total {
-  display: none;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 .split-content {
@@ -987,6 +999,32 @@ button:disabled {
 .cat-modal-emoji {
   font-size: 22px;
   line-height: 1;
+}
+
+/* clear confirm */
+
+.clear-confirm {
+  background: #fff;
+  border-radius: 20px;
+  padding: 24px;
+  max-width: 360px;
+  width: 90vw;
+  box-shadow: 0 24px 56px rgba(15, 23, 42, 0.2);
+  animation: catModalSlideUp 0.18s ease;
+  text-align: center;
+}
+
+.clear-confirm p {
+  margin: 0 0 18px;
+  font-size: 14px;
+  color: #17212d;
+  line-height: 1.6;
+}
+
+.clear-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
 }
 
 /* card */
