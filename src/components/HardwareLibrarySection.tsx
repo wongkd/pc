@@ -42,13 +42,28 @@ interface SearchResult {
 }
 
 async function searchHardware(keyword: string): Promise<SearchResult[]> {
-  const res = await fetch('/api/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ keyword }),
+  const body = new URLSearchParams({
+    isCoupon: '0', keyword,
+    openid: '564bdce0fa408fc9e1d5d42fd022ef0b',
+    order: 'desc', page: '1', pddListId: '',
+    sort: '', sourceType: '0', user_id: '',
   })
-  const json = await res.json()
-  return json.ok ? json.data : []
+  const res = await fetch('https://appapi.maishou88.com/api/v1/homepage/searchList', {
+    method: 'POST',
+    headers: {
+      'User-Agent': 'MaiShouApp/3.7.7 (iPhone; iOS 26.3; Scale/3.00)',
+      'openid': '564bdce0fa408fc9e1d5d42fd022ef0b',
+      'version': '3.7.7.2',
+    },
+    body,
+  })
+  const data: any = await res.json()
+  return (data?.data || []).map((v: any) => ({
+    goodsId: v.goodsId, source: v.sourceType, title: v.title,
+    shopName: v.shopName, originalPrice: v.originalPrice,
+    actualPrice: v.actualPrice, couponPrice: v.couponPrice,
+    monthSales: v.monthSales, picUrl: v.picUrl,
+  }))
 }
 
 // ── 黑名单：这写词说明结果是整机/套装，非单独硬件 ──
