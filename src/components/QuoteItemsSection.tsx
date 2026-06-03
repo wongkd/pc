@@ -2,19 +2,25 @@ import { useMemo, useState } from 'react'
 import type { HardwareLibraryItem, QuoteItem } from '../types/quote'
 import { formatMoney } from '../utils/money'
 
-const CATEGORY_OPTIONS = [
+const ALL_CATEGORIES = [
   'CPU',
   '主板',
   '内存',
   '显卡',
   '硬盘',
-  '电源',
   '散热器',
+  '电源',
   '机箱',
   '风扇',
   '显示器',
   '其他',
+  '鼠标',
+  '键盘',
+  '耳机',
+  '座椅',
 ] as const
+
+const DEFAULT_VISIBLE_COUNT = 11 // first 11 always visible; 鼠标/键盘/耳机/座椅 only when non-empty
 
 const CATEGORY_EMOJI: Record<string, string> = {
   CPU: '\u{1F4BB}',
@@ -22,12 +28,16 @@ const CATEGORY_EMOJI: Record<string, string> = {
   内存: '\u{1F9E0}',
   显卡: '\u{1F3AE}',
   硬盘: '\u{1F4BE}',
-  电源: '\u{26A1}',
   散热器: '\u{2744}\u{FE0F}',
+  电源: '\u{26A1}',
   机箱: '\u{1F5B3}\u{FE0F}',
   风扇: '\u{1F32C}\u{FE0F}',
   显示器: '\u{1F5A5}\u{FE0F}',
   其他: '\u{1F4E6}',
+  鼠标: '\u{1F5B1}\u{FE0F}',
+  键盘: '\u{2328}\u{FE0F}',
+  耳机: '\u{1F3A7}',
+  座椅: '\u{1FA91}',
 }
 
 function pickSuggestions(
@@ -69,11 +79,12 @@ export function QuoteItemsSection({
   onChangeItem,
 }: QuoteItemsSectionProps) {
   const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  const [showCategoryModal, setShowCategoryModal] = useState(false)
 
   const categories = useMemo(() => {
     const map = new Map<string, QuoteItem[]>()
     for (const item of items) {
-      const cat = CATEGORY_OPTIONS.includes(item.category as (typeof CATEGORY_OPTIONS)[number])
+      const cat = ALL_CATEGORIES.includes(item.category as (typeof ALL_CATEGORIES)[number])
         ? item.category
         : '其他'
       const list = map.get(cat) ?? []
@@ -81,18 +92,28 @@ export function QuoteItemsSection({
       map.set(cat, list)
     }
 
-    const ordered: string[] = CATEGORY_OPTIONS.filter((c) => map.has(c)) as string[]
-    for (const c of map.keys()) {
-      if (!ordered.includes(c)) ordered.push(c)
+    // Show all categories that have items; plus first 11 if they don't
+    const ordered: string[] = []
+    for (const cat of ALL_CATEGORIES) {
+      const idx = ALL_CATEGORIES.indexOf(cat)
+      if (map.has(cat) || idx < DEFAULT_VISIBLE_COUNT) {
+        ordered.push(cat)
+      }
     }
     return { map, ordered }
   }, [items])
 
   const [activeCategory, setActiveCategory] = useState<string>(
-    categories.ordered[0] ?? CATEGORY_OPTIONS[0],
+    categories.ordered[0] ?? ALL_CATEGORIES[0],
   )
 
   const activeItems = categories.map.get(activeCategory) ?? []
+
+  const handleSelectCategory = (cat: string) => {
+    setShowCategoryModal(false)
+    onAddItem(cat)
+    setActiveCategory(cat)
+  }
 
   return (
     <section className="panel-section panel-section-primary">
@@ -105,20 +126,23 @@ export function QuoteItemsSection({
             <span>共 {items.length} 项</span>
             <span>合计 {formatMoney(totalAmount)}</span>
           </div>
-          <button className="btn primary small" type="button" onClick={() => onAddItem()}>
+          <button
+            className="btn primary small"
+            type="button"
+            onClick={() => setShowCategoryModal(true)}
+          >
             新增项目
           </button>
         </div>
       </div>
 
       {items.length === 0 ? (
-        <div className="empty-state">当前还没有报价项目，可手动新增或从硬件库加入。</div>
+        <div className="empty-state">当前还没有报价项目，请点击「新增项目」开始添加配件。</div>
       ) : (
         <div className="split-layout">
           <nav className="split-nav">
             {categories.ordered.map((cat) => {
               const catItems = categories.map.get(cat) ?? []
-              const catTotal = catItems.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
               return (
                 <button
                   key={cat}
@@ -129,7 +153,6 @@ export function QuoteItemsSection({
                   <span className="split-nav-emoji">{CATEGORY_EMOJI[cat] ?? '\u{1F4E6}'}</span>
                   <span className="split-nav-label">{cat}</span>
                   <span className="split-nav-count">{catItems.length}</span>
-                  <span className="split-nav-total">{formatMoney(catTotal)}</span>
                 </button>
               )
             })}
@@ -140,9 +163,22 @@ export function QuoteItemsSection({
               <span>
                 {CATEGORY_EMOJI[activeCategory] ?? ''} {activeCategory}
               </span>
-              <span className="split-content-head-meta">
-                {activeItems.length} 项 · 合计 {formatMoney(activeItems.reduce((s, i) => s + i.quantity * i.unitPrice, 0))}
-              </span>
+              <div className="split-content-head-actions">
+                <span className="split-content-head-meta">
+                  {activeItems.length} 项 · 合计{' '}
+                  {formatMoney(
+                    activeItems.reduce((s, i) => s + i.quantity * i.unitPrice, 0),
+                  )}
+                </span>
+                <button
+                  className="split-content-add"
+                  type="button"
+                  onClick={() => onAddItem(activeCategory)}
+                  title={`新增 ${activeCategory}`}
+                >
+                  + 新增
+                </button>
+              </div>
             </div>
 
             <div className="stack">
@@ -166,24 +202,30 @@ export function QuoteItemsSection({
                 )
               })}
             </div>
-
-            <button
-              className="split-add-btn"
-              type="button"
-              onClick={() => onAddItem(activeCategory)}
-            >
-              + 新增 {activeCategory}
-            </button>
           </div>
         </div>
       )}
 
-      <div className="quote-items-summary">
-        <div className="quote-items-summary-row total">
-          <span>报价合计</span>
-          <strong>{formatMoney(totalAmount)}</strong>
+      {/* Category selection modal */}
+      {showCategoryModal && (
+        <div className="cat-modal-overlay" onClick={() => setShowCategoryModal(false)}>
+          <div className="cat-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="cat-modal-grid">
+              {ALL_CATEGORIES.map((cat) => (
+                <button
+                  key={cat}
+                  className="cat-modal-item"
+                  type="button"
+                  onClick={() => handleSelectCategory(cat)}
+                >
+                  <span className="cat-modal-emoji">{CATEGORY_EMOJI[cat] ?? '\u{1F4E6}'}</span>
+                  <span>{cat}</span>
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
     </section>
   )
 }
@@ -312,7 +354,9 @@ function QuoteItemCard({
             onClick={onMoveUp}
             title="上移"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 2L2 7h8z" fill="currentColor"/></svg>
+            <svg width="12" height="12" viewBox="0 0 12 12">
+              <path d="M6 2L2 7h8z" fill="currentColor" />
+            </svg>
           </button>
           <button
             className="qic-btn"
@@ -321,11 +365,13 @@ function QuoteItemCard({
             onClick={onMoveDown}
             title="下移"
           >
-            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 10L10 5H2z" fill="currentColor"/></svg>
+            <svg width="12" height="12" viewBox="0 0 12 12">
+              <path d="M6 10L10 5H2z" fill="currentColor" />
+            </svg>
           </button>
           <button className="qic-btn qic-btn-del" type="button" onClick={onDelete} title="删除">
             <svg width="12" height="12" viewBox="0 0 12 12">
-              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" fill="none"/>
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" fill="none" />
             </svg>
           </button>
         </div>
