@@ -1527,6 +1527,88 @@ button:disabled {
   background: rgba(44, 124, 246, 0.06);
 }
 
+.hl-price-btn {
+  padding: 5px 10px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 7px;
+  background: rgba(16, 185, 129, 0.06);
+  color: #059669;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.1s;
+}
+
+.hl-price-btn:hover:not(:disabled) {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.hl-price-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 一键比价按钮 */
+.hl-batch-btn {
+  padding: 5px 10px;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 7px;
+  background: rgba(245, 158, 11, 0.06);
+  color: #d97706;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.1s;
+}
+
+.hl-batch-btn:hover:not(:disabled) {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.hl-batch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* 进度条 */
+.hl-progress {
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  border-radius: 7px;
+  background: rgba(245, 158, 11, 0.08);
+  color: #d97706;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* 缩略图 */
+.hl-thumb-cell {
+  width: 32px;
+  padding: 2px !important;
+  vertical-align: middle;
+}
+
+.hl-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  object-fit: cover;
+  display: block;
+}
+
+/* 刷新时间 */
+.hl-refresh {
+  display: block;
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 400;
+  margin-top: 1px;
+}
+
 .quote-sheet {
   background:
     linear-gradient(180deg, rgba(250, 252, 254, 0.98), rgba(246, 249, 252, 0.96)),

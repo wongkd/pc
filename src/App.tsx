@@ -103,34 +103,25 @@ const defaultViewSettings: ViewSettings = {
 }
 
 const defaultLibrary: HardwareLibraryItem[] = [
-  {
-    id: crypto.randomUUID(),
-    category: 'CPU',
-    description: 'Intel Core i7-14700K',
-    price: 3099,
-    image: '',
-  },
-  {
-    id: crypto.randomUUID(),
-    category: '显卡',
-    description: 'NVIDIA RTX 4070 SUPER',
-    price: 4899,
-    image: '',
-  },
-  {
-    id: crypto.randomUUID(),
-    category: '内存',
-    description: 'Kingston Fury Beast DDR5 32GB',
-    price: 899,
-    image: '',
-  },
-  {
-    id: crypto.randomUUID(),
-    category: '硬盘',
-    description: 'Samsung 990 EVO Plus 1TB',
-    price: 699,
-    image: '',
-  },
+  { id: crypto.randomUUID(), category: 'CPU', description: 'Intel Core i7-14700K', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: 'CPU', description: 'Intel Core i5-14600KF', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: 'CPU', description: 'AMD Ryzen 9 7950X', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '显卡', description: 'NVIDIA RTX 4070 SUPER', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '显卡', description: 'NVIDIA RTX 4060 Ti', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '内存', description: 'Kingston Fury Beast DDR5 32GB', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '内存', description: 'Corsair Vengeance DDR5 32GB', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '硬盘', description: 'Samsung 990 EVO Plus 1TB', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '硬盘', description: 'WD Black SN850X 2TB', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '主板', description: 'MSI MAG Z790 TOMAHAWK WIFI', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '主板', description: 'ASUS ROG STRIX B760-A', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '电源', description: 'Corsair RM850e', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '散热器', description: 'DeepCool AK620', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '散热器', description: 'Noctua NH-D15', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '机箱', description: 'Lian Li Lancool 216', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '显示器', description: 'Dell U2724D', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '显示器', description: 'LG 27GP850-B', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '风扇', description: 'Arctic P12 PWM PST', price: 0, image: '' },
+  { id: crypto.randomUUID(), category: '风扇', description: 'Noctua NF-A12x25', price: 0, image: '' },
 ]
 
 const createQuoteSkeletonItem = (category: string): QuoteItem => ({

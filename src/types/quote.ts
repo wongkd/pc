@@ -38,6 +38,8 @@ export interface HardwareLibraryItem {
   description: string
   price: number
   image?: string
+  lastRefreshed?: string
+  sourcePlatform?: string
 }
 
 export interface QuoteItem {
