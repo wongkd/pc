@@ -1,4 +1,5 @@
-import type { QuoteItem } from '../types/quote'
+import { useMemo, useState } from 'react'
+import type { HardwareLibraryItem, QuoteItem } from '../types/quote'
 import { formatMoney } from '../utils/money'
 
 const CATEGORY_OPTIONS = [
@@ -15,12 +16,27 @@ const CATEGORY_OPTIONS = [
   '其他',
 ] as const
 
+function pickSuggestions(
+  keyword: string,
+  library: readonly HardwareLibraryItem[],
+  limit = 5,
+): HardwareLibraryItem[] {
+  if (!keyword || keyword.length < 2) return []
+  const kw = keyword.toLowerCase()
+  return library
+    .filter(
+      (item) =>
+        item.description.toLowerCase().includes(kw) || item.category.toLowerCase().includes(kw),
+    )
+    .slice(0, limit)
+}
+
 interface QuoteItemsSectionProps {
   title?: string
   items: QuoteItem[]
+  libraryItems: readonly HardwareLibraryItem[]
   highlightedItemId?: string | null
   onAddItem: () => void
-  onDuplicateItem: (id: string) => void
   onDeleteItem: (id: string) => void
   onMoveItemUp: (id: string) => void
   onMoveItemDown: (id: string) => void
@@ -30,6 +46,7 @@ interface QuoteItemsSectionProps {
 export function QuoteItemsSection({
   title,
   items,
+  libraryItems,
   highlightedItemId,
   onAddItem,
   onDeleteItem,
@@ -69,110 +86,20 @@ export function QuoteItemsSection({
               : '其他'
 
             return (
-              <div
-                className={`hardware-card quote-item-card ${highlightedItemId === item.id ? 'is-highlighted' : ''}`}
+              <QuoteItemCard
                 key={item.id}
-              >
-                <div className="item-card-head">
-                  <div className="item-card-title">
-                    <strong>{item.name || item.category || '其他'}</strong>
-                  </div>
-                  <div className="quote-item-actions">
-                    <button
-                      className="btn ghost small"
-                      type="button"
-                      onClick={() => onMoveItemUp(item.id)}
-                      disabled={index === 0}
-                    >
-                      上移
-                    </button>
-                    <button
-                      className="btn ghost small"
-                      type="button"
-                      onClick={() => onMoveItemDown(item.id)}
-                      disabled={index === items.length - 1}
-                    >
-                      下移
-                    </button>
-                    <button
-                      className="btn secondary small"
-                      type="button"
-                      onClick={() => onDeleteItem(item.id)}
-                    >
-                      删除
-                    </button>
-                  </div>
-                </div>
-
-                <div className="hardware-grid">
-                  <div className="field">
-                    <label>分类</label>
-                    <select
-                      value={normalizedCategory}
-                      onChange={(event) => onChangeItem(item.id, 'category', event.target.value)}
-                    >
-                      {CATEGORY_OPTIONS.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="field">
-                    <label>硬件名称</label>
-                    <input
-                      value={item.name}
-                      onChange={(event) => onChangeItem(item.id, 'name', event.target.value)}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>规格说明</label>
-                    <input
-                      value={item.details}
-                      onChange={(event) => onChangeItem(item.id, 'details', event.target.value)}
-                    />
-                  </div>
-                  <div className="field">
-                    <label>数量</label>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={item.quantity}
-                      onChange={(event) =>
-                        onChangeItem(item.id, 'quantity', Number(event.target.value))
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div className="hardware-grid hardware-grid-bottom">
-                  <div className="field">
-                    <label>单价</label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={item.unitPrice}
-                      onChange={(event) =>
-                        onChangeItem(item.id, 'unitPrice', Number(event.target.value))
-                      }
-                    />
-                  </div>
-                  <div className="field">
-                    <label>图片地址</label>
-                    <input
-                      value={item.image ?? ''}
-                      placeholder="https://..."
-                      onChange={(event) => onChangeItem(item.id, 'image', event.target.value)}
-                    />
-                  </div>
-                  <div className="field quote-item-subtotal">
-                    <label>当前小计</label>
-                    <div className="quote-item-subtotal-value">{formatMoney(subtotal)}</div>
-                  </div>
-                </div>
-              </div>
+                item={item}
+                index={index}
+                total={items.length}
+                normalizedCategory={normalizedCategory}
+                subtotal={subtotal}
+                highlighted={highlightedItemId === item.id}
+                libraryItems={libraryItems}
+                onChangeItem={onChangeItem}
+                onMoveUp={() => onMoveItemUp(item.id)}
+                onMoveDown={() => onMoveItemDown(item.id)}
+                onDelete={() => onDeleteItem(item.id)}
+              />
             )
           })
         )}
@@ -185,5 +112,163 @@ export function QuoteItemsSection({
         </div>
       </div>
     </section>
+  )
+}
+
+/* ──────────── Compact Card with Autocomplete ──────────── */
+
+interface QuoteItemCardProps {
+  item: QuoteItem
+  index: number
+  total: number
+  normalizedCategory: string
+  subtotal: number
+  highlighted: boolean
+  libraryItems: readonly HardwareLibraryItem[]
+  onChangeItem: (id: string, field: keyof QuoteItem, value: string | number) => void
+  onMoveUp: () => void
+  onMoveDown: () => void
+  onDelete: () => void
+}
+
+function QuoteItemCard({
+  item,
+  index,
+  total,
+  normalizedCategory,
+  subtotal,
+  highlighted,
+  libraryItems,
+  onChangeItem,
+  onMoveUp,
+  onMoveDown,
+  onDelete,
+}: QuoteItemCardProps) {
+  const [suggestOpen, setSuggestOpen] = useState(false)
+  const [inputFocused, setInputFocused] = useState(false)
+
+  const suggestions = useMemo(
+    () => pickSuggestions(item.name, libraryItems),
+    [item.name, libraryItems],
+  )
+
+  const handleApplySuggestion = (libItem: HardwareLibraryItem) => {
+    onChangeItem(item.id, 'name', libItem.description)
+    onChangeItem(item.id, 'category', libItem.category)
+    onChangeItem(item.id, 'details', libItem.description)
+    onChangeItem(item.id, 'unitPrice', libItem.price)
+    if (libItem.image) onChangeItem(item.id, 'image', libItem.image)
+    setSuggestOpen(false)
+  }
+
+  const showSuggestions =
+    suggestOpen && suggestions.length > 0 && inputFocused
+
+  return (
+    <div className={`quote-item-compact ${highlighted ? 'is-highlighted' : ''}`}>
+      {/* row 1: category tag + name + delete */}
+      <div className="qic-row qic-row-top">
+        <div className="qic-left">
+          <select
+            className="qic-category"
+            value={normalizedCategory}
+            onChange={(e) => onChangeItem(item.id, 'category', e.target.value)}
+          >
+            {CATEGORY_OPTIONS.map((opt) => (
+              <option key={opt} value={opt}>
+                {opt}
+              </option>
+            ))}
+          </select>
+
+          <div className="qic-name-wrap">
+            <input
+              className="qic-name"
+              placeholder="输入硬件名称…"
+              value={item.name}
+              onFocus={() => {
+                setInputFocused(true)
+                if (item.name.length >= 2) setSuggestOpen(true)
+              }}
+              onBlur={() => setTimeout(() => { setInputFocused(false); setSuggestOpen(false) }, 150)}
+              onChange={(e) => {
+                onChangeItem(item.id, 'name', e.target.value)
+                if (e.target.value.length >= 2) setSuggestOpen(true)
+                else setSuggestOpen(false)
+              }}
+            />
+            {showSuggestions && (
+              <ul className="qic-suggest-list">
+                {suggestions.map((lib) => (
+                  <li
+                    key={lib.id}
+                    className="qic-suggest-item"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleApplySuggestion(lib)}
+                  >
+                    <span className="qic-suggest-name">{lib.description}</span>
+                    <span className="qic-suggest-price">{formatMoney(lib.price)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+
+        <button className="qic-delete" type="button" onClick={onDelete} title="删除">
+          ×
+        </button>
+      </div>
+
+      {/* row 2: quantity / unit price / subtotal */}
+      <div className="qic-row qic-row-bottom">
+        <div className="qic-field">
+          <label>数量</label>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={item.quantity}
+            className="qic-qty"
+            onChange={(e) => onChangeItem(item.id, 'quantity', Number(e.target.value))}
+          />
+        </div>
+        <div className="qic-field">
+          <label>单价</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={item.unitPrice}
+            className="qic-price"
+            onChange={(e) => onChangeItem(item.id, 'unitPrice', Number(e.target.value))}
+          />
+        </div>
+        <div className="qic-field qic-field-subtotal">
+          <label>小计</label>
+          <span className="qic-subtotal">{formatMoney(subtotal)}</span>
+        </div>
+        <div className="qic-actions">
+          <button
+            className="qic-btn"
+            type="button"
+            disabled={index === 0}
+            onClick={onMoveUp}
+            title="上移"
+          >
+            ↑
+          </button>
+          <button
+            className="qic-btn"
+            type="button"
+            disabled={index === total - 1}
+            onClick={onMoveDown}
+            title="下移"
+          >
+            ↓
+          </button>
+        </div>
+      </div>
+    </div>
   )
 }

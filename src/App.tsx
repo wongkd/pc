@@ -388,25 +388,6 @@ function App() {
     )
   }
 
-  const duplicateQuoteItem = (id: string) => {
-    setQuoteItems((current) => {
-      const sourceIndex = current.findIndex((item) => item.id === id)
-      if (sourceIndex === -1) {
-        return current
-      }
-
-      const duplicate: QuoteItem = {
-        ...current[sourceIndex],
-        id: crypto.randomUUID(),
-      }
-
-      const next = [...current]
-      next.splice(sourceIndex + 1, 0, duplicate)
-      setHighlightedItemId(duplicate.id)
-      return next
-    })
-  }
-
   const deleteQuoteItem = (id: string) => {
     setQuoteItems((current) => current.filter((item) => item.id !== id))
     setHighlightedItemId((current) => (current === id ? null : current))
@@ -468,9 +449,9 @@ function App() {
           <QuoteItemsSection
             title={meta.projectTitle}
             items={quoteItems}
+            libraryItems={hardwareLibrary}
             highlightedItemId={highlightedItemId}
             onAddItem={addQuoteItem}
-            onDuplicateItem={duplicateQuoteItem}
             onDeleteItem={deleteQuoteItem}
             onMoveItemUp={(id) => moveQuoteItem(id, -1)}
             onMoveItemDown={(id) => moveQuoteItem(id, 1)}
