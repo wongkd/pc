@@ -484,19 +484,24 @@ function App() {
             <summary>硬件库</summary>
             <HardwareLibrarySection
               items={library.filteredLibrary}
-              categories={library.categories}
               search={library.search}
               categoryFilter={library.categoryFilter}
               onSearchChange={library.setSearch}
               onCategoryFilterChange={library.setCategoryFilter}
-              onAddItem={library.addLibraryItem}
+              onAddItem={(cat, desc, price) => {
+                setHardwareLibrary((prev) => [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    category: cat,
+                    description: desc,
+                    price,
+                    image: '',
+                  },
+                ])
+              }}
               onUpdateItem={library.updateLibraryItem}
               onDeleteItem={library.deleteLibraryItem}
-              onAddToQuote={library.handleAddToQuote}
-              onImportJson={handleImportJson}
-              onExportJson={library.exportJson}
-              onImportExcel={handleImportExcel}
-              onExportExcel={library.exportExcel}
             />
           </details>
         </section>

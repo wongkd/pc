@@ -1,179 +1,158 @@
-import type { ChangeEvent } from 'react'
+import { useMemo, useState } from 'react'
 import type { HardwareLibraryItem } from '../types/quote'
 
 interface HardwareLibrarySectionProps {
   items: HardwareLibraryItem[]
-  categories: string[]
   search: string
   categoryFilter: string
   onSearchChange: (value: string) => void
   onCategoryFilterChange: (value: string) => void
-  onAddItem: () => void
+  onAddItem: (category: string, description: string, price: number) => void
   onUpdateItem: (id: string, field: keyof HardwareLibraryItem, value: string | number) => void
   onDeleteItem: (id: string) => void
-  onAddToQuote: (item: HardwareLibraryItem) => void
-  onImportJson: (file: File) => Promise<void>
-  onExportJson: () => void
-  onImportExcel: (file: File) => Promise<void>
-  onExportExcel: () => void
 }
 
-async function handleFile(
-  event: ChangeEvent<HTMLInputElement>,
-  onPick: (file: File) => Promise<void>,
-) {
-  const file = event.target.files?.[0]
-  event.target.value = ''
-  if (file) {
-    await onPick(file)
+function HwLibRow({
+  item,
+  onUpdateItem,
+  onDeleteItem,
+}: {
+  item: HardwareLibraryItem
+  onUpdateItem: (id: string, field: keyof HardwareLibraryItem, value: string | number) => void
+  onDeleteItem: (id: string) => void
+}) {
+  const [editing, setEditing] = useState(false)
+  const [cat, setCat] = useState(item.category)
+  const [desc, setDesc] = useState(item.description)
+  const [price, setPrice] = useState(String(item.price))
+
+  if (editing) {
+    return (
+      <tr className="hl-row hl-row-edit">
+        <td><input className="hl-inp" value={cat} onChange={(e) => setCat(e.target.value)} placeholder="分类" /></td>
+        <td><input className="hl-inp" value={desc} onChange={(e) => setDesc(e.target.value)} placeholder="型号" /></td>
+        <td><input className="hl-inp hl-inp-price" type="number" min="0" step="0.01" value={price} onChange={(e) => setPrice(e.target.value)} /></td>
+        <td className="hl-act-col">
+          <button className="hl-act hl-act-ok" onClick={() => {
+            onUpdateItem(item.id, 'category', cat.trim())
+            onUpdateItem(item.id, 'description', desc.trim())
+            onUpdateItem(item.id, 'price', Number(price) || 0)
+            setEditing(false)
+          }}>&#10003;</button>
+          <button className="hl-act hl-act-no" onClick={() => setEditing(false)}>&#10007;</button>
+        </td>
+      </tr>
+    )
   }
+
+  return (
+    <tr className="hl-row">
+      <td className="hl-cat">{item.category}</td>
+      <td className="hl-desc">{item.description}</td>
+      <td className="hl-price">{item.price.toLocaleString()}</td>
+      <td className="hl-act-col">
+        <button className="hl-act" onClick={() => { setCat(item.category); setDesc(item.description); setPrice(String(item.price)); setEditing(true) }}>&#9998;</button>
+        <button className="hl-act hl-act-del" onClick={() => onDeleteItem(item.id)}>&#10007;</button>
+      </td>
+    </tr>
+  )
 }
 
-export function HardwareLibrarySection(props: HardwareLibrarySectionProps) {
-  const {
-    items,
-    categories,
-    search,
-    categoryFilter,
-    onSearchChange,
-    onCategoryFilterChange,
-    onAddItem,
-    onUpdateItem,
-    onDeleteItem,
-    onAddToQuote,
-    onImportJson,
-    onExportJson,
-    onImportExcel,
-    onExportExcel,
-  } = props
+export function HardwareLibrarySection({
+  items,
+  search,
+  categoryFilter,
+  onSearchChange,
+  onCategoryFilterChange,
+  onAddItem,
+  onUpdateItem,
+  onDeleteItem,
+}: HardwareLibrarySectionProps) {
+  const [newCat, setNewCat] = useState('CPU')
+  const [newDesc, setNewDesc] = useState('')
+  const [newPrice, setNewPrice] = useState('')
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, HardwareLibraryItem[]>()
+    for (const item of items) {
+      const c = item.category || '其他'
+      const list = map.get(c) ?? []
+      list.push(item)
+      map.set(c, list)
+    }
+    return Array.from(map.entries()).sort(([a], [b]) => a.localeCompare(b))
+  }, [items])
+
+  const categories = useMemo(
+    () => ['全部', ...new Set(items.map((i) => i.category).filter(Boolean))],
+    [items],
+  )
+
+  const handleAdd = () => {
+    const desc = newDesc.trim()
+    const price = Number(newPrice) || 0
+    if (!desc) return
+    onAddItem(newCat, desc, price)
+    setNewDesc('')
+    setNewPrice('')
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') handleAdd()
+  }
 
   return (
     <section className="panel-section panel-section-library">
-      <div className="section-head">
-        <div className="section-head-copy">
-          <span className="eyebrow">低频工具</span>
-          <h2>硬件库管理</h2>
-          <p>维护常用硬件信息，支持搜索筛选，并可补充商品图片地址。</p>
+      <div className="hl-head">
+        <h2 className="hl-title">硬件库</h2>
+        <div className="hl-tools">
+          <input className="hl-search" placeholder="搜索硬件…" value={search}
+            onChange={(e) => onSearchChange(e.target.value)} />
+          <select className="hl-filter" value={categoryFilter}
+            onChange={(e) => onCategoryFilterChange(e.target.value)}>
+            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
-        <button className="btn ghost small" type="button" onClick={onAddItem}>
-          新增硬件
-        </button>
       </div>
 
-      <div className="toolbar toolbar-wide hardware-toolbar">
-        <input
-          placeholder="按分类、型号或说明搜索"
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-        />
-        <select
-          value={categoryFilter}
-          onChange={(event) => onCategoryFilterChange(event.target.value)}
-        >
-          {categories.map((category) => (
-            <option key={category} value={category}>
-              {category}
-            </option>
-          ))}
+      {items.length === 0 ? (
+        <div className="hl-empty">硬件库为空，在下方添加常用硬件。</div>
+      ) : (
+        <div className="hl-table-wrap">
+          <table className="hl-table">
+            <thead>
+              <tr>
+                <th style={{ width: 100 }}>分类</th>
+                <th>型号</th>
+                <th style={{ width: 100 }}>价格</th>
+                <th style={{ width: 56 }}></th>
+              </tr>
+            </thead>
+            {grouped.map(([cat, catItems]) => (
+              <tbody key={cat}>
+                <tr className="hl-group-head">
+                  <td colSpan={4}>{cat} <span className="hl-group-n">{catItems.length}</span></td>
+                </tr>
+                {catItems.map((item) => (
+                  <HwLibRow key={item.id} item={item}
+                    onUpdateItem={onUpdateItem} onDeleteItem={onDeleteItem} />
+                ))}
+              </tbody>
+            ))}
+          </table>
+        </div>
+      )}
+
+      <div className="hl-add-row">
+        <select className="hl-inp hl-add-cat" value={newCat} onChange={(e) => setNewCat(e.target.value)}>
+          {categories.filter((c) => c !== '全部').map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
-        <button className="btn secondary small" type="button" onClick={onExportJson}>
-          导出 JSON
-        </button>
-        <label className="btn secondary small file-btn">
-          导入 JSON
-          <input
-            type="file"
-            accept=".json,application/json"
-            onChange={(event) => void handleFile(event, onImportJson)}
-          />
-        </label>
-        <button className="btn secondary small" type="button" onClick={onExportExcel}>
-          导出 Excel
-        </button>
-        <label className="btn secondary small file-btn">
-          导入 Excel
-          <input
-            type="file"
-            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            onChange={(event) => void handleFile(event, onImportExcel)}
-          />
-        </label>
-      </div>
-
-      <div className="stack">
-        {items.length === 0 ? (
-          <div className="empty-state">当前硬件库为空，先新增一条硬件数据。</div>
-        ) : (
-          items.map((item) => (
-            <div className="hardware-card hardware-card-library" key={item.id}>
-              <div className="hardware-grid">
-                <div className="field">
-                  <label>分类</label>
-                  <input
-                    placeholder="分类"
-                    value={item.category}
-                    onChange={(event) => onUpdateItem(item.id, 'category', event.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <label>型号或说明</label>
-                  <input
-                    placeholder="型号或说明"
-                    value={item.description}
-                    onChange={(event) => onUpdateItem(item.id, 'description', event.target.value)}
-                  />
-                </div>
-                <div className="field">
-                  <label>价格</label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="价格"
-                    value={item.price}
-                    onChange={(event) => onUpdateItem(item.id, 'price', Number(event.target.value))}
-                  />
-                </div>
-                <div className="field">
-                  <label>图片地址</label>
-                  <input
-                    placeholder="https://..."
-                    value={item.image ?? ''}
-                    onChange={(event) => onUpdateItem(item.id, 'image', event.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="hardware-grid hardware-grid-bottom hardware-grid-library-bottom">
-                <div className="field">
-                  <label>图片预览</label>
-                  <div className="library-thumb">
-                    {item.image ? (
-                      <img src={item.image} alt={item.description || '硬件图片'} />
-                    ) : (
-                      <span>暂无图片</span>
-                    )}
-                  </div>
-                </div>
-                <div className="field">
-                  <label>&nbsp;</label>
-                  <button className="btn ghost small" type="button" onClick={() => onAddToQuote(item)}>
-                    加入报价
-                  </button>
-                </div>
-                <div className="field">
-                  <label>&nbsp;</label>
-                  <button
-                    className="btn secondary small"
-                    type="button"
-                    onClick={() => onDeleteItem(item.id)}
-                  >
-                    删除
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
-        )}
+        <input className="hl-inp hl-add-desc" placeholder="输入型号" value={newDesc}
+          onChange={(e) => setNewDesc(e.target.value)} onKeyDown={handleKeyDown} />
+        <input className="hl-inp hl-inp-price hl-add-price" type="number" min="0" step="0.01"
+          placeholder="价格" value={newPrice}
+          onChange={(e) => setNewPrice(e.target.value)} onKeyDown={handleKeyDown} />
+        <button className="hl-add-btn" onClick={handleAdd}>添加</button>
       </div>
     </section>
   )

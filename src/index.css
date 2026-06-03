@@ -1318,6 +1318,212 @@ button:disabled {
   background: var(--content-bg);
 }
 
+/* ─── 硬件库（极简表格 + 分类分组） ─── */
+
+.hl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hl-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #17212d;
+}
+
+.hl-tools {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.hl-search {
+  width: 140px !important;
+  padding: 5px 8px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+
+.hl-filter {
+  width: 80px !important;
+  padding: 5px 6px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+
+.hl-empty {
+  text-align: center;
+  padding: 20px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.hl-table-wrap {
+  max-height: 360px;
+  overflow-y: auto;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  border-radius: 10px;
+}
+
+.hl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.hl-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.hl-table th {
+  padding: 7px 10px;
+  background: rgba(248, 250, 252, 0.98);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  text-align: left;
+  font-size: 10px;
+  font-weight: 700;
+  color: #94a3b8;
+  letter-spacing: 0.04em;
+}
+
+.hl-group-head td {
+  padding: 6px 10px;
+  background: rgba(248, 250, 252, 0.95);
+  font-size: 11px;
+  font-weight: 700;
+  color: #465362;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.04);
+}
+
+.hl-group-n {
+  display: inline-block;
+  min-width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: rgba(44, 124, 246, 0.1);
+  color: #2c7cf6;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.hl-row td {
+  padding: 6px 10px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.03);
+}
+
+.hl-row:hover td {
+  background: rgba(44, 124, 246, 0.02);
+}
+
+.hl-cat {
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.hl-desc {
+  font-weight: 500;
+  color: #17212d;
+}
+
+.hl-price {
+  text-align: right;
+  font-weight: 700;
+  color: #2c7cf6;
+  white-space: nowrap;
+}
+
+.hl-act-col {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.hl-act {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  color: #c0c9d4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+
+.hl-row:hover .hl-act { color: #94a3b8; }
+.hl-act:hover { background: rgba(44, 124, 246, 0.08); color: #2c7cf6; }
+.hl-act-del:hover { background: rgba(239, 68, 68, 0.08); color: #ef4444; }
+.hl-act-ok { color: #16a34a !important; }
+.hl-act-no { color: #94a3b8 !important; }
+
+.hl-inp {
+  padding: 4px 6px !important;
+  font-size: 11px !important;
+  border-radius: 6px !important;
+  width: 100%;
+}
+
+.hl-inp-price {
+  text-align: right;
+}
+
+.hl-row-edit td {
+  background: rgba(44, 124, 246, 0.03) !important;
+}
+
+.hl-add-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.hl-add-cat {
+  width: 80px;
+  flex: none;
+}
+
+.hl-add-desc {
+  flex: 1;
+  min-width: 100px;
+}
+
+.hl-add-price {
+  width: 90px;
+  flex: none;
+}
+
+.hl-add-btn {
+  padding: 5px 12px;
+  border: 1px solid rgba(44, 124, 246, 0.25);
+  border-radius: 7px;
+  background: transparent;
+  color: #2c7cf6;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.1s;
+}
+
+.hl-add-btn:hover {
+  background: rgba(44, 124, 246, 0.06);
+}
+
 .quote-sheet {
   background:
     linear-gradient(180deg, rgba(250, 252, 254, 0.98), rgba(246, 249, 252, 0.96)),

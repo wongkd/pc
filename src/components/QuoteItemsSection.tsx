@@ -22,13 +22,20 @@ const CATEGORY_EMOJI: Record<string, string> = {
 }
 
 function pickSuggestions(
-  keyword: string, library: readonly HardwareLibraryItem[], limit = 5,
+  keyword: string, category: string, library: readonly HardwareLibraryItem[], limit = 8,
 ): HardwareLibraryItem[] {
-  if (!keyword || keyword.length < 2) return []
-  const kw = keyword.toLowerCase()
-  return library.filter(
-    (item) => item.description.toLowerCase().includes(kw) || item.category.toLowerCase().includes(kw),
-  ).slice(0, limit)
+  const kw = keyword.trim().toLowerCase()
+  // 有输入 → 模糊匹配
+  if (kw.length >= 2) {
+    return library.filter(
+      (item) => item.description.toLowerCase().includes(kw) || item.category.toLowerCase().includes(kw),
+    ).slice(0, limit)
+  }
+  // 空输入 → 列出当前分类所有库内硬件，按价格升序
+  return library
+    .filter((item) => item.category === category)
+    .sort((a, b) => a.price - b.price)
+    .slice(0, limit)
 }
 
 interface QuoteItemsSectionProps {
@@ -222,15 +229,15 @@ interface QuoteItemCardProps {
 }
 
 function QuoteItemCard({
-  item, index, total, normalizedCategory: _nc, subtotal, highlighted,
+  item, index, total, normalizedCategory: category, subtotal, highlighted,
   libraryItems, onChangeItem, onMoveUp, onMoveDown, onDelete,
 }: QuoteItemCardProps) {
   const [suggestOpen, setSuggestOpen] = useState(false)
   const [inputFocused, setInputFocused] = useState(false)
 
   const suggestions = useMemo(
-    () => pickSuggestions(item.name, libraryItems),
-    [item.name, libraryItems],
+    () => pickSuggestions(item.name, category, libraryItems),
+    [item.name, category, libraryItems],
   )
 
   const handleApplySuggestion = (libItem: HardwareLibraryItem) => {
@@ -249,9 +256,9 @@ function QuoteItemCard({
       <div className="qic-card-row">
         <div className="qic-name-wrap">
           <input className="qic-name" placeholder="输入硬件名称…" value={item.name}
-            onFocus={() => { setInputFocused(true); if (item.name.length >= 2) setSuggestOpen(true) }}
+            onFocus={() => { setInputFocused(true); setSuggestOpen(true) }}
             onBlur={() => setTimeout(() => { setInputFocused(false); setSuggestOpen(false) }, 150)}
-            onChange={(e) => { onChangeItem(item.id, 'name', e.target.value); if (e.target.value.length >= 2) setSuggestOpen(true); else setSuggestOpen(false) }}
+            onChange={(e) => { onChangeItem(item.id, 'name', e.target.value); setSuggestOpen(true) }}
           />
           {showSuggestions && (
             <ul className="qic-suggest-list">
