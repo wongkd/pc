@@ -46,8 +46,6 @@ interface QuoteItemsSectionProps {
   onTitleChange?: (value: string) => void
   onAddItem: (category?: string) => void
   onDeleteItem: (id: string) => void
-  onMoveItemUp: (id: string) => void
-  onMoveItemDown: (id: string) => void
   onChangeItem: (id: string, field: keyof QuoteItem, value: string | number) => void
   onClearAll?: () => void
 }
@@ -55,7 +53,7 @@ interface QuoteItemsSectionProps {
 export function QuoteItemsSection({
   title, items, libraryItems, highlightedItemId,
   onTitleChange, onAddItem, onDeleteItem,
-  onMoveItemUp, onMoveItemDown, onChangeItem, onClearAll,
+  onChangeItem, onClearAll,
 }: QuoteItemsSectionProps) {
   const totalAmount = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
@@ -195,8 +193,6 @@ export function QuoteItemsSection({
                     highlighted={highlightedItemId === item.id}
                     libraryItems={libraryItems}
                     onChangeItem={onChangeItem}
-                    onMoveUp={() => onMoveItemUp(item.id)}
-                    onMoveDown={() => onMoveItemDown(item.id)}
                     onDelete={() => onDeleteItem(item.id)}
                   />
                 )
@@ -223,14 +219,12 @@ interface QuoteItemCardProps {
   highlighted: boolean
   libraryItems: readonly HardwareLibraryItem[]
   onChangeItem: (id: string, field: keyof QuoteItem, value: string | number) => void
-  onMoveUp: () => void
-  onMoveDown: () => void
   onDelete: () => void
 }
 
 function QuoteItemCard({
   item, index, total, normalizedCategory: category, subtotal, highlighted,
-  libraryItems, onChangeItem, onMoveUp, onMoveDown, onDelete,
+  libraryItems, onChangeItem, onDelete,
 }: QuoteItemCardProps) {
   const [suggestOpen, setSuggestOpen] = useState(false)
   const [inputFocused, setInputFocused] = useState(false)
@@ -286,16 +280,15 @@ function QuoteItemCard({
           <input type="number" min="0" step="0.01" value={item.unitPrice} className="qic-price"
             onChange={(e) => onChangeItem(item.id, 'unitPrice', Number(e.target.value))} />
         </div>
+        <div className="qic-field qic-field-spec">
+          <label>规格</label>
+          <input type="text" className="qic-spec" placeholder="如 四核八线程、白色、6000MHz…"
+            value={item.details} onChange={(e) => onChangeItem(item.id, 'details', e.target.value)} />
+        </div>
         <div className="qic-subtotal-badge">
           <span className="qic-subtotal">{formatMoney(subtotal)}</span>
         </div>
         <div className="qic-actions">
-          <button className="qic-btn" type="button" disabled={index === 0} onClick={onMoveUp} title="上移">
-            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 2L2 7h8z" fill="currentColor"/></svg>
-          </button>
-          <button className="qic-btn" type="button" disabled={index === total - 1} onClick={onMoveDown} title="下移">
-            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 10L10 5H2z" fill="currentColor"/></svg>
-          </button>
           <button className="qic-btn qic-btn-del" type="button" onClick={onDelete} title="删除">
             <svg width="12" height="12" viewBox="0 0 12 12">
               <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.5" fill="none"/>

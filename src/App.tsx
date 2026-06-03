@@ -422,22 +422,6 @@ function App() {
     setHighlightedItemId((current) => (current === id ? null : current))
   }
 
-  const moveQuoteItem = (id: string, direction: -1 | 1) => {
-    setQuoteItems((current) => {
-      const sourceIndex = current.findIndex((item) => item.id === id)
-      const targetIndex = sourceIndex + direction
-
-      if (sourceIndex === -1 || targetIndex < 0 || targetIndex >= current.length) {
-        return current
-      }
-
-      const next = [...current]
-      const [movedItem] = next.splice(sourceIndex, 1)
-      next.splice(targetIndex, 0, movedItem)
-      return next
-    })
-  }
-
   const handleExportHtml = () => {
     const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
     downloadText('quote-preview.html', buildQuoteHtml(document), 'text/html;charset=utf-8')
@@ -504,8 +488,6 @@ function App() {
             onTitleChange={(value) => handleMetaChange('projectTitle', value)}
             onAddItem={addQuoteItem}
             onDeleteItem={deleteQuoteItem}
-            onMoveItemUp={(id) => moveQuoteItem(id, -1)}
-            onMoveItemDown={(id) => moveQuoteItem(id, 1)}
             onChangeItem={updateQuoteItem}
             onClearAll={() => setQuoteItems([])}
           />
