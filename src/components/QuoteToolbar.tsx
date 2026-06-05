@@ -30,11 +30,15 @@ export function QuoteToolbar({
 }: QuoteToolbarProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const portalRef = useRef<HTMLDivElement>(null)
   const btnRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      const inButton = menuRef.current?.contains(target)
+      const inPortal = portalRef.current?.contains(target)
+      if (!inButton && !inPortal) {
         setMenuOpen(false)
       }
     }
@@ -116,7 +120,7 @@ export function QuoteToolbar({
           </button>
           {menuOpen &&
             createPortal(
-              <div className="export-menu" style={getMenuPos()}>
+              <div className="export-menu" ref={portalRef} style={getMenuPos()}>
                 {(Object.keys(EXPORT_LABELS) as ExportFormat[]).map((fmt) => (
                   <button
                     key={fmt}
