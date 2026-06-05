@@ -1,4 +1,7 @@
-const API_BASE = 'https://pc-backend.563838884.workers.dev'
+// 开发时连接本地 Worker，生产环境走 Pages Functions 代理（避免 workers.dev 被墙）
+const API_BASE = import.meta.env.DEV
+  ? 'http://localhost:8787'
+  : ''
 
 function token(): string | null {
   return localStorage.getItem('pc-auth-token')

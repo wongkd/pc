@@ -57,7 +57,7 @@ function priceComparePlugin() {
 }
 
 export default defineConfig({
-  base: '/pc/',
+  base: '/',
   plugins: [react(), priceComparePlugin()],
   resolve: {
     alias: {

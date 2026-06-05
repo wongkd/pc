@@ -52,12 +52,6 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
       <section className="panel quote-sheet">
         <div className="preview-frame">
           <div className="preview-frame-head">
-            <div>
-              <span className="eyebrow export-exclude" data-export-exclude="true">
-                预览
-              </span>
-              <h2>客户报价单</h2>
-            </div>
             <span className="preview-orientation export-exclude" data-export-exclude="true">
               {orientation === 'portrait' ? '竖版' : '横版'}
             </span>

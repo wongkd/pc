@@ -6,7 +6,7 @@ import { NotesSection } from './components/NotesSection'
 import { QuoteCustomerView } from './components/QuoteCustomerView'
 import { QuoteItemsSection } from './components/QuoteItemsSection'
 import { QuotePreview } from './components/QuotePreview'
-import { QuoteToolbar } from './components/QuoteToolbar'
+import { QuoteToolbar, type ExportFormat } from './components/QuoteToolbar'
 import { useHardwareLibrary } from './hooks/useHardwareLibrary'
 import { useHtml2Canvas } from './hooks/useHtml2Canvas'
 import { clearToken, fetchLibrary, fetchTemplates, saveTemplateToCloud, deleteTemplateFromCloud, isLoggedIn, changePassword as apiChangePassword } from './utils/api'
@@ -445,6 +445,50 @@ function App() {
     }
   }
 
+  const handleExportMarkdown = () => {
+    const visible = quoteItems.filter((item) => item.name.trim())
+    const lines: string[] = []
+    lines.push(`# ${meta.title || '客户报价单'}`)
+    lines.push('')
+    if (brand.name) lines.push(`**${brand.name}**`)
+    lines.push(`报价单号: ${meta.quoteNo}`)
+    lines.push(`日期: ${meta.quoteDate}`)
+    lines.push('')
+    lines.push('| 配件 | 型号 | 单价 | 数量 | 小计 |')
+    lines.push('| --- | --- | --- | --- | --- |')
+    for (const item of visible) {
+      const name = item.name || '-'
+      const detail = item.details || '-'
+      const price = `¥${item.unitPrice.toFixed(2)}`
+      const qty = item.quantity
+      const subtotal = `¥${(item.quantity * item.unitPrice).toFixed(2)}`
+      lines.push(`| ${name} | ${detail} | ${price} | ${qty} | ${subtotal} |`)
+    }
+    const total = visible.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
+    lines.push('')
+    lines.push(`**总计: ¥${total.toFixed(2)}**`)
+    if (notes) {
+      lines.push('')
+      lines.push('---')
+      lines.push(notes)
+    }
+    downloadText('quote-preview.md', lines.join('\n'))
+  }
+
+  const handleExportWord = () => {
+    const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
+    downloadText('quote-preview.doc', buildQuoteHtml(document), 'application/msword')
+  }
+
+  const handleExport = (format: ExportFormat) => {
+    switch (format) {
+      case 'png': void handleExportPng(); break
+      case 'markdown': handleExportMarkdown(); break
+      case 'word': handleExportWord(); break
+      case 'html': handleExportHtml(); break
+    }
+  }
+
   const handleImportJson = async (file: File) => {
     try {
       await library.importJson(file)
@@ -549,21 +593,13 @@ function App() {
         </section>
 
         <section className="panel preview-workbench">
-          <div className="preview-workbench-head">
-            <div className="section-head-copy">
-              <h2>报价单预览</h2>
-            </div>
-          </div>
-
           <QuoteToolbar
             previewMode={viewSettings.previewMode}
             orientation={viewSettings.orientation}
             onPreviewModeChange={(previewMode) => handleViewSettingsChange({ previewMode })}
             onOrientationChange={(orientation) => handleViewSettingsChange({ orientation })}
             onPrint={() => window.print()}
-            onExportPng={handleExportPng}
-            onExportPdf={handleExportPdf}
-            onExportHtml={handleExportHtml}
+            onExport={handleExport}
           />
 
           <div className="preview-workbench-body">

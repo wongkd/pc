@@ -1,0 +1,8 @@
+name = "pc-backend"
+main = "src/index.ts"
+compatibility_date = "2025-06-06"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pc-db"
+database_id = "2218dbef-fb7d-4248-8430-07dcd4fd0a17"

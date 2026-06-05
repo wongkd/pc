@@ -1,0 +1,21 @@
+{
+  "name": "pc-quote-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:init": "wrangler d1 execute pc-quote-db --file=./schema.sql",
+    "db:local": "wrangler d1 execute pc-quote-db --local --file=./schema.sql"
+  },
+  "dependencies": {
+    "@hono/zod-validator": "^0.4.2",
+    "hono": "^4.6.14",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250604.0",
+    "wrangler": "^4.97.0"
+  }
+}

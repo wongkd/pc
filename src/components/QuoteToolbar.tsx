@@ -1,5 +1,8 @@
-import type { CSSProperties } from 'react'
+import { useState, useRef, useEffect, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import type { Orientation, PreviewMode } from '../types/quote'
+
+export type ExportFormat = 'png' | 'markdown' | 'word' | 'html'
 
 interface QuoteToolbarProps {
   previewMode: PreviewMode
@@ -7,9 +10,14 @@ interface QuoteToolbarProps {
   onPreviewModeChange: (mode: PreviewMode) => void
   onOrientationChange: (orientation: Orientation) => void
   onPrint: () => void
-  onExportPng: () => Promise<void>
-  onExportPdf: () => Promise<void>
-  onExportHtml: () => void
+  onExport: (format: ExportFormat) => void
+}
+
+const EXPORT_LABELS: Record<ExportFormat, string> = {
+  png: 'PNG 图片',
+  markdown: 'Markdown',
+  word: 'Word 文档',
+  html: 'HTML',
 }
 
 export function QuoteToolbar({
@@ -18,79 +26,113 @@ export function QuoteToolbar({
   onPreviewModeChange,
   onOrientationChange,
   onPrint,
-  onExportPng,
-  onExportPdf,
-  onExportHtml,
+  onExport,
 }: QuoteToolbarProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const btnRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    if (menuOpen) {
+      document.addEventListener('mousedown', handleClick)
+      return () => document.removeEventListener('mousedown', handleClick)
+    }
+  }, [menuOpen])
+
+  function getMenuPos(): CSSProperties {
+    const rect = btnRef.current?.getBoundingClientRect()
+    if (!rect) return { visibility: 'hidden' }
+    return {
+      position: 'fixed',
+      top: rect.bottom + 4,
+      left: rect.left,
+    }
+  }
+
   return (
     <section className="quote-toolbar">
-      <div className="quote-toolbar-grid">
-        <div className="toolbar-group">
-          <span className="toolbar-label">预览模式</span>
-          <div
-            className="segmented-control preview-mode-switch"
-            style={{ ['--segment-index' as string]: previewMode === 'document' ? 0 : 1 } as CSSProperties}
+      <div className="quote-toolbar-row">
+        <div
+          className="segmented-control preview-mode-switch"
+          style={{ ['--segment-index' as string]: previewMode === 'document' ? 0 : 1 } as CSSProperties}
+        >
+          <span className="segmented-thumb" aria-hidden="true" />
+          <button
+            className={`segment-option ${previewMode === 'document' ? 'active' : ''}`}
+            type="button"
+            onClick={() => onPreviewModeChange('document')}
           >
-            <span className="segmented-thumb" aria-hidden="true" />
-            <button
-              className={`segment-option ${previewMode === 'document' ? 'active' : ''}`}
-              type="button"
-              onClick={() => onPreviewModeChange('document')}
-            >
-              文档版预览
-            </button>
-            <button
-              className={`segment-option ${previewMode === 'customer' ? 'active' : ''}`}
-              type="button"
-              onClick={() => onPreviewModeChange('customer')}
-            >
-              用户端商品清单版
-            </button>
-          </div>
+            文档版
+          </button>
+          <button
+            className={`segment-option ${previewMode === 'customer' ? 'active' : ''}`}
+            type="button"
+            onClick={() => onPreviewModeChange('customer')}
+          >
+            商品清单
+          </button>
         </div>
 
-        <div className="toolbar-group toolbar-group-compact">
-          <span className="toolbar-label">页面方向</span>
-          <div
-            className="segmented-control preview-orientation-switch"
-            style={{ ['--segment-index' as string]: orientation === 'portrait' ? 0 : 1 } as CSSProperties}
+        <div
+          className="segmented-control preview-orientation-switch"
+          style={{ ['--segment-index' as string]: orientation === 'portrait' ? 0 : 1 } as CSSProperties}
+        >
+          <span className="segmented-thumb" aria-hidden="true" />
+          <button
+            className={`segment-option ${orientation === 'portrait' ? 'active' : ''}`}
+            type="button"
+            onClick={() => onOrientationChange('portrait')}
           >
-            <span className="segmented-thumb" aria-hidden="true" />
-            <button
-              className={`segment-option ${orientation === 'portrait' ? 'active' : ''}`}
-              type="button"
-              onClick={() => onOrientationChange('portrait')}
-            >
-              竖版
-            </button>
-            <button
-              className={`segment-option ${orientation === 'landscape' ? 'active' : ''}`}
-              type="button"
-              onClick={() => onOrientationChange('landscape')}
-            >
-              横版
-            </button>
-          </div>
+            竖版
+          </button>
+          <button
+            className={`segment-option ${orientation === 'landscape' ? 'active' : ''}`}
+            type="button"
+            onClick={() => onOrientationChange('landscape')}
+          >
+            横版
+          </button>
         </div>
-      </div>
 
-      <div className="quote-toolbar-actions">
-        <div className="toolbar-action-group">
-          <span className="toolbar-label">导出</span>
-          <div className="toolbar-action-row">
-            <button className="btn primary" type="button" onClick={onPrint}>
-              打印报价单
-            </button>
-            <button className="btn secondary" type="button" onClick={() => void onExportPng()}>
-              导出 PNG
-            </button>
-            <button className="btn secondary" type="button" onClick={() => void onExportPdf()}>
-              导出 PDF
-            </button>
-            <button className="btn ghost" type="button" onClick={onExportHtml}>
-              导出 HTML
-            </button>
-          </div>
+        <div className="toolbar-spacer" />
+
+        <button className="btn primary btn-toolbar" type="button" onClick={onPrint}>
+          打印
+        </button>
+
+        <div className="export-dropdown" ref={menuRef}>
+          <button
+            ref={btnRef}
+            className="btn secondary btn-toolbar export-btn"
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            导出 <span className="export-caret">{menuOpen ? '▲' : '▼'}</span>
+          </button>
+          {menuOpen &&
+            createPortal(
+              <div className="export-menu" style={getMenuPos()}>
+                {(Object.keys(EXPORT_LABELS) as ExportFormat[]).map((fmt) => (
+                  <button
+                    key={fmt}
+                    className="export-menu-item"
+                    type="button"
+                    onClick={() => {
+                      onExport(fmt)
+                      setMenuOpen(false)
+                    }}
+                  >
+                    {EXPORT_LABELS[fmt]}
+                  </button>
+                ))}
+              </div>,
+              document.body
+            )}
         </div>
       </div>
     </section>
