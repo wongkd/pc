@@ -527,7 +527,7 @@ function App() {
 
   const handleExportHtml = () => {
     const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
-    downloadText('quote-preview.html', buildQuoteHtml(document), 'text/html;charset=utf-8')
+    downloadText('quote-preview.html', buildQuoteHtml(document, viewSettings.orientation), 'text/html;charset=utf-8')
   }
 
   const handleExportPng = async () => {
@@ -585,12 +585,12 @@ function App() {
 
   const handleExportWord = () => {
     const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
-    downloadText('quote-preview.doc', buildQuoteHtml(document), 'application/msword')
+    downloadText('quote-preview.doc', buildQuoteHtml(document, viewSettings.orientation), 'application/msword')
   }
 
   const handlePrint = () => {
     const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
-    const html = buildQuoteHtml(document)
+    const html = buildQuoteHtml(document, viewSettings.orientation)
     const printWindow = window.open('', '_blank', 'width=800,height=600')
     if (!printWindow) {
       // 弹窗被拦截时，降级到常规打印
@@ -599,17 +599,30 @@ function App() {
     }
     printWindow.document.write(html)
     printWindow.document.close()
-    // 等待内容渲染后再触发打印
-    printWindow.onload = () => {
-      printWindow.print()
-      printWindow.onafterprint = () => printWindow.close()
-      // 兜底：如果用户取消打印，10秒后自动关闭
-      setTimeout(() => { try { printWindow.close() } catch {} }, 10000)
+    // 等图片加载完成后再打印
+    const images = printWindow.document.querySelectorAll('img')
+    if (images.length > 0) {
+      let loaded = 0
+      const tryPrint = () => {
+        loaded++
+        if (loaded >= images.length) {
+          printWindow.print()
+          printWindow.onafterprint = () => printWindow.close()
+          setTimeout(() => { try { printWindow.close() } catch {} }, 10000)
+        }
+      }
+      images.forEach((img) => {
+        if (img.complete) { tryPrint() }
+        else { img.addEventListener('load', tryPrint, { once: true }); img.addEventListener('error', tryPrint, { once: true }) }
+      })
+    } else {
+      // 没有图片直接打印
+      setTimeout(() => {
+        printWindow.print()
+        printWindow.onafterprint = () => printWindow.close()
+        setTimeout(() => { try { printWindow.close() } catch {} }, 10000)
+      }, 300)
     }
-    // 如果 onload 没触发（某些移动浏览器），直接打印
-    setTimeout(() => {
-      try { printWindow.print() } catch {}
-    }, 600)
   }
 
   const handleExport = (format: ExportFormat) => {
