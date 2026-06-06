@@ -53,10 +53,17 @@ export interface QuoteItem {
   libraryItemId?: string
 }
 
+export interface TermsData {
+  payment: string
+  afterSales: string
+  warranty: string
+  remarks: string
+}
+
 export interface QuoteDocument {
   brand: BrandInfo
   meta: QuoteMeta
-  notes: string
+  notes: TermsData
   hardwareLibrary: HardwareLibraryItem[]
   quoteItems: QuoteItem[]
 }

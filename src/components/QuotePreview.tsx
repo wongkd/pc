@@ -1,12 +1,12 @@
 import { forwardRef } from 'react'
-import type { BrandInfo, Orientation, QuoteItem, QuoteMeta } from '../types/quote'
+import type { BrandInfo, Orientation, QuoteItem, QuoteMeta, TermsData } from '../types/quote'
 import { formatDisplayDate } from '../utils/date'
 import { formatMoney } from '../utils/money'
 
 interface QuotePreviewProps {
   brand: BrandInfo
   meta: QuoteMeta
-  notes: string
+  notes: TermsData
   items: QuoteItem[]
   orientation: Orientation
 }
@@ -29,21 +29,21 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
       [
         {
           title: '付款方式',
-          content: '支持对公转账、微信转账或现款结算，具体以下单确认为准。',
+          content: notes.payment || '支持对公转账、微信转账或现款结算，具体以下单确认为准。',
         },
         {
           title: '售后说明',
-          content: '整机安装调试后交付，提供硬件质保支持，故障问题可协助远程排查。',
+          content: notes.afterSales || '整机安装调试后交付，提供硬件质保支持，故障问题可协助远程排查。',
         },
       ],
       [
         {
           title: '质保政策',
-          content: '以收货日为准计算质保时长，整机一年质保，续保费用为整机费用 5% 每年。',
+          content: notes.warranty || '以收货日为准计算质保时长，整机一年质保，续保费用为整机费用 5% 每年。',
         },
         {
           title: '备注条款',
-          content: notes || '暂无补充备注。',
+          content: notes.remarks || '暂无补充备注。',
         },
       ],
     ]

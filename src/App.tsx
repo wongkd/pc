@@ -19,12 +19,29 @@ import type {
   QuoteDocument,
   QuoteItem,
   QuoteMeta,
+  TermsData,
   ViewSettings,
 } from './types/quote'
 import { getTodayInputValue } from './utils/date'
 import { buildQuoteHtml } from './utils/exportHtml'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import './index.css'
+
+/** 迁移旧版 notes 字符串 → TermsData 对象 */
+function migrateNotes(raw: unknown): TermsData {
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    const obj = raw as Record<string, unknown>
+    return {
+      payment: String(obj.payment || ''),
+      afterSales: String(obj.afterSales || ''),
+      warranty: String(obj.warranty || ''),
+      remarks: String(obj.remarks || ''),
+    }
+  }
+  // 旧版 notes 是字符串，全量迁移到 remarks
+  const legacy = typeof raw === 'string' ? raw : ''
+  return { payment: '', afterSales: '', warranty: '', remarks: legacy }
+}
 
 const STORAGE_KEY = 'pc-quote-app'
 const MERCHANT_TEMPLATE_STORAGE_KEY = 'pc-quote-app:merchant-templates'
@@ -143,11 +160,16 @@ const defaultQuoteItems: QuoteItem[] = DEFAULT_QUOTE_ITEM_CATEGORIES.map((catego
 const defaultStorageData: AppStorageData = {
   brand: defaultBrand,
   meta: defaultMeta,
-  notes: [
-    '1. 报价包含整机装配、基础驱动安装与常规测试。',
-    '2. 以收货日为准计算质保时长，整机一年质保，续保费用为整机费用 5% 每年。',
-    '3. 库存与交付时间以下单当日实际确认为准。',
-  ].join('\n'),
+  notes: {
+    payment: '',
+    afterSales: '',
+    warranty: '',
+    remarks: [
+      '1. 报价包含整机装配、基础驱动安装与常规测试。',
+      '2. 以收货日为准计算质保时长，整机一年质保，续保费用为整机费用 5% 每年。',
+      '3. 库存与交付时间以下单当日实际确认为准。',
+    ].join('\n'),
+  },
   hardwareLibrary: defaultLibrary,
   quoteItems: defaultQuoteItems,
   viewSettings: defaultViewSettings,
@@ -170,7 +192,7 @@ function normalizeStoredState(raw: unknown): AppStorageData {
   return {
     brand: { ...defaultBrand, ...data.brand },
     meta: nextMeta,
-    notes: data.notes ?? defaultStorageData.notes,
+    notes: migrateNotes(data.notes),
     hardwareLibrary: data.hardwareLibrary ?? defaultLibrary,
     quoteItems: Array.isArray(data.quoteItems) ? data.quoteItems : defaultQuoteItems,
     viewSettings: {
@@ -542,10 +564,21 @@ function App() {
     const total = visible.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
     lines.push('')
     lines.push(`**总计: ¥${total.toFixed(2)}**`)
-    if (notes) {
+    // 附加条款备注
+    const termSections: [string, string][] = [
+      ['付款方式', notes.payment],
+      ['售后说明', notes.afterSales],
+      ['质保政策', notes.warranty],
+      ['备注条款', notes.remarks],
+    ].filter(([, v]) => v.trim())
+    if (termSections.length > 0) {
       lines.push('')
       lines.push('---')
-      lines.push(notes)
+      for (const [title, content] of termSections) {
+        lines.push(`**${title}**`)
+        lines.push(content)
+        lines.push('')
+      }
     }
     downloadText('quote-preview.md', lines.join('\n'))
   }

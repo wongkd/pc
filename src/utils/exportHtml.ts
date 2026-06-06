@@ -110,19 +110,19 @@ export function buildQuoteHtml(document: QuoteDocument): string {
         <div class="terms">
           <div class="term-card">
             <h3>付款方式</h3>
-            <div>支持对公转账、微信转账或现款结算，具体以下单确认为准。</div>
+            <div>${escapeHtml(document.notes.payment || '支持对公转账、微信转账或现款结算，具体以下单确认为准。').replace(/\n/g, '<br />')}</div>
           </div>
           <div class="term-card">
             <h3>售后说明</h3>
-            <div>整机安装调试后交付，提供硬件质保支持，故障问题可协助远程排查。</div>
+            <div>${escapeHtml(document.notes.afterSales || '整机安装调试后交付，提供硬件质保支持，故障问题可协助远程排查。').replace(/\n/g, '<br />')}</div>
           </div>
           <div class="term-card">
             <h3>质保政策</h3>
-            <div>以收货日为准计算质保时长，整机一年质保，续保费用为整机费用 5% 每年。</div>
+            <div>${escapeHtml(document.notes.warranty || '以收货日为准计算质保时长，整机一年质保，续保费用为整机费用 5% 每年。').replace(/\n/g, '<br />')}</div>
           </div>
           <div class="term-card">
             <h3>备注条款</h3>
-            <div>${escapeHtml(document.notes || '暂无补充备注。').replace(/\n/g, '<br />')}</div>
+            <div>${escapeHtml(document.notes.remarks || '暂无补充备注。').replace(/\n/g, '<br />')}</div>
           </div>
         </div>
       </div>
