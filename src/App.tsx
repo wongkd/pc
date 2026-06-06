@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { BaseInfoSection } from './components/BaseInfoSection'
 import { HardwareLibrarySection } from './components/HardwareLibrarySection'
 import { LoginPanel } from './components/LoginPanel'
@@ -9,7 +9,7 @@ import { QuotePreview } from './components/QuotePreview'
 import { QuoteToolbar, type ExportFormat } from './components/QuoteToolbar'
 import { useHardwareLibrary } from './hooks/useHardwareLibrary'
 import { useHtml2Canvas } from './hooks/useHtml2Canvas'
-import { clearToken, fetchLibrary, fetchTemplates, saveTemplateToCloud, deleteTemplateFromCloud, isLoggedIn, changePassword as apiChangePassword } from './utils/api'
+import { clearToken, fetchLibrary, fetchTemplates, saveTemplateToCloud, deleteTemplateFromCloud, isLoggedIn, changePassword as apiChangePassword, fetchState, saveState } from './utils/api'
 import type {
   AppStorageData,
   BrandInfo,
@@ -93,9 +93,9 @@ const defaultQuoteDate = getTodayInputValue()
 const defaultMeta: QuoteMeta = {
   quoteNo: buildDefaultQuoteNo(defaultQuoteDate),
   quoteDate: defaultQuoteDate,
-  customerName: '广州智诚贸易有限公司',
-  contactName: '张经理',
-  contactPhone: '13800000000',
+  customerName: '',
+  contactName: '',
+  contactPhone: '',
   projectTitle: '高性能图形工作站配置方案',
 }
 
@@ -160,6 +160,9 @@ function normalizeStoredState(raw: unknown): AppStorageData {
   }
 
   const nextMeta = { ...defaultMeta, ...data.meta }
+  if (nextMeta.customerName === '广州智诚贸易有限公司') nextMeta.customerName = ''
+  if (nextMeta.contactName === '张经理') nextMeta.contactName = ''
+  if (nextMeta.contactPhone === '13800000000') nextMeta.contactPhone = ''
   if (!nextMeta.quoteNo?.trim()) {
     nextMeta.quoteNo = buildDefaultQuoteNo(nextMeta.quoteDate || defaultQuoteDate)
   }
@@ -236,6 +239,8 @@ function App() {
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null)
   const [loggedIn, setLoggedIn] = useState(isLoggedIn())
   const [cloudLoading, setCloudLoading] = useState(false)
+  const [cloudSyncEnabled, setCloudSyncEnabled] = useState(false)
+  const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showPwdModal, setShowPwdModal] = useState(false)
   const [pwdOld, setPwdOld] = useState('')
   const [pwdNew, setPwdNew] = useState('')
@@ -243,14 +248,15 @@ function App() {
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportPng, exportPdf } = useHtml2Canvas()
 
-  // 登录后从云端加载硬件库和模板
+  // 登录后从云端加载硬件库、模板和应用状态
   useEffect(() => {
     if (!loggedIn) return
     setCloudLoading(true)
     Promise.all([
       fetchLibrary(),
       fetchTemplates(),
-    ]).then(([libItems, tmplItems]) => {
+      fetchState(),
+    ]).then(([libItems, tmplItems, stateResult]) => {
       if (libItems.length > 0) {
         const mapped = libItems.map((i: any) => ({
           id: String(i.id), category: i.category || '', description: i.name || i.description || '',
@@ -259,17 +265,55 @@ function App() {
         setHardwareLibrary(mapped)
       }
       if (tmplItems.length > 0) {
-        const templates = tmplItems.map((t: any) => {
+        const cloudTemplates = tmplItems.map((t: any) => {
           let data = { brand: {}, meta: {} }
           try { data = JSON.parse(t.data) } catch {}
           return { id: String(t.id), name: t.name, brand: data.brand || {}, updatedAt: t.updated_at || '' }
         })
-        setMerchantTemplates(templates)
+        setMerchantTemplates((prev) => {
+          const merged = [...prev]
+          for (const ct of cloudTemplates) {
+            const idx = merged.findIndex((t) => t.name === ct.name)
+            if (idx >= 0) {
+              merged[idx] = ct
+            } else {
+              merged.push(ct)
+            }
+          }
+          return merged
+        })
       }
+      // 应用完整状态（报价项、客户信息等）→ 用云端数据覆盖本地
+      if (stateResult.ok && stateResult.data) {
+        const cloudState = normalizeStoredState(stateResult.data)
+        if (cloudState.brand) setBrand(cloudState.brand)
+        if (cloudState.meta) setMeta(cloudState.meta)
+        if (cloudState.notes) setNotes(cloudState.notes)
+        if (cloudState.quoteItems) setQuoteItems(cloudState.quoteItems)
+        if (cloudState.viewSettings) setViewSettings(cloudState.viewSettings)
+      }
+      // 启用云端自动保存
+      setCloudSyncEnabled(true)
     }).catch(() => {}).finally(() => setCloudLoading(false))
   }, [loggedIn])
 
-  const handleLogout = () => { clearToken(); setLoggedIn(false); setHardwareLibrary([]) }
+  // 状态变更后自动保存到云端（2秒防抖）
+  const buildStatePayload = useCallback(() => ({
+    brand, meta, notes, quoteItems, viewSettings,
+  }), [brand, meta, notes, quoteItems, viewSettings])
+
+  useEffect(() => {
+    if (!cloudSyncEnabled || !loggedIn) return
+    if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current)
+    cloudSaveTimerRef.current = setTimeout(() => {
+      saveState(buildStatePayload()).catch(() => {})
+    }, 2000)
+    return () => {
+      if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current)
+    }
+  }, [buildStatePayload, cloudSyncEnabled, loggedIn])
+
+  const handleLogout = () => { clearToken(); setLoggedIn(false); setHardwareLibrary([]); setCloudSyncEnabled(false) }
   const handleChangePwd = async () => {
     setPwdMsg('')
     if (!pwdOld || !pwdNew || pwdNew.length < 6) { setPwdMsg('新密码至少6位'); return }
@@ -480,6 +524,30 @@ function App() {
     downloadText('quote-preview.doc', buildQuoteHtml(document), 'application/msword')
   }
 
+  const handlePrint = () => {
+    const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
+    const html = buildQuoteHtml(document)
+    const printWindow = window.open('', '_blank', 'width=800,height=600')
+    if (!printWindow) {
+      // 弹窗被拦截时，降级到常规打印
+      window.print()
+      return
+    }
+    printWindow.document.write(html)
+    printWindow.document.close()
+    // 等待内容渲染后再触发打印
+    printWindow.onload = () => {
+      printWindow.print()
+      printWindow.onafterprint = () => printWindow.close()
+      // 兜底：如果用户取消打印，10秒后自动关闭
+      setTimeout(() => { try { printWindow.close() } catch {} }, 10000)
+    }
+    // 如果 onload 没触发（某些移动浏览器），直接打印
+    setTimeout(() => {
+      try { printWindow.print() } catch {}
+    }, 600)
+  }
+
   const handleExport = (format: ExportFormat) => {
     switch (format) {
       case 'png': void handleExportPng(); break
@@ -598,7 +666,7 @@ function App() {
             orientation={viewSettings.orientation}
             onPreviewModeChange={(previewMode) => handleViewSettingsChange({ previewMode })}
             onOrientationChange={(orientation) => handleViewSettingsChange({ orientation })}
-            onPrint={() => window.print()}
+            onPrint={handlePrint}
             onExport={handleExport}
           />
 

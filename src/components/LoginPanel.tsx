@@ -34,9 +34,11 @@ export function LoginPanel({ onLogin }: Props) {
         <p className="login-sub">登录以同步云端硬件库</p>
         <form onSubmit={handleSubmit}>
           <input className="login-inp" type="email" placeholder="邮箱" value={email}
-            onChange={(e) => setEmail(e.target.value)} required />
+            autoCapitalize="off" autoCorrect="off" spellCheck="false"
+            onChange={(e) => setEmail(e.target.value.trim())} required />
           <input className="login-inp" type="password" placeholder="密码" value={password}
-            onChange={(e) => setPassword(e.target.value)} required minLength={6} />
+            autoCapitalize="off" autoCorrect="off"
+            onChange={(e) => setPassword(e.target.value.trim())} required minLength={6} />
           {error && <p className="login-err">{error}</p>}
           <button className="login-btn" type="submit" disabled={loading}>
             {loading ? '请稍候…' : mode === 'login' ? '登录' : '注册'}

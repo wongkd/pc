@@ -5,6 +5,7 @@ import { libraryRoutes } from './routes/library'
 import { searchRoute } from './routes/search'
 import { normalizeRoute } from './routes/normalize'
 import { templatesRoutes } from './routes/templates'
+import { stateRoutes } from './routes/state'
 
 type Bindings = {
   DB: D1Database
@@ -24,6 +25,7 @@ app.route('/api/library', libraryRoutes)
 app.route('/api/search', searchRoute)
 app.route('/api/normalize', normalizeRoute)
 app.route('/api/templates', templatesRoutes)
+app.route('/api/state', stateRoutes)
 
 // Health check
 app.get('/api/health', (c) => c.json({ ok: true, time: new Date().toISOString() }))

@@ -893,11 +893,25 @@ button:disabled {
 }
 
 .form-grid,
+.form-grid-3col,
 .sheet-bottom,
 .preview-meta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+/* 3列网格：桌面端三列，手机端自适应 */
+.form-grid-3col {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .form-grid-3col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
 }
 
 .field {
@@ -1078,20 +1092,22 @@ button:disabled {
   align-items: center;
   gap: 8px;
   padding: 9px 10px;
-  border: none;
+  border: 1px solid rgba(15, 23, 42, 0.08);
   border-radius: 12px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.7);
   cursor: pointer;
   text-align: left;
-  transition: background 0.14s;
+  transition: all 0.14s;
 }
 
 .split-nav-item:hover {
   background: rgba(44, 124, 246, 0.06);
+  border-color: rgba(44, 124, 246, 0.2);
 }
 
 .split-nav-item.active {
   background: rgba(44, 124, 246, 0.1);
+  border-color: rgba(44, 124, 246, 0.3);
 }
 
 .split-nav-emoji {
@@ -3308,6 +3324,625 @@ td {
 
   .customer-view-footer .btn {
     width: 100%;
+  }
+}
+
+/* ── 移动端适配 (≤768px) ── */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+    background: #f3f5f7;
+  }
+
+  .shell {
+    padding: 0;
+  }
+
+  /* 单栏布局 */
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin-top: 0;
+  }
+
+  /* 顶部标题栏 */
+  .app-toolbar {
+    padding: 12px 16px 0;
+    margin-bottom: 8px;
+  }
+
+  .app-toolbar h1 {
+    font-size: 18px;
+    margin-top: 4px;
+  }
+
+  .app-toolbar p {
+    font-size: 11px;
+    white-space: normal;
+  }
+
+  /* 面板圆角 */
+  .hero, .panel {
+    border-radius: 0;
+  }
+
+  .panel {
+    border-left: none;
+    border-right: none;
+  }
+
+  /* 编辑面板 */
+  .editor-panel {
+    border-radius: 16px 16px 0 0;
+  }
+
+  .panel-section, .panel-intro {
+    padding: 14px 16px;
+  }
+
+  .panel-intro h2 {
+    font-size: 20px;
+  }
+
+  .section-head h2 {
+    font-size: 18px;
+  }
+
+  /* 表单全宽 */
+  .form-grid, .info-two-col {
+    grid-template-columns: 1fr;
+  }
+
+  .field {
+    gap: 6px;
+  }
+
+  .field label {
+    font-size: 12px;
+  }
+
+  /* 输入框放大 */
+  input, textarea, select {
+    padding: 12px 14px;
+    font-size: 16px;
+  }
+
+  /* 配件卡片内输入框保持紧凑 */
+  .qic-name {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    border-radius: 10px;
+    background: #fff;
+  }
+
+  .qic-qty,
+  .qic-price {
+    padding: 8px 10px !important;
+    font-size: 13px !important;
+  }
+
+  .qic-card {
+    gap: 10px;
+  }
+
+  .qic-card-row {
+    flex-wrap: wrap;
+  }
+
+  .qic-card-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .qic-field {
+    max-width: none;
+  }
+
+  .qic-actions {
+    margin-left: 0;
+  }
+
+  .hl-search {
+    width: 100% !important;
+  }
+
+  /* 工具栏 */
+  .quote-toolbar {
+    padding: 8px;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    background: rgba(248, 250, 252, 0.98);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.05);
+  }
+
+  .quote-toolbar-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* 移动端按钮触控修复 */
+  button {
+    touch-action: manipulation;
+  }
+
+  .segmented-control {
+    font-size: 13px;
+  }
+
+  .segment-option {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+
+  .btn-toolbar {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+    min-height: 44px;
+  }
+
+  .btn {
+    padding: 12px 16px;
+    min-height: 44px;
+  }
+
+  .btn.small {
+    padding: 10px 14px;
+    min-height: 44px;
+  }
+
+  .toolbar-spacer {
+    display: none;
+  }
+
+  /* 预览面板 */
+  .preview-workbench {
+    padding: 8px;
+    border-radius: 0;
+  }
+
+  .preview-workbench-body {
+    padding: 6px;
+    border-radius: 16px;
+  }
+
+  .quote-page {
+    padding: 24px 16px;
+    border-radius: 12px;
+    min-height: auto;
+  }
+
+  .quote-page-document {
+    padding: 20px 14px;
+    border-radius: 4px;
+  }
+
+  .quote-header {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .preview-frame {
+    padding: 10px;
+  }
+
+  /* 硬件库表格 */
+  .hl-table-wrap {
+    font-size: 11px;
+    max-height: 280px;
+  }
+
+  .hl-table th, .hl-row td {
+    padding: 6px 8px;
+  }
+
+  /* 模板列表 */
+  .template-save-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* hero 区 */
+  .hero {
+    padding: 20px 16px;
+  }
+
+  .hero-metrics {
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .metric-card {
+    padding: 12px 14px;
+  }
+
+  .metric-card strong {
+    font-size: 20px;
+  }
+
+  /* 导出菜单移动端适配 */
+  .export-menu {
+    min-width: 160px;
+  }
+
+  .export-menu-item {
+    padding: 12px 16px;
+    font-size: 15px;
+  }
+
+  /* 配件分区布局 */
+  .split-layout {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .split-nav {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    overflow-x: auto;
+  }
+
+  .split-nav-item {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: rgba(255, 255, 255, 0.7);
+    white-space: nowrap;
+  }
+
+  .split-content-head {
+    font-size: 13px;
+  }
+
+  /* 按钮同行 */
+  .section-head-side {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-mini-stats {
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* 各区段标题统一卡片风格 */
+  .section-head h2,
+  .hl-title,
+  .info-collapse summary {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #465362 !important;
+    background: rgba(248, 250, 252, 0.96) !important;
+    border: 1px solid rgba(15, 23, 42, 0.08) !important;
+    border-radius: 12px !important;
+    margin: 0 !important;
+  }
+
+  .section-head {
+    margin-bottom: 10px;
+  }
+
+  .hl-head {
+    margin-bottom: 10px;
+  }
+
+  .info-collapse {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+    padding: 0 16px !important;
+  }
+
+  .info-collapse summary {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* 信息卡片去框：移除边框/背景/阴影，只保留内容 */
+  .info-card {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  /* 品牌/联系方式 字段恢复合适大小 */
+  .base-info-compact .info-card-sm input,
+  .base-info-compact .info-card-sm select,
+  .base-info-compact .info-card-sm textarea {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+    border-radius: 8px !important;
+  }
+
+  .info-card .field label {
+    font-size: 12px !important;
+  }
+
+  /* ===== 客户视图预览卡片 - 全面压缩 ===== */
+  .customer-view {
+    padding: 8px 8px 80px !important;
+  }
+
+  .customer-view-header {
+    margin-bottom: 6px !important;
+  }
+
+  .customer-view-summary {
+    padding: 10px 12px !important;
+    gap: 6px !important;
+    border-radius: 12px !important;
+  }
+
+  .customer-view-title-row h3 {
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+  }
+
+  .customer-view-title-note {
+    font-size: 10px !important;
+  }
+
+  .customer-view-price {
+    font-size: 16px !important;
+  }
+
+  .customer-view-meta {
+    gap: 4px !important;
+  }
+
+  .customer-view-meta span {
+    padding: 3px 8px !important;
+    font-size: 10px !important;
+  }
+
+  .customer-view-list {
+    gap: 6px !important;
+    margin-top: 6px !important;
+  }
+
+  .customer-item-card {
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 6px !important;
+    padding: 6px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04) !important;
+  }
+
+  .customer-view.landscape .customer-item-card {
+    grid-template-columns: 48px minmax(0, 1fr) !important;
+    gap: 6px !important;
+    padding: 6px !important;
+  }
+
+  .customer-item-image {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 10px !important;
+  }
+
+  .customer-view.landscape .customer-item-image {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .customer-item-image-placeholder span {
+    font-size: 9px !important;
+  }
+
+  .customer-item-body h4 {
+    margin: 2px 0 1px !important;
+    font-size: 13px !important;
+    line-height: 1.25 !important;
+  }
+
+  .customer-view.landscape .customer-item-body h4 {
+    font-size: 13px !important;
+  }
+
+  .customer-item-body p {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+
+  .customer-item-category {
+    padding: 2px 7px !important;
+    font-size: 9px !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  .customer-item-subtotal {
+    font-size: 13px !important;
+  }
+
+  .customer-item-top {
+    gap: 6px !important;
+  }
+
+  .customer-item-bottom {
+    margin-top: 3px !important;
+    gap: 3px !important;
+  }
+
+  .customer-item-meta-inline {
+    padding: 2px 5px !important;
+    gap: 3px !important;
+  }
+
+  .customer-item-meta-label {
+    font-size: 8px !important;
+  }
+
+  .customer-item-meta-inline strong {
+    font-size: 10px !important;
+  }
+
+  .customer-view-footer {
+    gap: 6px !important;
+  }
+
+  .customer-view-footer-bar {
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+  }
+
+  .customer-view-footer-total span {
+    font-size: 11px !important;
+  }
+
+  .customer-view-footer-total strong {
+    font-size: 16px !important;
+  }
+
+  .customer-view-footer-btn {
+    padding: 10px 16px !important;
+    font-size: 13px !important;
+  }
+
+  /* ===== 编辑面板硬件卡片缩小 ===== */
+  .qic-card {
+    padding: 8px 10px !important;
+    gap: 6px !important;
+    border-radius: 10px !important;
+  }
+
+  .qic-name {
+    padding: 6px 8px !important;
+    font-size: 13px !important;
+  }
+
+  .qic-qty,
+  .qic-price {
+    padding: 6px 8px !important;
+    font-size: 13px !important;
+  }
+
+  .qic-field label {
+    font-size: 8px !important;
+  }
+
+  .qic-subtotal {
+    font-size: 13px !important;
+  }
+
+  .qic-btn {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  /* ===== 条款区域保持2×2网格（与导出PNG一致） ===== */
+  .terms-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .term-card-compact {
+    padding: 10px 12px !important;
+  }
+
+  .term-card-compact h4 {
+    font-size: 11px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .term-card-compact .notes {
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+  }
+
+  /* ===== 强力修复预览区域：显示表格 隐藏卡片 ===== */
+  .quote-table-wrap {
+    display: block !important;
+    overflow-x: visible !important;
+  }
+
+  .quote-items-mobile,
+  .quote-mobile-total {
+    display: none !important;
+  }
+
+  /* 表格自适应容器宽度 */
+  .quote-table {
+    font-size: 12px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    table-layout: fixed !important;
+  }
+
+  .quote-table th,
+  .quote-table td {
+    padding: 7px 8px !important;
+    font-size: 11px !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+
+  /* 调整列宽比例 */
+  .quote-table th:nth-child(1),
+  .quote-table td:nth-child(1) {
+    width: 18% !important;
+  }
+
+  .quote-table th:nth-child(2),
+  .quote-table td:nth-child(2) {
+    width: 42% !important;
+  }
+
+  .quote-table th:nth-child(3),
+  .quote-table td:nth-child(3),
+  .quote-table th:nth-child(4),
+  .quote-table td:nth-child(4),
+  .quote-table th:nth-child(5),
+  .quote-table td:nth-child(5) {
+    width: 13% !important;
+    white-space: nowrap !important;
+  }
+
+  .category-tag {
+    padding: 3px 6px !important;
+    font-size: 9px !important;
+    white-space: nowrap !important;
+  }
+
+  .quote-item-name {
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+  }
+
+  .quote-item-details {
+    font-size: 10px !important;
+    line-height: 1.3 !important;
+  }
+
+  .quote-table tfoot td {
+    font-size: 11px !important;
+  }
+
+  /* 确保预览容器不溢出 */
+  .preview-stage {
+    overflow-x: visible !important;
+  }
+
+  .quote-page {
+    max-width: 100% !important;
+    overflow-x: visible !important;
+  }
+
+  /* 底部安全区 */
+  .app-shell {
+    padding-bottom: env(safe-area-inset-bottom, 16px);
   }
 }
 

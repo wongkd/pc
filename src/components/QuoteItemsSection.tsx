@@ -146,7 +146,7 @@ export function QuoteItemsSection({
         <div className="split-layout">
           <nav className="split-nav">
             {categories.ordered.map((cat) => {
-              const hasItem = categories.map.has(cat)
+              const hasItem = categories.map.has(cat) && categories.map.get(cat)!.some(item => item.name.trim() !== '')
               return (
                 <button
                   key={cat}

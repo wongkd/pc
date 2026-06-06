@@ -81,3 +81,15 @@ export async function deleteTemplateFromCloud(id: number) {
   const r = await fetch(`${API_BASE}/api/templates`, { method: 'DELETE', headers: headers(), body: JSON.stringify({ id }) })
   return r.json()
 }
+
+// 多端同步：获取云端应用状态
+export async function fetchState(): Promise<{ ok: boolean; data: any; updated_at: string | null }> {
+  const r = await fetch(`${API_BASE}/api/state`, { headers: headers() })
+  return r.json()
+}
+
+// 多端同步：保存应用状态到云端
+export async function saveState(data: any) {
+  const r = await fetch(`${API_BASE}/api/state`, { method: 'PUT', headers: headers(), body: JSON.stringify({ data }) })
+  return r.json()
+}

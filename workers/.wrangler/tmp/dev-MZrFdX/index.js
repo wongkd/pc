@@ -1227,14 +1227,14 @@ var Hono = class _Hono {
    * app.route("/api", app2) // GET /api/user
    * ```
    */
-  route(path, app7) {
+  route(path, app8) {
     const subApp = this.basePath(path);
-    app7.routes.map((r) => {
+    app8.routes.map((r) => {
       let handler;
-      if (app7.errorHandler === errorHandler) {
+      if (app8.errorHandler === errorHandler) {
         handler = r.handler;
       } else {
-        handler = /* @__PURE__ */ __name(async (c, next) => (await compose([], app7.errorHandler)(c, () => r.handler(c, next))).res, "handler");
+        handler = /* @__PURE__ */ __name(async (c, next) => (await compose([], app8.errorHandler)(c, () => r.handler(c, next))).res, "handler");
         handler[COMPOSED_HANDLER] = r.handler;
       }
       subApp.#addRoute(r.method, r.path, handler, r.basePath);
@@ -6982,20 +6982,56 @@ app5.delete("/", authMiddleware, zValidator("json", deleteTemplateSchema), async
   return c.json({ ok: true });
 });
 
-// src/index.ts
+// src/routes/state.ts
 var app6 = new Hono2();
-app6.use("*", cors({
+var saveSchema = external_exports.object({
+  data: external_exports.any()
+});
+app6.get("/", authMiddleware, async (c) => {
+  const userId = c.get("userId");
+  const row = await c.env.DB.prepare(
+    "SELECT data, updated_at FROM app_state WHERE user_id = ?"
+  ).bind(userId).first();
+  if (!row) {
+    return c.json({ ok: true, data: null, updated_at: null });
+  }
+  let parsed = null;
+  try {
+    parsed = JSON.parse(row.data);
+  } catch {
+  }
+  return c.json({ ok: true, data: parsed, updated_at: row.updated_at });
+});
+app6.put("/", authMiddleware, zValidator("json", saveSchema), async (c) => {
+  const userId = c.get("userId");
+  const { data } = c.req.valid("json");
+  const dataStr = typeof data === "string" ? data : JSON.stringify(data);
+  try {
+    await c.env.DB.prepare(
+      `INSERT INTO app_state (user_id, data, updated_at) VALUES (?, ?, datetime('now'))
+       ON CONFLICT(user_id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at`
+    ).bind(userId, dataStr).run();
+    return c.json({ ok: true });
+  } catch (e) {
+    return c.json({ ok: false, error: e.message || "\u4FDD\u5B58\u5931\u8D25" }, 500);
+  }
+});
+
+// src/index.ts
+var app7 = new Hono2();
+app7.use("*", cors({
   origin: "*",
   allowHeaders: ["Content-Type", "Authorization"],
   allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 }));
-app6.route("/api/auth", app);
-app6.route("/api/library", app2);
-app6.route("/api/search", app3);
-app6.route("/api/normalize", app4);
-app6.route("/api/templates", app5);
-app6.get("/api/health", (c) => c.json({ ok: true, time: (/* @__PURE__ */ new Date()).toISOString() }));
-var src_default = app6;
+app7.route("/api/auth", app);
+app7.route("/api/library", app2);
+app7.route("/api/search", app3);
+app7.route("/api/normalize", app4);
+app7.route("/api/templates", app5);
+app7.route("/api/state", app6);
+app7.get("/api/health", (c) => c.json({ ok: true, time: (/* @__PURE__ */ new Date()).toISOString() }));
+var src_default = app7;
 
 // node_modules/wrangler/templates/middleware/middleware-ensure-req-body-drained.ts
 var drainBody = /* @__PURE__ */ __name(async (request, env, _ctx, middlewareCtx) => {

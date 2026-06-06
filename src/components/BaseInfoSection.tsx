@@ -2,8 +2,6 @@ import { useState } from 'react'
 import type { BrandInfo, MerchantTemplate, QuoteMeta } from '../types/quote'
 import { BrandSection } from './BrandSection'
 import { ContactSection } from './ContactSection'
-import { CustomerInfoSection } from './CustomerInfoSection'
-import { QuoteInfoSection } from './QuoteInfoSection'
 
 interface BaseInfoSectionProps {
   brand: BrandInfo
@@ -30,34 +28,91 @@ export function BaseInfoSection({
   }
 
   return (
-    <section className="panel-section panel-section-secondary base-info-compact">
-      {/* 三列紧凑卡片 */}
-      <div className="info-3col">
-        <div className="info-card info-card-sm">
-          <div className="info-card-title">商家模板</div>
-          <div className="info-compact-row">
-            <input value={templateName} placeholder="模板名称…" onChange={(e) => setTemplateName(e.target.value)} />
-            <button className="btn ghost small" type="button" onClick={handleSave}>保存</button>
+    <>
+      {/* 模板模块：独立卡片 */}
+      <section className="panel-section">
+        <div className="section-head">
+          <div className="section-head-copy">
+            <h2>商家模板</h2>
+            <span className="section-head-note">快速套用品牌信息</span>
           </div>
-          {templates.length > 0 && (
-            <div className="info-compact-list">
-              {templates.map((t) => (
-                <div className="info-compact-item" key={t.id}>
-                  <span className="info-compact-name">{t.name}</span>
-                  <button className="btn ghost small" type="button" onClick={() => onApplyTemplate(t.id)}>套用</button>
-                  <button className="btn secondary small" type="button" onClick={() => onDeleteTemplate(t.id)}>删除</button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
-        <div className="info-card info-card-sm">
-          <CustomerInfoSection meta={meta} onChange={onMetaChange} />
+        <div className="info-compact-row" style={{ gap: 8 }}>
+          <input value={templateName} placeholder="模板名称…" onChange={(e) => setTemplateName(e.target.value)} style={{ flex: 1 }} />
+          <button className="btn ghost small" type="button" onClick={handleSave}>保存</button>
         </div>
-        <div className="info-card info-card-sm">
-          <QuoteInfoSection meta={meta} onChange={onMetaChange} />
+        {templates.length > 0 && (
+          <div className="info-compact-list" style={{ marginTop: 8 }}>
+            {templates.map((t) => (
+              <div className="info-compact-item" key={t.id}>
+                <span className="info-compact-name">{t.name}</span>
+                <button className="btn ghost small" type="button" onClick={() => onApplyTemplate(t.id)}>套用</button>
+                <button className="btn secondary small" type="button" onClick={() => onDeleteTemplate(t.id)}>删除</button>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* 客户＆报价信息：3列横向网格 */}
+      <section className="panel-section">
+        <div className="section-head">
+          <div className="section-head-copy">
+            <h2>客户与报价信息</h2>
+          </div>
         </div>
-      </div>
+        <div className="form-grid-3col">
+          <div className="field">
+            <label htmlFor="customerName">客户名称</label>
+            <input
+              id="customerName"
+              value={meta.customerName}
+              onChange={(event) => onMetaChange('customerName', event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="contactName">联系人</label>
+            <input
+              id="contactName"
+              value={meta.contactName}
+              onChange={(event) => onMetaChange('contactName', event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="contactPhone">客户电话</label>
+            <input
+              id="contactPhone"
+              value={meta.contactPhone}
+              onChange={(event) => onMetaChange('contactPhone', event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="quoteNo">报价单号</label>
+            <input
+              id="quoteNo"
+              value={meta.quoteNo}
+              onChange={(event) => onMetaChange('quoteNo', event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="quoteDate">报价日期</label>
+            <input
+              id="quoteDate"
+              type="date"
+              value={meta.quoteDate}
+              onChange={(event) => onMetaChange('quoteDate', event.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="projectTitle">项目标题</label>
+            <input
+              id="projectTitle"
+              value={meta.projectTitle}
+              onChange={(event) => onMetaChange('projectTitle', event.target.value)}
+            />
+          </div>
+        </div>
+      </section>
 
       {/* 品牌与联系方式 折叠 */}
       <details className="info-collapse">
@@ -71,6 +126,6 @@ export function BaseInfoSection({
           </div>
         </div>
       </details>
-    </section>
+    </>
   )
 }
