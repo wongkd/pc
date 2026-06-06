@@ -15,6 +15,7 @@ dist-ssr
 # Wrangler / Cloudflare Workers
 .wrangler/state/
 .wrangler/tmp/
+workers/.wrangler/
 
 # Editor directories and files
 .vscode/*
