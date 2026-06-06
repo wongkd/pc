@@ -132,7 +132,7 @@ interface HardwareLibrarySectionProps {
   categoryFilter: string
   onSearchChange: (value: string) => void
   onCategoryFilterChange: (value: string) => void
-  onAddItem: (category: string, description: string, price: number) => void
+  onAddItem: (category: string, description: string, price: number, image?: string) => void
   onUpdateItem: (id: string, field: keyof HardwareLibraryItem, value: string | number) => void
   onDeleteItem: (id: string) => void
   isAdmin?: boolean
@@ -208,6 +208,7 @@ export function HardwareLibrarySection({
   const [newCat, setNewCat] = useState('CPU')
   const [newDesc, setNewDesc] = useState('')
   const [newPrice, setNewPrice] = useState('')
+  const [newImage, setNewImage] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [refreshProgress, setRefreshProgress] = useState('')
   const [searchingPrice, setSearchingPrice] = useState(false)
@@ -237,10 +238,11 @@ export function HardwareLibrarySection({
     const desc = newDesc.trim()
     const price = Number(newPrice) || 0
     if (!desc) return
-    onAddItem(newCat, desc, price)
+    onAddItem(newCat, desc, price, newImage || undefined)
     setNewDesc('')
     setNewPrice('')
-  }, [newCat, newDesc, newPrice, onAddItem])
+    setNewImage('')
+  }, [newCat, newDesc, newPrice, newImage, onAddItem])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') handleAdd()
@@ -259,6 +261,10 @@ export function HardwareLibrarySection({
         // 如果标题更完整，替换型号名
         if (best.title && best.title.length > desc.length) {
           setNewDesc(best.title)
+        }
+        // 同步获取图片 URL
+        if (best.picUrl) {
+          setNewImage(best.picUrl)
         }
       }
     } catch { /* ignore */ }
