@@ -13,11 +13,13 @@ function escapeHtml(value: string): string {
 }
 
 function renderRows(items: QuoteItem[]): string {
-  if (items.length === 0) {
+  // 过滤空白项目
+  const filled = items.filter((item) => item.name.trim() || item.details.trim() || item.unitPrice > 0)
+  if (filled.length === 0) {
     return '<tr><td colspan="5" style="padding:28px;text-align:center;color:#64748b;">暂无硬件报价项目</td></tr>'
   }
 
-  return items
+  return filled
     .map((item) => {
       const subtotal = item.quantity * item.unitPrice
       return `
@@ -82,7 +84,7 @@ export function buildQuoteHtml(document: QuoteDocument, orientation: Orientation
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          gap: 8px;
+          gap: 12px;
           min-height: 56px;
         }
         .logo {
