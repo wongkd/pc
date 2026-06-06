@@ -6733,9 +6733,22 @@ async function authMiddleware(c, next) {
     return c.json({ ok: false, error: "\u4EE4\u724C\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u767B\u5F55" }, 401);
   }
   c.set("userId", payload.sub);
+  c.set("userEmail", payload.email || "");
   await next();
 }
 __name(authMiddleware, "authMiddleware");
+var ADMIN_EMAIL = "563838884@qq.com";
+function isAdmin(c) {
+  return c.get("userEmail") === ADMIN_EMAIL;
+}
+__name(isAdmin, "isAdmin");
+async function adminMiddleware(c, next) {
+  if (!isAdmin(c)) {
+    return c.json({ ok: false, error: "\u4EC5\u7BA1\u7406\u5458\u53EF\u4FEE\u6539\u786C\u4EF6\u5E93" }, 403);
+  }
+  await next();
+}
+__name(adminMiddleware, "adminMiddleware");
 
 // src/routes/auth.ts
 var app = new Hono2();
@@ -6831,23 +6844,23 @@ app2.get("/", authMiddleware, async (c) => {
   ).bind(userId, limit, offset).all();
   return c.json(items.results);
 });
-app2.post("/", authMiddleware, zValidator("json", addItemSchema), async (c) => {
+app2.post("/", authMiddleware, adminMiddleware, zValidator("json", addItemSchema), async (c) => {
   const userId = c.get("userId");
   const { items } = c.req.valid("json");
   try {
-    const stmt = c.env.DB.prepare(
-      "INSERT INTO library (user_id, category, name, price, image, platform) VALUES (?, ?, ?, ?, ?, ?)"
-    );
-    const batch = items.map(
-      (item) => stmt.bind(userId, item.category, item.name, item.price, item.image || "", item.platform || "")
-    );
-    await c.env.DB.batch(batch);
-    return c.json({ ok: true, count: items.length });
+    const results = [];
+    for (const item of items) {
+      const row = await c.env.DB.prepare(
+        "INSERT INTO library (user_id, category, name, price, image, platform) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, category, name, price"
+      ).bind(userId, item.category, item.name, item.price, item.image || "", item.platform || "").first();
+      if (row) results.push(row);
+    }
+    return c.json({ ok: true, count: results.length, items: results });
   } catch (e) {
     return c.json({ ok: false, error: e.message || "\u6DFB\u52A0\u5931\u8D25" }, 500);
   }
 });
-app2.put("/:id", authMiddleware, zValidator("json", updateItemSchema), async (c) => {
+app2.put("/:id", authMiddleware, adminMiddleware, zValidator("json", updateItemSchema), async (c) => {
   const userId = c.get("userId");
   const id = c.req.param("id");
   const updates = c.req.valid("json");
@@ -6870,7 +6883,7 @@ app2.put("/:id", authMiddleware, zValidator("json", updateItemSchema), async (c)
   await c.env.DB.prepare(`UPDATE library SET ${fields.join(", ")} WHERE id = ? AND user_id = ?`).bind(...values).run();
   return c.json({ ok: true });
 });
-app2.delete("/:id", authMiddleware, async (c) => {
+app2.delete("/:id", authMiddleware, adminMiddleware, async (c) => {
   const userId = c.get("userId");
   const id = c.req.param("id");
   const existing = await c.env.DB.prepare("SELECT id FROM library WHERE id = ? AND user_id = ?").bind(id, userId).first();

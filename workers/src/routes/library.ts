@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import { z } from 'zod'
 import { zValidator } from '@hono/zod-validator'
-import { authMiddleware } from '../auth'
+import { authMiddleware, adminMiddleware } from '../auth'
 
 type Bindings = { DB: D1Database }
 type Variables = { userId: number }
@@ -37,26 +37,26 @@ app.get('/', authMiddleware, async (c) => {
   return c.json(items.results)
 })
 
-// 批量添加硬件
-app.post('/', authMiddleware, zValidator('json', addItemSchema), async (c) => {
+// 批量添加硬件（返回带云端 ID 的记录列表）— 仅管理员
+app.post('/', authMiddleware, adminMiddleware, zValidator('json', addItemSchema), async (c) => {
   const userId = c.get('userId')
   const { items } = c.req.valid('json')
   try {
-    const stmt = c.env.DB.prepare(
-      'INSERT INTO library (user_id, category, name, price, image, platform) VALUES (?, ?, ?, ?, ?, ?)'
-    )
-    const batch = items.map(item =>
-      stmt.bind(userId, item.category, item.name, item.price, item.image || '', item.platform || '')
-    )
-    await c.env.DB.batch(batch)
-    return c.json({ ok: true, count: items.length })
+    const results: Array<{ id: number; category: string; name: string; price: number }> = []
+    for (const item of items) {
+      const row = await c.env.DB.prepare(
+        'INSERT INTO library (user_id, category, name, price, image, platform) VALUES (?, ?, ?, ?, ?, ?) RETURNING id, category, name, price'
+      ).bind(userId, item.category, item.name, item.price, item.image || '', item.platform || '').first()
+      if (row) results.push(row as any)
+    }
+    return c.json({ ok: true, count: results.length, items: results })
   } catch (e: any) {
     return c.json({ ok: false, error: e.message || '添加失败' }, 500)
   }
 })
 
-// 更新硬件
-app.put('/:id', authMiddleware, zValidator('json', updateItemSchema), async (c) => {
+// 更新硬件 — 仅管理员
+app.put('/:id', authMiddleware, adminMiddleware, zValidator('json', updateItemSchema), async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
   const updates = c.req.valid('json')
@@ -84,8 +84,8 @@ app.put('/:id', authMiddleware, zValidator('json', updateItemSchema), async (c) 
   return c.json({ ok: true })
 })
 
-// 删除硬件
-app.delete('/:id', authMiddleware, async (c) => {
+// 删除硬件 — 仅管理员
+app.delete('/:id', authMiddleware, adminMiddleware, async (c) => {
   const userId = c.get('userId')
   const id = c.req.param('id')
   const existing = await c.env.DB.prepare('SELECT id FROM library WHERE id = ? AND user_id = ?').bind(id, userId).first()

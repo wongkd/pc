@@ -8,8 +8,12 @@ function token(): string | null {
 }
 
 export function setToken(t: string) { localStorage.setItem('pc-auth-token', t) }
-export function clearToken() { localStorage.removeItem('pc-auth-token') }
+export function clearToken() { localStorage.removeItem('pc-auth-token'); localStorage.removeItem('pc-auth-email') }
 export function isLoggedIn() { return !!token() }
+
+export function setUserEmail(email: string) { localStorage.setItem('pc-auth-email', email) }
+export function getUserEmail() { return localStorage.getItem('pc-auth-email') || '' }
+export function isAdminUser() { return getUserEmail() === '563838884@qq.com' }
 
 function headers(): Record<string, string> {
   const h: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -36,7 +40,8 @@ export async function fetchLibrary(): Promise<any[]> {
 
 export async function addLibraryItems(items: Array<{ category: string; name: string; price: number; image?: string; platform?: string }>) {
   const r = await fetch(`${API_BASE}/api/library`, { method: 'POST', headers: headers(), body: JSON.stringify({ items }) })
-  return r.json()
+  const data = await r.json()
+  return { ok: data.ok, items: data.items || [] }
 }
 
 export async function updateLibraryItem(id: number, updates: Record<string, any>) {

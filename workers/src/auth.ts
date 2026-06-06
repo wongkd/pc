@@ -103,5 +103,20 @@ export async function authMiddleware(c: Context, next: Next) {
     return c.json({ ok: false, error: '令牌已过期，请重新登录' }, 401)
   }
   c.set('userId', payload.sub as number)
+  c.set('userEmail', (payload.email as string) || '')
+  await next()
+}
+
+const ADMIN_EMAIL = '563838884@qq.com'
+
+export function isAdmin(c: Context): boolean {
+  return c.get('userEmail') === ADMIN_EMAIL
+}
+
+/** 管理员权限中间件：仅管理员可写 */
+export async function adminMiddleware(c: Context, next: Next) {
+  if (!isAdmin(c)) {
+    return c.json({ ok: false, error: '仅管理员可修改硬件库' }, 403)
+  }
   await next()
 }

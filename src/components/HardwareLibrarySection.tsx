@@ -135,6 +135,7 @@ interface HardwareLibrarySectionProps {
   onAddItem: (category: string, description: string, price: number) => void
   onUpdateItem: (id: string, field: keyof HardwareLibraryItem, value: string | number) => void
   onDeleteItem: (id: string) => void
+  isAdmin?: boolean
 }
 
 // ── 行组件 ──

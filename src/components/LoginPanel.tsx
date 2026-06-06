@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { login, register, setToken } from '../utils/api'
+import { login, register, setToken, setUserEmail } from '../utils/api'
 
 interface Props {
   onLogin: () => void
@@ -20,7 +20,7 @@ export function LoginPanel({ onLogin }: Props) {
       const fn = mode === 'login' ? login : register
       const res = await fn(email, password)
       if (res.error) { setError(res.error) }
-      else if (res.token) { setToken(res.token); onLogin() }
+      else if (res.token) { setToken(res.token); setUserEmail(res.user?.email || email); onLogin() }
     } catch {
       setError('网络错误，请稍后重试')
     }

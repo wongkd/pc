@@ -382,6 +382,7 @@ function App() {
     hardwareLibrary,
     setHardwareLibrary,
     addQuoteItemFromLibrary,
+    loggedIn,
   )
 
   const handleBrandChange = (field: keyof BrandInfo, value: string) => {
@@ -667,18 +668,7 @@ function App() {
               categoryFilter={library.categoryFilter}
               onSearchChange={library.setSearch}
               onCategoryFilterChange={library.setCategoryFilter}
-              onAddItem={(cat, desc, price) => {
-                setHardwareLibrary((prev) => [
-                  ...prev,
-                  {
-                    id: crypto.randomUUID(),
-                    category: cat,
-                    description: desc,
-                    price,
-                    image: '',
-                  },
-                ])
-              }}
+              onAddItem={library.addLibraryItemWithCloud}
               onUpdateItem={library.updateLibraryItem}
               onDeleteItem={library.deleteLibraryItem}
             />

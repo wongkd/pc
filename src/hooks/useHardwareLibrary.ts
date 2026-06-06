@@ -5,6 +5,7 @@ import {
   HARDWARE_LIBRARY_COLUMNS,
   normalizeHardwareLibraryRows,
 } from '../utils/hardwareLibraryExcel'
+import { addLibraryItems, updateLibraryItem as apiUpdateLibraryItem, deleteLibraryItem as apiDeleteLibraryItem } from '../utils/api'
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
@@ -19,6 +20,8 @@ export function useHardwareLibrary(
   library: HardwareLibraryItem[],
   setLibrary: React.Dispatch<React.SetStateAction<HardwareLibraryItem[]>>,
   addQuoteItemFromLibrary: (item: HardwareLibraryItem) => void,
+  /** 云端同步回调（可选，已登录时传入） */
+  cloudSync?: boolean,
 ) {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('全部')
@@ -53,6 +56,22 @@ export function useHardwareLibrary(
     ])
   }
 
+  /** 带云端同步的添加 */
+  const addLibraryItemWithCloud = async (category: string, description: string, price: number, image = '') => {
+    const localId = crypto.randomUUID()
+    setLibrary((current) => [...current, { id: localId, category, description, price, image }])
+    if (!cloudSync) return
+    try {
+      const res = await addLibraryItems([{ category, name: description, price, image }])
+      if (res.ok && res.items?.length > 0) {
+        const cloudId = String(res.items[0].id)
+        setLibrary((current) =>
+          current.map((item) => item.id === localId ? { ...item, id: cloudId } : item)
+        )
+      }
+    } catch {}
+  }
+
   const updateLibraryItem = (
     id: string,
     field: keyof HardwareLibraryItem,
@@ -61,10 +80,18 @@ export function useHardwareLibrary(
     setLibrary((current) =>
       current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
     )
+    const numId = Number(id)
+    if (cloudSync && Number.isFinite(numId)) {
+      apiUpdateLibraryItem(numId, { [field]: value }).catch(() => {})
+    }
   }
 
   const deleteLibraryItem = (id: string) => {
     setLibrary((current) => current.filter((item) => item.id !== id))
+    const numId = Number(id)
+    if (cloudSync && Number.isFinite(numId)) {
+      apiDeleteLibraryItem(numId).catch(() => {})
+    }
   }
 
   const exportJson = () => {
@@ -152,6 +179,7 @@ export function useHardwareLibrary(
     categoryFilter,
     setCategoryFilter,
     addLibraryItem,
+    addLibraryItemWithCloud,
     updateLibraryItem,
     deleteLibraryItem,
     exportJson,
