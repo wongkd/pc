@@ -299,7 +299,6 @@ function QuoteItemCard({
   const handleApplySuggestion = (libItem: HardwareLibraryItem) => {
     onChangeItem(item.id, 'name', libItem.description)
     onChangeItem(item.id, 'category', libItem.category)
-    onChangeItem(item.id, 'details', libItem.description)
     onChangeItem(item.id, 'unitPrice', libItem.price)
     if (libItem.image) onChangeItem(item.id, 'image', libItem.image)
     setSuggestOpen(false)
