@@ -1,13 +1,35 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>电脑报价方案</title>
+    <style>
+      #app-loader {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        height: 100vh; gap: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        background: #f8fafc;
+      }
+      #app-loader .spinner {
+        width: 32px; height: 32px; border: 3px solid #e2e8f0;
+        border-top-color: #3b82f6; border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      #app-loader .text {
+        color: #94a3b8; font-size: 14px; letter-spacing: 0.5px;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="app-loader">
+        <div class="spinner"></div>
+        <div class="text">正在加载…</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
