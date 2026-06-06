@@ -6824,9 +6824,11 @@ var updateItemSchema = external_exports.object({
 });
 app2.get("/", authMiddleware, async (c) => {
   const userId = c.get("userId");
+  const limit = Math.min(Number(c.req.query("limit") || "500"), 500);
+  const offset = Math.max(Number(c.req.query("offset") || "0"), 0);
   const items = await c.env.DB.prepare(
-    "SELECT id, category, name, price, image, platform, refreshed_at, created_at FROM library WHERE user_id = ? ORDER BY created_at DESC"
-  ).bind(userId).all();
+    "SELECT id, category, name, price, image, platform, refreshed_at, created_at FROM library WHERE user_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?"
+  ).bind(userId, limit, offset).all();
   return c.json(items.results);
 });
 app2.post("/", authMiddleware, zValidator("json", addItemSchema), async (c) => {

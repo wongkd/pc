@@ -1110,6 +1110,41 @@ button:disabled {
   border-color: rgba(44, 124, 246, 0.3);
 }
 
+/* 拖拽手柄：桌面端显示，手机端隐藏 */
+.split-nav-drag {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 20px;
+  flex-shrink: 0;
+  color: #94a3b8;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .split-nav-item {
+    cursor: default;
+  }
+  .split-nav-item:hover .split-nav-drag {
+    opacity: 1;
+  }
+  .split-nav-drag {
+    display: flex;
+  }
+  .split-nav-drag:active {
+    cursor: grabbing;
+  }
+}
+
+.split-nav-item.drag-over {
+  border-color: rgba(44, 124, 246, 0.5) !important;
+  background: rgba(44, 124, 246, 0.08) !important;
+  box-shadow: 0 0 0 2px rgba(44, 124, 246, 0.15);
+}
+
 .split-nav-emoji {
   font-size: 16px;
   line-height: 1;

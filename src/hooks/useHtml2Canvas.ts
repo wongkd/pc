@@ -92,7 +92,13 @@ function captureSafely(element: HTMLElement, isMobile: boolean) {
 export function useHtml2Canvas() {
   const toCanvas = useCallback(async (element: HTMLElement) => {
     const isMobile = window.innerWidth < 768
-    return captureSafely(element, isMobile)
+    return html2canvas(element, {
+      backgroundColor: '#ffffff',
+      scale: isMobile ? 1 : 2,
+      useCORS: true,
+      ignoreElements: (node) =>
+        node instanceof HTMLElement && node.dataset.exportExclude === 'true',
+    })
   }, [])
 
   const exportPng = useCallback(

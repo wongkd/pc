@@ -248,15 +248,30 @@ function App() {
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportPng, exportPdf } = useHtml2Canvas()
 
-  // 登录后从云端加载硬件库、模板和应用状态
+  // 登录后加载：优先加载状态（解除 UI 阻塞），硬件库和模板后台加载
   useEffect(() => {
     if (!loggedIn) return
     setCloudLoading(true)
-    Promise.all([
-      fetchLibrary(),
-      fetchTemplates(),
-      fetchState(),
-    ]).then(([libItems, tmplItems, stateResult]) => {
+
+    // 第一步：加载核心状态（阻塞 UI 直到完成）
+    fetchState().then((stateResult) => {
+      if (stateResult.ok && stateResult.data) {
+        const cloudState = normalizeStoredState(stateResult.data)
+        if (cloudState.brand) setBrand(cloudState.brand)
+        if (cloudState.meta) setMeta(cloudState.meta)
+        if (cloudState.notes) setNotes(cloudState.notes)
+        if (cloudState.quoteItems) setQuoteItems(cloudState.quoteItems)
+        if (cloudState.viewSettings) setViewSettings(cloudState.viewSettings)
+      }
+      setCloudSyncEnabled(true)
+      setCloudLoading(false)
+    }).catch(() => {
+      setCloudSyncEnabled(true)
+      setCloudLoading(false)
+    })
+
+    // 第二步：后台加载硬件库和模板（不阻塞 UI）
+    Promise.all([fetchLibrary(), fetchTemplates()]).then(([libItems, tmplItems]) => {
       if (libItems.length > 0) {
         const mapped = libItems.map((i: any) => ({
           id: String(i.id), category: i.category || '', description: i.name || i.description || '',
@@ -274,27 +289,13 @@ function App() {
           const merged = [...prev]
           for (const ct of cloudTemplates) {
             const idx = merged.findIndex((t) => t.name === ct.name)
-            if (idx >= 0) {
-              merged[idx] = ct
-            } else {
-              merged.push(ct)
-            }
+            if (idx >= 0) { merged[idx] = ct }
+            else { merged.push(ct) }
           }
           return merged
         })
       }
-      // 应用完整状态（报价项、客户信息等）→ 用云端数据覆盖本地
-      if (stateResult.ok && stateResult.data) {
-        const cloudState = normalizeStoredState(stateResult.data)
-        if (cloudState.brand) setBrand(cloudState.brand)
-        if (cloudState.meta) setMeta(cloudState.meta)
-        if (cloudState.notes) setNotes(cloudState.notes)
-        if (cloudState.quoteItems) setQuoteItems(cloudState.quoteItems)
-        if (cloudState.viewSettings) setViewSettings(cloudState.viewSettings)
-      }
-      // 启用云端自动保存
-      setCloudSyncEnabled(true)
-    }).catch(() => {}).finally(() => setCloudLoading(false))
+    }).catch(() => {})
   }, [loggedIn])
 
   // 状态变更后自动保存到云端（2秒防抖）
@@ -461,6 +462,31 @@ function App() {
     setHighlightedItemId(nextItem.id)
   }
 
+  // 拖拽重排分类 → items 按新分类顺序分组排列
+  const handleReorderCategories = (order: string[]) => {
+    setQuoteItems((current) => {
+      const orderMap = new Map(order.map((c, i) => [c, i]))
+      const grouped = new Map<string, QuoteItem[]>()
+      const others: QuoteItem[] = []
+      for (const item of current) {
+        const cat = orderMap.has(item.category) ? item.category : ''
+        if (cat) {
+          const list = grouped.get(cat) ?? []
+          list.push(item)
+          grouped.set(cat, list)
+        } else {
+          others.push(item)
+        }
+      }
+      const result: QuoteItem[] = []
+      for (const cat of order) {
+        if (grouped.has(cat)) result.push(...grouped.get(cat)!)
+      }
+      result.push(...others)
+      return result
+    })
+  }
+
   const updateQuoteItem = (id: string, field: keyof QuoteItem, value: string | number) => {
     setQuoteItems((current) =>
       current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
@@ -610,6 +636,7 @@ function App() {
             onDeleteItem={deleteQuoteItem}
             onChangeItem={updateQuoteItem}
             onClearAll={() => setQuoteItems([])}
+            onReorderCategories={handleReorderCategories}
           />
 
           <BaseInfoSection
