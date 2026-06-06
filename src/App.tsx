@@ -238,7 +238,7 @@ function App() {
   const [hardwareLibraryExpanded, setHardwareLibraryExpanded] = useState(false)
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null)
   const [loggedIn, setLoggedIn] = useState(isLoggedIn())
-  const [cloudLoading, setCloudLoading] = useState(false)
+  const [cloudLoading, setCloudLoading] = useState(loggedIn)
   const [cloudSyncEnabled, setCloudSyncEnabled] = useState(false)
   const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [showPwdModal, setShowPwdModal] = useState(false)
@@ -607,6 +607,7 @@ function App() {
       ) : (
       <div className="app-shell">
       <div className="auth-btns no-print">
+        {cloudLoading && <span className="cloud-sync-indicator">☁ 同步中…</span>}
         <button onClick={() => setShowPwdModal(true)}>改密</button>
         <button onClick={handleLogout}>注销</button>
       </div>
@@ -623,9 +624,6 @@ function App() {
       )}
       <div className="layout">
         <section className="panel editor-panel">
-          {cloudLoading ? (
-            <div className="panel-section" style={{ textAlign: 'center', padding: 40, color: '#94a3b8' }}>正在加载云端硬件库…</div>
-          ) : (
           <>
           <QuoteItemsSection
             title={meta.projectTitle}
@@ -674,7 +672,6 @@ function App() {
             />
           </details>
           </>
-          )}
         </section>
 
         <section className="panel preview-workbench">
