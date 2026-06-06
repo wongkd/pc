@@ -84,22 +84,24 @@ export function buildQuoteHtml(document: QuoteDocument, orientation: Orientation
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          gap: 12px;
+          gap: 10px;
           min-height: 56px;
         }
         .logo {
-          max-width: 160px;
-          max-height: 48px;
+          width: min(100%, 220px);
+          max-height: 64px;
           display: flex;
           align-items: center;
+          justify-content: flex-start;
         }
         .logo img {
           width: auto;
           height: auto;
           max-width: 100%;
-          max-height: 100%;
+          max-height: 64px;
           display: block;
           object-fit: contain;
+          object-position: left center;
         }
         .slogan {
           margin: 0;
