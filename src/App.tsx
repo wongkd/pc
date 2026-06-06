@@ -257,7 +257,10 @@ function App() {
     fetchState().then((stateResult) => {
       if (stateResult.ok && stateResult.data) {
         const cloudState = normalizeStoredState(stateResult.data)
-        if (cloudState.brand) setBrand(cloudState.brand)
+        if (cloudState.brand) {
+        // 云端不存储 logo（体积太大约400KB），仅同步文字信息，保留本地 logo
+        setBrand((prev) => ({ ...cloudState.brand!, logoDataUrl: prev.logoDataUrl || cloudState.brand!.logoDataUrl || '' }))
+      }
         if (cloudState.meta) setMeta(cloudState.meta)
         if (cloudState.notes) setNotes(cloudState.notes)
         if (cloudState.quoteItems) setQuoteItems(cloudState.quoteItems)
@@ -300,7 +303,8 @@ function App() {
 
   // 状态变更后自动保存到云端（2秒防抖）
   const buildStatePayload = useCallback(() => ({
-    brand, meta, notes, quoteItems, viewSettings,
+    // logo 不参与状态同步（体积太大，约400KB），保持本地缓存即可
+    brand: { ...brand, logoDataUrl: undefined }, meta, notes, quoteItems, viewSettings,
   }), [brand, meta, notes, quoteItems, viewSettings])
 
   useEffect(() => {
