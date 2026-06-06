@@ -76,7 +76,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 <div className="preview-meta-grid preview-meta-grid-compact screen-only">
                   <div className="meta-item meta-mini">
                     <div className="label">报价编号</div>
-                    <div className="value">{meta.quoteNo || '未填写'}</div>
+                    <div className="value">{meta.quoteNo || ''}</div>
                   </div>
                   <div className="meta-item meta-mini">
                     <div className="label">报价日期</div>
@@ -84,12 +84,12 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                   </div>
                   <div className="meta-item meta-mini">
                     <div className="label">客户名称</div>
-                    <div className="value">{meta.customerName || '未填写'}</div>
+                    <div className="value">{meta.customerName || ''}</div>
                   </div>
                   <div className="meta-item meta-mini">
                     <div className="label">联系人 / 电话</div>
                     <div className="value">
-                      {(brand.contactPerson || '未填写') + ' / ' + (brand.contactPhone || '未填写')}
+                      {(brand.contactPerson || '') + (brand.contactPerson && brand.contactPhone ? ' / ' : '') + (brand.contactPhone || '')}
                     </div>
                   </div>
                 </div>
@@ -100,7 +100,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                       <tr>
                         <td>
                           <div className="label">报价编号</div>
-                          <div className="value">{meta.quoteNo || '未填写'}</div>
+                          <div className="value">{meta.quoteNo || ''}</div>
                         </td>
                         <td>
                           <div className="label">报价日期</div>
@@ -110,12 +110,12 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                       <tr>
                         <td>
                           <div className="label">客户名称</div>
-                          <div className="value">{meta.customerName || '未填写'}</div>
+                          <div className="value">{meta.customerName || ''}</div>
                         </td>
                         <td>
                           <div className="label">联系人 / 电话</div>
                           <div className="value">
-                            {(brand.contactPerson || '未填写') + ' / ' + (brand.contactPhone || '未填写')}
+                            {(brand.contactPerson || '') + (brand.contactPerson && brand.contactPhone ? ' / ' : '') + (brand.contactPhone || '')}
                           </div>
                         </td>
                       </tr>

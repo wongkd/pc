@@ -24,7 +24,7 @@ function renderRows(items: QuoteItem[]): string {
         <tr>
           <td><span class="tag">${escapeHtml(item.category || '其他')}</span></td>
           <td>
-            <div class="item-name">${escapeHtml(item.name || '未填写')}</div>
+            <div class="item-name">${escapeHtml(item.name || '')}</div>
             ${item.details ? `<div class="item-details">${escapeHtml(item.details)}</div>` : ''}
           </td>
           <td style="text-align:right;">${item.quantity}</td>
@@ -82,7 +82,7 @@ export function buildQuoteHtml(document: QuoteDocument, orientation: Orientation
           display: flex;
           flex-direction: column;
           align-items: flex-start;
-          gap: 4px;
+          gap: 8px;
           min-height: 56px;
         }
         .logo {
@@ -267,15 +267,15 @@ export function buildQuoteHtml(document: QuoteDocument, orientation: Orientation
             <p class="slogan">${escapeHtml(document.brand.slogan || '专业工作站与电脑配置报价服务')}</p>
           </div>
           <div class="meta">
-            <div class="meta-card"><div class="meta-label">报价编号</div><div class="meta-value">${escapeHtml(document.meta.quoteNo || '未填写')}</div></div>
+            <div class="meta-card"><div class="meta-label">报价编号</div><div class="meta-value">${escapeHtml(document.meta.quoteNo || '')}</div></div>
             <div class="meta-card"><div class="meta-label">报价日期</div><div class="meta-value">${escapeHtml(formatDisplayDate(document.meta.quoteDate))}</div></div>
-            <div class="meta-card"><div class="meta-label">客户名称</div><div class="meta-value">${escapeHtml(document.meta.customerName || '未填写')}</div></div>
-            <div class="meta-card"><div class="meta-label">联系人 / 电话</div><div class="meta-value">${escapeHtml(document.brand.contactPerson || '未填写')} / ${escapeHtml(document.brand.contactPhone || '未填写')}</div></div>
+            <div class="meta-card"><div class="meta-label">客户名称</div><div class="meta-value">${escapeHtml(document.meta.customerName || '')}</div></div>
+            <div class="meta-card"><div class="meta-label">联系人 / 电话</div><div class="meta-value">${escapeHtml(document.brand.contactPerson || '')} ${document.brand.contactPerson && document.brand.contactPhone ? '/' : ''} ${escapeHtml(document.brand.contactPhone || '')}</div></div>
           </div>
         </div>
 
         <div class="hero">
-          <h2 class="hero-title">${escapeHtml(document.meta.projectTitle || '未填写项目名称')}</h2>
+          <h2 class="hero-title">${escapeHtml(document.meta.projectTitle || '')}</h2>
           <p class="muted">以下报价内容适用于客户确认、商务沟通与正式发送，请以最终下单确认为准。</p>
         </div>
 
