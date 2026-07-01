@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { BaseInfoSection } from './components/BaseInfoSection'
 import { HardwareLibrarySection } from './components/HardwareLibrarySection'
 import { LoginPanel } from './components/LoginPanel'
 import { NotesSection } from './components/NotesSection'
 import { QuoteCustomerView } from './components/QuoteCustomerView'
-import { QuoteItemsSection } from './components/QuoteItemsSection'
+import { ALL_CATEGORIES, QuoteItemsSection } from './components/QuoteItemsSection'
 import { QuotePreview } from './components/QuotePreview'
-import { QuoteToolbar, type ExportFormat } from './components/QuoteToolbar'
+import { QuoteToolbar } from './components/QuoteToolbar'
 import { useHardwareLibrary } from './hooks/useHardwareLibrary'
 import { useHtml2Canvas } from './hooks/useHtml2Canvas'
-import { clearToken, fetchLibrary, fetchTemplates, saveTemplateToCloud, deleteTemplateFromCloud, isLoggedIn, changePassword as apiChangePassword, fetchState, saveState } from './utils/api'
+import { clearToken, fetchLibrary, fetchQuote, fetchTemplates, addLibraryItems, saveQuote, saveTemplateToCloud, deleteTemplateFromCloud, isLoggedIn, changePassword as apiChangePassword } from './utils/api'
 import type {
   AppStorageData,
   BrandInfo,
@@ -19,29 +19,13 @@ import type {
   QuoteDocument,
   QuoteItem,
   QuoteMeta,
-  TermsData,
   ViewSettings,
 } from './types/quote'
+import { DEFAULT_QUOTE_NOTES, migrateNotes } from './types/quote'
 import { getTodayInputValue } from './utils/date'
 import { buildQuoteHtml } from './utils/exportHtml'
 import { loadFromStorage, saveToStorage } from './utils/storage'
 import './index.css'
-
-/** 迁移旧版 notes 字符串 → TermsData 对象 */
-function migrateNotes(raw: unknown): TermsData {
-  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
-    const obj = raw as Record<string, unknown>
-    return {
-      payment: String(obj.payment || ''),
-      afterSales: String(obj.afterSales || ''),
-      warranty: String(obj.warranty || ''),
-      remarks: String(obj.remarks || ''),
-    }
-  }
-  // 旧版 notes 是字符串，全量迁移到 remarks
-  const legacy = typeof raw === 'string' ? raw : ''
-  return { payment: '', afterSales: '', warranty: '', remarks: legacy }
-}
 
 const STORAGE_KEY = 'pc-quote-app'
 const MERCHANT_TEMPLATE_STORAGE_KEY = 'pc-quote-app:merchant-templates'
@@ -96,13 +80,13 @@ function syncQuoteNoWithDate(quoteNo: string, quoteDate: string) {
 }
 
 const defaultBrand: BrandInfo = {
-  companyName: '企稳稳科技',
-  slogan: '专业工作站与电脑配置报价服务',
+  companyName: '',
+  slogan: '',
   logoDataUrl: '',
-  contactPerson: '黄启栋',
-  contactPhone: '17620992684',
-  contactWechat: '17620992684',
-  contactAddress: '广东省湛江市赤坎区东园西村20号园和苑',
+  contactPerson: '',
+  contactPhone: '',
+  contactWechat: '',
+  contactAddress: '',
 }
 
 const defaultQuoteDate = getTodayInputValue()
@@ -110,9 +94,9 @@ const defaultQuoteDate = getTodayInputValue()
 const defaultMeta: QuoteMeta = {
   quoteNo: buildDefaultQuoteNo(defaultQuoteDate),
   quoteDate: defaultQuoteDate,
-  customerName: '',
-  contactName: '',
-  contactPhone: '',
+  customerName: '广州智诚贸易有限公司',
+  contactName: '张经理',
+  contactPhone: '13800000000',
   projectTitle: '高性能图形工作站配置方案',
 }
 
@@ -160,18 +144,10 @@ const defaultQuoteItems: QuoteItem[] = DEFAULT_QUOTE_ITEM_CATEGORIES.map((catego
 const defaultStorageData: AppStorageData = {
   brand: defaultBrand,
   meta: defaultMeta,
-  notes: {
-    payment: '',
-    afterSales: '',
-    warranty: '',
-    remarks: [
-      '1. 报价包含整机装配、基础驱动安装与常规测试。',
-      '2. 以收货日为准计算质保时长，整机一年质保，续保费用为整机费用 5% 每年。',
-      '3. 库存与交付时间以下单当日实际确认为准。',
-    ].join('\n'),
-  },
+  notes: { ...DEFAULT_QUOTE_NOTES },
   hardwareLibrary: defaultLibrary,
   quoteItems: defaultQuoteItems,
+  categoryOrder: ALL_CATEGORIES as string[],
   viewSettings: defaultViewSettings,
 }
 
@@ -182,9 +158,6 @@ function normalizeStoredState(raw: unknown): AppStorageData {
   }
 
   const nextMeta = { ...defaultMeta, ...data.meta }
-  if (nextMeta.customerName === '广州智诚贸易有限公司') nextMeta.customerName = ''
-  if (nextMeta.contactName === '张经理') nextMeta.contactName = ''
-  if (nextMeta.contactPhone === '13800000000') nextMeta.contactPhone = ''
   if (!nextMeta.quoteNo?.trim()) {
     nextMeta.quoteNo = buildDefaultQuoteNo(nextMeta.quoteDate || defaultQuoteDate)
   }
@@ -192,9 +165,10 @@ function normalizeStoredState(raw: unknown): AppStorageData {
   return {
     brand: { ...defaultBrand, ...data.brand },
     meta: nextMeta,
-    notes: migrateNotes(data.notes),
-    hardwareLibrary: data.hardwareLibrary ?? defaultLibrary,
+    notes: migrateNotes(data.notes ?? defaultStorageData.notes),
+    hardwareLibrary: Array.isArray(data.hardwareLibrary) ? data.hardwareLibrary : defaultLibrary,
     quoteItems: Array.isArray(data.quoteItems) ? data.quoteItems : defaultQuoteItems,
+    categoryOrder: Array.isArray(data.categoryOrder) ? data.categoryOrder : (ALL_CATEGORIES as string[]),
     viewSettings: {
       previewMode:
         data.viewSettings?.previewMode ??
@@ -220,6 +194,8 @@ function normalizeMerchantTemplates(raw: unknown): MerchantTemplate[] {
         id: template.id ?? crypto.randomUUID(),
         name: template.name ?? '未命名模板',
         brand: { ...defaultBrand, ...template.brand },
+        quoteItems: Array.isArray(template.quoteItems) ? template.quoteItems : [],
+        notes: migrateNotes(template.notes ?? defaultStorageData.notes),
         updatedAt: template.updatedAt ?? new Date().toISOString(),
       }
     })
@@ -256,13 +232,13 @@ function App() {
   const [hardwareLibrary, setHardwareLibrary] = useState(initialState.hardwareLibrary)
   const [quoteItems, setQuoteItems] = useState(initialState.quoteItems)
   const [viewSettings, setViewSettings] = useState(initialState.viewSettings)
+  const [categoryOrder, setCategoryOrder] = useState<string[]>(initialState.categoryOrder)
   const [merchantTemplates, setMerchantTemplates] = useState(initialTemplates)
+  const [brandContactExpanded, setBrandContactExpanded] = useState(false)
   const [hardwareLibraryExpanded, setHardwareLibraryExpanded] = useState(false)
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null)
   const [loggedIn, setLoggedIn] = useState(isLoggedIn())
-  const [cloudLoading, setCloudLoading] = useState(loggedIn)
-  const [cloudSyncEnabled, setCloudSyncEnabled] = useState(false)
-  const cloudSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [cloudLoading, setCloudLoading] = useState(false)
   const [showPwdModal, setShowPwdModal] = useState(false)
   const [pwdOld, setPwdOld] = useState('')
   const [pwdNew, setPwdNew] = useState('')
@@ -270,77 +246,53 @@ function App() {
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportPng, exportPdf } = useHtml2Canvas()
 
-  // 登录后加载：优先加载状态（解除 UI 阻塞），硬件库和模板后台加载
+  // 登录后从云端加载硬件库、模板和报价配置
   useEffect(() => {
     if (!loggedIn) return
     setCloudLoading(true)
-
-    // 第一步：加载核心状态（阻塞 UI 直到完成）
-    fetchState().then((stateResult) => {
-      if (stateResult.ok && stateResult.data) {
-        const cloudState = normalizeStoredState(stateResult.data)
-        if (cloudState.brand) {
-        // 云端不存储 logo（体积太大约400KB），仅同步文字信息，保留本地 logo
-        setBrand((prev) => ({ ...cloudState.brand!, logoDataUrl: prev.logoDataUrl || cloudState.brand!.logoDataUrl || '' }))
-      }
-        if (cloudState.meta) setMeta(cloudState.meta)
-        if (cloudState.notes) setNotes(cloudState.notes)
-        if (cloudState.quoteItems) setQuoteItems(cloudState.quoteItems)
-        if (cloudState.viewSettings) setViewSettings(cloudState.viewSettings)
-      }
-      setCloudSyncEnabled(true)
-      setCloudLoading(false)
-    }).catch(() => {
-      setCloudSyncEnabled(true)
-      setCloudLoading(false)
-    })
-
-    // 第二步：后台加载硬件库和模板（不阻塞 UI）
-    Promise.all([fetchLibrary(), fetchTemplates()]).then(([libItems, tmplItems]) => {
+    Promise.all([
+      fetchLibrary(),
+      fetchTemplates(),
+      fetchQuote(),
+    ]).then(([libItems, tmplItems, cloudQuote]) => {
       if (libItems.length > 0) {
         const mapped = libItems.map((i: any) => ({
-          id: String(i.id), category: i.category || '', description: i.name || i.description || '',
+          id: String(i.id), cloudId: i.id, category: i.category || '', description: i.name || i.description || '',
           price: Number(i.price) || 0, image: i.image || '', lastRefreshed: i.refreshed_at || '', sourcePlatform: i.platform || '',
         }))
         setHardwareLibrary(mapped)
       }
       if (tmplItems.length > 0) {
-        const cloudTemplates = tmplItems.map((t: any) => {
-          let data = { brand: {}, meta: {} }
+        const templates = normalizeMerchantTemplates(tmplItems.map((t: any) => {
+          let data = { brand: {}, meta: {}, quoteItems: [], notes: '' }
           try { data = JSON.parse(t.data) } catch {}
-          return { id: String(t.id), name: t.name, brand: data.brand || {}, updatedAt: t.updated_at || '' }
-        })
-        setMerchantTemplates((prev) => {
-          const merged = [...prev]
-          for (const ct of cloudTemplates) {
-            const idx = merged.findIndex((t) => t.name === ct.name)
-            if (idx >= 0) { merged[idx] = ct }
-            else { merged.push(ct) }
-          }
-          return merged
-        })
+          return { id: String(t.id), name: t.name, brand: data.brand, quoteItems: data.quoteItems, notes: data.notes, updatedAt: t.updated_at || '' }
+        }))
+        setMerchantTemplates(templates)
       }
-    }).catch(() => {})
+      if (cloudQuote) {
+        // Merge cloud quote into local state (cloud wins for core fields if newer)
+        const q = cloudQuote as any
+        if (q.brand) setBrand(q.brand)
+        if (q.meta) setMeta(q.meta)
+        if (typeof q.notes === 'string' || (q.notes && typeof q.notes === 'object')) setNotes(migrateNotes(q.notes))
+        if (Array.isArray(q.hardwareLibrary)) setHardwareLibrary(q.hardwareLibrary)
+        if (Array.isArray(q.quoteItems)) setQuoteItems(q.quoteItems)
+        if (Array.isArray(q.categoryOrder)) setCategoryOrder(q.categoryOrder)
+      }
+    }).catch(() => {}).finally(() => setCloudLoading(false))
   }, [loggedIn])
 
-  // 状态变更后自动保存到云端（2秒防抖）
-  const buildStatePayload = useCallback(() => ({
-    // logo 不参与状态同步（体积太大，约400KB），保持本地缓存即可
-    brand: { ...brand, logoDataUrl: undefined }, meta, notes, quoteItems, viewSettings,
-  }), [brand, meta, notes, quoteItems, viewSettings])
-
+  // 登录后自动保存报价到云端（防抖 3 秒）
   useEffect(() => {
-    if (!cloudSyncEnabled || !loggedIn) return
-    if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current)
-    cloudSaveTimerRef.current = setTimeout(() => {
-      saveState(buildStatePayload()).catch(() => {})
-    }, 2000)
-    return () => {
-      if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current)
-    }
-  }, [buildStatePayload, cloudSyncEnabled, loggedIn])
+    if (!loggedIn) return
+    const timer = setTimeout(() => {
+      saveQuote(meta.quoteNo || '未命名报价', { brand, meta, notes, hardwareLibrary, quoteItems, categoryOrder }).catch(() => {})
+    }, 3000)
+    return () => clearTimeout(timer)
+  }, [loggedIn, brand, meta, notes, hardwareLibrary, quoteItems])
 
-  const handleLogout = () => { clearToken(); setLoggedIn(false); setHardwareLibrary([]); setCloudSyncEnabled(false) }
+  const handleLogout = () => { clearToken(); setLoggedIn(false); setHardwareLibrary([]) }
   const handleChangePwd = async () => {
     setPwdMsg('')
     if (!pwdOld || !pwdNew || pwdNew.length < 6) { setPwdMsg('新密码至少6位'); return }
@@ -356,9 +308,10 @@ function App() {
       notes,
       hardwareLibrary,
       quoteItems,
+      categoryOrder,
       viewSettings,
     })
-  }, [brand, meta, notes, hardwareLibrary, quoteItems, viewSettings])
+  }, [brand, meta, notes, hardwareLibrary, quoteItems, categoryOrder, viewSettings])
 
   useEffect(() => {
     saveToStorage<MerchantTemplate[]>(MERCHANT_TEMPLATE_STORAGE_KEY, merchantTemplates)
@@ -408,7 +361,6 @@ function App() {
     hardwareLibrary,
     setHardwareLibrary,
     addQuoteItemFromLibrary,
-    loggedIn,
   )
 
   const handleBrandChange = (field: keyof BrandInfo, value: string) => {
@@ -440,26 +392,41 @@ function App() {
   }
 
   const handleSaveMerchantTemplate = (name: string) => {
+    const localId = crypto.randomUUID()
     const nextTemplate: MerchantTemplate = {
-      id: crypto.randomUUID(),
+      id: localId,
       name,
       brand: { ...brand },
+      quoteItems: quoteItems,
+      notes,
       updatedAt: new Date().toISOString(),
     }
     setMerchantTemplates((current) => [nextTemplate, ...current])
-    if (loggedIn) saveTemplateToCloud(name, { brand }).catch(() => {})
+    if (loggedIn) {
+      saveTemplateToCloud(name, { brand, quoteItems, notes })
+        .then((res) => {
+          if (res.id) {
+            setMerchantTemplates((current) =>
+              current.map((t) => (t.id === localId ? { ...t, id: String(res.id) } : t))
+            )
+          }
+        })
+        .catch(() => {})
+    }
   }
 
   const handleApplyMerchantTemplate = (id: string) => {
-    setMerchantTemplates((current) => {
-      const template = current.find((item) => item.id === id)
-      if (!template) {
-        return current
-      }
+    const template = merchantTemplates.find((item) => item.id === id)
+    if (!template) {
+      return
+    }
 
-      setBrand({ ...template.brand })
-      return current
-    })
+    setBrand({ ...defaultBrand, ...template.brand })
+    if (template.quoteItems && template.quoteItems.length > 0) {
+      setQuoteItems(template.quoteItems)
+    }
+    setNotes(template.notes)
+    setBrandContactExpanded(true)
   }
 
   const handleDeleteMerchantTemplate = (id: string) => {
@@ -473,12 +440,28 @@ function App() {
       return
     }
 
+    // Compress logo to avoid oversized base64 breaking cloud save
     const reader = new FileReader()
     reader.onload = () => {
-      setBrand((current) => ({
-        ...current,
-        logoDataUrl: typeof reader.result === 'string' ? reader.result : '',
-      }))
+      const img = new Image()
+      img.onload = () => {
+        const MAX_W = 300
+        const scale = Math.min(1, MAX_W / img.width)
+        const w = Math.round(img.width * scale)
+        const h = Math.round(img.height * scale)
+        const canvas = document.createElement('canvas')
+        canvas.width = w
+        canvas.height = h
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, w, h)
+        }
+        setBrand((current) => ({
+          ...current,
+          logoDataUrl: canvas.toDataURL('image/jpeg', 0.7),
+        }))
+      }
+      img.src = typeof reader.result === 'string' ? reader.result : ''
     }
     reader.readAsDataURL(file)
   }
@@ -487,31 +470,6 @@ function App() {
     const nextItem = createQuoteSkeletonItem(category)
     setQuoteItems((current) => [...current, nextItem])
     setHighlightedItemId(nextItem.id)
-  }
-
-  // 拖拽重排分类 → items 按新分类顺序分组排列
-  const handleReorderCategories = (order: string[]) => {
-    setQuoteItems((current) => {
-      const orderMap = new Map(order.map((c, i) => [c, i]))
-      const grouped = new Map<string, QuoteItem[]>()
-      const others: QuoteItem[] = []
-      for (const item of current) {
-        const cat = orderMap.has(item.category) ? item.category : ''
-        if (cat) {
-          const list = grouped.get(cat) ?? []
-          list.push(item)
-          grouped.set(cat, list)
-        } else {
-          others.push(item)
-        }
-      }
-      const result: QuoteItem[] = []
-      for (const cat of order) {
-        if (grouped.has(cat)) result.push(...grouped.get(cat)!)
-      }
-      result.push(...others)
-      return result
-    })
   }
 
   const updateQuoteItem = (id: string, field: keyof QuoteItem, value: string | number) => {
@@ -527,12 +485,12 @@ function App() {
 
   const handleExportHtml = () => {
     const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
-    downloadText('quote-preview.html', buildQuoteHtml(document, viewSettings.orientation), 'text/html;charset=utf-8')
+    downloadText('quote-preview.html', buildQuoteHtml(document), 'text/html;charset=utf-8')
   }
 
   const handleExportPng = async () => {
     if (previewRef.current) {
-      await exportPng(previewRef.current, 'quote-preview.png')
+      await exportPng(previewRef.current, 'quote-preview.png', viewSettings.orientation)
     }
   }
 
@@ -542,99 +500,9 @@ function App() {
     }
   }
 
-  const handleExportMarkdown = () => {
-    const visible = quoteItems.filter((item) => item.name.trim())
-    const lines: string[] = []
-    lines.push(`# ${meta.title || '客户报价单'}`)
-    lines.push('')
-    if (brand.name) lines.push(`**${brand.name}**`)
-    lines.push(`报价单号: ${meta.quoteNo}`)
-    lines.push(`日期: ${meta.quoteDate}`)
-    lines.push('')
-    lines.push('| 配件 | 型号 | 单价 | 数量 | 小计 |')
-    lines.push('| --- | --- | --- | --- | --- |')
-    for (const item of visible) {
-      const name = item.name || '-'
-      const detail = item.details || '-'
-      const price = `¥${item.unitPrice.toFixed(2)}`
-      const qty = item.quantity
-      const subtotal = `¥${(item.quantity * item.unitPrice).toFixed(2)}`
-      lines.push(`| ${name} | ${detail} | ${price} | ${qty} | ${subtotal} |`)
-    }
-    const total = visible.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
-    lines.push('')
-    lines.push(`**总计: ¥${total.toFixed(2)}**`)
-    // 附加条款备注
-    const termSections: [string, string][] = [
-      ['付款方式', notes.payment],
-      ['售后说明', notes.afterSales],
-      ['质保政策', notes.warranty],
-      ['备注条款', notes.remarks],
-    ].filter(([, v]) => v.trim())
-    if (termSections.length > 0) {
-      lines.push('')
-      lines.push('---')
-      for (const [title, content] of termSections) {
-        lines.push(`**${title}**`)
-        lines.push(content)
-        lines.push('')
-      }
-    }
-    downloadText('quote-preview.md', lines.join('\n'))
-  }
-
-  const handleExportWord = () => {
-    const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
-    downloadText('quote-preview.doc', buildQuoteHtml(document, viewSettings.orientation), 'application/msword')
-  }
-
-  const handlePrint = () => {
-    const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
-    const html = buildQuoteHtml(document, viewSettings.orientation)
-    const printWindow = window.open('', '_blank', 'width=800,height=600')
-    if (!printWindow) {
-      // 弹窗被拦截时，降级到常规打印
-      window.print()
-      return
-    }
-    printWindow.document.write(html)
-    printWindow.document.close()
-    // 等图片加载完成后再打印
-    const images = printWindow.document.querySelectorAll('img')
-    if (images.length > 0) {
-      let loaded = 0
-      const tryPrint = () => {
-        loaded++
-        if (loaded >= images.length) {
-          printWindow.print()
-          printWindow.onafterprint = () => printWindow.close()
-          setTimeout(() => { try { printWindow.close() } catch {} }, 10000)
-        }
-      }
-      images.forEach((img) => {
-        if (img.complete) { tryPrint() }
-        else { img.addEventListener('load', tryPrint, { once: true }); img.addEventListener('error', tryPrint, { once: true }) }
-      })
-    } else {
-      // 没有图片直接打印
-      setTimeout(() => {
-        printWindow.print()
-        printWindow.onafterprint = () => printWindow.close()
-        setTimeout(() => { try { printWindow.close() } catch {} }, 10000)
-      }, 300)
-    }
-  }
-
-  const handleExport = (format: ExportFormat) => {
-    switch (format) {
-      case 'png': void handleExportPng(); break
-      case 'markdown': handleExportMarkdown(); break
-      case 'word': handleExportWord(); break
-      case 'html': handleExportHtml(); break
-    }
-  }
-
-  const handleImportJson = async (file: File) => {
+  // TODO: wire up import buttons
+  /*
+  const _handleImportJson = async (file: File) => {
     try {
       await library.importJson(file)
     } catch (error) {
@@ -642,13 +510,14 @@ function App() {
     }
   }
 
-  const handleImportExcel = async (file: File) => {
+  const _handleImportExcel = async (file: File) => {
     try {
       await library.importExcel(file)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Excel 导入失败。')
     }
   }
+  */
 
   return (
     <div className="shell">
@@ -657,7 +526,6 @@ function App() {
       ) : (
       <div className="app-shell">
       <div className="auth-btns no-print">
-        {cloudLoading && <span className="cloud-sync-indicator">☁ 同步中…</span>}
         <button onClick={() => setShowPwdModal(true)}>改密</button>
         <button onClick={handleLogout}>注销</button>
       </div>
@@ -674,24 +542,28 @@ function App() {
       )}
       <div className="layout">
         <section className="panel editor-panel">
+          {cloudLoading && <div style={{ textAlign: 'center', padding: '4px 0', fontSize: 12, color: '#64748b', borderBottom: '1px solid rgba(59,130,246,0.15)' }}>正在同步云端数据...</div>}
           <>
           <QuoteItemsSection
             title={meta.projectTitle}
             items={quoteItems}
             libraryItems={hardwareLibrary}
+            categoryOrder={categoryOrder}
             highlightedItemId={highlightedItemId}
             onTitleChange={(value) => handleMetaChange('projectTitle', value)}
             onAddItem={addQuoteItem}
             onDeleteItem={deleteQuoteItem}
             onChangeItem={updateQuoteItem}
+            onCategoryOrderChange={setCategoryOrder}
             onClearAll={() => setQuoteItems([])}
-            onReorderCategories={handleReorderCategories}
           />
 
           <BaseInfoSection
             brand={brand}
             meta={meta}
             templates={merchantTemplates}
+            brandContactExpanded={brandContactExpanded}
+            onBrandContactExpandedChange={setBrandContactExpanded}
             onBrandChange={handleBrandChange}
             onMetaChange={handleMetaChange}
             onLogoUpload={handleLogoUpload}
@@ -716,7 +588,21 @@ function App() {
               categoryFilter={library.categoryFilter}
               onSearchChange={library.setSearch}
               onCategoryFilterChange={library.setCategoryFilter}
-              onAddItem={library.addLibraryItemWithCloud}
+              onAddItem={(cat, desc, price, image) => {
+                setHardwareLibrary((prev) => [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    category: cat,
+                    description: desc,
+                    price,
+                    image: image || '',
+                  },
+                ])
+                if (loggedIn) {
+                  addLibraryItems([{ category: cat, name: desc, price, image: image || '' }]).catch(() => {})
+                }
+              }}
               onUpdateItem={library.updateLibraryItem}
               onDeleteItem={library.deleteLibraryItem}
             />
@@ -725,13 +611,21 @@ function App() {
         </section>
 
         <section className="panel preview-workbench">
+          <div className="preview-workbench-head">
+            <div className="section-head-copy">
+              <h2>报价单预览</h2>
+            </div>
+          </div>
+
           <QuoteToolbar
             previewMode={viewSettings.previewMode}
             orientation={viewSettings.orientation}
             onPreviewModeChange={(previewMode) => handleViewSettingsChange({ previewMode })}
             onOrientationChange={(orientation) => handleViewSettingsChange({ orientation })}
-            onPrint={handlePrint}
-            onExport={handleExport}
+            onPrint={() => window.print()}
+            onExportPng={handleExportPng}
+            onExportPdf={handleExportPdf}
+            onExportHtml={handleExportHtml}
           />
 
           <div className="preview-workbench-body">
@@ -742,6 +636,7 @@ function App() {
                   meta={meta}
                   notes={notes}
                   items={quoteItems}
+                  categoryOrder={categoryOrder}
                   orientation={viewSettings.orientation}
                 />
               ) : (

@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import * as XLSX from 'xlsx'
 import type { HardwareLibraryItem } from '../types/quote'
 import {
   HARDWARE_LIBRARY_COLUMNS,
   normalizeHardwareLibraryRows,
 } from '../utils/hardwareLibraryExcel'
-import { addLibraryItems, updateLibraryItem as apiUpdateLibraryItem, deleteLibraryItem as apiDeleteLibraryItem } from '../utils/api'
+import { updateLibraryItem as syncUpdate, deleteLibraryItem as syncDelete } from '../utils/api'
 
 function downloadBlob(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob)
@@ -20,8 +19,6 @@ export function useHardwareLibrary(
   library: HardwareLibraryItem[],
   setLibrary: React.Dispatch<React.SetStateAction<HardwareLibraryItem[]>>,
   addQuoteItemFromLibrary: (item: HardwareLibraryItem) => void,
-  /** 云端同步回调（可选，已登录时传入） */
-  cloudSync?: boolean,
 ) {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('全部')
@@ -56,42 +53,30 @@ export function useHardwareLibrary(
     ])
   }
 
-  /** 带云端同步的添加 */
-  const addLibraryItemWithCloud = async (category: string, description: string, price: number, image = '') => {
-    const localId = crypto.randomUUID()
-    setLibrary((current) => [...current, { id: localId, category, description, price, image }])
-    if (!cloudSync) return
-    try {
-      const res = await addLibraryItems([{ category, name: description, price, image }])
-      if (res.ok && res.items?.length > 0) {
-        const cloudId = String(res.items[0].id)
-        setLibrary((current) =>
-          current.map((item) => item.id === localId ? { ...item, id: cloudId } : item)
-        )
-      }
-    } catch {}
-  }
-
   const updateLibraryItem = (
     id: string,
     field: keyof HardwareLibraryItem,
     value: string | number,
   ) => {
-    setLibrary((current) =>
-      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
-    )
-    const numId = Number(id)
-    if (cloudSync && Number.isFinite(numId)) {
-      apiUpdateLibraryItem(numId, { [field]: value }).catch(() => {})
-    }
+    setLibrary((current) => {
+      const target = current.find((item) => item.id === id)
+      // fire-and-forget: sync to cloud if item has cloudId
+      if (target?.cloudId != null) {
+        syncUpdate(target.cloudId, { [field]: value })
+      }
+      return current.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    })
   }
 
   const deleteLibraryItem = (id: string) => {
-    setLibrary((current) => current.filter((item) => item.id !== id))
-    const numId = Number(id)
-    if (cloudSync && Number.isFinite(numId)) {
-      apiDeleteLibraryItem(numId).catch(() => {})
-    }
+    setLibrary((current) => {
+      const target = current.find((item) => item.id === id)
+      // fire-and-forget: sync to cloud if item has cloudId
+      if (target?.cloudId != null) {
+        syncDelete(target.cloudId)
+      }
+      return current.filter((item) => item.id !== id)
+    })
   }
 
   const exportJson = () => {
@@ -132,7 +117,8 @@ export function useHardwareLibrary(
     setSearch('')
   }
 
-  const exportExcel = () => {
+  const exportExcel = async () => {
+    const XLSX = await import('xlsx')
     const rows = [
       [...HARDWARE_LIBRARY_COLUMNS],
       ...library.map((item) => [item.category, item.description, item.price, item.image ?? '']),
@@ -144,6 +130,7 @@ export function useHardwareLibrary(
   }
 
   const importExcel = async (file: File) => {
+    const XLSX = await import('xlsx')
     const data = await file.arrayBuffer()
     const workbook = XLSX.read(data, { type: 'array' })
     const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
@@ -179,7 +166,6 @@ export function useHardwareLibrary(
     categoryFilter,
     setCategoryFilter,
     addLibraryItem,
-    addLibraryItemWithCloud,
     updateLibraryItem,
     deleteLibraryItem,
     exportJson,

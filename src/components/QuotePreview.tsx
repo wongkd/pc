@@ -1,13 +1,14 @@
-import { forwardRef } from 'react'
-import type { BrandInfo, Orientation, QuoteItem, QuoteMeta, TermsData } from '../types/quote'
+import { forwardRef, useMemo } from 'react'
+import type { BrandInfo, Orientation, QuoteItem, QuoteMeta, QuoteNotes } from '../types/quote'
 import { formatDisplayDate } from '../utils/date'
 import { formatMoney } from '../utils/money'
 
 interface QuotePreviewProps {
   brand: BrandInfo
   meta: QuoteMeta
-  notes: TermsData
+  notes: QuoteNotes
   items: QuoteItem[]
+  categoryOrder: string[]
   orientation: Orientation
 }
 
@@ -21,8 +22,16 @@ function isBlankQuoteItem(item: QuoteItem) {
 }
 
 export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
-  ({ brand, meta, notes, items, orientation }, ref) => {
-    const visibleItems = items.filter((item) => !isBlankQuoteItem(item))
+  ({ brand, meta, notes, items, categoryOrder, orientation }, ref) => {
+    const categoryRank = useMemo(() => new Map(categoryOrder.map((c, i) => [c, i])), [categoryOrder])
+    const visibleItems = useMemo(() => {
+      const filtered = items.filter((item) => !isBlankQuoteItem(item))
+      return [...filtered].sort((a, b) => {
+        const rankA = categoryRank.get(a.category) ?? Number.MAX_SAFE_INTEGER
+        const rankB = categoryRank.get(b.category) ?? Number.MAX_SAFE_INTEGER
+        return rankA - rankB
+      })
+    }, [items, categoryRank])
     const totalAmount = visibleItems.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
 
     const termRows = [
@@ -52,6 +61,12 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
       <section className="panel quote-sheet">
         <div className="preview-frame">
           <div className="preview-frame-head">
+            <div>
+              <span className="eyebrow export-exclude" data-export-exclude="true">
+                预览
+              </span>
+              <h2>客户报价单</h2>
+            </div>
             <span className="preview-orientation export-exclude" data-export-exclude="true">
               {orientation === 'portrait' ? '竖版' : '横版'}
             </span>
@@ -76,7 +91,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                 <div className="preview-meta-grid preview-meta-grid-compact screen-only">
                   <div className="meta-item meta-mini">
                     <div className="label">报价编号</div>
-                    <div className="value">{meta.quoteNo || ''}</div>
+                    <div className="value">{meta.quoteNo || '未填写'}</div>
                   </div>
                   <div className="meta-item meta-mini">
                     <div className="label">报价日期</div>
@@ -84,12 +99,12 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                   </div>
                   <div className="meta-item meta-mini">
                     <div className="label">客户名称</div>
-                    <div className="value">{meta.customerName || ''}</div>
+                    <div className="value">{meta.customerName || '未填写'}</div>
                   </div>
                   <div className="meta-item meta-mini">
                     <div className="label">联系人 / 电话</div>
                     <div className="value">
-                      {(brand.contactPerson || '') + (brand.contactPerson && brand.contactPhone ? ' / ' : '') + (brand.contactPhone || '')}
+                      {(brand.contactPerson || '未填写') + ' / ' + (brand.contactPhone || '未填写')}
                     </div>
                   </div>
                 </div>
@@ -100,7 +115,7 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                       <tr>
                         <td>
                           <div className="label">报价编号</div>
-                          <div className="value">{meta.quoteNo || ''}</div>
+                          <div className="value">{meta.quoteNo || '未填写'}</div>
                         </td>
                         <td>
                           <div className="label">报价日期</div>
@@ -110,12 +125,12 @@ export const QuotePreview = forwardRef<HTMLDivElement, QuotePreviewProps>(
                       <tr>
                         <td>
                           <div className="label">客户名称</div>
-                          <div className="value">{meta.customerName || ''}</div>
+                          <div className="value">{meta.customerName || '未填写'}</div>
                         </td>
                         <td>
                           <div className="label">联系人 / 电话</div>
                           <div className="value">
-                            {(brand.contactPerson || '') + (brand.contactPerson && brand.contactPhone ? ' / ' : '') + (brand.contactPhone || '')}
+                            {(brand.contactPerson || '未填写') + ' / ' + (brand.contactPhone || '未填写')}
                           </div>
                         </td>
                       </tr>

@@ -1,9 +1,9 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { HardwareLibraryItem, QuoteItem } from '../types/quote'
 import { formatMoney } from '../utils/money'
 
-const ALL_CATEGORIES = [
+export const ALL_CATEGORIES = [
   'CPU', '主板', '内存', '显卡', '硬盘',
   '散热器', '电源', '机箱', '风扇', '显示器',
   '其他', '鼠标', '键盘', '耳机', '座椅',
@@ -42,25 +42,26 @@ interface QuoteItemsSectionProps {
   title?: string
   items: QuoteItem[]
   libraryItems: readonly HardwareLibraryItem[]
+  categoryOrder: string[]
   highlightedItemId?: string | null
   onTitleChange?: (value: string) => void
   onAddItem: (category?: string) => void
   onDeleteItem: (id: string) => void
   onChangeItem: (id: string, field: keyof QuoteItem, value: string | number) => void
   onClearAll?: () => void
-  /** 桌面端拖拽排序品类 → 重排 items 数组 */
-  onReorderCategories?: (order: string[]) => void
+  onCategoryOrderChange?: (order: string[]) => void
 }
 
 export function QuoteItemsSection({
-  title, items, libraryItems, highlightedItemId,
+  title, items, libraryItems, categoryOrder, highlightedItemId,
   onTitleChange, onAddItem, onDeleteItem,
-  onChangeItem, onClearAll, onReorderCategories,
+  onChangeItem, onClearAll, onCategoryOrderChange,
 }: QuoteItemsSectionProps) {
   const totalAmount = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0)
   const [showCategoryModal, setShowCategoryModal] = useState(false)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
-  const dragRef = useRef<string | null>(null)  // 正在拖拽的品类名
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null)
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
 
   const categories = useMemo(() => {
     const map = new Map<string, QuoteItem[]>()
@@ -71,70 +72,52 @@ export function QuoteItemsSection({
       map.set(cat, list)
     }
     const ordered: string[] = []
+    for (const cat of categoryOrder) {
+      if (map.has(cat) || ALL_CATEGORIES.indexOf(cat as (typeof ALL_CATEGORIES)[number]) < DEFAULT_VISIBLE_COUNT) ordered.push(cat)
+    }
+    // ensure any categories not in categoryOrder still appear if they have items
     for (const cat of ALL_CATEGORIES) {
-      const idx = ALL_CATEGORIES.indexOf(cat)
-      if (map.has(cat) || idx < DEFAULT_VISIBLE_COUNT) ordered.push(cat)
+      if (!ordered.includes(cat) && map.has(cat)) ordered.push(cat)
     }
     return { map, ordered }
-  }, [items])
+  }, [items, categoryOrder])
 
-  const [categoryOrder, setCategoryOrder] = useState<string[]>(categories.ordered)
-  // 当 categories 变化时同步 categoryOrder
-  const displayOrder = useMemo(() => {
-    const existing = new Set(categories.ordered)
-    // 保留已有顺序，追加新品类
-    const merged = [...categoryOrder.filter(c => existing.has(c))]
-    for (const c of categories.ordered) {
-      if (!merged.includes(c)) merged.push(c)
-    }
-    return merged
-  }, [categories.ordered, categoryOrder])
-
-  const [activeCategory, setActiveCategory] = useState<string>(displayOrder[0] ?? ALL_CATEGORIES[0])
+  const [activeCategory, setActiveCategory] = useState<string>(categories.ordered[0] ?? ALL_CATEGORIES[0])
   const activeItems = categories.map.get(activeCategory) ?? []
-
-  // 拖拽排序
-  const handleDragStart = useCallback((cat: string) => {
-    dragRef.current = cat
-  }, [])
-
-  const handleDragOver = useCallback((e: React.DragEvent, target: string) => {
-    e.preventDefault()
-    if (!dragRef.current || dragRef.current === target) return
-    // 视觉反馈
-    const el = e.currentTarget as HTMLElement
-    el.classList.add('drag-over')
-  }, [])
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    const el = e.currentTarget as HTMLElement
-    el.classList.remove('drag-over')
-  }, [])
-
-  const handleDrop = useCallback((target: string) => {
-    const dragged = dragRef.current
-    dragRef.current = null
-    if (!dragged || dragged === target) return
-    // 清除所有 drag-over 标记
-    document.querySelectorAll('.split-nav-item.drag-over').forEach(el => el.classList.remove('drag-over'))
-    const next = [...displayOrder]
-    const fromIdx = next.indexOf(dragged)
-    const toIdx = next.indexOf(target)
-    if (fromIdx < 0 || toIdx < 0) return
-    next.splice(fromIdx, 1)
-    next.splice(toIdx, 0, dragged)
-    setCategoryOrder(next)
-    onReorderCategories?.(next)
-  }, [displayOrder, onReorderCategories])
-
-  const handleDragEnd = useCallback(() => {
-    dragRef.current = null
-  }, [])
 
   const handleSelectCategory = (cat: string) => {
     setShowCategoryModal(false)
     onAddItem(cat)
     setActiveCategory(cat)
+  }
+
+  const handleAddDefaultItem = () => {
+    ALL_CATEGORIES.forEach((category) => onAddItem(category))
+    setActiveCategory(ALL_CATEGORIES[0])
+  }
+
+  const handleDragStart = (index: number) => {
+    setDraggingIndex(index)
+  }
+
+  const handleDragOver = (index: number, e: React.DragEvent) => {
+    e.preventDefault()
+    setDragOverIndex(index)
+  }
+
+  const handleDrop = (targetIndex: number) => {
+    if (draggingIndex == null || draggingIndex === targetIndex) return
+    const next = [...categories.ordered]
+    const [moved] = next.splice(draggingIndex, 1)
+    next.splice(targetIndex, 0, moved)
+    onCategoryOrderChange?.(next)
+    setDraggingIndex(null)
+    setDragOverIndex(null)
+  }
+
+  const handleDragEnd = () => {
+    setDraggingIndex(null)
+    setDragOverIndex(null)
   }
 
   const categoryModal = showCategoryModal ? createPortal(
@@ -187,7 +170,7 @@ export function QuoteItemsSection({
               一键清空
             </button>
           )}
-          <button className="btn primary small" type="button" onClick={() => setShowCategoryModal(true)}>
+          <button className="btn primary small" type="button" onClick={handleAddDefaultItem}>
             新增项目
           </button>
         </div>
@@ -198,24 +181,22 @@ export function QuoteItemsSection({
       ) : (
         <div className="split-layout">
           <nav className="split-nav">
-            {displayOrder.map((cat) => {
-              const hasItem = categories.map.has(cat) && categories.map.get(cat)!.some(item => item.name.trim() !== '')
+            {categories.ordered.map((cat, index) => {
+              const hasItem = categories.map.has(cat)
+              const isDragging = index === draggingIndex
+              const isDragOver = index === dragOverIndex && draggingIndex !== dragOverIndex
               return (
                 <button
                   key={cat}
-                  className={`split-nav-item ${cat === activeCategory ? 'active' : ''}`}
+                  className={`split-nav-item ${cat === activeCategory ? 'active' : ''} ${isDragging ? 'is-dragging' : ''} ${isDragOver ? 'is-drag-over' : ''}`}
                   type="button"
                   draggable
-                  onDragStart={() => handleDragStart(cat)}
-                  onDragOver={(e) => handleDragOver(e, cat)}
-                  onDragLeave={handleDragLeave}
-                  onDrop={() => handleDrop(cat)}
-                  onDragEnd={handleDragEnd}
                   onClick={() => setActiveCategory(cat)}
+                  onDragStart={() => handleDragStart(index)}
+                  onDragOver={(e) => handleDragOver(index, e)}
+                  onDrop={() => handleDrop(index)}
+                  onDragEnd={handleDragEnd}
                 >
-                  <span className="split-nav-drag" aria-hidden="true" onClick={(e) => e.stopPropagation()}>
-                    <svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="0" width="2" height="4" rx="1" fill="currentColor" opacity="0.4"/><rect x="8" y="0" width="2" height="4" rx="1" fill="currentColor" opacity="0.4"/><rect x="2" y="8" width="2" height="4" rx="1" fill="currentColor" opacity="0.4"/><rect x="8" y="8" width="2" height="4" rx="1" fill="currentColor" opacity="0.4"/></svg>
-                  </span>
                   <span className="split-nav-emoji">{CATEGORY_EMOJI[cat] ?? '\u{1F4E6}'}</span>
                   <span className="split-nav-label">{cat}</span>
                   {hasItem ? (
@@ -285,7 +266,7 @@ interface QuoteItemCardProps {
 }
 
 function QuoteItemCard({
-  item, index, total, normalizedCategory: category, subtotal, highlighted,
+  item, normalizedCategory: category, subtotal, highlighted,
   libraryItems, onChangeItem, onDelete,
 }: QuoteItemCardProps) {
   const [suggestOpen, setSuggestOpen] = useState(false)
