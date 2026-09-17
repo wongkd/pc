@@ -92,10 +92,35 @@
   border-left: 1rpx solid var(--mp-line);
 }
 
+/* 金额格比计数格宽：它是这一行里唯一可能到十位字符的值（`¥12,800.00` 本身就 10 字符，
+   而三个计数格最多两三位）。等分四格的 179.5rpx 装不下，T02b §14.2 实测就是这么被裁的。
+   260rpx 与 features/amount-view.ts 的 METRIC_VALUE_BUDGET_PX 配套，
+   **改这里必须同步改那个常量**，否则字号档位算出来的字宽就不作数。 */
+.metric-money {
+  min-width: 260rpx;
+}
+
 .metric-value {
   font-size: 40rpx;
   line-height: 1.2;
   color: var(--mp-ink);
+  /* 金额换行比缩小更糟：断成两行会被读成两个数（02 §103 不许出现无法核账的数）。
+     放不下时的正确手段是降档字号（下面几档）或加宽格子，不是换行。 */
+  white-space: nowrap;
+}
+
+/* 数值字号分档。档位由 features/amount-view.ts 的 metricValueClass() 按字符类别算，
+   不是手挑的；类名与那里的 METRIC_VALUE_TIERS 一一对应，改一处必须改另一处。 */
+.metric-value-md {
+  font-size: 36rpx;
+}
+
+.metric-value-sm {
+  font-size: 32rpx;
+}
+
+.metric-value-xs {
+  font-size: 28rpx;
 }
 
 .metric-label {
@@ -121,6 +146,11 @@
 
   .metric + .metric {
     border-left: 1rpx solid var(--mp-line);
+  }
+
+  /* 两行两列时每格 ≈140px，已宽于金额格的下限，若沿用 min-width 会让两列不再等分。 */
+  .metric-money {
+    min-width: 0;
   }
 }
 

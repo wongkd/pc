@@ -21,7 +21,7 @@ import {
   sortTasksForDemo,
 } from '../../features/demo-data'
 import type { WorkbenchTask } from '../../features/demo-data'
-import { describeAction, describeAmount, formatYuan } from '../../features/amount-view'
+import { describeAction, describeAmount, formatYuan, metricValueClass } from '../../features/amount-view'
 
 /** 缩略图缺失或加载失败时的降级文案（02 §6 DeviceSummary：不暴露内部图片）。 */
 const PHOTO_KIND_LABELS: Record<AttachmentPurpose, string> = {
@@ -37,6 +37,10 @@ interface MetricView {
   value: string
   /** 为 null 表示该指标在骨架阶段没有可跳转的落点，只解释口径。 */
   filter: string | null
+  /** 金额格要单独占更宽的位置（见 toMetric 与 index.wxss 的 .metric-money）。 */
+  isMoney: boolean
+  /** 数值的字号档位类名，空串为基准档。由 metricValueClass 按字符类别算，不手挑。 */
+  valueClass: string
 }
 
 interface FilterView {
@@ -64,23 +68,33 @@ export interface TaskRowView {
   blockerText: string
 }
 
-/** 四项统计。02 §4：窄屏下允许两行两列，不把大金额压到不可读。 */
+/**
+ * 四项统计。02 §103：宽屏四列，320px 或大金额时允许两行两列，
+ * 且「不把 ¥128,000.50 缩成极小字号或省略成无法核账的数」。
+ *
+ * 第四格为什么特殊：设计稿（v3 hybrid-mobile-board.png）这一行是四格等分、金额写作
+ * `¥12,800`（不带分位），而 02 §1 明确「小数位不为了好看被吞掉」，实际渲染是
+ * `¥12,800.00` —— 比设计稿多 3 个字符，等分格装不下（T02b §14.2 实测缺陷 1）。
+ * 故金额格的宽度与字号都由「内容最长」这一事实决定：格子给更宽的 min-width，
+ * 字号用 metricValueClass 按字符类别分档，两者配套，见 index.wxss。
+ */
 const METRICS: MetricView[] = [
-  { key: 'delivery', label: '待交机', value: String(DEMO_METRICS.pendingDelivery), filter: 'delivery' },
-  {
-    key: 'stock_shortage',
-    label: '缺货订单',
-    value: String(DEMO_METRICS.stockShortage),
-    filter: 'stock_shortage',
-  },
-  { key: 'service', label: '维修待办', value: String(DEMO_METRICS.servicePending), filter: 'service' },
-  {
-    key: 'receivable',
-    label: '待收款',
-    value: formatYuan(DEMO_METRICS.receivableCents),
-    filter: null,
-  },
+  toMetric('delivery', '待交机', String(DEMO_METRICS.pendingDelivery), 'delivery'),
+  toMetric('stock_shortage', '缺货订单', String(DEMO_METRICS.stockShortage), 'stock_shortage'),
+  toMetric('service', '维修待办', String(DEMO_METRICS.servicePending), 'service'),
+  toMetric('receivable', '待收款', formatYuan(DEMO_METRICS.receivableCents), null, true),
 ]
+
+/** 统计格视图。valueClass 一律现算，避免手写字号档位与文案对不上。 */
+function toMetric(
+  key: string,
+  label: string,
+  value: string,
+  filter: string | null,
+  isMoney = false,
+): MetricView {
+  return { key, label, value, filter, isMoney, valueClass: metricValueClass(value) }
+}
 
 /** 事项筛选。02 §3 的列表筛选为「全部 / 交付 / 缺货 / 维修 / 回收」，不含「待收款」。 */
 const FILTERS: FilterView[] = [

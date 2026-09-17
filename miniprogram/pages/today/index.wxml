@@ -19,14 +19,14 @@
 
   <view class="metrics">
     <view
-      class="metric"
+      class="metric {{item.isMoney ? 'metric-money' : ''}}"
       hover-class="metric-hover"
       wx:for="{{metrics}}"
       wx:key="key"
       data-filter="{{item.filter}}"
       bindtap="onMetricTap"
     >
-      <text class="metric-value mp-tabular">{{item.value}}</text>
+      <text class="metric-value mp-tabular {{item.valueClass}}">{{item.value}}</text>
       <text class="metric-label">{{item.label}}</text>
     </view>
   </view>
