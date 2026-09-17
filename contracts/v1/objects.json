@@ -239,7 +239,23 @@
         "采购单数量 = 已合格入库 + 已拒收 / 取消数量 + 尚待到货数量；退供另有关联退供单。",
         "超量到货先修改确认采购量或建立追加采购，不静默增加。",
         "取消采购属补充动作，编号与契约须先补入再实现。"
-      ]
+      ],
+      "derivedFields": [
+        {
+          "name": "pendingQty",
+          "label": "在途 / 尚待到货",
+          "formula": "orderedQty - receivedQty - cancelledQty",
+          "basis": "03 §4「采购单数量 = 已合格入库 + 已拒收 / 取消数量 + 尚待到货数量」；04 §3 要求 GET /inventory/purchases 返回「采购、实到、在途、拒收 / 取消」"
+        },
+        {
+          "name": "receiptProgress",
+          "label": "部分到货判定",
+          "formula": "receivedQty > 0 且 pendingQty > 0 → 部分到货；pendingQty = 0 且 receivedQty > 0 → 到货完成；receivedQty = 0 → 尚未到货",
+          "basis": "05 T06b「采购 5 到 3 显示在途 2，不能整单勾完」；06 A11「采购 5 实到 3，重试本次入库，在库只增 3，在途余 2」"
+        }
+      ],
+      "notStored": "本对象不设 status / state 字段，这是规格的有意设计而非遗漏：采购进度由 orderedQty / receivedQty / cancelledQty 三个计数器派生（04 §2 的最低字段列未含状态字段）；验收结论由关联 Receipt.inspectionDisposition 承载。存储状态会与计数器产生第二真相来源，允许两者漂移；派生可保证恒等式始终成立。",
+      "revision": "2026-09-17 T01-rev1 补录。T01a 未记录派生关系，T01b 曾误将其登记为「对象层遗漏」；经核对 03 §4、04 §2/§3、05 T06b、06 A11 后更正。"
     },
 
     "Receipt": {
@@ -430,7 +446,29 @@
         "实物接收、贷项、现金退款各有独立状态与引用。",
         "累计退货贷项不超过原行净额；已退数量由本记录累计。",
         "未收到实物不能凭退款增加库存。"
-      ]
+      ],
+      "factMapping": [
+        {
+          "fact": "实物接收",
+          "stateCarrier": "StockItem.availability / 库存桶（收货后进入待检 quarantine，不自动可卖）",
+          "refField": "stockItemIds",
+          "verdict": "已核实：03 §4「销售退回接收 → 在库与待处理增加，验收实物后」；03 §7「库存先进入待检，绝不自动可卖」"
+        },
+        {
+          "fact": "现金退款",
+          "stateCarrier": "Refund 单据（独立对象，资金方式、发生时间、冲销各自记录）",
+          "refField": "refundEntryRef",
+          "verdict": "已核实：Refund 对象独立存在，本字段为其引用；03 §7「现金退款可稍后」"
+        },
+        {
+          "fact": "贷项",
+          "stateCarrier": "未定义 —— 规格未说明贷项是否需要独立审批 / 生效状态",
+          "refField": "creditCents / lineAllocations",
+          "verdict": "**未决**：03 §7 只给出贷项参与「销售净应计金额」计算的口径，未定义状态取值；04 §2 本行字段列亦无状态字段。登记为规格未定义，T11a 实现 B17 / B18 前须确认，不得自行编造。"
+        }
+      ],
+      "notStored": "本对象不设单一 status / state 字段：04 §2 该行注明的「实物接收 / 贷项 / 现金退款各有状态与引用」，其中「引用」由本对象字段承载（stockItemIds / refundEntryRef / lineAllocations），「状态」由上表关联对象各自承接。不合并为单一总状态，是因为三者进度独立（03 §7「退货实物可待检，现金退款可稍后；二者独立」），一个总状态会掩盖差异。",
+      "revision": "2026-09-17 T01-rev1 补录。T01b 曾误将其登记为「对象层遗漏 / high」；经核对 04 §2 字段列实无状态字段、三个状态由关联对象承接后更正为规格未定义（贷项一项仍待决）。"
     },
 
     "Refund": {
@@ -646,5 +684,14 @@
       "一个已交付但欠款的订单继续成为「待收款」事项。",
       "各数字含 filterTarget，点击后可跳到对应过滤视图。"
     ]
-  }
-}
+  },
+  "revisions": [
+    {
+      "rev": "T01-rev1",
+      "date": "2026-09-17",
+      "summary": "更正状态机缺口登记：Purchase 移出 gaps（在途为派生值，非存储状态）；ReturnRecord 重述为规格未定义并拆出「贷项状态」未决项；全部缺口补 specBasis 与 origin 分类。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "未变更任何字段名、类型、枚举取值、动作编号或错误码，规范性表面零变化；仅新增非规范性注解。故按 conventions.compatibility.versioning 的意图不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    }
+  ]}

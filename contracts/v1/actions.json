@@ -859,96 +859,137 @@
     { "code": "R14", "path": "/operations/:requestId", "permission": null, "result": "status(pending/succeeded/failed)、resultRef、error", "uiRefs": ["全局"], "note": "「结果未知」时以原 requestId 查询（conventions.envelope、errors.json unknownResultProcedure）。" }
   ],
   "stateMachineGaps": {
-    "note": "本节登记本卡核对时发现的缺口：动作会改变对象状态，但该对象的状态机（或状态字段本身）尚未冻结。本卡不自行编造转换表 —— 缺失的转换守卫在 03 §3–§7 没有对应原文，硬编一个值会污染契约、并让后续任务把假设当地基。缺口由指定任务卡补全；补全时同步更新 enums.json 或 objects.json 的对应文件，并按 conventions.compatibility.versioning 决定是否提升 contractVersion。",
-    "howFound": "对 actions.json 的 36 个动作做反向检查：统计哪些动作的 code 未被 enums.json 任何状态机转换引用，再逐个对象的 status / state / uploadState 字段核对是否存在对应状态机。",
+    "note": "本节登记核对时发现的规格留白：动作会改变对象状态，但该对象的状态机（或其转换守卫）在方案中没有原文。本契约不自行编造转换表 —— 硬编一个值会污染契约、并让后续任务把假设当地基。缺口由指定任务卡补全；补全时同步更新 enums.json 或 objects.json，并按 conventions.compatibility.versioning 决定是否提升 contractVersion。",
+    "howFound": "反向检查：统计哪些业务动作的 code 未被 enums.json 任何状态机转换引用，再逐个核对对象的 status / state / uploadState 字段是否存在对应状态机。2026-09-17 T01-rev1 复核：每条缺口补 specBasis（真实文件 + 行号 + 原文字符串），由校验脚本逐条验证引文确实存在于所引行；不能给出 specBasis 者不得登记为缺口。",
+    "originValues": {
+      "spec-undefined": "规格未定义该状态的取值与转换 —— 方案确实没写，不是转录遗漏。实现前须推动方案补定义或由业务确认，禁止自行编造。",
+      "spec-partial": "规格已给出取值但未给出转换守卫与边界条件 —— 属规格有意留白。取值可直接复用，转换须经业务确认后补入。"
+    },
     "gaps": [
       {
-        "object": "Purchase",
-        "missing": "status 字段（对象层缺口）",
+        "object": "Reservation",
+        "missing": "状态机（字段与取值已存在，转换未定义）",
         "severity": "high",
-        "detail": "objects.json 的 Purchase 没有 status 字段，但 03 §7 已给出采购数量恒等式（采购量 = 已合格入库 + 已拒收/取消 + 尚待到货 ），04 §3 要求返回「在途、拒收 / 取消」。没有状态就无法表达在途与部分到货。",
-        "affectsActions": ["B14", "B15", "B37", "B38"],
-        "owner": "T06a",
-        "origin": "T01a 对象层遗漏"
+        "detail": "Reservation 有 status 字段，且 04 §2 已给出三个取值 active / released / consumed，但未定义转换守卫。有效预留的失效、释放、消耗直接决定交付闸门（03 §7「有效预留未失效」）与库存桶转换，是 T04 唯一约束与 T08a 原子预留的共同前置。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 27, "quote": "status(active/released/consumed)" }
+        ],
+        "affectsActions": ["B03", "B05", "B10", "B11"],
+        "owner": "T08a",
+        "origin": "spec-partial"
       },
       {
         "object": "ReturnRecord",
-        "missing": "status 字段（对象层缺口）",
-        "severity": "high",
-        "detail": "04 §2 明确要求退货的「实物接收 / 贷项 / 现金退款各有状态与引用」，但 objects.json 的 ReturnRecord 无状态字段。退货是三条独立事实，不能只留一个总状态。",
+        "missing": "单一条 status 字段（规格表述待澄清，非转录遗漏）",
+        "severity": "medium",
+        "detail": "04 §2 该行「约束 / 关系」列写明「实物接收 / 贷项 / 现金退款各有状态与引用」，但同一行「最低业务字段」列未列任何状态字段。已核实其中两问的承载：实物接收由 StockItem.availability 与库存桶承接（03 §4、03 §7）；现金退款由 Refund 单据承接（本对象字段 refundEntryRef）。剩余一问答不了 —— 「贷项」是否需独立状态（如老板审批 / 生效）规格未定义。本契约不自行编造取值；T11a 实现 B17 / B18 前须确认三条事实是否都需显式状态，或确认均由关联对象承接。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 36, "quote": "各有状态与引用" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 175, "quote": "退货实物可待检" }
+        ],
         "affectsActions": ["B17", "B18"],
         "owner": "T11a",
-        "origin": "T01a 对象层遗漏"
-      },
-      {
-        "object": "Reservation",
-        "missing": "状态机（字段已存在）",
-        "severity": "high",
-        "detail": "Reservation 有 status 字段但无状态机。有效预留的失效、释放、消耗直接决定交付闸门（03 §7「有效预留未失效」）与库存桶转换，是 T04 唯一约束与 T08a 原子预留的共同前置。",
-        "affectsActions": ["B03", "B05", "B10", "B11"],
-        "owner": "T08a",
-        "origin": "T01a 状态机遗漏"
+        "origin": "spec-undefined"
       },
       {
         "object": "Offset",
-        "missing": "状态机（字段已存在）",
+        "missing": "状态机（字段已存在，取值与转换均未定义）",
         "severity": "medium",
-        "detail": "Offset 有 state 字段但无状态机。涉及双向余额与撤销语义（撤销不自动归还实物，见 B32 notes）。",
+        "detail": "Offset 有 state 字段，但 04 §2 未给取值，也无转换。涉及双向余额与撤销语义（撤销不自动归还实物，见 B32 notes）。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 38, "quote": "tradeInId" }
+        ],
         "affectsActions": ["B31", "B32"],
         "owner": "T14a",
-        "origin": "T01a 状态机遗漏"
+        "origin": "spec-undefined"
       },
       {
         "object": "Attachment",
-        "missing": "状态机（字段已存在）",
+        "missing": "状态机（字段已存在，取值与转换均未定义）",
         "severity": "medium",
-        "detail": "有 uploadState 字段但无状态机。04 §7 第 9 条要求先上传验证后关联、孤立上传有明确保留期与引用检查，必须能表达状态推进与失败。",
+        "detail": "有 uploadState 字段，04 §2 未给取值。04 §7 第 9 条要求先上传验证后关联、孤立上传有明确保留期与引用检查，须能表达状态推进与失败。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 39, "quote": "uploadState" }
+        ],
         "affectsActions": ["B35"],
         "owner": "T16a",
-        "origin": "T01a 状态机遗漏"
+        "origin": "spec-undefined"
       },
       {
         "object": "Operation",
-        "missing": "转换表（取值已定）",
+        "missing": "转换表（取值已定、转换未定）",
         "severity": "medium",
-        "detail": "04 §2 已给出 status 三个取值 pending / succeeded / failed，但未冻结转换守卫与超时语义。04 §3、§4 要求「结果未知」时以原 requestId 查询，该流程依赖本状态机。",
+        "detail": "04 §2 有 status 字段，取值在 04 §3 给出：pending / succeeded / failed；转换守卫与超时语义未定义。04 §3、§4 要求「结果未知」时以原 requestId 查询，该流程依赖本状态机。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 65, "quote": "status(pending/succeeded/failed)" }
+        ],
         "affectsActions": ["B36", "B08", "B10", "B15"],
         "owner": "T04a",
-        "origin": "T01a 状态机遗漏（取值已定、转换未定）"
+        "origin": "spec-partial"
       },
       {
         "object": "CashEntry",
-        "missing": "状态机（字段已存在）",
+        "missing": "状态机（字段为本契约新增，取值与转换未定义）",
         "severity": "low",
-        "detail": "verificationState 未冻结；02 §5 账本页要求「核对状态」可筛选，T09a 人工核对流程依赖它。",
+        "detail": "verificationState 为本契约新增字段（04 §2 只列 verifiedAt 可空），02 §5 账本页要求「核对状态」可筛选，T09a 人工核对流程依赖它。取值与转换均未定义。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 37, "quote": "verifiedAt" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 143, "quote": "核对状态" }
+        ],
         "affectsActions": ["B08", "B18", "B33", "B34"],
         "owner": "T09a",
-        "origin": "T01a 状态机遗漏"
+        "origin": "spec-undefined"
       },
       {
         "object": "Product",
-        "missing": "状态机（字段已存在）",
+        "missing": "状态机（字段已存在，取值与转换未定义）",
         "severity": "low",
-        "detail": "Product 有 status 但无状态机。旧 hardware 用 status='active' 过滤（backend/src/index.ts:735），新契约需明确停用语义与对在售订单的影响。",
+        "detail": "Product 有 status 但 04 §2 未给取值；旧 hardware 用 status = active 过滤，新契约需明确停用语义与对在售订单的影响。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 19, "quote": "requiresSn" },
+          { "file": "backend/src/index.ts", "line": 735, "quote": "COALESCE(status, 'active')='active'" }
+        ],
         "affectsActions": ["B12"],
         "owner": "T05a",
-        "origin": "T01a 状态机遗漏"
+        "origin": "spec-undefined"
       },
       {
         "object": "QuoteVersion",
-        "missing": "状态机（字段已存在）",
+        "missing": "状态机（字段与取值均未独立定义）",
         "severity": "low",
-        "detail": "QuoteVersion 的 status 与 QuoteStatus 的关系未说明 —— 版本自身是否需要 superseded 之类状态，取决于 B02「发出后修改形成新版本」的具体实现。",
+        "detail": "QuoteVersion 的 status 与 QuoteStatus 的关系未说明 —— 版本自身是否需要 superseded 之类状态，取决于 B02「发出后修改形成新版本」的具体实现。04 §2 该行未给独立取值。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 24, "quote": "validUntil" }
+        ],
         "affectsActions": ["B02", "B03"],
         "owner": "T07a",
-        "origin": "T01a 状态机遗漏"
+        "origin": "spec-undefined"
       }
     ],
     "notAGap": [
-      "B19 的库存桶转换不算缺口：enums.json 的 inventoryBucketRules 已定义桶与转换规则。",
-      "B12 建立商品、B13 期初、B20 接修、B35 上传等「创建型」动作不引用前置转换属正常，初始状态即由创建动作确立。"
+      {
+        "claim": "Purchase 不设 status / state 字段",
+        "reclassifiedFrom": "T01b 曾登记为「status 字段（对象层缺口）/ high」；2026-09-17 T01-rev1 更正",
+        "reason": "采购进度由 orderedQty / receivedQty / cancelledQty 派生，04 §2 的最低字段列本就未含状态字段。存储状态会与三个计数器形成第二真相来源并允许漂移；派生可保证恒等式始终成立。派生式与验收口径见 objects.json 的 Purchase.derivedFields。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 28, "quote": "inspectionDisposition" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 102, "quote": "尚待到货数量" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/05-implementation-tasks.md", "line": 88, "quote": "显示在途 2" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md", "line": 67, "quote": "在途余 2" }
+        ]
+      },
+      {
+        "claim": "B19 的库存桶转换不算缺口",
+        "reason": "enums.json 的 inventoryBucketRules 已定义桶与转换规则。",
+        "specBasis": []
+      },
+      {
+        "claim": "B12 建立商品、B13 期初、B20 接修、B35 上传等「创建型」动作不引用前置转换",
+        "reason": "属正常，初始状态即由创建动作确立。",
+        "specBasis": []
+      }
     ],
-    "countingNote": "stateMachineGaps 不计入校验失败项，校验脚本只报告数量与对象名，避免把「已登记的已知缺口」误判为「契约不一致」。"
+    "countingNote": "stateMachineGaps 不计入校验失败项，校验脚本只报告数量与对象名，避免把「已登记的已知缺口」误判为「契约不一致」。但每条缺口的 specBasis 必须逐条通过校验（文件存在、行号在范围内、引文确实出现在该行），以防再用未经核实的断言登记缺口。"
   },
   "legacyPermissionMap": {
     "note": "映射依据为 backend/src/index.ts 的实际守卫资源，不按权限码字面名推断（legacy-mapping.json permissions 表条目已记录该结论）。旧权限表无种子迁移，行内容未核实（Q04），本映射不依赖行内容。",
@@ -1149,5 +1190,14 @@
       "affects": "T15、T17b",
       "owner": "T15"
     }
-  ]
-}
+  ],
+  "revisions": [
+    {
+      "rev": "T01-rev1",
+      "date": "2026-09-17",
+      "summary": "更正状态机缺口登记：Purchase 移出 gaps（在途为派生值，非存储状态）；ReturnRecord 重述为规格未定义并拆出「贷项状态」未决项；全部缺口补 specBasis 与 origin 分类。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "未变更任何字段名、类型、枚举取值、动作编号或错误码，规范性表面零变化；仅新增非规范性注解。故按 conventions.compatibility.versioning 的意图不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    }
+  ]}

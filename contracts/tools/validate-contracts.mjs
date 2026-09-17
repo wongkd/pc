@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
- * 契约自洽性校验（T01a + T01b）
+ * 契约自洽性校验（T01a + T01b + T01-rev1）
  *
  * 用途：验证 contracts/v1 下的协议文件彼此自洽，并且与 backend/migrations 的实际表结构、
- *       backend/src/index.ts 的实际权限守卫对得上。
+ *       backend/src/index.ts 的实际权限守卫、docs/plans 的规格原文对得上。
  * 运行：node contracts/tools/validate-contracts.mjs
  * 退出码：0 = 全部通过；1 = 存在失败项
  *
@@ -413,6 +413,117 @@ for (const act of [...(actionsDoc.authActions ?? []), ...(actionsDoc.readActions
 
 warn(`已登记状态机缺口 ${gaps.length} 项（不影响本次校验结论，须由对应任务卡补全）`)
 
+// ── 11. 缺口依据与规格字段覆盖（T01-rev1）───────────────────────────────
+// 11.1 每条缺口的 specBasis 必须可被机械验证：文件存在、行号在范围内、引文逐字出现在该行。
+//      起因：T01b 曾用未经核实的断言把「Purchase 缺状态字段」登记为对象层遗漏，事后核对
+//      04 §2 的最低字段列本就没有状态字段、在途是派生值 —— 结论是错的。此检查确保
+//      任何缺口登记都必须附可核对原文，而不是凭印象断言。
+const specCache = new Map()
+function specLinesOf(relPath) {
+  if (specCache.has(relPath)) return specCache.get(relPath)
+  let lines = null
+  try {
+    lines = readFileSync(join(repoRoot, relPath), 'utf8').split(/\r?\n/)
+  } catch {
+    lines = null
+  }
+  specCache.set(relPath, lines)
+  return lines
+}
+function verifyBasis(ownerLabel, basis) {
+  for (const b of basis ?? []) {
+    const lines = specLinesOf(b.file)
+    const label = `${ownerLabel} specBasis ${b.file}:${b.line}`
+    check(`${label} 文件可读`, lines !== null, '文件不存在或读取失败')
+    if (!lines) continue
+    const inRange = Number.isInteger(b.line) && b.line >= 1 && b.line <= lines.length
+    check(`${label} 行号在范围内`, inRange, `文件共 ${lines.length} 行`)
+    if (!inRange) continue
+    check(`${label} 引文出现在该行`, lines[b.line - 1].includes(b.quote), `该行未找到「${b.quote}」`)
+  }
+}
+
+const smg = actionsDoc.stateMachineGaps ?? {}
+const originKeys = Object.keys(smg.originValues ?? {})
+check('stateMachineGaps 声明 originValues 取值表', originKeys.length > 0)
+let basisVerified = 0
+for (const gap of gaps) {
+  check(`缺口 ${gap.object} 声明 origin`, typeof gap.origin === 'string' && gap.origin.length > 0, `origin=${gap.origin}`)
+  check(`缺口 ${gap.object} 的 origin 在取值表内`, originKeys.includes(gap.origin), `origin=${gap.origin}`)
+  check(`缺口 ${gap.object} 附 specBasis`, Array.isArray(gap.specBasis) && gap.specBasis.length > 0,
+    '没有 specBasis 依据不得登记为缺口')
+  basisVerified += (gap.specBasis ?? []).length
+  verifyBasis(`缺口 ${gap.object}`, gap.specBasis)
+}
+for (const ng of smg.notAGap ?? []) {
+  if (typeof ng !== 'object' || ng === null) {
+    check('notAGap 条目为结构化对象（含 claim / reason / specBasis）', false, `实际为 ${typeof ng}`)
+    continue
+  }
+  check(`notAGap「${String(ng.claim).slice(0, 20)}…」附 reason`, typeof ng.reason === 'string' && ng.reason.length > 0)
+  basisVerified += (ng.specBasis ?? []).length
+  verifyBasis(`notAGap「${String(ng.claim).slice(0, 20)}…」`, ng.specBasis)
+}
+
+// 11.2 04 §2「数据对象与最低字段」覆盖：逐行与 objects.json 双向核对。
+//      复合行（如「Purchase / Receipt」）在规格里是一行、本契约拆为两个对象，故按并集比对。
+const UI_SPEC = 'docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md'
+const SPEC_NAME_MAP = {
+  Product: ['Product'], StockBalance: ['StockBalance'], StockItem: ['StockItem'], Customer: ['Customer'],
+  CustomerDevice: ['CustomerDevice'], Quote: ['Quote'], QuoteVersion: ['QuoteVersion'], SaleOrder: ['SaleOrder'],
+  SaleLine: ['SaleLine'], Reservation: ['Reservation'], Purchase: ['Purchase'], Receipt: ['Receipt'],
+  InventoryMovement: ['InventoryMovement'], Checklist: ['Checklist'], TestRecord: ['TestRecord'],
+  Delivery: ['Delivery'], Recovery: ['Recovery'], RefurbishmentCost: ['RefurbishmentCost'],
+  ServiceOrder: ['ServiceOrder'], DeviceConfiguration: ['DeviceConfiguration'], Change: ['DeviceChange'],
+  Return: ['ReturnRecord'], Refund: ['Refund'], CashEntry: ['CashEntry'], Offset: ['Offset'],
+  Attachment: ['Attachment'], Operation: ['Operation'], AuditEvent: ['AuditEvent'],
+  WechatIdentity: ['WechatIdentity'], Session: ['Session']
+}
+function parseSpecFields(fieldCell) {
+  const out = new Set()
+  for (let token of fieldCell.split('、')) {
+    token = token.trim()
+    if (!token) continue
+    token = token.replace(/\s*可空\s*$/, '').replace(/\(.*?\)/g, '')
+    for (const part of token.split(/\s+或\s+/)) {
+      for (const sub of part.split(/\s*\/\s*/)) {
+        const f = sub.trim().toLowerCase()
+        if (f) out.add(f)
+      }
+    }
+  }
+  return [...out]
+}
+const specLines = specLinesOf(UI_SPEC)
+check('04 §2 规格文件可读', specLines !== null)
+let coverageRows = 0
+if (specLines) {
+  let inSection2 = false
+  for (const line of specLines) {
+    if (/^##\s*2\./.test(line)) { inSection2 = true; continue }
+    if (/^##\s*3\./.test(line)) { inSection2 = false; continue }
+    if (!inSection2 || !line.startsWith('|')) continue
+    const cells = line.split('|').map((c) => c.trim())
+    if (cells.length < 4) continue
+    const nameCell = cells[1]
+    const fieldCell = cells[2]
+    if (!nameCell || nameCell === '对象' || /^-+$/.test(nameCell)) continue
+    if (!fieldCell || fieldCell === '最低业务字段') continue
+    const keys = nameCell.split('/').map((s) => s.trim().split(/\s+/)[0]).map((p) => SPEC_NAME_MAP[p]).filter(Boolean).flat()
+    if (!keys.length) {
+      warn(`04 §2 行「${nameCell}」未在 SPEC_NAME_MAP 登记，无法核对字段覆盖`)
+      continue
+    }
+    coverageRows += 1
+    const specFields = parseSpecFields(fieldCell)
+    const own = new Set()
+    for (const k of keys) for (const f of Object.keys(objectsDoc.objects[k]?.fields ?? {})) own.add(f.toLowerCase())
+    const missing = specFields.filter((f) => !own.has(f))
+    check(`04 §2「${nameCell}」最低字段已全部落到 objects.json`, missing.length === 0, `缺 ${missing.join(', ')}`)
+  }
+  check('04 §2 覆盖检查至少解析到 20 行对象', coverageRows >= 20, `仅 ${coverageRows} 行`)
+}
+
 // ── 输出 ────────────────────────────────────────────────────────────────
 console.log('契约自洽性校验 · contractVersion v1')
 console.log('─'.repeat(64))
@@ -423,6 +534,7 @@ console.log(`库存桶转换 ${bucketTransitionCount} 条`)
 console.log(`错误码 ${errorCount} 个`)
 console.log(`金额公式 ${formulaCount} 条`)
 console.log(`旧表映射 ${mappedTables.size} 张 / 迁移实际表 ${sqlTables.size} 张`)
+console.log(`缺口依据核验 ${basisVerified} 条 / 规格 §2 字段覆盖 ${coverageRows} 行`)
 console.log('─'.repeat(64))
 console.log(`通过 ${passes.length} 项`)
 

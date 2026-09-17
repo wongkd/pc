@@ -1,6 +1,6 @@
 # contracts · 跨端契约
 
-日期：2026-09-17。状态：v1 部分冻结（T01a、T01b 完成，T01c 待做）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。
+日期：2026-09-17。状态：v1 部分冻结（T01a、T01b 完成并经 T01-rev1 修订，T01c 待做）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。
 
 本目录是电脑网页端与微信小程序共用的协议唯一来源。两端不得各自维护一份枚举、金额公式或错误码。
 
@@ -10,13 +10,13 @@
 |---|---|---|
 | `v1/conventions.json` | ID、金额、数量、时间、nullable、分页、响应信封、写入约定、兼容策略 | T01a |
 | `v1/enums.json` | 全部枚举取值、五个状态机、库存桶转换、待补枚举清单 | T01a |
-| `v1/objects.json` | 31 个对象的协议字段、类型、nullable、枚举引用，以及待办读模型与工作台指标口径 | T01a |
+| `v1/objects.json` | 31 个对象的协议字段、类型、nullable、枚举引用、派生态与事实映射，以及待办读模型与工作台指标口径 | T01a（T01-rev1 修订） |
 | `v1/errors.json` | 标准错误码、HTTP 状态、客户端处理、结果未知的处理流程 | T01a |
 | `v1/money-rules.json` | 金额公式、冲销策略、优惠分摊、部分退货、成本与毛利 | T01a |
 | `v1/legacy-mapping.json` | 旧表 → 新模型映射、保留的数据库机制、单位换算、未决问题 | T01a |
-| `v1/actions.json` | B01–B36 动作目录、多路径操作的分别权限、49 个新权限码、11 个旧权限码映射、状态机缺口登记 | T01b |
+| `v1/actions.json` | B01–B36 动作目录、多路径操作的分别权限、49 个新权限码、11 个旧权限码映射、状态机缺口登记（含 `specBasis` 依据） | T01b（T01-rev1 修订） |
 | `v1/fixtures.json` | 虚构样本、边界输入、预期结果、DTO 生成配置 | **T01c（未产出）** |
-| `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b |
+| `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b + T01-rev1 |
 
 ## 2. 校验方式
 
@@ -24,7 +24,7 @@
 node contracts/tools/validate-contracts.mjs
 ```
 
-脚本做静态检查与源码文本核对，不连接数据库、不部署、不读生产数据。它会：
+脚本做静态检查与源码 / 规格文本核对，不连接数据库、不部署、不读生产数据。它会：
 
 - 校验各文件 JSON 可解析、`contractVersion` 一致、冻结来源已声明；
 - 校验每个字段的类型在约定集合内、枚举引用存在、金额字段以 `Cents` 结尾；
@@ -34,11 +34,16 @@ node contracts/tools/validate-contracts.mjs
 - **反向读取 `backend/src/index.ts`**，检查旧权限映射是否覆盖了源码里实际出现的每一个权限码，并核对每条映射的 `evidence` 行号真实存在、且该行确实涉及权限判断；
 - **校验动作编号与 `ActionCode` 枚举双向一致**、动作的 permission / entity / stateMachine / errors 引用都不悬空；
 - **解析 `02-ui-specification.md` §5 的页面清单**，检查每个正式页面至少映射一个动作（防止按钮找不到动作）；
-- **强制 `noWidening`**：`owner_only` 权限码不得继承「店员可得」的旧权限（`quote/edit`、`library/edit` 等），即旧宽权限不得自动获得退款、折抵、报损等能力。
+- **强制 `noWidening`**：`owner_only` 权限码不得继承「店员可得」的旧权限（`quote/edit`、`library/edit` 等），即旧宽权限不得自动获得退款、折抵、报损等能力；
+- **校验每条状态机缺口的 `specBasis`**：文件存在、行号在文件范围内、引文字符串**逐字出现在该行**。拿不出可核对原文者不得登记为缺口（起因见 [T01-rev1 验证记录](../docs/verification/2026-09-17-T01-rev1/README.md)）；
+- **解析 `04-data-and-api.md` §2「数据对象与最低字段」表格**，逐行与 `objects.json` 双向核对字段覆盖（复合行如 `Purchase / Receipt` 按两对象并集比对），防止对象字段漏抄。
 
 退出码 0 表示通过，1 表示存在失败项。提示项不阻断，代表方案本身尚未定义的规则缺口。
 
-校验闸门自身做过负向测试：注入「`sales/refund` 伪装继承 `quote/edit`」与「抽掉盘点页动作归属」两个错误，脚本分别报出对应失败项。改脚本后可照此复验。
+校验闸门自身做过负向测试，改脚本后应照此复验：
+
+- 注入「`sales/refund` 伪装继承 `quote/edit`」与「抽掉盘点页动作归属」→ T01b 已验；
+- 注入「缺口 `specBasis` 引文不存在」「`origin` 不在取值表内」「删掉 `Purchase.orderedQty`」→ T01-rev1 已验，三项分别报出对应失败项。
 
 ## 3. 变更流程
 
@@ -53,12 +58,15 @@ node contracts/tools/validate-contracts.mjs
 |---|---|---|
 | 虚构样本与 DTO 生成 | 未产出 | T01c |
 | `closed` / `expired` 状态的进入条件 | 方案未定义，校验脚本列为提示 | 对应业务卡实现前补 |
-| **状态机缺口 9 项**（Purchase / ReturnRecord 缺状态字段；Reservation / Offset / Attachment / Operation / CashEntry / Product / QuoteVersion 有状态字段无状态机） | 已在 `actions.json` 的 `stateMachineGaps` 登记 | T06a / T11a / T08a / T14a / T16a / T04a / T09a / T05a / T07a |
+| **状态机缺口 8 项**（Reservation、ReturnRecord、Offset、Attachment、Operation、CashEntry、Product、QuoteVersion） | 已在 `actions.json` 的 `stateMachineGaps` 登记，每条附 `specBasis` 依据。经 T01-rev1 更正：**8 项全部属「规格未定义」，无一项是转录遗漏** | T08a / T11a / T14a / T16a / T04a / T09a / T05a / T07a |
+| ReturnRecord 的「贷项」是否需独立状态 | 规格未定义，T01-rev1 拆出的未决项 | T11a |
 | 补充动作 B37–B41（采购取消、退供、报损、价格调整、售后收款） | B37–B39 标 reserved、B40 阻塞、B41 已定路径 | T06a / T06c / 待指定 / T12c |
-| 生成 D1 实际已应用哪些迁移（0004 / 0005） | 未核实 | T20 |
+| 生产 D1 实际已应用哪些迁移（0004 / 0005） | 未核实 | T20 |
 | `library` 表是否有历史数据 | 未核实（代码零引用） | T20 |
 | `quotes.data` blob 实际结构 | 未核实（现为单行工作副本） | T07 |
-| 生产 `permissions` 表实际行内容 | 未核实（本卡已改为按代码守卫映射，不依赖表行） | T20 |
+| 生产 `permissions` 表实际行内容 | 未核实（已改为按代码守卫映射，不依赖表行） | T20 |
+
+**已澄清、不再视为缺口**：`Purchase` 不需要存储状态字段 —— 采购进度由 `orderedQty / receivedQty / cancelledQty` 派生（在途 = 三者相减），04 §2 的最低字段列本就没有状态字段。派生式见 `objects.json` 的 `Purchase.derivedFields`。T01b 曾误将其登记为「对象层遗漏」，T01-rev1 已更正。
 
 ## 5. 与其他文档的关系
 
@@ -78,3 +86,13 @@ node contracts/tools/validate-contracts.mjs
 | `noWidening` | 旧 `quote/edit`、`library/edit` 是高危宽权限，**不得**自动映射为退款、折抵、报损、盘差批准、欠款放行、付款、冲销等 `owner_only` 能力。校验脚本第 10.3 节强制此约束 |
 
 旧权限映射的完整依据（含 `backend/src/index.ts` 行号证据）见 `v1/actions.json` 的 `legacyPermissionMap`。映射按**代码实际守卫的资源**判定，不按权限码字面名 —— 例如 `library/*` 实际守卫的是商品与 SN 接口。
+
+## 7. 修订历史
+
+| 修订 | 日期 | 内容 | 版本处置 |
+|---|---|---|---|
+| T01a | 2026-09-17 | 冻结约定、枚举、对象、错误码、金额规则、旧表映射六份契约 + 校验脚本 | 建立 `v1` |
+| T01b | 2026-09-17 | 新增 `actions.json`（动作、权限、旧权限映射、状态机缺口登记）；校验脚本加第 10 节 | v1 不变 |
+| T01-rev1 | 2026-09-17 | 更正状态机缺口登记：`Purchase` 移出 gaps（在途为派生值）、`ReturnRecord` 重述为规格未定义；全部条目补 `specBasis` 与 `origin`；`objects.json` 补派生态与事实映射；校验脚本加第 11 节 | v1 不变（见下） |
+
+T01-rev1 **未变更任何规范性表面** —— 字段名、类型、枚举取值、动作编号、错误码均无变化，新增的 `derivedFields` / `factMapping` / `notStored` / `specBasis` / `originValues` 均为非规范性注解，故未提升 `contractVersion`，改为在原文件内留 `revisions` 记录。⚠️ **此判断属治理决策，须项目负责人裁定**；若要求严格按第 3 节第 1 条执行，应改建 `contracts/v2/`。

@@ -8,7 +8,7 @@
 - [电脑网页＋微信小程序双端实施方案](./docs/plans/2026-09-17-web-wechat-plan/README.md)：基于 A+B 效果图的页面、业务规则、数据接口、分步任务与验收；用于后续低端模型实施，本轮仅规划，不建设手机网页端。
 - [装机店经营工作台重做规划](./装机店经营工作台-重做规划-2026-09-17.md)：产品与业务规划。
 - [A+B 融合原型](./docs/design/2026-09-17-style-exploration/v3/README.md)：沿用 B 的视觉，加入 A 的订单处理；手机改为待办优先、详情处理、底部主操作。
-- [跨端契约](./contracts/README.md)：两端共用的枚举、对象字段、金额规则、错误码、动作目录与权限映射、旧表映射；v1 部分冻结（T01a、T01b 完成，T01c 待做），校验命令 `node contracts/tools/validate-contracts.mjs`。
+- [跨端契约](./contracts/README.md)：两端共用的枚举、对象字段、金额规则、错误码、动作目录与权限映射、旧表映射；v1 部分冻结（T01a、T01b 完成并经 T01-rev1 修订，T01c 待做），校验命令 `node contracts/tools/validate-contracts.mjs`。
 - [前一轮独立 A / B / C 提案](./docs/design/2026-09-17-style-exploration/v2/README.md)：历史对照，保留原稿。
 
 融合版目前是独立本地原型，尚未接入业务 API、部署或实现原生小程序 / App。预览命令与验证结果见对应说明。本目录已建立 Git 基线（`main` 分支，起始提交 `e5ca594`，见 T00 记录）。
