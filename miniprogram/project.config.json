@@ -1,7 +1,7 @@
 {
   "description": "装机店经营工作台 · 微信小程序端（T02b 骨架卡，未接业务服务、未写任何业务数据）",
   "projectname": "pc-quote-miniprogram",
-  "appid": "touristappid",
+  "appid": "wx1b14bf01ef71718d",
   "compileType": "miniprogram",
   "miniprogramRoot": "./",
   "srcMiniprogramRoot": "./",
