@@ -1,6 +1,6 @@
 # 未决项与踩坑台账（跨卡片）
 
-更新：2026-09-17（最后由 T02a 维护）
+更新：2026-09-17（最后由 T02b 维护）
 用途：**把「规格没写的」「需要你拍板的」「已经踩过的坑」集中在一处**，便于换一个 AI 继续做，也便于你逐条决定。
 
 - 本文件只做索引与结论，**不复述业务规范**；业务规则以 `docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md` 与契约 `contracts/` 为准。
@@ -11,8 +11,10 @@
 ```bash
 git log --oneline -8                       # 看做到哪张卡
 node contracts/tools/validate-contracts.mjs # 契约自洽（应 3047 项、退出码 0）
-node frontend/scripts/sync-contracts.mjs --check  # 端内生成物未漂移
-npm --prefix frontend run test              # 应 6 文件 / 49 用例通过
+node frontend/scripts/sync-contracts.mjs --check    # 网页端内生成物未漂移
+node miniprogram/scripts/sync-contracts.mjs --check # 小程序端内生成物未漂移
+npm --prefix frontend run test              # 应 6 文件 / 50 用例通过
+npm --prefix miniprogram test               # 应 2 文件 / 26 用例通过（需先 npm --prefix miniprogram install）
 ```
 
 然后读：根 `README.md` → 本文件 → `docs/verification/<最新卡号>/README.md` → 当前任务涉及的规格小节。
@@ -50,14 +52,13 @@ npm --prefix frontend run test              # 应 6 文件 / 49 用例通过
 
 | 编号 | 事项 | 卡在哪 | 归属 |
 |---|---|---|---|
-| T-01 | 生成物目标 `frontend/src/contracts/generated` 已落地，但契约里 `dtoGeneration.targets[id=web].status` 仍写 `pending` | 改已冻结文件要留 `revisionNote`，未擅自改 | T02c / 下次契约修订 |
-| T-02 | 小程序端生成物目标 `miniprogram/contracts/generated` 仍 `pending`，且路径是规划值，要按实际 `miniprogramRoot` 回写 | 小程序项目尚未建立 | T02b |
 | T-03 | 后端三个生产 secret 未写入远端 | 本机无 Cloudflare 登录态 | **补做 `wrangler secret put` 前禁止 `wrangler deploy`** |
 | T-04 | 本地 D1 测试入口不存在（历史 harness 已丢失，`backend/package.json` 无 `test` 脚本，未装 `typescript`） | 需重建 | T04 |
 | T-05 | 微信平台条件全未知（AppID / 主体 / 成员、API 域名、对象存储、店内网络、真机） | 等用户提供 | 阻塞 T03 / T16 / T21 |
 | T-06 | 生产 D1 的 `0004` / `0005` 是否已应用 | 未核实 | T20 |
 | T-07 | `permissions` 表实际行内容 | 未核实（契约已改为按代码守卫映射，不依赖表行） | T20 |
 | T-08 | 后端仍是 `index.ts` 单文件 1551 行，未拆 `routes/domains/repositories` | 边做边拆 | 各业务卡 |
+| T-09 | 小程序只有一个详情页 `packages/sales/order-detail`，售后与回收事项暂也跳它 | 与 02 §2 页面地图有偏差（售后应为 `packages/service/detail`、回收应为 `packages/recovery/detail`） | T12 / T14 |
 
 ---
 
@@ -103,7 +104,9 @@ npm --prefix frontend run test              # 应 6 文件 / 49 用例通过
 | 浏览器视觉验收（U01 尺寸 / U02 缩放 / U05 键盘 / U06 首屏主动作） | 本机无 Playwright 等浏览器自动化；本地登录会触达生产后端，T00 已声明避免接触生产 |
 | 颜色对比度实测（`danger` 是 02 §1 新增语义色） | 需要浏览器环境 |
 | 断网 / 写超时 / 登录过期 / 冲突 / 无权限等界面状态（02 §7） | 无服务端，骨架只实现了「筛选无结果」与「图片失败」两种 |
-| 微信开发者工具与真机 | 小程序项目尚未建立；AppID 等平台条件未知 |
+| **微信开发者工具编译**（T02b 的「小程序必须编译出原生页面」） | 工具服务端口原为关闭。已通过 CLI 的 `y` 确认流程写入开启设置，但**当前运行的实例仍是旧设置**，需关闭并重新打开开发者工具、再扫码登录，CLI 才能驱动编译。**在跑通之前不得声称该条通过** |
+| 小程序真机 / iOS / Android | 无 AppID（本卡用无 AppID 模式）；无真机条件 |
+| 小程序视觉验收（320 / 375 / 390 / 430、字体放大、返回恢复的滚动位置） | 需开发者工具或真机 |
 | 后端集成、并发、幂等 | T04 的本地 D1 测试入口还没重建 |
 
 ---
@@ -120,3 +123,6 @@ npm --prefix frontend run test              # 应 6 文件 / 49 用例通过
 | R-06 | 生成物能否共享成一个 TS 包 | 不能：网页 Vite 与小程序原生编译链不同；改为从 `contracts/v1` 单向生成到各端 |
 | R-07 | 优惠分摊的算法 | 必须整数运算：行分子 = `discountCents × grossCents`、分母 = `ΣgrossCents`、取整得商、取模得余数；浮点会在小数第 6 位才分出余数大小 |
 | R-08 | 演示标识怎么承载 | 由 ID 前缀 `DEMO-` 承载，不新增协议字段 |
+| R-09 | 生成物目标状态回写（原 T-01 / T-02） | **T02b 已回写**：两端 `targets.status` 均为 `done`，留 `revisions` 记录（T02b-rev1）。小程序 `miniprogramRoot` 取项目根，故 `miniprogram/contracts/generated` 与规划值一致，未改任何 `rootPath` |
+| R-10 | `manifest.json` 的 `targets` 是生成器内硬编码副本 | **T02b 已修**：改为从 `fixtures.json` 读取，保持单一来源 |
+| R-11 | 小程序端能否直接跑 TS 测试 | **可以**：Node 22 的类型擦除可直接加载 `.ts`，但**不解析无扩展名的相对导入**，故被测试引用的模块只能含 `import type`；`node --test <目录>` 在本机不工作，须写 `node --test "tests/*.test.mjs"` |
