@@ -2,6 +2,7 @@
 
 日期：2026-09-17
 状态：**本地通过（构建、测试、防漂移闸门）· 浏览器视觉验收未运行**
+提交：`455c66f`
 依据：[05-implementation-tasks.md · T02a](../../plans/2026-09-17-web-wechat-plan/05-implementation-tasks.md)、[01 §3 六模块与六项顶栏](../../plans/2026-09-17-web-wechat-plan/01-scope-and-architecture.md)、[02 UI 规格](../../plans/2026-09-17-web-wechat-plan/02-ui-specification.md)、[06 §2 V1 样本](../../plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md)
 
 本卡只建立网页壳、导航与工作台骨架，**未连接生产、未写任何业务数据、未新增迁移、未部署**。跨卡片未决项见 [docs/OPEN-ITEMS.md](../../OPEN-ITEMS.md)。
