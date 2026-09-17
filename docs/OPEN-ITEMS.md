@@ -105,7 +105,7 @@ npm --prefix miniprogram test               # 应 2 文件 / 26 用例通过（�
 | 颜色对比度实测（`danger` 是 02 §1 新增语义色） | 需要浏览器环境 |
 | 断网 / 写超时 / 登录过期 / 冲突 / 无权限等界面状态（02 §7） | 无服务端，骨架只实现了「筛选无结果」与「图片失败」两种 |
 | **微信开发者工具编译**（T02b 的「小程序必须编译出原生页面」） | 工具服务端口原为关闭。已通过 CLI 的 `y` 确认流程写入开启设置，但**当前运行的实例仍是旧设置**，需关闭并重新打开开发者工具、再扫码登录，CLI 才能驱动编译。**在跑通之前不得声称该条通过** |
-| 小程序真机 / iOS / Android | AppID 已配置（`wx1b14bf01ef71718d`）；仍需工具登录与真机条件。开发者工具编译亦未运行（服务端口关闭） |
+| 小程序真机 / iOS / Android | AppID 已配置（`wx1b14bf01ef71718d`）；**开发者工具已加载并编译**（日志证据见 T02b §13），但**渲染截图未取得**；真机条件仍缺 |
 | 小程序视觉验收（320 / 375 / 390 / 430、字体放大、返回恢复的滚动位置） | 需开发者工具或真机 |
 | 后端集成、并发、幂等 | T04 的本地 D1 测试入口还没重建 |
 
@@ -126,3 +126,4 @@ npm --prefix miniprogram test               # 应 2 文件 / 26 用例通过（�
 | R-09 | 生成物目标状态回写（原 T-01 / T-02） | **T02b 已回写**：两端 `targets.status` 均为 `done`，留 `revisions` 记录（T02b-rev1）。小程序 `miniprogramRoot` 取项目根，故 `miniprogram/contracts/generated` 与规划值一致，未改任何 `rootPath` |
 | R-10 | `manifest.json` 的 `targets` 是生成器内硬编码副本 | **T02b 已修**：改为从 `fixtures.json` 读取，保持单一来源 |
 | R-11 | 小程序端能否直接跑 TS 测试 | **可以**：Node 22 的类型擦除可直接加载 `.ts`，但**不解析无扩展名的相对导入**，故被测试引用的模块只能含 `import type`；`node --test <目录>` 在本机不工作，须写 `node --test "tests/*.test.mjs"` |
+| R-12 | 微信开发者工具的自动化与截屏 | **三条限制**（均与项目代码无关）：① `cli.js open` 对**已打开的项目**报 `TypeError: d.on is not a function`（`openOrCreateWindow` 缺陷），须先 `cli.js quit` 再 open；② 本版本 `cli.js auto` **没有 `--auto-port` 选项**，`miniprogram-automator` 的 `launch()` 因此连不上 → **自动化截图不可用**；③ 本机安全策略**封死** `Add-Type`、`[Reflection.Assembly]::LoadWithPartialName`、`New-Object -ComObject` 三种截屏途径。⇒ 要小程序截图，只能在工具界面手动截 |
