@@ -3,7 +3,7 @@
   "frozenBy": "T01a",
   "frozenAt": "2026-09-17",
   "status": "frozen",
-  "revisionNote": "T01b（2026-09-17）仅更新了 openQuestions 中 Q04 的 owner 与 resolution：权限映射依据改为 backend/src/index.ts 的实际守卫资源，生产表行核实移交 T20。表映射、数据库机制、单位换算等协议内容未改动。",
+  "revisionNote": "T04（2026-09-17）在 tables 末尾追加 4 条非旧表登记：operations、assertion_guards、entity_version_log、operation_failures，均来自 0006_consistency_core.sql，无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入该迁移文件。未新增或修改任何 action 取值、目标对象名与校验规则，规范性表面零变化，故不提升 contractVersion。此前记录：T01b（2026-09-17）仅更新了 openQuestions 中 Q04 的 owner 与 resolution：权限映射依据改为 backend/src/index.ts 的实际守卫资源，生产表行核实移交 T20。表映射、数据库机制、单位换算等协议内容未改动。",
   "sources": [
     "backend/migrations/0000_baseline.sql",
     "backend/migrations/0001_erp2_stores_members_permissions.sql",
@@ -11,6 +11,7 @@
     "backend/migrations/0003_orders.sql",
     "backend/migrations/0004_sn.sql",
     "backend/migrations/0005_sn_hardening.sql",
+    "backend/migrations/0006_consistency_core.sql（T04 新增表，非旧结构）",
     "backend/src/index.ts（实际 SQL 用法核对，2026-09-17）"
   ],
   "methodNote": "本映射依据实际迁移文件与实际代码用法编制，不依据旧回执或口头描述。标记为 unverified 的项必须在下游任务中核实后才能依赖。",
@@ -281,6 +282,54 @@
       "notes": [
         "uq_order_item_sn_effective_sn 保证同一 SN 只有一条有效绑定，映射为逐件预留的唯一性基础。",
         "order_item_sn_before_insert_hardening 校验同店、商品匹配与订购数量，保留并审计，不重复实现同一规则。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "operations",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "关键写动作的幂等记录，落地 04 §7；UNIQUE (store_id, request_id) 本身就是幂等断言",
+      "notes": [
+        "新增表，不映射任何旧结构；旧写入口如需接入必须走同一动作服务。",
+        "只登记成功动作；失败由 operation_failures 单独承载，两者不得互相替代。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "assertion_guards",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "通用断言守卫：把「条件更新影响 0 行」变成硬错误；触发器 assertion_guards_abort 携带契约错误码中止整批",
+      "notes": [
+        "静息状态必须为空；出现任何一行都说明守卫被触发，不能当正常数据处理。",
+        "不是业务表，不得被查询接口暴露，也不得进入任何客户输出。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "entity_version_log",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "乐观锁的版本推进日志；主键 (entity_type, entity_id, version) 使并发推进只有一个胜者",
+      "notes": [
+        "旧 orders 没有 version 列，故旧单不能直接充当新版本模型。",
+        "业务表可保留冗余 version 列便于读取，但版本历史以本表为准。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "operation_failures",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "失败动作的脱敏诊断，在失败批次之外单独写入",
+      "notes": [
+        "表名即语义：绝不能被读作「动作成功」的证据。",
+        "只存诊断摘要，禁止写 token、原始请求体或完整客户载荷。"
       ],
       "status": "ok"
     }

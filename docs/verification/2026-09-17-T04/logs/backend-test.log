@@ -1,0 +1,141 @@
+
+> test
+> node --test --test-concurrency=1 "tests/*.test.mjs"
+
+TAP version 13
+# Subtest: 迁移与结构：0006 的四处对象都已建立
+ok 1 - 迁移与结构：0006 的四处对象都已建立
+  ---
+  duration_ms: 4729.0966
+  type: 'test'
+  ...
+# Subtest: 守卫表在静息状态必须为空
+ok 2 - 守卫表在静息状态必须为空
+  ---
+  duration_ms: 76.3777
+  type: 'test'
+  ...
+# Subtest: 正常路径：扣减、流水、幂等记录、版本日志各一笔
+ok 3 - 正常路径：扣减、流水、幂等记录、版本日志各一笔
+  ---
+  duration_ms: 1196.1555
+  type: 'test'
+  ...
+# Subtest: 同 requestId 同载荷：复用原结果，副作用不叠加
+ok 4 - 同 requestId 同载荷：复用原结果，副作用不叠加
+  ---
+  duration_ms: 1117.0131
+  type: 'test'
+  ...
+# Subtest: 同 requestId 改载荷：IDEMPOTENCY_MISMATCH，且不产生副作用
+ok 5 - 同 requestId 改载荷：IDEMPOTENCY_MISMATCH，且不产生副作用
+  ---
+  duration_ms: 1163.0154
+  type: 'test'
+  ...
+# Subtest: 版本不匹配：VERSION_CONFLICT，无任何副作用
+ok 6 - 版本不匹配：VERSION_CONFLICT，无任何副作用
+  ---
+  duration_ms: 1178.3521
+  type: 'test'
+  ...
+# Subtest: 余量不足：STOCK_CONFLICT，无任何副作用
+ok 7 - 余量不足：STOCK_CONFLICT，无任何副作用
+  ---
+  duration_ms: 989.4533
+  type: 'test'
+  ...
+# Subtest: 批次中途失败：整批回滚，业务副作用为零
+ok 8 - 批次中途失败：整批回滚，业务副作用为零
+  ---
+  duration_ms: 1350.3567
+  type: 'test'
+  ...
+# Subtest: 反例：不设防时「影响 0 行」会静默放过后续写入
+ok 9 - 反例：不设防时「影响 0 行」会静默放过后续写入
+  ---
+  duration_ms: 5156.7698
+  type: 'test'
+  ...
+# Subtest: 设防后：同一场景被守卫拦下，整批回滚
+ok 10 - 设防后：同一场景被守卫拦下，整批回滚
+  ---
+  duration_ms: 1038.3733
+  type: 'test'
+  ...
+# Subtest: CHECK 约束即断言：扣成负数会让整批失败
+ok 11 - CHECK 约束即断言：扣成负数会让整批失败
+  ---
+  duration_ms: 634.4504
+  type: 'test'
+  ...
+# Subtest: 唯一约束即断言：版本日志重复插入会让整批失败
+ok 12 - 唯一约束即断言：版本日志重复插入会让整批失败
+  ---
+  duration_ms: 576.1939
+  type: 'test'
+  ...
+# Subtest: 守卫表在任何运行结束后都必须是空的
+ok 13 - 守卫表在任何运行结束后都必须是空的
+  ---
+  duration_ms: 77.0762
+  type: 'test'
+  ...
+# Subtest: 失败动作不留下 operations 成功记录，只留脱敏诊断
+ok 14 - 失败动作不留下 operations 成功记录，只留脱敏诊断
+  ---
+  duration_ms: 1007.3289
+  type: 'test'
+  ...
+# Subtest: 并发：两个客户端从同一版本抢同一资源，只有一个生效
+ok 15 - 并发：两个客户端从同一版本抢同一资源，只有一个生效
+  ---
+  duration_ms: 6268.8882
+  type: 'test'
+  ...
+# Subtest: 并发：同一 requestId 被同时提交两次，副作用仍然恰好一次
+ok 16 - 并发：同一 requestId 被同时提交两次，副作用仍然恰好一次
+  ---
+  duration_ms: 1484.8376
+  type: 'test'
+  ...
+# Subtest: 不同 requestId 抢同一实物：业务唯一约束拒绝第二个
+ok 17 - 不同 requestId 抢同一实物：业务唯一约束拒绝第二个
+  ---
+  duration_ms: 1177.477
+  type: 'test'
+  ...
+# Subtest: 写成功但响应丢失：查询可恢复结果，重发复用不重复扣减
+ok 18 - 写成功但响应丢失：查询可恢复结果，重发复用不重复扣减
+  ---
+  duration_ms: 1117.3765
+  type: 'test'
+  ...
+# Subtest: 查询未知 requestId：如实返回 found=false，不编造结果
+ok 19 - 查询未知 requestId：如实返回 found=false，不编造结果
+  ---
+  duration_ms: 78.8806
+  type: 'test'
+  ...
+# Subtest: 查询时载荷不一致：如实标出 mismatch
+ok 20 - 查询时载荷不一致：如实标出 mismatch
+  ---
+  duration_ms: 886.9232
+  type: 'test'
+  ...
+# Subtest: 失败之后用新 requestId 重试：允许，且不会留下失败请求的残留
+ok 21 - 失败之后用新 requestId 重试：允许，且不会留下失败请求的残留
+  ---
+  duration_ms: 1410.8265
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 33910.3112
+exit=0

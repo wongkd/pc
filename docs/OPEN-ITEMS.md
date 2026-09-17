@@ -1,6 +1,6 @@
 # 未决项与踩坑台账（跨卡片）
 
-更新：2026-09-17（最后由 T02b-rev2 维护）
+更新：2026-09-17（最后由 T04 维护）
 用途：**把「规格没写的」「需要你拍板的」「已经踩过的坑」集中在一处**，便于换一个 AI 继续做，也便于你逐条决定。
 
 - 本文件只做索引与结论，**不复述业务规范**；业务规则以 `docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md` 与契约 `contracts/` 为准。
@@ -15,6 +15,8 @@ node frontend/scripts/sync-contracts.mjs --check    # 网页端内生成物未�
 node miniprogram/scripts/sync-contracts.mjs --check # 小程序端内生成物未漂移
 npm --prefix frontend run test              # 应 6 文件 / 50 用例通过
 npm --prefix miniprogram test               # 应 4 文件 / 39 用例通过（T02b-rev2 后；需先 npm --prefix miniprogram install）
+npm --prefix backend test                   # 应 21 用例通过（T04 后；真实 workerd + 真实 D1）
+node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物未漂移（T04 新增）
 ```
 
 然后读：根 `README.md` → 本文件 → `docs/verification/<最新卡号>/README.md` → 当前任务涉及的规格小节。
@@ -33,6 +35,7 @@ npm --prefix miniprogram test               # 应 4 文件 / 39 用例通过（T
 | **D-E** | 演示样本进了生产构建产物是否现在处理，还是等 T18 | 契约要求「生产包不得携带样本」，现实是 `dist/assets/*.js` 里有 `DEMO-SO-003` | 处理方式有三种（按环境动态导入 / 构建期排除 / 保留到 T18 统一做），代价不同 | **在此之前本卡产物不得当可用版本发布** |
 | **D-F** | 今天页统计条**不再四格等分**（金额格 260rpx、计数格 ≈153rpx） | T02b-rev2 修 R-14 时采用了「金额格加宽 + 字号分档」。设计稿 v3 是四格等分，但那与 02 §1「小数位不能为了好看掩盖分」冲突（设计稿写 `¥12,800`，真实渲染是 `¥12,800.00`） | 要维持严格等分只能改走方案 A（保住等分、金额压到 ≈30rpx，比同排计数小 25%），观感取舍需你定 | 三种方案与实测数见 `docs/verification/2026-09-17-T02b-rev2/README.md` §3 |
 | **D-G** | 详情页「阶段」两端做法**互相矛盾**，T02c 的 `ProgressSteps` 提取被它卡住 | 网页端（T02a）在 `WorkbenchTodayPage.tsx` 里**硬编码三步** `['已确认成交','备货 / 检测','收款与交付']`，并用「有没有卡点」**推测**当前进度（`index===1 && blockerSummary ? is-blocked : ...`）；小程序端（T02b D8）因为 V1 读模型没有阶段字段，**明确拒绝画推测进度**，只写承位说明。同一规格点（02 §107）两端相反 | 要定「阶段」的数据来源：① 照网页端做法（阶段=按事项类型手写模板 + 由卡点推测状态）② 等契约补详情读模型（阶段/检查项字段 + 样本）后再两端一起做 ③ 两端都退成承位说明。**Q-T02b-2 的升级版**；不定就无法提取 ProgressSteps | 阻塞 T02c；涉及是否新增契约对象与扩 V1 样本（T08 / T12 / T14） |
+| **D-H** | `operations.result_json` 的结构是否升入契约（成为规范性定义） | T04 把动作结果（summary / effects / entityType / entityId / version）存进 `operations.result_json`。结构目前由 `backend/src/domains/operations.ts` 的 `OperationOutcome` 定义，**契约未声明**（与 D-A 的 `amountSummary` 同类问题） | 与 D-A 合并考虑：若两者都升入 `objects.json`，属于新增规范性表面，须提 `contractVersion` → 建 `contracts/v2/`。若不升，两端只能按实现约定消费，客户端拿不到类型 | 影响「结果未知查询」的响应结构（GET /operations/:requestId 已在 T04 预留 `queryOperation`）。D4 已裁定跳 T02c，但本项与 D-A 应在 T07/T08 前定 |
 
 ---
 
@@ -56,7 +59,6 @@ npm --prefix miniprogram test               # 应 4 文件 / 39 用例通过（T
 | 编号 | 事项 | 卡在哪 | 归属 |
 |---|---|---|---|
 | T-03 | 后端三个生产 secret 未写入远端 | 本机无 Cloudflare 登录态 | **补做 `wrangler secret put` 前禁止 `wrangler deploy`** |
-| T-04 | 本地 D1 测试入口不存在（历史 harness 已丢失，`backend/package.json` 无 `test` 脚本，未装 `typescript`） | 需重建 | T04 |
 | T-05 | 微信平台条件：**AppID 已提供（`wx1b14bf01ef71718d`，2026-09-17）**；小程序主体 / 成员、API 域名、对象存储、店内网络、真机仍未知 | 部分已提供，其余等用户 | 阻塞 T03 / T16 / T21 |
 | T-06 | 生产 D1 的 `0004` / `0005` 是否已应用 | 未核实 | T20 |
 | T-07 | `permissions` 表实际行内容 | 未核实（契约已改为按代码守卫映射，不依赖表行） | T20 |
@@ -84,6 +86,10 @@ npm --prefix miniprogram test               # 应 4 文件 / 39 用例通过（T
 | P-12 | 校验脚本自身也会写错 | 曾把「公式结果」当「输入项」判空 → 12 项连锁误报 | 依赖检查必须区分输入项与派生项 |
 | P-13 | **换壳 / 搬入口时会连同「可见性条件」一起丢掉** | 旧壳对「系统设置」有 `permissions` 判断，T02a 把它移进头像菜单时差点漏掉，那样任何店员都能看到设置入口 | 迁移入口时逐条对着旧实现核对**条件**，不只核对路径；并补测试 |
 | P-14 | **用设计稿对齐排版时，按稿上的示例字符数算宽度会漏掉真实渲染** | 设计稿统计条写 `¥12,800`（7 字符、不带分位），真实必须渲染 `¥12,800.00`（10 字符，02 §1 不许掩盖分）→ 等分格装不下，实测被裁（R-14） | 排版对齐时用**真实渲染文案**（含分位、含千分位、含前后缀）算宽度，不能用稿上的示例值；能算就写成约束测试 |
+| P-15 | **注释里出现「星号加斜杠」会提前闭合块注释** | T04 的 `tests/lib/build.mjs` 文件头写了 `.validation-*` + `/` 形式的路径通配，注释提前结束，后续整段被当代码，报出的却是下一行的 `SyntaxError: Unexpected identifier '$'`，差点往模板字符串上排查 | 注释里不要写出「星号紧跟斜杠」的组合；写目录通配时拆开或改措辞。**看语法错误先回看前文是否提前闭合** |
+| P-16 | **miniflare 的 `scriptPath` 不编译 TypeScript** | 用它托管 `worker.ts` 直接报 `Unable to parse ...: Unexpected token` —— 只有 wrangler 才走 esbuild 转译 | 测试要调 TS 代码时，先用 esbuild 打包成 `.mjs` 再 import（见 `backend/tests/lib/build.mjs`） |
+| P-17 | **D1 的 `exec()` 按换行切分语句** | 多行 `CREATE TABLE` 被切成半句，报 `incomplete input`；而触发器体内自带分号，按 `;` 裸拆同样会切坏 | 自己写拆分器：跳过注释与字符串字面量，并把 `CREATE TRIGGER ... BEGIN ... END` 整体当一条语句（见 `backend/tests/lib/sql.mjs`） |
+| P-18 | **`node --test` 不会因为测试跑完就退出** | 留下活动句柄（未 dispose 的 workerd）时会挂住；管道缓冲让外面看不到任何输出，表现为「跑了 4 分钟没动静」，极易误判为卡死 | 确保 `dispose()`；探测类脚本显式 `process.exit()`。日志**重定向到文件再读**，不要依赖管道 `tail` |
 
 ---
 
@@ -112,7 +118,8 @@ npm --prefix miniprogram test               # 应 4 文件 / 39 用例通过（T
 | **微信开发者工具编译**（T02b 的「小程序必须编译出原生页面」） | ✅ **T02b-rev2 已跑通**：`cli.js preview` 实际编译通过、AppID 正确识别、无编译错误，并首次拿到体积（总 77.4KB / 主包 68.5KB / 分包 9.0KB）。**但 `preview` 不产出截图，渲染结论仍未验**；`preview` 会生成预览码（约 25 分钟失效），这是本机唯一能拿到真机观感的通道 |
 | 小程序真机 / iOS / Android | AppID 已配置（现由本项目单独使用）；**模拟器实拍已确认今天页渲染正常**（T02b §14）；**真机条件仍缺** —— 02 §188 要求的 iOS / Android 实机截图未提供 |
 | 小程序视觉验收（320 / 375 / 390 / 430、字体放大、返回恢复的滚动位置） | 需开发者工具或真机。今天页已在模拟器实拍过一次（T02b §14），**R-14 修复后的形态尚未实拍**（T02b-rev2 §7）；详情页仍从未在渲染环境里看过 |
-| 后端集成、并发、幂等 | T04 的本地 D1 测试入口还没重建 |
+| ~~后端集成、并发、幂等~~ | ✅ **T04 已重建**：`npm --prefix backend test` = 真实 workerd + 真实 D1，21 用例覆盖中途失败回滚、0 行断言、幂等复用/冲突、并发争用、结果恢复。**但「并发」是同一实例内两条请求同时在途**，跨实例 / 跨机房竞争仍未测 |
+| 生产 D1 的迁移状态（含 0006） | 0004 / 0005 是否应用本就未核实；0006 **确认未应用**。在 T20 与明确授权前不得 apply |
 
 ---
 
@@ -134,3 +141,4 @@ npm --prefix miniprogram test               # 应 4 文件 / 39 用例通过（T
 | R-12 | 微信开发者工具的自动化与截屏 | **三条限制**（均与项目代码无关）：① `cli.js open` 对**已打开的项目**报 `TypeError: d.on is not a function`（`openOrCreateWindow` 缺陷），须先 `cli.js quit` 再 open；② 本版本 `cli.js auto` **没有 `--auto-port` 选项**，`miniprogram-automator` 的 `launch()` 因此连不上 → **自动化截图不可用**；③ 本机安全策略**封死** `Add-Type`、`[Reflection.Assembly]::LoadWithPartialName`、`New-Object -ComObject` 三种截屏途径。⇒ 要小程序截图，只能在工具界面手动截 |
 | R-13 | **小程序项目归属（已裁定）** | **`pc-quote/miniprogram` 是本项目唯一的小程序项目**（2026-09-17 用户选 A）。原同盘另一条线 `工作同步\装一下机小程序`（云开发 QuickStart 模板，58 文件 / 1.4MB，**内容已核实无任何业务代码**）按用户指示**已于 2026-09-17 23:15 移除**，完整保留在 `pc-quote/backups/装一下机小程序-已移除-20260917`（放该目录是因为 `backups/` 已被 gitignore）。**AppID `wx1b14bf01ef71718d` 现已归本项目单独使用**。另：在工具里「打开项目」必须选到 **`…\pc-quote\miniprogram` 这一层**；只选到 `…\pc-quote` 会报「在项目根目录未找到 app.json」 |
 | R-14 | **统计条金额溢出** | ✅ **T02b-rev2 已修**。根因不是字号选错，而是**格宽与内容不匹配**：四格等分时单格内容宽 ≈89.75px，而 `¥12,800.00` 是 10 字符 ≈117px（T02b §14 的记载写「`.metric-value` 用 `--mp-fs-amount` 48rpx」与代码不符 —— 排版修订已降到 40rpx，记载没跟上，rev2 已更正）。修法：金额格 `min-width: 260rpx`（02 §1 明文许可「金额位数超过样图时允许布局增长」）+ 数值按字符类别分档（40/36/32/28rpx，下限 28rpx、永不省略）。见 [2026-09-17-T02b-rev2](../verification/2026-09-17-T02b-rev2/README.md)。**修复后的渲染仍未实拍**（本机截不了屏），视觉确认待做；布局是否维持等分见 §1 的 D-F |
+| R-15 | **本地 D1 测试入口与一致性基础设施（原 T-04）** | ✅ **T04 已重建**（2026-09-17）。`backend/tests/` 用 miniflare 起**真实 workerd + 真实 D1**，按序应用全部迁移，被测 TS 经 esbuild 打包后直接调用；命令 `npm --prefix backend test`，**21 用例通过**。同时新增：`0006_consistency_core.sql`（operations / assertion_guards+触发器 / entity_version_log / operation_failures）、`backend/src/domains/operations.ts`（幂等执行器与断言守卫）、`backend/scripts/sync-error-codes.mjs`（契约错误码单向生成到后端，可 `--check`）。核心机制一句话：**约束即断言** —— 唯一约束管幂等与逐件预留、CHECK 管非负与不超额、守卫表管其余复合条件；**不依赖 `changes()`、不依赖 Worker 内存锁**。详见 [2026-09-17-T04](../verification/2026-09-17-T04/README.md) |

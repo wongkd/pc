@@ -1,0 +1,248 @@
+
+> pc-quote-miniprogram@0.0.0 test
+> node --test "tests/*.test.mjs"
+
+TAP version 13
+# Subtest: formatCents 千分位与两位小数（与电脑端显示格式一致）
+ok 1 - formatCents 千分位与两位小数（与电脑端显示格式一致）
+  ---
+  duration_ms: 0.964
+  type: 'test'
+  ...
+# Subtest: formatCents 保留负号（退款 / 冲销）
+ok 2 - formatCents 保留负号（退款 / 冲销）
+  ---
+  duration_ms: 0.1443
+  type: 'test'
+  ...
+# Subtest: formatCents 不吞掉「分」
+ok 3 - formatCents 不吞掉「分」
+  ---
+  duration_ms: 0.0881
+  type: 'test'
+  ...
+# Subtest: formatYuan 带 ¥ 前缀
+ok 4 - formatYuan 带 ¥ 前缀
+  ---
+  duration_ms: 0.0776
+  type: 'test'
+  ...
+# Subtest: 待收：显示尾款与方向，并给出总额 / 已收明细
+ok 5 - 待收：显示尾款与方向，并给出总额 / 已收明细
+  ---
+  duration_ms: 0.245
+  type: 'test'
+  ...
+# Subtest: 结清：显示「已结清」并提醒仍需确认实物交出
+ok 6 - 结清：显示「已结清」并提醒仍需确认实物交出
+  ---
+  duration_ms: 0.8915
+  type: 'test'
+  ...
+# Subtest: 应付：显示为「应付客户」，不得变成负尾款
+ok 7 - 应付：显示为「应付客户」，不得变成负尾款
+  ---
+  duration_ms: 0.2476
+  type: 'test'
+  ...
+# Subtest: 预计：初估要标明「预计」且不计确定应收
+ok 8 - 预计：初估要标明「预计」且不计确定应收
+  ---
+  duration_ms: 0.1184
+  type: 'test'
+  ...
+# Subtest: 未定价：写「待确认」，不得用 ¥0 冒充
+ok 9 - 未定价：写「待确认」，不得用 ¥0 冒充
+  ---
+  duration_ms: 0.2341
+  type: 'test'
+  ...
+# Subtest: 无金额记录时不虚构金额
+ok 10 - 无金额记录时不虚构金额
+  ---
+  duration_ms: 0.2659
+  type: 'test'
+  ...
+# Subtest: 主动作：禁用时必须给出可读原因
+ok 11 - 主动作：禁用时必须给出可读原因
+  ---
+  duration_ms: 0.173
+  type: 'test'
+  ...
+# Subtest: 样本条数与契约 V1 一致
+ok 12 - 样本条数与契约 V1 一致
+  ---
+  duration_ms: 0.6784
+  type: 'test'
+  ...
+# Subtest: 每条样本与契约逐字段相等（字段顺序不计）
+ok 13 - 每条样本与契约逐字段相等（字段顺序不计）
+  ---
+  duration_ms: 0.6396
+  type: 'test'
+  ...
+# Subtest: 演示标识由 ID 前缀承载，且 taskId / entityId 唯一
+ok 14 - 演示标识由 ID 前缀承载，且 taskId / entityId 唯一
+  ---
+  duration_ms: 0.1728
+  type: 'test'
+  ...
+# Subtest: 固定演示日期来自契约，不随运行当天漂移
+ok 15 - 固定演示日期来自契约，不随运行当天漂移
+  ---
+  duration_ms: 0.0684
+  type: 'test'
+  ...
+# Subtest: 四项指标与契约 metrics 一致
+ok 16 - 四项指标与契约 metrics 一致
+  ---
+  duration_ms: 0.1257
+  type: 'test'
+  ...
+# Subtest: 类别计数与契约 expected.categoryCounts 一致
+ok 17 - 类别计数与契约 expected.categoryCounts 一致
+  ---
+  duration_ms: 0.08
+  type: 'test'
+  ...
+# Subtest: 待收 = countsTowardReceivable 的 balanceCents 之和（按契约重算）
+ok 18 - 待收 = countsTowardReceivable 的 balanceCents 之和（按契约重算）
+  ---
+  duration_ms: 0.2158
+  type: 'test'
+  ...
+# Subtest: 初估与未确认费用不得计入待收
+ok 19 - 初估与未确认费用不得计入待收
+  ---
+  duration_ms: 0.1463
+  type: 'test'
+  ...
+# Subtest: 金额恒等式：balanceCents = totalCents - receivedCents - offsetCents
+ok 20 - 金额恒等式：balanceCents = totalCents - receivedCents - offsetCents
+  ---
+  duration_ms: 0.2484
+  type: 'test'
+  ...
+# Subtest: 禁用的主动作必须给出可读阻断原因
+ok 21 - 禁用的主动作必须给出可读阻断原因
+  ---
+  duration_ms: 0.2858
+  type: 'test'
+  ...
+# Subtest: 演示排序可复现，且不修改原集合
+ok 22 - 演示排序可复现，且不修改原集合
+  ---
+  duration_ms: 7.4221
+  type: 'test'
+  ...
+# Subtest: 排序规则：有截止时间的在前，无截止时间的在最后
+ok 23 - 排序规则：有截止时间的在前，无截止时间的在最后
+  ---
+  duration_ms: 0.1234
+  type: 'test'
+  ...
+# Subtest: findTaskById 只按 ID 命中，未知 ID 返回 undefined
+ok 24 - findTaskById 只按 ID 命中，未知 ID 返回 undefined
+  ---
+  duration_ms: 0.0714
+  type: 'test'
+  ...
+# Subtest: 逾期判断用固定演示日期比较（V1 无逾期样本，故此处构造用例）
+ok 25 - 逾期判断用固定演示日期比较（V1 无逾期样本，故此处构造用例）
+  ---
+  duration_ms: 0.0719
+  type: 'test'
+  ...
+# Subtest: 分类标签覆盖 TaskCategory 全部取值
+ok 26 - 分类标签覆盖 TaskCategory 全部取值
+  ---
+  duration_ms: 0.0823
+  type: 'test'
+  ...
+# Subtest: deviceShortName 取「·」之前那段
+ok 27 - deviceShortName 取「·」之前那段
+  ---
+  duration_ms: 0.8642
+  type: 'test'
+  ...
+# Subtest: deviceShortName 没有分隔符时整段返回
+ok 28 - deviceShortName 没有分隔符时整段返回
+  ---
+  duration_ms: 0.1751
+  type: 'test'
+  ...
+# Subtest: deviceShortName 多个分隔符只取第一段
+ok 29 - deviceShortName 多个分隔符只取第一段
+  ---
+  duration_ms: 0.1885
+  type: 'test'
+  ...
+# Subtest: deviceShortName 空值返回空串，不返回 "null" 或占位符
+ok 30 - deviceShortName 空值返回空串，不返回 "null" 或占位符
+  ---
+  duration_ms: 0.0934
+  type: 'test'
+  ...
+# Subtest: deviceShortName 不进一步截断（含空格的型号必须完整保留）
+ok 31 - deviceShortName 不进一步截断（含空格的型号必须完整保留）
+  ---
+  duration_ms: 0.0813
+  type: 'test'
+  ...
+# Subtest: 七条样本都能切出非空且不含状态词的简称
+ok 32 - 七条样本都能切出非空且不含状态词的简称
+  ---
+  duration_ms: 0.2602
+  type: 'test'
+  ...
+# Subtest: 回归钉：等分四格装不下 ¥12,800.00（T02b §14.2 实测缺陷 1）
+ok 33 - 回归钉：等分四格装不下 ¥12,800.00（T02b §14.2 实测缺陷 1）
+  ---
+  duration_ms: 0.8416
+  type: 'test'
+  ...
+# Subtest: 02 §103 点名的金额形态不得落到下限档
+ok 34 - 02 §103 点名的金额形态不得落到下限档
+  ---
+  duration_ms: 0.2105
+  type: 'test'
+  ...
+# Subtest: 金额越长档位只降不升，且永不越过下限
+ok 35 - 金额越长档位只降不升，且永不越过下限
+  ---
+  duration_ms: 0.2401
+  type: 'test'
+  ...
+# Subtest: 预算外只降到下限，不返回空档位也不省略数字
+ok 36 - 预算外只降到下限，不返回空档位也不省略数字
+  ---
+  duration_ms: 0.6992
+  type: 'test'
+  ...
+# Subtest: 所选档位满足宽度预算（下限档除外）
+ok 37 - 所选档位满足宽度预算（下限档除外）
+  ---
+  duration_ms: 0.2518
+  type: 'test'
+  ...
+# Subtest: 档位类名、字号与格宽必须在今天页样式里真实存在（rpx = px × 2）
+ok 38 - 档位类名、字号与格宽必须在今天页样式里真实存在（rpx = px × 2）
+  ---
+  duration_ms: 0.4413
+  type: 'test'
+  ...
+# Subtest: 模板与页面真的把这套档位接上了（防样式写了没人用）
+ok 39 - 模板与页面真的把这套档位接上了（防样式写了没人用）
+  ---
+  duration_ms: 0.2342
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 156.1334

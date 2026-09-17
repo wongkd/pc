@@ -1,0 +1,19 @@
+
+> pc-quote-app@0.0.0 build
+> tsc -b && vite build
+
+[36mvite v8.0.11 [32mbuilding client environment for production...[36m[39m
+[2Ktransforming...✓ 261 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                         1.94 kB │ gzip:   1.02 kB
+dist/assets/index-Ca13W-xk.css         85.41 kB │ gzip:  15.96 kB
+dist/assets/typeof-mVVFPGHC.js          0.27 kB │ gzip:   0.16 kB
+dist/assets/purify.es-BEO7sGA_.js      22.44 kB │ gzip:   8.81 kB
+dist/assets/index.es-ad1giZ96.js      151.41 kB │ gzip:  48.89 kB
+dist/assets/html2canvas-B9ZTowNt.js   199.56 kB │ gzip:  46.78 kB
+dist/assets/index-DVUI6sVV.js         380.54 kB │ gzip: 113.13 kB
+dist/assets/jspdf.es.min-DibMtGyv.js  399.25 kB │ gzip: 129.53 kB
+dist/assets/xlsx-B1VYu86S.js          424.76 kB │ gzip: 141.51 kB
+
+[32m✓ built in 2.07s[39m

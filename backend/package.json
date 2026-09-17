@@ -1,7 +1,13 @@
 {
+  "scripts": {
+    "test": "node --test --test-concurrency=1 \"tests/*.test.mjs\"",
+    "check:error-codes": "node scripts/sync-error-codes.mjs --check"
+  },
   "devDependencies": {
     "@cloudflare/workerd-windows-64": "^1.20260625.1",
     "@cloudflare/workers-types": "^4.20260702.1",
+    "esbuild": "^0.28.1",
+    "miniflare": "^4.20260625.0",
     "wrangler": "^4.105.0"
   }
 }
