@@ -61,3 +61,8 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# 微信开发者工具：把仓库根目录误当小程序项目打开时会生成这两个文件
+# （2026-09-17 实际发生过：工具的「打开项目」选浅了一层）
+/project.config.json
+project.private.config.json
