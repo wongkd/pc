@@ -147,40 +147,51 @@ function buildEnums(enumsDoc) {
 
 function buildObjects(objectsDoc, enumsDoc) {
   const enumNames = Object.keys(enumsDoc.enums)
+  const baseImports = ['ContractId', 'Cents', 'Instant', 'CalendarDate', 'JsonValue', 'JsonObject']
+
+  const body = []
+  body.push('// 持久对象默认另含 CommonFields；正式事件类对象另含 EventFields 的相关子集。')
+  body.push('// 生成器不自动合并这两组字段，避免把读模型也套上持久字段；是否需要由各端按使用场景显式组合。')
+  body.push('export interface CommonFields {')
+  for (const [k, v] of Object.entries(objectsDoc.commonFields)) {
+    body.push(`  ${k}: ${tsTypeOf(v, enumNames)}${fieldComment(v)}`)
+  }
+  body.push('}')
+  body.push('')
+  body.push('export interface EventFields {')
+  for (const [k, v] of Object.entries(objectsDoc.eventFields)) {
+    body.push(`  ${k}: ${tsTypeOf(v, enumNames)}${fieldComment(v)}`)
+  }
+  body.push('}')
+  body.push('')
+
+  for (const [objName, obj] of Object.entries(objectsDoc.objects)) {
+    body.push(`/** ${obj.desc} */`)
+    body.push(`export interface ${pascal(objName)} {`)
+    for (const [fieldName, field] of Object.entries(obj.fields)) {
+      body.push(`  ${fieldName}: ${tsTypeOf(field, enumNames)}${fieldComment(field)}`)
+    }
+    body.push('}')
+    body.push('')
+  }
+
+  // 只导入正文真正引用到的类型。
+  // 原因：端内 tsconfig 开了 noUnusedLocals，全量导入会让生成物在网页端直接编译失败
+  // （T02a 实测 6 处 TS6196）。导入集合由正文推导，不需要人工维护。
+  const text = body.join('\n')
+  const used = [...baseImports, ...enumNames].filter((name) =>
+    new RegExp(`\\b${name}\\b`).test(text),
+  )
+
   const lines = []
   lines.push(HEADER)
   lines.push(`// 生成命令：${GENERATE_COMMAND}`)
   lines.push('// 来源：contracts/v1/objects.json；字段与 nullable 以契约为准。')
-  lines.push("import type {")
-  lines.push('  ContractId, Cents, Instant, CalendarDate, JsonValue, JsonObject,')
-  for (const name of enumNames) lines.push(`  ${name},`)
+  lines.push('import type {')
+  lines.push(`  ${used.join(', ')},`)
   lines.push("} from './enums'")
   lines.push('')
-  lines.push('// 持久对象默认另含 CommonFields；正式事件类对象另含 EventFields 的相关子集。')
-  lines.push('// 生成器不自动合并这两组字段，避免把读模型也套上持久字段；是否需要由各端按使用场景显式组合。')
-  lines.push('export interface CommonFields {')
-  for (const [k, v] of Object.entries(objectsDoc.commonFields)) {
-    lines.push(`  ${k}: ${tsTypeOf(v, enumNames)}${fieldComment(v)}`)
-  }
-  lines.push('}')
-  lines.push('')
-  lines.push('export interface EventFields {')
-  for (const [k, v] of Object.entries(objectsDoc.eventFields)) {
-    lines.push(`  ${k}: ${tsTypeOf(v, enumNames)}${fieldComment(v)}`)
-  }
-  lines.push('}')
-  lines.push('')
-
-  for (const [objName, obj] of Object.entries(objectsDoc.objects)) {
-    lines.push(`/** ${obj.desc} */`)
-    lines.push(`export interface ${pascal(objName)} {`)
-    for (const [fieldName, field] of Object.entries(obj.fields)) {
-      lines.push(`  ${fieldName}: ${tsTypeOf(field, enumNames)}${fieldComment(field)}`)
-    }
-    lines.push('}')
-    lines.push('')
-  }
-  return lines.join('\n')
+  return lines.concat(body).join('\n')
 }
 
 function buildActions(actionsDoc, enumsDoc) {

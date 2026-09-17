@@ -1,6 +1,6 @@
 # contracts · 跨端契约
 
-日期：2026-09-17。状态：v1 已冻结（T01a、T01b 完成并经 T01-rev1 修订，T01c 补齐虚构样本与 DTO 生成流程）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。
+日期：2026-09-17。状态：v1 已冻结（T01a、T01b 完成并经 T01-rev1 修订，T01c 补齐虚构样本与 DTO 生成流程，T02a 修生成器的类型导入并按契约落地网页端生成物）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。跨卡片未决项：[docs/OPEN-ITEMS.md](../docs/OPEN-ITEMS.md)。
 
 本目录是电脑网页端与微信小程序共用的协议唯一来源。两端不得各自维护一份枚举、金额公式或错误码。
 
@@ -18,7 +18,8 @@
 | `v1/fixtures.json` | 06 §2 的 V1–V4 虚构样本、边界输入、预期结果、可机械重算的金额算例、DTO 生成配置 | T01c |
 | `generated/` | 由 `tools/generate-dto.mjs` 从 v1 单向生成的端内枚举与类型。**生成物禁止手工编辑** | T01c |
 | `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b + T01-rev1 + T01c |
-| `tools/generate-dto.mjs` | 端内 DTO 生成器（单向生成，带 `--check`） | T01c |
+| `tools/generate-dto.mjs` | 端内 DTO 生成器（单向生成，带 `--check`） | T01c（T02a 修复未使用类型导入） |
+| `frontend/scripts/sync-contracts.mjs` | 把生成物落到网页端内目录，并做「契约 → 中立生成物 → 端内」三方防漂移校验（不在本目录，属端内脚本） | T02a |
 
 ## 2. 校验方式
 
@@ -50,6 +51,18 @@ node contracts/tools/validate-contracts.mjs
 - 注入「缺口 `specBasis` 引文不存在」「`origin` 不在取值表内」「删掉 `Purchase.orderedQty`」→ T01-rev1 已验，三项分别报出对应失败项；
 - 注入「手改生成物一个字符」「改一个算例的期望金额」「抽掉一条 V1 样本」「删掉算例的空值原因」→ T01c 已验，四项分别报出对应失败项。
 
+## 2.1 端内生成物与防漂移
+
+生成物从 `contracts/v1` 单向生成，中立产物在 `contracts/generated/`，各端在**自己的任务卡**里落地一份消费副本（`fixtures.dtoGeneration.targets` 冻结了路径）。
+
+```bash
+node contracts/tools/generate-dto.mjs            # 重生成中立产物
+node frontend/scripts/sync-contracts.mjs         # 落网页端内目录
+node frontend/scripts/sync-contracts.mjs --check # 三方防漂移复验
+```
+
+`sync-contracts.mjs` 会自检「契约声明的 web 目标路径」与「脚本实际写入路径」是否一致（改路径必须先改契约），并做三方比对：**契约源文件 → 中立生成物 → 端内副本**。任何一方被手工改动都会报错。T02a 已用三种注入（手改端内生成物、改端内样本、改契约样本）验证闸门有效。
+
 ## 3. 变更流程
 
 1. 已冻结文件**不原地改写**。需要变更时新增 `v1.x` 或 `v2` 目录并提升 `contractVersion`。
@@ -72,7 +85,8 @@ node contracts/tools/validate-contracts.mjs
 | 取消未交付单时原确认成交额如何退出销售净应计 | 方案未定义，fixtures 的 `openItems` F01 已登记 | T08a |
 | 回收未取得所有权时剩余应付的表示（null 还是另有约定） | 方案未定义，`openItems` F02 已登记 | T14a |
 | `amountSummary` / `primaryAction` 子结构是否升为 objects.json 的规范性定义 | 本契约暂冻结在 `fixtures.json`，`openItems` F03 待裁定 | 项目负责人 |
-| 生成物落地到端内目录的方式 | 本卡只产中立生成物，接入由 T02 执行，`openItems` F04 | T02a / T02b |
+| **生成物在前端严格配置下无法编译**（T02a 发现并修复） | `objects.ts` 原先把全部 36 个枚举类型无条件导入，前端 `noUnusedLocals` 下报 6 处 `TS6196`。已把 `buildObjects()` 改为按正文实际引用过滤 import。**生成物仍禁止手工编辑**，同类问题一律改生成器 | 已修（T02a），如需分行输出超长导入行仍属生成器改动 |
+| 生成物落地到端内目录的方式 | 网页端已落地 `frontend/src/contracts/generated`（T02a，含防漂移脚本）；**契约里 `dtoGeneration.targets[id=web].status` 仍是 `pending`，需一次契约修订回写**（改已冻结文件须留 `revisionNote`）；小程序端仍待 T02b | T02c / T02b |
 | V1 样本的列表排序 | 本卡只冻数据不冻顺序，`openItems` F05 | T18 |
 
 **已澄清、不再视为缺口**：`Purchase` 不需要存储状态字段 —— 采购进度由 `orderedQty / receivedQty / cancelledQty` 派生（在途 = 三者相减），04 §2 的最低字段列本就没有状态字段。派生式见 `objects.json` 的 `Purchase.derivedFields`。T01b 曾误将其登记为「对象层遗漏」，T01-rev1 已更正。
@@ -105,6 +119,7 @@ node contracts/tools/validate-contracts.mjs
 | T01b | 2026-09-17 | 新增 `actions.json`（动作、权限、旧权限映射、状态机缺口登记）；校验脚本加第 10 节 | v1 不变 |
 | T01-rev1 | 2026-09-17 | 更正状态机缺口登记：`Purchase` 移出 gaps（在途为派生值）、`ReturnRecord` 重述为规格未定义；全部条目补 `specBasis` 与 `origin`；`objects.json` 补派生态与事实映射；校验脚本加第 11 节 | v1 不变（见下） |
 | T01c | 2026-09-17 | 新增 `v1/fixtures.json`（V1–V4 样本、边界输入、12 组金额算例、DTO 生成配置、5 项未决项）；新增 `tools/generate-dto.mjs` 与 `generated/`；校验脚本加第 12 节（样本重算 + 生成物防手改） | v1 不变（见下） |
+| T02a | 2026-09-17 | **修生成器**：`buildObjects()` 只导入正文实际引用的类型（原先全量导入导致前端 `noUnusedLocals` 编译失败）；`generated/objects.ts` 与 `manifest.json` 哈希随之更新并重新生成。契约规范性表面**未变** | v1 不变（见下） |
 
 T01-rev1 **未变更任何规范性表面** —— 字段名、类型、枚举取值、动作编号、错误码均无变化，新增的 `derivedFields` / `factMapping` / `notStored` / `specBasis` / `originValues` 均为非规范性注解，故未提升 `contractVersion`，改为在原文件内留 `revisions` 记录。⚠️ **此判断属治理决策，须项目负责人裁定**；若要求严格按第 3 节第 1 条执行，应改建 `contracts/v2/`。
 

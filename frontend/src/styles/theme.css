@@ -1,0 +1,75 @@
+/**
+ * T02a · 双端共享视觉变量（网页侧）。
+ *
+ * 值来源：docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md §1「设计变量」。
+ *
+ * ⚠️ 变量名统一加 `wb-` 前缀，不用规格表里的裸名（paper / ink / muted / line）。
+ * 原因：frontend/src/index.css 的 `:root` 已经占用了 `--line`、`--muted`、`--ink`、
+ * `--page-bg` 等裸名，且 AppShell 会同时包住报价编辑器。若在壳里重定义裸名，
+ * 报价页的分隔线与次要文字会跟着变色 —— 属于「顺手改坏已确认功能」。
+ *
+ * 本文件不写任何业务规则的样式判定（金额、库存、权限只决定文案与能否点击）。
+ */
+
+.app-shell {
+  /* 底色与正文 */
+  --wb-paper: #f8f6ef;
+  --wb-ink: #334b42;
+  --wb-muted: #687365;
+  --wb-line: #d9ddd0;
+  --wb-sage: #e8edde;
+  --wb-photo: #ece9de;
+  --wb-surface: #fffef9;
+
+  /* 语义色：缺货 / 延误 / 待核实；失败 / 不可逆 */
+  --wb-warning: #826021;
+  --wb-warning-bg: #f1e9d2;
+  --wb-danger: #9b3c32;
+  --wb-danger-bg: #f5e6e2;
+
+  /* 节奏：4–48px 共同节拍 */
+  --wb-s1: 4px;
+  --wb-s2: 8px;
+  --wb-s3: 12px;
+  --wb-s4: 16px;
+  --wb-s5: 20px;
+  --wb-s6: 24px;
+  --wb-s8: 32px;
+  --wb-s10: 40px;
+  --wb-s12: 48px;
+
+  /* 低圆角：对话框最多 8px，避免所有内容卡片化 */
+  --wb-radius: 4px;
+  --wb-radius-dialog: 8px;
+
+  /* 触控：最小 44×44，主动作 48 高 */
+  --wb-touch: 44px;
+  --wb-touch-primary: 48px;
+
+  /* 字体分工：衬线只用于页标题、设备名与少量大金额 */
+  --wb-font-sans: system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
+    sans-serif;
+  --wb-font-serif: Georgia, "Songti SC", "SimSun", "Noto Serif SC", serif;
+
+  /* 字号：桌面正文 14–16、次要 12–13、页标题与金额 28–32 */
+  --wb-fs-body: 15px;
+  --wb-fs-secondary: 13px;
+  --wb-fs-small: 12px;
+  --wb-fs-label: 13px;
+  --wb-fs-title: 30px;
+  --wb-fs-amount: 30px;
+  --wb-fs-device: 19px;
+}
+
+/* 壳接管页面底色时去掉 index.css 给 body 的灰蓝渐变与内边距。
+   仅挂在 .app-shell 存在期间，组件卸载会移除该类。 */
+body.wb-shell-body {
+  padding: 0;
+  background: var(--wb-paper, #f8f6ef);
+}
+
+/* 金额与编号尽量等宽数字；小数位不为了「好看」被吞掉 */
+.wb-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}

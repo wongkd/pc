@@ -1,0 +1,342 @@
+/**
+ * T02a · 网页壳（AppShell）样式。
+ * 尺寸依据 02-ui-specification.md §3「电脑工作台」：顶栏 76px、两侧 44px，1366×768 顶栏可压到 66px。
+ * 触控目标与圆角依据 §1 设计变量。类名统一 `wb-` 前缀，与既有 index.css 不共用选择器。
+ */
+
+.app-shell {
+  min-height: 100vh;
+  background: var(--wb-paper);
+  color: var(--wb-ink);
+  font-family: var(--wb-font-sans);
+  font-size: var(--wb-fs-body);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── 离线提示 ───────────────────────────────────────────── */
+.wb-offline-bar {
+  padding: var(--wb-s2) var(--wb-s5);
+  background: var(--wb-warning-bg);
+  color: var(--wb-warning);
+  font-size: var(--wb-fs-secondary);
+  border-bottom: 1px solid var(--wb-line);
+}
+
+/* ── 顶栏 ───────────────────────────────────────────────── */
+.wb-topbar {
+  min-height: 76px;
+  padding: 0 44px;
+  display: flex;
+  align-items: center;
+  gap: var(--wb-s6);
+  border-bottom: 1px solid var(--wb-line);
+  background: var(--wb-surface);
+  flex-wrap: wrap;
+}
+
+.wb-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-s3);
+  min-width: 0;
+}
+
+.wb-brand-mark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--wb-ink);
+  border-radius: var(--wb-radius);
+  font-family: var(--wb-font-serif);
+  font-size: 16px;
+  letter-spacing: 0.02em;
+}
+
+.wb-brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.wb-brand-copy strong {
+  font-family: var(--wb-font-serif);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.wb-brand-copy small {
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-small);
+  line-height: 1.4;
+}
+
+.wb-nav {
+  display: flex;
+  align-items: stretch;
+  gap: var(--wb-s1);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.wb-nav-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--wb-touch);
+  padding: 0 var(--wb-s4);
+  border-radius: var(--wb-radius);
+  color: var(--wb-ink);
+  text-decoration: none;
+  font-size: var(--wb-fs-label);
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+.wb-nav-link:hover {
+  background: var(--wb-sage);
+}
+
+.wb-nav-link.is-active {
+  background: var(--wb-sage);
+  border-bottom-color: var(--wb-ink);
+  font-weight: 600;
+}
+
+.wb-nav-link:focus-visible,
+.wb-account-trigger:focus-visible,
+.wb-search input:focus-visible,
+.wb-account-menu button:focus-visible {
+  outline: 2px solid var(--wb-ink);
+  outline-offset: 2px;
+}
+
+.wb-topbar-side {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-s4);
+  margin-left: auto;
+}
+
+.wb-search {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-s2);
+}
+
+.wb-search input {
+  width: 220px;
+  min-height: var(--wb-touch);
+  padding: 0 var(--wb-s3);
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius);
+  background: var(--wb-surface);
+  color: var(--wb-ink);
+  font-size: var(--wb-fs-label);
+}
+
+.wb-search input::placeholder {
+  color: var(--wb-muted);
+}
+
+.wb-search kbd {
+  color: var(--wb-muted);
+  font-family: var(--wb-font-sans);
+  font-size: 11px;
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius);
+  padding: 3px 5px;
+  white-space: nowrap;
+}
+
+/* ── 账号菜单 ───────────────────────────────────────────── */
+.wb-account {
+  position: relative;
+}
+
+.wb-account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wb-s2);
+  min-height: var(--wb-touch);
+  padding: 0 var(--wb-s3);
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius);
+  background: var(--wb-surface);
+  color: var(--wb-ink);
+  cursor: pointer;
+  font-size: var(--wb-fs-label);
+  max-width: 220px;
+}
+
+.wb-account-mail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-account-caret {
+  color: var(--wb-muted);
+  font-size: 10px;
+}
+
+.wb-account-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + var(--wb-s2));
+  z-index: 30;
+  width: 240px;
+  padding: var(--wb-s2);
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-dialog);
+  background: var(--wb-surface);
+  box-shadow: 0 12px 30px rgb(51 75 66 / 12%);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-account-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wb-s1);
+  padding: var(--wb-s2);
+  border-bottom: 1px solid var(--wb-line);
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-small);
+}
+
+.wb-account-field select {
+  min-height: 36px;
+  padding: 0 var(--wb-s2);
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius);
+  background: var(--wb-surface);
+  color: var(--wb-ink);
+  font-size: var(--wb-fs-label);
+}
+
+.wb-account-menu button {
+  min-height: var(--wb-touch);
+  padding: var(--wb-s2);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  border: 0;
+  border-radius: var(--wb-radius);
+  background: transparent;
+  color: var(--wb-ink);
+  text-align: left;
+  font-size: var(--wb-fs-label);
+  cursor: pointer;
+}
+
+.wb-account-menu button:hover {
+  background: var(--wb-sage);
+}
+
+.wb-account-menu button small {
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-small);
+}
+
+/* ── 提示条（不返回假结果，如实说明未接通） ─────────────── */
+.wb-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wb-s4);
+  margin: 0;
+  padding: var(--wb-s2) 44px;
+  background: var(--wb-warning-bg);
+  color: var(--wb-warning);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-notice button {
+  min-height: 36px;
+  padding: 0 var(--wb-s3);
+  border: 1px solid currentcolor;
+  border-radius: var(--wb-radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: var(--wb-fs-small);
+}
+
+/* ── 内容区 ─────────────────────────────────────────────── */
+.wb-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--wb-s6) 44px var(--wb-s10);
+}
+
+/* ── 响应式：1366×768 压顶栏；1280 以下收紧；1024 以下保基本可用 ── */
+@media (max-width: 1440px) {
+  .wb-topbar {
+    padding: 0 var(--wb-s8);
+  }
+  .wb-content {
+    padding: var(--wb-s5) var(--wb-s8) var(--wb-s8);
+  }
+  .wb-notice {
+    padding-left: var(--wb-s8);
+    padding-right: var(--wb-s8);
+  }
+}
+
+@media (max-width: 1400px) {
+  .wb-topbar {
+    min-height: 66px;
+  }
+  .wb-search input {
+    width: 180px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .wb-topbar {
+    padding: 0 var(--wb-s6);
+    gap: var(--wb-s4);
+  }
+  .wb-content {
+    padding: var(--wb-s5) var(--wb-s6) var(--wb-s8);
+  }
+  .wb-nav-link {
+    padding: 0 var(--wb-s3);
+  }
+  .wb-search kbd {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .wb-topbar-side {
+    width: 100%;
+    margin-left: 0;
+    padding-bottom: var(--wb-s2);
+  }
+  .wb-search {
+    flex: 1 1 auto;
+  }
+  .wb-search input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .wb-topbar {
+    padding: 0 var(--wb-s4);
+  }
+  .wb-content {
+    padding: var(--wb-s4) var(--wb-s4) var(--wb-s8);
+  }
+  .wb-brand-copy small {
+    display: none;
+  }
+}

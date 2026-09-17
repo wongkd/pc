@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
+import { AppShell } from './app/AppShell'
+import { WorkspaceLandingPage } from './app/WorkspaceLandingPage'
+import type { WorkspaceEntry } from './app/WorkspaceLandingPage'
+import { WorkbenchTodayPage } from './features/workbench/WorkbenchTodayPage'
 import { BaseInfoSection } from './components/BaseInfoSection'
 import { HardwareLibrarySection } from './components/HardwareLibrarySection'
-import { ErpShell } from './components/ErpShell'
 import { LoginPanel } from './components/LoginPanel'
 import { ModulePlaceholderPage } from './components/ModulePlaceholderPage'
-import { DashboardPage, OrderDetailPage, OrdersPage } from './components/OrdersPages'
+import { OrderDetailPage, OrdersPage } from './components/OrdersPages'
 import { ProductManagementPage } from './components/ProductManagementPage'
 import { SerialNumberPage } from './components/SerialNumberPage'
 import { SystemSettingsPage } from './components/SystemSettingsPage'
@@ -33,7 +36,7 @@ import { DEFAULT_QUOTE_NOTES, migrateNotes } from './types/quote'
 import { getTodayInputValue } from './utils/date'
 import { buildQuoteHtml } from './utils/exportHtml'
 import { loadFromStorage, saveToStorage } from './utils/storage'
-import { ERP_NAV_ITEMS, getErpNavItem } from './erpNavigation'
+import { ERP_NAV_ITEMS } from './erpNavigation'
 import './index.css'
 
 const STORAGE_KEY = 'pc-quote-app'
@@ -160,6 +163,48 @@ const defaultStorageData: AppStorageData = {
   viewSettings: defaultViewSettings,
 }
 
+interface WorkspaceConfig {
+  kicker: string
+  title: string
+  intro: string
+  entries: WorkspaceEntry[]
+  notYet: string[]
+}
+
+/** T02a 域落地页配置：开单与回收置换当前只建立入口，不做业务写入。 */
+const SALES_WORKSPACE: WorkspaceConfig = {
+  kicker: '报价与销售工作区',
+  title: '开单',
+  intro: '草稿、报价与订单的查找和新建入口。报价编辑器与订单列表是既有功能，本卡只把它们收拢到同一导航下，未新增业务写入。',
+  entries: [
+    { label: '报价编辑器', description: '现有报价编辑与导出功能', to: '/quotes' },
+    { label: '订单列表', description: '查看订单、收款与履约状态', to: '/orders' },
+    { label: '新建装机报价', description: '单据列表、草稿与版本管理', to: null, owner: 'T07' },
+    { label: '新建零售', description: '散客扫码零售与结算', to: null, owner: 'T08a' },
+  ],
+  notYet: [
+    '未接入报价草稿与版本服务（T07）',
+    '未接入确认成交与预留（T08）',
+    '不写库存、不收款',
+  ],
+}
+
+const RECOVERY_WORKSPACE: WorkspaceConfig = {
+  kicker: '回收与置换',
+  title: '回收置换',
+  intro: '接收旧物、验机、定价、收购、整备与折抵。当前只有入口，没有可提交的收购或折抵。',
+  entries: [
+    { label: '接收与验机', description: '登记旧机、拍照、逐项验机', to: null, owner: 'T13' },
+    { label: '报价与收购确认', description: '最终价确认后所有权才转门店', to: null, owner: 'T13' },
+    { label: '置换与折抵', description: '双单对照与资金方向', to: null, owner: 'T14' },
+  ],
+  notYet: [
+    '未接入回收单状态机（T13）',
+    '未接入折抵与结算（T14）',
+    '不收旧件入库存、不产生收购成本',
+  ],
+}
+
 function normalizeStoredState(raw: unknown): AppStorageData {
   const data = (raw ?? {}) as Partial<AppStorageData> & {
     meta?: Partial<QuoteMeta> & { orientation?: Orientation }
@@ -222,7 +267,6 @@ function downloadText(filename: string, content: string, type = 'text/plain;char
 }
 
 function App() {
-  const location = useLocation()
   const navigate = useNavigate()
   const initialState = useMemo(
     () => normalizeStoredState(loadFromStorage<unknown>(STORAGE_KEY, defaultStorageData)),
@@ -334,8 +378,6 @@ function App() {
   const handleStoreSelect = async (storeId: number) => {
     try { await selectStore(storeId); await loadProfile() } catch { clearToken(); setLoggedIn(false) }
   }
-  const visibleNavItems = ERP_NAV_ITEMS.filter((item) => item.path !== '/settings' || profile?.permissions.includes('*') || profile?.permissions.includes('store/manage') || profile?.permissions.includes('member/manage') || profile?.permissions.includes('role/view'))
-
   useEffect(() => {
     saveToStorage<AppStorageData>(STORAGE_KEY, {
       brand,
@@ -397,7 +439,6 @@ function App() {
     setHardwareLibrary,
     addQuoteItemFromLibrary,
   )
-  const currentNavItem = getErpNavItem(location.pathname)
 
   const handleBrandChange = (field: keyof BrandInfo, value: string) => {
     setBrand((current) => ({ ...current, [field]: value }))
@@ -584,9 +625,7 @@ function App() {
       {!loggedIn ? (
         <LoginPanel onLogin={() => { setLoggedIn(true); navigate('/quotes', { replace: true }) }} />
       ) : authLoading || !profile ? <div className="settings-state">正在验证登录状态...</div> : (
-      <ErpShell
-        currentTitle={currentNavItem?.label ?? '页面不存在'}
-        items={visibleNavItems}
+      <AppShell
         profile={profile}
         currentStore={currentStore}
         onStoreSelect={handleStoreSelect}
@@ -722,7 +761,9 @@ function App() {
         </section>
             </div>
           )} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/dashboard" element={<WorkbenchTodayPage />} />
+          <Route path="/sales" element={<WorkspaceLandingPage {...SALES_WORKSPACE} />} />
+          <Route path="/recovery" element={<WorkspaceLandingPage {...RECOVERY_WORKSPACE} />} />
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
           <Route path="/settings" element={<SystemSettingsPage permissions={profile.permissions} currentStore={currentStore} onStoreChanged={setCurrentStore} />} />
@@ -740,7 +781,7 @@ function App() {
             element={<ModulePlaceholderPage title="页面不存在" description="当前地址未对应 ERP 页面。" />}
           />
         </Routes>
-      </ErpShell>
+      </AppShell>
       )}
     </div>
   )
