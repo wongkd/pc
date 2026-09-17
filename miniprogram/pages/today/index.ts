@@ -91,6 +91,20 @@ const FILTERS: FilterView[] = [
   { key: 'recovery', label: TASK_CATEGORY_LABELS.recovery },
 ]
 
+/**
+ * 列表分组标题。
+ *
+ * 设计稿写「今日待处理 · 7」，但那只是「全部」这一种态下的文案；筛选后若仍显示
+ * 「今日待处理」就是错的。故按当前筛选给出对应标题，计数始终等于当前结果数。
+ */
+const GROUP_LABELS: Record<string, string> = {
+  all: '今日待处理',
+  delivery: '交付事项',
+  stock_shortage: '缺货事项',
+  service: '维修事项',
+  recovery: '回收事项',
+}
+
 /** 任务行视图。WXML 不能调用任意函数，显示值一律在此预算好。 */
 export function toRowView(task: WorkbenchTask): TaskRowView {
   const amount = describeAmount(task.amountSummary)
@@ -127,6 +141,7 @@ Page({
     activeFilter: 'all',
     rows: [] as TaskRowView[],
     resultCount: 0,
+    groupLabel: GROUP_LABELS.all,
     emptyText: '',
   },
 
@@ -150,6 +165,7 @@ Page({
       activeFilter: key,
       rows,
       resultCount: rows.length,
+      groupLabel: GROUP_LABELS[key] ?? GROUP_LABELS.all,
       emptyText: rows.length === 0 ? '当前筛选没有待办事项' : '',
     })
   },

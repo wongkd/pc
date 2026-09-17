@@ -1,13 +1,21 @@
+<!--
+  T02b · 今天页。
+  顺序依据 02 §4「今天页」：品牌和开单 → 四项统计 → 待办标题 / 视图
+  → 搜索与扫码 → 事项筛选 → 竖向列表。
+  数据全部来自 features/demo-data.ts 的虚构样本；页面不改数据、不提交业务动作。
+-->
 <view class="today">
   <view class="brand-row">
     <view class="brand">
-      <text class="brand-name">装机店工作台</text>
-      <text class="brand-store">演示门店</text>
+      <text class="brand-name">装机店</text>
+      <view class="brand-store">
+        <text class="brand-store-char">工</text>
+        <text class="brand-store-char">作</text>
+        <text class="brand-store-char">台</text>
+      </view>
     </view>
     <view class="create-btn" hover-class="btn-hover" bindtap="onCreateTap">＋开单</view>
   </view>
-
-  <view class="runtime-note">{{runtimeNote}}</view>
 
   <view class="metrics">
     <view
@@ -18,19 +26,21 @@
       data-filter="{{item.filter}}"
       bindtap="onMetricTap"
     >
-      <text class="metric-label">{{item.label}}</text>
       <text class="metric-value mp-tabular">{{item.value}}</text>
+      <text class="metric-label">{{item.label}}</text>
     </view>
   </view>
 
   <view class="todo-head">
-    <text class="todo-title">待办事项</text>
-    <text class="todo-count">{{resultCount}} 项</text>
+    <view class="todo-head-left">
+      <text class="todo-title">待办订单</text>
+      <text class="todo-count mp-tabular">{{resultCount}}</text>
+    </view>
   </view>
 
   <view class="search-row">
     <view class="search-box" hover-class="btn-hover" bindtap="onSearchTap">
-      <text class="search-placeholder">搜索单据 / 设备 / 客户</text>
+      <text class="search-placeholder">客户、单号、设备 / SN</text>
     </view>
     <view class="scan-btn" hover-class="btn-hover" bindtap="onSearchTap">扫码</view>
   </view>
@@ -44,6 +54,8 @@
       bindtap="onFilterTap"
     >{{item.label}}</view>
   </view>
+
+  <view class="group-head">{{groupLabel}} · {{resultCount}}</view>
 
   <view class="empty" wx:if="{{rows.length === 0}}">{{emptyText}}</view>
 
@@ -90,4 +102,6 @@
       <view class="row-arrow">›</view>
     </view>
   </view>
+
+  <view class="mp-runtime-note">{{runtimeNote}}</view>
 </view>

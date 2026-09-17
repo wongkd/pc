@@ -37,13 +37,15 @@ miniprogram/
 │   └── sales/order-detail/ 事项详情（分包），底部固定金额与动作条
 ├── features/
 │   ├── demo-data.ts        V1 演示样本与指标、演示排序、逾期判断
-│   └── amount-view.ts      金额格式化与呈现口径（待收 / 应付 / 已结清 / 预计 / 待确认）
+│   ├── amount-view.ts      金额格式化与呈现口径（待收 / 应付 / 已结清 / 预计 / 待确认）
+│   └── display-text.ts     文案切分的纯函数（详情页主标题的设备简称）
 ├── templates/
 │   └── landing.wxml        三个域落地页共用的排版模板
 ├── contracts/generated/    契约生成物（6 个，禁止手改）
 ├── scripts/
 │   ├── sync-contracts.mjs  生成物落地 + 三方防漂移
-│   └── check-pages.mjs     结构自检：注册页面 ↔ 磁盘文件
+│   ├── check-pages.mjs     结构自检：注册页面 ↔ 磁盘文件
+│   └── check-classes.mjs   结构自检：wxml 引用的类名都有样式定义
 └── tests/                  node --test，零依赖
 ```
 
@@ -53,10 +55,11 @@ miniprogram/
 cd miniprogram
 npm install            # 仅类型依赖：typescript、miniprogram-api-typings
 
-npm test               # 样本 ↔ 契约一致性、金额口径（26 用例）
+npm test               # 样本 ↔ 契约一致性、金额口径、设备简称切分（32 用例）
 npm run typecheck      # tsc --noEmit，strict
 npm run check-contracts # 端内生成物未被手改
 npm run check-pages    # app.json 注册与磁盘文件一致
+npm run check-classes  # wxml 引用的类名都有样式定义
 ```
 
 生成物更新（改契约后必须执行）：

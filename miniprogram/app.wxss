@@ -35,6 +35,12 @@ page {
   --mp-fs-title: 44rpx;
   --mp-fs-amount: 48rpx;
 
+  /* 衬线：02 §1 只允许用在页标题、设备名和少量大金额。
+     取系统自带宋体，**不加载远程字体** —— 02 §1 要求「首版不依赖远程中文字体
+     保证页面可用」。Android 缺少其中部分字面时回退为无衬线，属规格预期内的降级，
+     是否引入获授权的中文字体子集待真机验证后再定。 */
+  --mp-serif: 'Songti SC', 'STSong', 'SimSun', 'Noto Serif CJK SC', serif;
+
   --mp-s1: 8rpx;
   --mp-s2: 16rpx;
   --mp-s3: 24rpx;
@@ -63,6 +69,7 @@ page {
 
 /* 页标题与区块标题 */
 .mp-page-title {
+  font-family: var(--mp-serif);
   font-size: var(--mp-fs-title);
   line-height: 1.3;
   font-weight: 500;
@@ -97,13 +104,16 @@ page {
   font-size: var(--mp-fs-secondary);
 }
 
-/* 运行状态说明：说明本页数据来源与未接通范围，不做成横幅广告位 */
+/* 运行状态说明：如实说明数据来源与未接通范围。
+   02 §9 明确「示例数据」属评审环境内容、不是生产页面标题，
+   故不做顶部横幅，只放在页面末尾，小字、不抢主信息层级。 */
 .mp-runtime-note {
-  padding: var(--mp-s2) var(--mp-s4);
-  background: var(--mp-sage);
+  margin: var(--mp-s6) var(--mp-s4) 0;
+  padding-top: var(--mp-s3);
+  border-top: 1rpx solid var(--mp-line);
+  font-size: 22rpx;
+  line-height: 1.6;
   color: var(--mp-muted);
-  font-size: var(--mp-fs-small);
-  line-height: 1.5;
 }
 
 /* 域落地页（T02b）：三个域页共用排版，文案由各页 data 提供。

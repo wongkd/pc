@@ -9,6 +9,7 @@
     "sync-contracts": "node scripts/sync-contracts.mjs",
     "check-contracts": "node scripts/sync-contracts.mjs --check",
     "check-pages": "node scripts/check-pages.mjs",
+    "check-classes": "node scripts/check-classes.mjs",
     "test": "node --test \"tests/*.test.mjs\""
   },
   "devDependencies": {

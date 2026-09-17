@@ -23,6 +23,7 @@ import {
   isOverdueTask,
 } from '../../../features/demo-data'
 import { describeAction, describeAmount } from '../../../features/amount-view'
+import { deviceShortName } from '../../../features/display-text'
 
 const PHOTO_KIND_LABELS: Record<AttachmentPurpose, string> = {
   [AttachmentPurpose.PRODUCT_REFERENCE]: '型号示意',
@@ -31,11 +32,19 @@ const PHOTO_KIND_LABELS: Record<AttachmentPurpose, string> = {
   [AttachmentPurpose.DELIVERY_EVIDENCE]: '交付照片',
 }
 
+/** 阶段与事件区的承位文案：写明空缺原因与归属，不用推测值填空。 */
+const STAGE_NOTE =
+  '阶段序列尚未接通。V1 读模型样本没有阶段字段，本页不显示推测的进度；归属 T08 / T12 / T18。'
+const EVENT_NOTE =
+  '事件记录尚未接通。V1 读模型样本没有事件字段，本页不显示推测的历史；归属 T08 / T12 / T18。'
+
 interface DetailView {
   taskId: string
   entityId: string
   entityVersion: number
   categoryLabel: string
+  /** 页面主标题：客户 + 设备简称（见 deviceShortName）。 */
+  headline: string
   title: string
   deadlineText: string
   isOverdue: boolean
@@ -45,6 +54,9 @@ interface DetailView {
   hasPhoto: boolean
   photoUrl: string
   photoBroken: boolean
+  /** 阶段与事件的承位说明：无样本可依，如实写明而不是编造进度。 */
+  stageNote: string
+  eventNote: string
   blockerSummary: string
   amountPrimary: string
   amountDirection: string
@@ -74,6 +86,8 @@ Page({
     const action = describeAction(source.primaryAction)
     const overdue = isOverdueTask(source)
     const deadline = source.deadlineText ?? '未约定时间'
+    const customer = source.customerDisplay ?? '未登记客户'
+    const deviceShort = deviceShortName(source.deviceSummary)
 
     this.setData({
       loaded: true,
@@ -82,15 +96,18 @@ Page({
         entityId: source.entityId,
         entityVersion: source.entityVersion,
         categoryLabel: TASK_CATEGORY_LABELS[source.category],
+        headline: deviceShort ? `${customer} · ${deviceShort}` : customer,
         title: source.title,
         deadlineText: overdue ? `已逾期 · ${deadline}` : deadline,
         isOverdue: overdue,
-        customer: source.customerDisplay ?? '未登记客户',
+        customer,
         device: source.deviceSummary ?? '未登记设备',
         photoLabel: source.photoKind ? PHOTO_KIND_LABELS[source.photoKind] : '无照片',
         hasPhoto: source.photoUrl !== null,
         photoUrl: source.photoUrl ?? '',
         photoBroken: false,
+        stageNote: STAGE_NOTE,
+        eventNote: EVENT_NOTE,
         blockerSummary: source.blockerSummary ?? '',
         amountPrimary: amount.primary,
         amountDirection: amount.directionLabel,

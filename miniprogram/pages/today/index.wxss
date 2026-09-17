@@ -1,9 +1,20 @@
+/**
+ * T02b · 今天页样式。
+ *
+ * 排版对齐依据：02 §4「今天页」的顺序（品牌和开单 → 四项统计 → 待办标题 / 视图
+ * → 搜索与扫码 → 事项筛选 → 竖向列表）与 v3 设计稿
+ * （docs/design/2026-09-17-style-exploration/v3/hybrid-mobile-board.png）。
+ *
+ * 只对呈现层：不改数据、不改跳转、不新增业务控件。
+ */
+
 .today {
   min-height: 100vh;
   padding-bottom: var(--mp-s6);
 }
 
-/* 品牌与开单：02 §4「应用品牌与＋开单置于下方紧凑行」，不画假胶囊 */
+/* ---------- 品牌与开单 ---------- */
+/* 02 §4「应用品牌与＋开单置于下方紧凑行」，不画假胶囊 */
 .brand-row {
   display: flex;
   align-items: center;
@@ -15,16 +26,32 @@
 
 .brand {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: var(--mp-s2);
 }
 
 .brand-name {
-  font-size: var(--mp-fs-device);
+  font-family: var(--mp-serif);
+  font-size: 44rpx;
+  line-height: 1;
   color: var(--mp-ink);
+  letter-spacing: 3rpx;
 }
 
+/* 「工作台」竖排：逐字纵向排列。
+   不用 writing-mode —— 部分机型 WebView 对竖排回流处理不一致，
+   逐字排列在任何机型都得到同一结果。 */
 .brand-store {
-  font-size: var(--mp-fs-small);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-left: var(--mp-s2);
+  border-left: 2rpx solid var(--mp-line);
+}
+
+.brand-store-char {
+  font-size: 22rpx;
+  line-height: 1.1;
   color: var(--mp-muted);
 }
 
@@ -39,55 +66,95 @@
   border-radius: var(--mp-radius);
 }
 
-/* 四项统计：窄屏两行两列，大金额不被压缩（02 §4） */
+/* ---------- 四项统计 ---------- */
+/* 02 §103：宽屏四列；320px 或大金额时允许两行两列。
+   用竖分隔线而非卡片边框 —— 02 §1 禁止「多彩统计卡」。 */
 .metrics {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--mp-s2);
-  padding: var(--mp-s3) var(--mp-s4) 0;
+  align-items: stretch;
+  background: var(--mp-surface);
+  border-bottom: 1rpx solid var(--mp-line);
 }
 
 .metric {
-  flex: 0 0 calc(50% - var(--mp-s1));
-  box-sizing: border-box;
+  flex: 1 1 0;
+  min-width: 0;
   min-height: var(--mp-touch);
-  padding: var(--mp-s2) var(--mp-s3);
-  background: var(--mp-surface);
-  border: 1rpx solid var(--mp-line);
-  border-radius: var(--mp-radius);
+  padding: var(--mp-s2) 4rpx;
   display: flex;
   flex-direction: column;
+  align-items: center;
   justify-content: center;
+  gap: 2rpx;
 }
 
-.metric-label {
-  font-size: var(--mp-fs-small);
-  color: var(--mp-muted);
+.metric + .metric {
+  border-left: 1rpx solid var(--mp-line);
 }
 
 .metric-value {
-  font-size: var(--mp-fs-amount);
-  line-height: 1.25;
+  font-size: 40rpx;
+  line-height: 1.2;
   color: var(--mp-ink);
 }
 
+.metric-label {
+  font-size: 22rpx;
+  line-height: 1.2;
+  color: var(--mp-muted);
+  white-space: nowrap;
+}
+
+/* 窄屏两行两列：金额不被压到不可读（02 §103） */
+@media (max-width: 360px) {
+  .metrics {
+    flex-wrap: wrap;
+    padding: var(--mp-s2) var(--mp-s4);
+    gap: var(--mp-s2);
+  }
+
+  .metric {
+    flex: 0 0 calc(50% - var(--mp-s1));
+    border: 1rpx solid var(--mp-line);
+    border-radius: var(--mp-radius);
+  }
+
+  .metric + .metric {
+    border-left: 1rpx solid var(--mp-line);
+  }
+}
+
+/* ---------- 待办标题 ---------- */
 .todo-head {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: var(--mp-s2);
   padding: var(--mp-s4) var(--mp-s4) var(--mp-s2);
 }
 
+.todo-head-left {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mp-s2);
+  min-width: 0;
+}
+
 .todo-title {
-  font-size: var(--mp-fs-device);
+  font-family: var(--mp-serif);
+  font-size: 40rpx;
+  line-height: 1.2;
   color: var(--mp-ink);
 }
 
 .todo-count {
-  font-size: var(--mp-fs-secondary);
-  color: var(--mp-muted);
+  font-size: 40rpx;
+  line-height: 1.2;
+  color: var(--mp-ink);
 }
 
+/* ---------- 搜索与扫码 ---------- */
+/* 02 §40：今天页动作含「筛选、选单、扫码、开单」，故保留扫码入口 */
 .search-row {
   display: flex;
   gap: var(--mp-s2);
@@ -96,6 +163,7 @@
 
 .search-box {
   flex: 1;
+  min-width: 0;
   min-height: var(--mp-touch);
   display: flex;
   align-items: center;
@@ -121,29 +189,46 @@
   border-radius: var(--mp-radius);
 }
 
+/* ---------- 事项筛选 ---------- */
+/* 下划线式页签：选中态是深绿短线，不是胶囊 —— 与设计稿一致，也避免彩色按钮堆叠 */
 .filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--mp-s2);
-  padding: var(--mp-s3) var(--mp-s4);
+  gap: var(--mp-s5);
+  padding: 0 var(--mp-s4) var(--mp-s3);
+  margin-top: var(--mp-s3);
+  border-bottom: 1rpx solid var(--mp-line);
+  white-space: nowrap;
 }
 
 .filter {
-  min-height: 64rpx;
-  padding: 0 var(--mp-s3);
+  position: relative;
+  min-height: 72rpx;
   display: flex;
   align-items: center;
+  flex: 0 0 auto;
   font-size: var(--mp-fs-secondary);
   color: var(--mp-muted);
-  background: var(--mp-surface);
-  border: 1rpx solid var(--mp-line);
-  border-radius: var(--mp-radius);
 }
 
 .filter-on {
-  background: var(--mp-sage);
-  border-color: var(--mp-ink);
   color: var(--mp-ink);
+}
+
+.filter-on::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 4rpx;
+  background: var(--mp-ink);
+}
+
+/* ---------- 分组标题 ---------- */
+.group-head {
+  padding: var(--mp-s3) var(--mp-s4) var(--mp-s1);
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
 }
 
 .empty {
@@ -153,11 +238,12 @@
   color: var(--mp-muted);
 }
 
+/* ---------- 竖向列表 ---------- */
 .rows {
   padding: 0 var(--mp-s4);
 }
 
-/* 任务行：56–64px 缩略图 + 客户/设备 + 卡点 + 时间与动作；整行可点（02 §4） */
+/* 任务行：60px 缩略图 + 客户/设备 + 卡点 + 时间与动作 + 金额；整行可点（02 §4） */
 .row {
   display: flex;
   align-items: stretch;
@@ -175,7 +261,7 @@
 }
 
 .metric-hover {
-  border-color: var(--mp-ink);
+  background: var(--mp-sage);
 }
 
 .thumb,
@@ -211,7 +297,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--mp-s1);
+  gap: 4rpx;
 }
 
 .row-head {
@@ -247,6 +333,7 @@
   flex-wrap: wrap;
   gap: var(--mp-s2);
   align-items: baseline;
+  justify-content: space-between;
 }
 
 .row-deadline {
@@ -284,6 +371,7 @@
   color: var(--mp-muted);
 }
 
+/* 阻断原因：动作不可点时必须给出可读原因（02 §6），但视觉上不与主信息争层级 */
 .row-blocked-reason {
   font-size: var(--mp-fs-small);
   color: var(--mp-danger);

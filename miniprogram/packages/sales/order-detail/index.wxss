@@ -1,7 +1,16 @@
+/**
+ * T02b · 事项详情页样式。
+ *
+ * 排版对齐依据：02 §4「详情页」的顺序，与 v3 设计稿
+ * （docs/design/2026-09-17-style-exploration/v3/hybrid-mobile-detail.png）。
+ * 只对呈现层：不改数据、不改动作、不新增业务入口。
+ */
+
 .page {
   min-height: 100vh;
-  /* 为底部固定操作条预留等高空间，最后一条记录可滚到操作条上方（02 §4） */
-  padding-bottom: 200rpx;
+  /* 预留底部固定操作条的高度，保证最后一条内容能滚到操作条上方（02 §4）。
+     操作条 = 金额区 + 主动作；下端再叠安全区。 */
+  padding-bottom: 320rpx;
   box-sizing: border-box;
 }
 
@@ -36,71 +45,81 @@
   font-size: var(--mp-fs-secondary);
 }
 
+/* ---------- 1 · 单号 / 类别 / 交期 ---------- */
 .head {
-  padding: var(--mp-s3) var(--mp-s4);
-  background: var(--mp-surface);
-  border-bottom: 1rpx solid var(--mp-line);
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--mp-s3);
+  padding: var(--mp-s3) var(--mp-s4) var(--mp-s2);
 }
 
 .head-top {
   display: flex;
   align-items: baseline;
-  gap: var(--mp-s3);
+  gap: var(--mp-s2);
+  min-width: 0;
 }
 
 .entity-id {
-  font-size: var(--mp-fs-title);
+  font-size: var(--mp-fs-secondary);
   line-height: 1.3;
-  color: var(--mp-ink);
+  color: var(--mp-muted);
 }
 
 .category-tag {
-  font-size: var(--mp-fs-small);
-  color: var(--mp-muted);
-  border: 1rpx solid var(--mp-line);
+  font-size: 22rpx;
+  color: var(--mp-ink);
+  background: var(--mp-sage);
   border-radius: var(--mp-radius);
-  padding: 0 var(--mp-s2);
+  padding: 2rpx var(--mp-s2);
+  flex: 0 0 auto;
 }
 
 .deadline {
-  display: block;
-  margin-top: var(--mp-s1);
-  font-size: var(--mp-fs-secondary);
+  flex: 0 0 auto;
+  font-size: var(--mp-fs-small);
   color: var(--mp-muted);
+  text-align: right;
 }
 
 .deadline-overdue {
   color: var(--mp-danger);
 }
 
+/* ---------- 2 · 客户与事项（页面主标题） ---------- */
+.headline {
+  padding: 0 var(--mp-s4) var(--mp-s3);
+  border-bottom: 1rpx solid var(--mp-line);
+}
+
+.headline-title {
+  display: block;
+  font-family: var(--mp-serif);
+  font-size: 52rpx;
+  line-height: 1.25;
+  color: var(--mp-ink);
+}
+
+.headline-sub {
+  display: block;
+  margin-top: var(--mp-s1);
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+  line-height: 1.5;
+}
+
+/* ---------- 3–7 · 分区 ---------- */
 .section {
   padding: var(--mp-s3) var(--mp-s4);
   border-bottom: 1rpx solid var(--mp-line);
 }
 
 .section-title {
-  font-size: var(--mp-fs-small);
+  font-size: 22rpx;
+  letter-spacing: 2rpx;
   color: var(--mp-muted);
   margin-bottom: var(--mp-s2);
-}
-
-.kv {
-  display: flex;
-  gap: var(--mp-s3);
-  padding: var(--mp-s1) 0;
-}
-
-.k {
-  flex: 0 0 96rpx;
-  font-size: var(--mp-fs-secondary);
-  color: var(--mp-muted);
-}
-
-.v {
-  flex: 1;
-  min-width: 0;
-  font-size: var(--mp-fs-body);
-  color: var(--mp-ink);
 }
 
 /* 紧凑设备摘要：约 88–104px 图（02 §4），此处取 200rpx = 100px */
@@ -146,7 +165,9 @@
   gap: var(--mp-s1);
 }
 
+/* 设备名用衬线（02 §1：衬线只用于页标题、设备名和少量大金额） */
 .device-name {
+  font-family: var(--mp-serif);
   font-size: var(--mp-fs-device);
   color: var(--mp-ink);
   line-height: 1.4;
@@ -178,9 +199,10 @@
 .muted {
   font-size: var(--mp-fs-secondary);
   color: var(--mp-muted);
-  line-height: 1.6;
+  line-height: 1.7;
 }
 
+/* ---------- 8 · 底部固定金额与动作 ---------- */
 /* 详情页只有这一个固定底部区域：不含 tabBar，也不堆第二层导航（02 §4） */
 .action-bar {
   position: fixed;
@@ -189,15 +211,20 @@
   bottom: 0;
   background: var(--mp-surface);
   border-top: 1rpx solid var(--mp-line);
-  padding: var(--mp-s2) var(--mp-s4);
-  padding-bottom: calc(var(--mp-s2) + env(safe-area-inset-bottom));
+  padding: var(--mp-s3) var(--mp-s4);
+  padding-bottom: calc(var(--mp-s3) + env(safe-area-inset-bottom));
 }
 
 .amount {
   display: flex;
   flex-direction: column;
-  gap: var(--mp-s1);
+  gap: 2rpx;
   margin-bottom: var(--mp-s2);
+}
+
+.amount-label {
+  font-size: 22rpx;
+  color: var(--mp-muted);
 }
 
 .amount-line {
@@ -210,11 +237,6 @@
   font-size: var(--mp-fs-amount);
   line-height: 1.2;
   color: var(--mp-ink);
-}
-
-.amount-direction {
-  font-size: var(--mp-fs-secondary);
-  color: var(--mp-muted);
 }
 
 .amount-detail {
