@@ -1,0 +1,93 @@
+<view class="today">
+  <view class="brand-row">
+    <view class="brand">
+      <text class="brand-name">装机店工作台</text>
+      <text class="brand-store">演示门店</text>
+    </view>
+    <view class="create-btn" hover-class="btn-hover" bindtap="onCreateTap">＋开单</view>
+  </view>
+
+  <view class="runtime-note">{{runtimeNote}}</view>
+
+  <view class="metrics">
+    <view
+      class="metric"
+      hover-class="metric-hover"
+      wx:for="{{metrics}}"
+      wx:key="key"
+      data-filter="{{item.filter}}"
+      bindtap="onMetricTap"
+    >
+      <text class="metric-label">{{item.label}}</text>
+      <text class="metric-value mp-tabular">{{item.value}}</text>
+    </view>
+  </view>
+
+  <view class="todo-head">
+    <text class="todo-title">待办事项</text>
+    <text class="todo-count">{{resultCount}} 项</text>
+  </view>
+
+  <view class="search-row">
+    <view class="search-box" hover-class="btn-hover" bindtap="onSearchTap">
+      <text class="search-placeholder">搜索单据 / 设备 / 客户</text>
+    </view>
+    <view class="scan-btn" hover-class="btn-hover" bindtap="onSearchTap">扫码</view>
+  </view>
+
+  <view class="filters">
+    <view
+      class="filter {{activeFilter === item.key ? 'filter-on' : ''}}"
+      wx:for="{{filters}}"
+      wx:key="key"
+      data-key="{{item.key}}"
+      bindtap="onFilterTap"
+    >{{item.label}}</view>
+  </view>
+
+  <view class="empty" wx:if="{{rows.length === 0}}">{{emptyText}}</view>
+
+  <view class="rows">
+    <view
+      class="row"
+      hover-class="row-hover"
+      wx:for="{{rows}}"
+      wx:key="taskId"
+      data-task-id="{{item.taskId}}"
+      bindtap="onSelectTask"
+    >
+      <view class="thumb">
+        <image
+          wx:if="{{item.hasPhoto && !item.photoBroken}}"
+          class="thumb-img"
+          src="{{item.photoUrl}}"
+          mode="aspectFill"
+          data-index="{{index}}"
+          binderror="onThumbError"
+        />
+        <view wx:else class="thumb-fallback">
+          <text class="thumb-fallback-text">{{item.photoLabel}}</text>
+        </view>
+      </view>
+
+      <view class="row-main">
+        <view class="row-head">
+          <text class="row-customer">{{item.customer}}</text>
+          <text class="row-device">{{item.device}}</text>
+        </view>
+        <view class="row-blocker-summary" wx:if="{{item.blockerSummary}}">{{item.blockerSummary}}</view>
+        <view class="row-meta">
+          <text class="row-deadline {{item.isOverdue ? 'row-deadline-overdue' : ''}}">{{item.deadlineText}}</text>
+          <text class="row-action {{item.actionEnabled ? '' : 'row-action-blocked'}}">{{item.actionLabel}}</text>
+        </view>
+        <view class="row-amount-line" wx:if="{{item.amountPrimary}}">
+          <text class="row-amount mp-tabular">{{item.amountPrimary}}</text>
+          <text class="row-amount-dir">{{item.amountDirection}}</text>
+        </view>
+        <view class="row-blocked-reason" wx:if="{{item.blockerText}}">受阻：{{item.blockerText}}</view>
+      </view>
+
+      <view class="row-arrow">›</view>
+    </view>
+  </view>
+</view>

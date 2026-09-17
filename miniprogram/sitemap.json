@@ -1,0 +1,9 @@
+{
+  "desc": "内部经营工具，不允许被微信索引。全部页面 disallow。",
+  "rules": [
+    {
+      "action": "disallow",
+      "page": "*"
+    }
+  ]
+}

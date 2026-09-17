@@ -17,13 +17,13 @@
       "id": "web",
       "rootPath": "frontend/src/contracts/generated",
       "owner": "T02a",
-      "status": "pending"
+      "status": "done"
     },
     {
       "id": "miniprogram",
       "rootPath": "miniprogram/contracts/generated",
       "owner": "T02b",
-      "status": "pending"
+      "status": "done"
     }
   ],
   "generatedFrom": {

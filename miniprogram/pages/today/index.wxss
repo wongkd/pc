@@ -1,0 +1,298 @@
+.today {
+  min-height: 100vh;
+  padding-bottom: var(--mp-s6);
+}
+
+/* 品牌与开单：02 §4「应用品牌与＋开单置于下方紧凑行」，不画假胶囊 */
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--mp-s3) var(--mp-s4);
+  background: var(--mp-surface);
+  border-bottom: 1rpx solid var(--mp-line);
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-name {
+  font-size: var(--mp-fs-device);
+  color: var(--mp-ink);
+}
+
+.brand-store {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+}
+
+.create-btn {
+  min-height: var(--mp-touch);
+  padding: 0 var(--mp-s4);
+  display: flex;
+  align-items: center;
+  background: var(--mp-ink);
+  color: var(--mp-surface);
+  font-size: var(--mp-fs-secondary);
+  border-radius: var(--mp-radius);
+}
+
+/* 四项统计：窄屏两行两列，大金额不被压缩（02 §4） */
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mp-s2);
+  padding: var(--mp-s3) var(--mp-s4) 0;
+}
+
+.metric {
+  flex: 0 0 calc(50% - var(--mp-s1));
+  box-sizing: border-box;
+  min-height: var(--mp-touch);
+  padding: var(--mp-s2) var(--mp-s3);
+  background: var(--mp-surface);
+  border: 1rpx solid var(--mp-line);
+  border-radius: var(--mp-radius);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.metric-label {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+}
+
+.metric-value {
+  font-size: var(--mp-fs-amount);
+  line-height: 1.25;
+  color: var(--mp-ink);
+}
+
+.todo-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mp-s2);
+  padding: var(--mp-s4) var(--mp-s4) var(--mp-s2);
+}
+
+.todo-title {
+  font-size: var(--mp-fs-device);
+  color: var(--mp-ink);
+}
+
+.todo-count {
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+}
+
+.search-row {
+  display: flex;
+  gap: var(--mp-s2);
+  padding: 0 var(--mp-s4);
+}
+
+.search-box {
+  flex: 1;
+  min-height: var(--mp-touch);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--mp-s3);
+  background: var(--mp-surface);
+  border: 1rpx solid var(--mp-line);
+  border-radius: var(--mp-radius);
+}
+
+.search-placeholder {
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+}
+
+.scan-btn {
+  min-height: var(--mp-touch);
+  padding: 0 var(--mp-s4);
+  display: flex;
+  align-items: center;
+  background: var(--mp-sage);
+  color: var(--mp-ink);
+  font-size: var(--mp-fs-secondary);
+  border-radius: var(--mp-radius);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mp-s2);
+  padding: var(--mp-s3) var(--mp-s4);
+}
+
+.filter {
+  min-height: 64rpx;
+  padding: 0 var(--mp-s3);
+  display: flex;
+  align-items: center;
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+  background: var(--mp-surface);
+  border: 1rpx solid var(--mp-line);
+  border-radius: var(--mp-radius);
+}
+
+.filter-on {
+  background: var(--mp-sage);
+  border-color: var(--mp-ink);
+  color: var(--mp-ink);
+}
+
+.empty {
+  padding: var(--mp-s8) var(--mp-s4);
+  text-align: center;
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+}
+
+.rows {
+  padding: 0 var(--mp-s4);
+}
+
+/* 任务行：56–64px 缩略图 + 客户/设备 + 卡点 + 时间与动作；整行可点（02 §4） */
+.row {
+  display: flex;
+  align-items: stretch;
+  gap: var(--mp-s3);
+  padding: var(--mp-s3) 0;
+  border-bottom: 1rpx solid var(--mp-line);
+}
+
+.row-hover {
+  background: var(--mp-sage);
+}
+
+.btn-hover {
+  opacity: 0.75;
+}
+
+.metric-hover {
+  border-color: var(--mp-ink);
+}
+
+.thumb,
+.thumb-img,
+.thumb-fallback {
+  width: 120rpx;
+  height: 120rpx;
+}
+
+.thumb {
+  flex: 0 0 120rpx;
+  border-radius: var(--mp-radius);
+  overflow: hidden;
+  background: var(--mp-photo);
+}
+
+.thumb-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mp-s1);
+  box-sizing: border-box;
+}
+
+.thumb-fallback-text {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+  text-align: center;
+}
+
+.row-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mp-s1);
+}
+
+.row-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--mp-s2);
+}
+
+.row-customer {
+  font-size: var(--mp-fs-body);
+  color: var(--mp-ink);
+}
+
+.row-device {
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+  /* 长设备名最多两行，电话与 SN 进入详情（02 §4） */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.row-blocker-summary {
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-warning);
+  line-height: 1.5;
+}
+
+.row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--mp-s2);
+  align-items: baseline;
+}
+
+.row-deadline {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+}
+
+/* 逾期必须写字，不只变红（02 §4） */
+.row-deadline-overdue {
+  color: var(--mp-danger);
+}
+
+.row-action {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-ink);
+}
+
+.row-action-blocked {
+  color: var(--mp-muted);
+}
+
+.row-amount-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mp-s2);
+}
+
+.row-amount {
+  font-size: var(--mp-fs-body);
+  color: var(--mp-ink);
+}
+
+.row-amount-dir {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+}
+
+.row-blocked-reason {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-danger);
+  line-height: 1.5;
+}
+
+.row-arrow {
+  display: flex;
+  align-items: center;
+  color: var(--mp-muted);
+  font-size: var(--mp-fs-device);
+}

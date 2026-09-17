@@ -1248,8 +1248,8 @@
     "outputDir": "contracts/generated",
     "outputNote": "T01c 产出中立生成物到 contracts/generated/，供两端在各自任务卡中复制 / 引用。它不是「第二份契约」，只是契约的编译产物。",
     "targets": [
-      { "id": "web", "label": "电脑网页端", "rootPath": "frontend/src/contracts/generated", "status": "pending", "owner": "T02a" },
-      { "id": "miniprogram", "label": "微信小程序端", "rootPath": "miniprogram/contracts/generated", "status": "pending", "owner": "T02b", "pathNote": "小程序项目尚未建立，路径为规划值；T02b 建立项目时按实际 miniprogramRoot 调整并回写本文件。" }
+      { "id": "web", "label": "电脑网页端", "rootPath": "frontend/src/contracts/generated", "status": "done", "owner": "T02a", "landedNote": "T02a 已落地，由 frontend/scripts/sync-contracts.mjs 写入端内并做三方防漂移。" },
+      { "id": "miniprogram", "label": "微信小程序端", "rootPath": "miniprogram/contracts/generated", "status": "done", "owner": "T02b", "pathNote": "T02b 已建立项目并落地。project.config.json 的 miniprogramRoot 取项目根，故本路径即端内实际消费路径，规划值与实际一致，未改动 rootPath。" }
     ],
     "headerRule": "每个生成文件首行必须是 // AUTO-GENERATED FROM contracts/v1 — DO NOT EDIT，并写明生成命令与源文件哈希。",
     "hashRule": "manifest.json 记录每个契约源文件的 sha256 与每个生成物的 sha256；--check 与校验脚本都重算比对。",
@@ -1266,5 +1266,16 @@
       "fixtures.json 不生成端内文件：样本只在测试与演示环境使用，生产包不得携带。"
     ],
     "forbiddenManualEdit": "任何生成物的手工修改会在 validate-contracts.mjs 第 12 节与 generate-dto.mjs --check 中被检出并失败。修改必须改契约源文件后重新生成。"
-  }
+  },
+
+  "revisions": [
+    {
+      "rev": "T02b-rev1",
+      "date": "2026-09-17",
+      "summary": "回写 dtoGeneration.targets 两端落地状态：web 与 miniprogram 均由 pending 改为 done，并补 landedNote / pathNote 记录实际落地方式。同时修正生成器：manifest.json 的 targets 原为 contracts/tools/generate-dto.mjs 内硬编码的第二份副本，现改为从本文件读取，使 targets 保持单一来源。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "未变更任何字段名、类型、枚举取值、动作编号、错误码、金额公式或样本数值；两个 rootPath 与规划值一致，未改动。端内生成物路径不变，故按 conventions.compatibility.versioning 的意图不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定（与 OPEN-ITEMS D-B 同一治理问题）。",
+      "verification": "node contracts/tools/validate-contracts.mjs；node contracts/tools/generate-dto.mjs --check；node frontend/scripts/sync-contracts.mjs --check；node miniprogram/scripts/sync-contracts.mjs --check"
+    }
+  ]
 }

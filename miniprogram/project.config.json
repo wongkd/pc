@@ -1,0 +1,35 @@
+{
+  "description": "装机店经营工作台 · 微信小程序端（T02b 骨架卡，未接业务服务、未写任何业务数据）",
+  "projectname": "pc-quote-miniprogram",
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "./",
+  "srcMiniprogramRoot": "./",
+  "setting": {
+    "urlCheck": false,
+    "es6": true,
+    "enhance": true,
+    "postcss": true,
+    "minified": true,
+    "useCompilerPlugins": ["typescript"],
+    "ignoreDevUnusedFiles": false
+  },
+  "packOptions": {
+    "ignore": [
+      { "type": "file", "value": "package.json" },
+      { "type": "file", "value": "package-lock.json" },
+      { "type": "file", "value": "tsconfig.json" },
+      { "type": "file", "value": "README.md" },
+      { "type": "folder", "value": "scripts" },
+      { "type": "folder", "value": "tests" },
+      { "type": "folder", "value": "node_modules" },
+      { "type": "file", "value": "contracts/generated/manifest.json" }
+    ],
+    "include": []
+  },
+  "condition": {},
+  "editorSetting": {
+    "tabIndent": "insertSpaces",
+    "tabSize": 2
+  }
+}

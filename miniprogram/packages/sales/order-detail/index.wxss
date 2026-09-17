@@ -1,0 +1,245 @@
+.page {
+  min-height: 100vh;
+  /* 为底部固定操作条预留等高空间，最后一条记录可滚到操作条上方（02 §4） */
+  padding-bottom: 200rpx;
+  box-sizing: border-box;
+}
+
+.not-found {
+  padding: var(--mp-s8) var(--mp-s4);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--mp-s2);
+}
+
+.not-found-title {
+  font-size: var(--mp-fs-device);
+  color: var(--mp-ink);
+}
+
+.not-found-hint {
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+  text-align: center;
+}
+
+.ghost-btn {
+  margin-top: var(--mp-s3);
+  min-height: var(--mp-touch);
+  padding: 0 var(--mp-s5);
+  display: flex;
+  align-items: center;
+  border: 1rpx solid var(--mp-ink);
+  color: var(--mp-ink);
+  border-radius: var(--mp-radius);
+  font-size: var(--mp-fs-secondary);
+}
+
+.head {
+  padding: var(--mp-s3) var(--mp-s4);
+  background: var(--mp-surface);
+  border-bottom: 1rpx solid var(--mp-line);
+}
+
+.head-top {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mp-s3);
+}
+
+.entity-id {
+  font-size: var(--mp-fs-title);
+  line-height: 1.3;
+  color: var(--mp-ink);
+}
+
+.category-tag {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+  border: 1rpx solid var(--mp-line);
+  border-radius: var(--mp-radius);
+  padding: 0 var(--mp-s2);
+}
+
+.deadline {
+  display: block;
+  margin-top: var(--mp-s1);
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+}
+
+.deadline-overdue {
+  color: var(--mp-danger);
+}
+
+.section {
+  padding: var(--mp-s3) var(--mp-s4);
+  border-bottom: 1rpx solid var(--mp-line);
+}
+
+.section-title {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+  margin-bottom: var(--mp-s2);
+}
+
+.kv {
+  display: flex;
+  gap: var(--mp-s3);
+  padding: var(--mp-s1) 0;
+}
+
+.k {
+  flex: 0 0 96rpx;
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+}
+
+.v {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--mp-fs-body);
+  color: var(--mp-ink);
+}
+
+/* 紧凑设备摘要：约 88–104px 图（02 §4），此处取 200rpx = 100px */
+.device {
+  display: flex;
+  gap: var(--mp-s3);
+  align-items: flex-start;
+}
+
+.device-thumb,
+.device-img,
+.device-fallback {
+  width: 200rpx;
+  height: 200rpx;
+}
+
+.device-thumb {
+  flex: 0 0 200rpx;
+  border-radius: var(--mp-radius);
+  overflow: hidden;
+  background: var(--mp-photo);
+}
+
+.device-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--mp-s2);
+  box-sizing: border-box;
+}
+
+.device-fallback-text {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+  text-align: center;
+}
+
+.device-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--mp-s1);
+}
+
+.device-name {
+  font-size: var(--mp-fs-device);
+  color: var(--mp-ink);
+  line-height: 1.4;
+}
+
+.device-note {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+}
+
+.blocker {
+  font-size: var(--mp-fs-body);
+  color: var(--mp-warning);
+  line-height: 1.6;
+}
+
+.next-action {
+  font-size: var(--mp-fs-body);
+  color: var(--mp-ink);
+}
+
+.blocked-reason {
+  margin-top: var(--mp-s1);
+  font-size: var(--mp-fs-small);
+  color: var(--mp-danger);
+  line-height: 1.6;
+}
+
+.muted {
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+  line-height: 1.6;
+}
+
+/* 详情页只有这一个固定底部区域：不含 tabBar，也不堆第二层导航（02 §4） */
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--mp-surface);
+  border-top: 1rpx solid var(--mp-line);
+  padding: var(--mp-s2) var(--mp-s4);
+  padding-bottom: calc(var(--mp-s2) + env(safe-area-inset-bottom));
+}
+
+.amount {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mp-s1);
+  margin-bottom: var(--mp-s2);
+}
+
+.amount-line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--mp-s2);
+}
+
+.amount-value {
+  font-size: var(--mp-fs-amount);
+  line-height: 1.2;
+  color: var(--mp-ink);
+}
+
+.amount-direction {
+  font-size: var(--mp-fs-secondary);
+  color: var(--mp-muted);
+}
+
+.amount-detail {
+  font-size: var(--mp-fs-small);
+  color: var(--mp-muted);
+  line-height: 1.5;
+}
+
+.primary-btn {
+  min-height: var(--mp-touch-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mp-ink);
+  color: var(--mp-surface);
+  font-size: var(--mp-fs-body);
+  border-radius: var(--mp-radius);
+}
+
+/* 阻断态：仍然可读、可解释原因，不是简单置灰到看不见（02 §6） */
+.primary-btn-blocked {
+  background: var(--mp-sage);
+  color: var(--mp-muted);
+}
+
+.btn-hover {
+  opacity: 0.75;
+}

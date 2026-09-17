@@ -361,6 +361,7 @@ export function buildArtifacts() {
   const errorsDoc = sources['errors.json'].doc
   const moneyDoc = sources['money-rules.json'].doc
   const actionsDoc = sources['actions.json'].doc
+  const fixturesDoc = JSON.parse(readFileSync(join(v1Dir, 'fixtures.json'), 'utf8'))
 
   const files = {
     'enums.ts': buildEnums(enumsDoc),
@@ -386,10 +387,12 @@ export function buildArtifacts() {
     contractsFrozenBy: [conventions.frozenBy, actionsDoc.frozenBy, 'T01c'],
     headerRule: HEADER,
     editPolicy: '生成物禁止手工编辑；改契约源文件后重新生成。validate-contracts.mjs 第 12 节重算本清单的哈希。',
-    targets: [
-      { id: 'web', rootPath: 'frontend/src/contracts/generated', owner: 'T02a', status: 'pending' },
-      { id: 'miniprogram', rootPath: 'miniprogram/contracts/generated', owner: 'T02b', status: 'pending' }
-    ],
+    targets: (fixturesDoc.dtoGeneration?.targets ?? []).map((t) => ({
+      id: t.id,
+      rootPath: t.rootPath,
+      owner: t.owner,
+      status: t.status
+    })),
     generatedFrom,
     artifacts: Object.keys(files).sort().map((name) => ({ file: name, sha256: artifactHashes[name] })),
     selfHashNote: 'manifest.json 与 artifacts 的 sha256 均指文件正文（不含 manifest 自身哈希）。'

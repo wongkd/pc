@@ -1,0 +1,20 @@
+<template name="landing">
+  <view class="mp-landing">
+    <text class="mp-landing-kicker">{{kicker}}</text>
+    <text class="mp-landing-title">{{title}}</text>
+    <text class="mp-landing-intro">{{intro}}</text>
+
+    <view class="mp-landing-list">
+      <view class="mp-landing-item" wx:for="{{entries}}" wx:key="name">
+        <text class="mp-landing-item-name">{{item.name}}</text>
+        <text class="mp-landing-item-desc">{{item.desc}}</text>
+        <text class="mp-landing-item-state">{{item.state}}</text>
+      </view>
+    </view>
+
+    <view class="mp-landing-notes">
+      <text class="mp-landing-notes-title">本阶段边界</text>
+      <text class="mp-landing-notes-text">{{notes}}</text>
+    </view>
+  </view>
+</template>

@@ -1,0 +1,48 @@
+{
+  "pages": [
+    "pages/today/index",
+    "pages/sales/index",
+    "pages/inventory/index",
+    "pages/more/index"
+  ],
+  "subPackages": [
+    {
+      "root": "packages",
+      "pages": ["sales/order-detail/index"]
+    }
+  ],
+  "window": {
+    "navigationBarBackgroundColor": "#F8F6EF",
+    "navigationBarTitleText": "工作台",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#F8F6EF",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#687365",
+    "selectedColor": "#334B42",
+    "backgroundColor": "#FFFEF9",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/today/index",
+        "text": "今天"
+      },
+      {
+        "pagePath": "pages/sales/index",
+        "text": "开单"
+      },
+      {
+        "pagePath": "pages/inventory/index",
+        "text": "库存"
+      },
+      {
+        "pagePath": "pages/more/index",
+        "text": "更多"
+      }
+    ]
+  },
+  "lazyCodeLoading": "requiredComponents",
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

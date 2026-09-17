@@ -1,0 +1,333 @@
+/**
+ * T02b · 小程序的演示样本（V1 读模型样本）。
+ *
+ * 数据来源：`contracts/v1/fixtures.json` 的 `datasets.V1`（06 §2 固定虚构样本）。
+ * 契约规定 `fixtures.json` 不生成端内文件（`dtoGeneration.notGenerated`），故此处是
+ * 端内副本；`tests/demo-consistency.test.mjs` 会逐字段与契约比对，任何一方漂移都会
+ * 使测试失败 —— 不允许出现「三处手写、各自演化」（网页端副本在
+ * `frontend/src/features/workbench/demoData.ts`，与本文件同源）。
+ *
+ * 演示约定（`fixtures.demoPolicy`）：
+ *   - 标识由 ID 前缀 `DEMO-` 承载，不新增协议字段；
+ *   - 固定演示日期 2026-09-17（Asia/Shanghai），不随运行当天变成过期样本；
+ *   - 样本整体不可导入生产；接真实服务（T18）后必须删除本文件，
+ *     禁止生产模式回退到样本并显示成功。
+ *   - V1 只证明页面读模型，不构成任何业务前置条件已满足的证据。
+ *
+ * 金额单位一律为「分」（integer cents），展示时才除以 100。
+ */
+import type {
+  AttachmentPurpose,
+  BalanceDirection,
+  EntityType,
+  TaskCategory,
+} from '../contracts/generated/enums'
+
+/** objects.json 把 TaskReadModel.amountSummary 声明为 JsonObject（结构未固定），
+ *  结构由 fixtures.shapeDefinitions.amountSummary 首次冻结；此处按其字段定义端内类型。 */
+export interface WorkbenchAmountSummary {
+  totalCents: number | null
+  receivedCents: number | null
+  offsetCents: number | null
+  balanceCents: number | null
+  balanceDirection: BalanceDirection | null
+  estimateCents: number | null
+  countsTowardReceivable: boolean
+  note: string | null
+}
+
+export interface WorkbenchActionBlocker {
+  /** 必须是 errors.json 中存在的错误码。 */
+  code: string
+  message: string
+  targetPage: string | null
+  targetField: string | null
+}
+
+export interface WorkbenchPrimaryAction {
+  code: string
+  label: string
+  enabled: boolean
+  blockers: WorkbenchActionBlocker[]
+}
+
+export interface WorkbenchTask {
+  taskId: string
+  entityType: EntityType
+  entityId: string
+  entityVersion: number
+  category: TaskCategory
+  title: string
+  customerDisplay: string | null
+  deviceSummary: string | null
+  photoKind: AttachmentPurpose | null
+  photoUrl: string | null
+  dueAt: string | null
+  deadlineText: string | null
+  blockerSummary: string | null
+  amountSummary: WorkbenchAmountSummary | null
+  primaryAction: WorkbenchPrimaryAction
+  detailTarget: string
+}
+
+/** 固定演示日期与门店时区（fixtures.demoPolicy）。 */
+export const DEMO_DATE = '2026-09-17'
+export const DEMO_TIMEZONE = 'Asia/Shanghai'
+
+/** 运行状态说明：页面必须如实说明数据来源与未接通范围（02 §1、05 执行原则）。 */
+export const DEMO_RUNTIME_NOTE = '演示样本 · 固定日期 2026-09-17 · 未连接门店服务'
+
+export const DEMO_TASKS: WorkbenchTask[] = [
+  {
+    taskId: 'DEMO-TASK-001',
+    entityType: 'sale_order',
+    entityId: 'DEMO-SO-003',
+    entityVersion: 3,
+    category: 'delivery',
+    title: '装机交付 · 白色设计主机',
+    customerDisplay: '陈先生',
+    deviceSummary: '白色设计主机 · 设计用装机',
+    photoKind: 'delivery_evidence',
+    photoUrl: 'demo://photos/DEMO-SO-003.png',
+    dueAt: '2026-09-17T08:00:00Z',
+    deadlineText: '今天 16:00 取机',
+    blockerSummary: '装机检查 2/3 项完成；附件未打包',
+    amountSummary: {
+      totalCents: 628000,
+      receivedCents: 200000,
+      offsetCents: 0,
+      balanceCents: 428000,
+      balanceDirection: 'client_due',
+      estimateCents: null,
+      countsTowardReceivable: true,
+      note: null,
+    },
+    primaryAction: {
+      code: 'B10',
+      label: '办理交付（先核对）',
+      enabled: false,
+      blockers: [
+        {
+          code: 'CHECKLIST_INCOMPLETE',
+          message: '检查项 2/3 完成，附件未打包',
+          targetPage: '装机检测',
+          targetField: null,
+        },
+      ],
+    },
+    detailTarget: '/orders/DEMO-SO-003',
+  },
+  {
+    taskId: 'DEMO-TASK-002',
+    entityType: 'sale_order',
+    entityId: 'DEMO-SO-002',
+    entityVersion: 4,
+    category: 'stock_shortage',
+    title: '装机缺件 · 缺 SSD 1 件',
+    customerDisplay: '林女士',
+    deviceSummary: '游戏主机 · 缺 SSD 1 件',
+    photoKind: 'product_reference',
+    photoUrl: 'demo://photos/DEMO-SO-002.png',
+    dueAt: '2026-09-17T09:30:00Z',
+    deadlineText: '预计 17:30 到货（尚未实到）',
+    blockerSummary: '缺 SSD 1 件，预计 17:30，尚未实到',
+    amountSummary: {
+      totalCents: 828000,
+      receivedCents: 200000,
+      offsetCents: 0,
+      balanceCents: 628000,
+      balanceDirection: 'client_due',
+      estimateCents: null,
+      countsTowardReceivable: true,
+      note: null,
+    },
+    primaryAction: { code: 'B15', label: '核对到货', enabled: true, blockers: [] },
+    detailTarget: '/orders/DEMO-SO-002',
+  },
+  {
+    taskId: 'DEMO-TASK-003',
+    entityType: 'service_order',
+    entityId: 'DEMO-RE-008',
+    entityVersion: 2,
+    category: 'service',
+    title: '维修 · 显卡间歇黑屏',
+    customerDisplay: '周先生',
+    deviceSummary: '客户显卡 · 间歇黑屏',
+    photoKind: 'service_intake',
+    photoUrl: 'demo://photos/DEMO-RE-008.png',
+    dueAt: null,
+    deadlineText: '待安排',
+    blockerSummary: '已接收待检测，未定收费',
+    amountSummary: {
+      totalCents: null,
+      receivedCents: null,
+      offsetCents: null,
+      balanceCents: null,
+      balanceDirection: null,
+      estimateCents: null,
+      countsTowardReceivable: false,
+      note: '费用待确认',
+    },
+    primaryAction: { code: 'B21', label: '开始检测', enabled: true, blockers: [] },
+    detailTarget: '/after-sales/DEMO-RE-008',
+  },
+  {
+    taskId: 'DEMO-TASK-004',
+    entityType: 'sale_order',
+    entityId: 'DEMO-SO-011',
+    entityVersion: 2,
+    category: 'delivery',
+    title: '零售交付 · 办公主机',
+    customerDisplay: '赵先生',
+    deviceSummary: '办公主机 · 零售整机',
+    photoKind: 'delivery_evidence',
+    photoUrl: 'demo://photos/DEMO-SO-011.png',
+    dueAt: '2026-09-17T10:00:00Z',
+    deadlineText: '今天 18:00',
+    blockerSummary: null,
+    amountSummary: {
+      totalCents: 368000,
+      receivedCents: 368000,
+      offsetCents: 0,
+      balanceCents: 0,
+      balanceDirection: 'settled',
+      estimateCents: null,
+      countsTowardReceivable: true,
+      note: '尾款为 0，仍须确认实物交出',
+    },
+    primaryAction: { code: 'B10', label: '办理交付', enabled: true, blockers: [] },
+    detailTarget: '/orders/DEMO-SO-011',
+  },
+  {
+    taskId: 'DEMO-TASK-005',
+    entityType: 'service_order',
+    entityId: 'DEMO-RE-006',
+    entityVersion: 3,
+    category: 'service',
+    title: '维修 · 主板更换建议',
+    customerDisplay: '刘女士',
+    deviceSummary: '笔记本 · 主板更换建议 480 元',
+    photoKind: 'service_intake',
+    photoUrl: 'demo://photos/DEMO-RE-006.png',
+    dueAt: null,
+    deadlineText: '待客户确认',
+    blockerSummary: '主板更换建议 480 元，未获客户确认',
+    amountSummary: {
+      totalCents: null,
+      receivedCents: null,
+      offsetCents: null,
+      balanceCents: null,
+      balanceDirection: null,
+      estimateCents: 48000,
+      countsTowardReceivable: false,
+      note: '预计费用，不计确定应收',
+    },
+    primaryAction: { code: 'B22', label: '查看方案', enabled: true, blockers: [] },
+    detailTarget: '/after-sales/DEMO-RE-006',
+  },
+  {
+    taskId: 'DEMO-TASK-006',
+    entityType: 'sale_order',
+    entityId: 'DEMO-SO-009',
+    entityVersion: 2,
+    category: 'stock_shortage',
+    title: '零售缺件 · 显示器 1 台在途',
+    customerDisplay: '吴先生',
+    deviceSummary: '办公套装 · 显示器 1 台在途',
+    photoKind: 'product_reference',
+    photoUrl: 'demo://photos/DEMO-SO-009.png',
+    dueAt: '2026-09-18T02:00:00Z',
+    deadlineText: '预计明天到货',
+    blockerSummary: '显示器 1 台在途，预计明天',
+    amountSummary: {
+      totalCents: 424000,
+      receivedCents: 200000,
+      offsetCents: 0,
+      balanceCents: 224000,
+      balanceDirection: 'client_due',
+      estimateCents: null,
+      countsTowardReceivable: true,
+      note: null,
+    },
+    primaryAction: { code: 'B15', label: '查看缺件', enabled: true, blockers: [] },
+    detailTarget: '/orders/DEMO-SO-009',
+  },
+  {
+    taskId: 'DEMO-TASK-007',
+    entityType: 'recovery_order',
+    entityId: 'DEMO-TR-001',
+    entityVersion: 1,
+    category: 'recovery',
+    title: '回收 · 旧机暂存待验机',
+    customerDisplay: '刘先生',
+    deviceSummary: '旧主机 · 暂存待验机',
+    photoKind: 'recovery_evidence',
+    photoUrl: 'demo://photos/DEMO-TR-001.png',
+    dueAt: null,
+    deadlineText: '待安排',
+    blockerSummary: '旧机暂存待验机，预计 1,500 元，未确认收购',
+    amountSummary: {
+      totalCents: null,
+      receivedCents: null,
+      offsetCents: null,
+      balanceCents: null,
+      balanceDirection: null,
+      estimateCents: 150000,
+      countsTowardReceivable: false,
+      note: '客户所有，不计库存 / 折抵',
+    },
+    primaryAction: { code: 'B27', label: '开始验机', enabled: true, blockers: [] },
+    detailTarget: '/recovery/DEMO-TR-001',
+  },
+]
+
+/** 指标（06 §2 期望，fixtures.datasets.V1.metrics）。 */
+export const DEMO_METRICS = {
+  pendingDelivery: 2,
+  stockShortage: 2,
+  servicePending: 2,
+  taskTotal: 7,
+  /** 待收 = countsTowardReceivable=true 的 balanceCents 之和 = 4,280 + 6,280 + 2,240 元。 */
+  receivableCents: 1280000,
+} as const
+
+/** 列表类别筛选。`all` 之外与 TaskCategory 取值一致。 */
+export const TASK_CATEGORY_LABELS: Record<TaskCategory, string> = {
+  delivery: '交付',
+  stock_shortage: '缺货',
+  service: '维修',
+  recovery: '回收',
+  collection: '待收款',
+}
+
+/**
+ * 演示排序：截止时间升序，无截止时间的排在最后。
+ *
+ * ⚠️ 这不是最终排序。契约里 V1 声明 `order: "unspecified"`（F05，归 T18），
+ * 规格只保证 06 §2 表格顺序是「类别展示顺序」。此处仅为让演示可复现。
+ */
+export function sortTasksForDemo(tasks: WorkbenchTask[]): WorkbenchTask[] {
+  return [...tasks].sort((a, b) => {
+    if (a.dueAt === b.dueAt) return a.taskId.localeCompare(b.taskId)
+    if (a.dueAt === null) return 1
+    if (b.dueAt === null) return -1
+    return a.dueAt < b.dueAt ? -1 : 1
+  })
+}
+
+/** 按 taskId 取任务。详情页只带 ID 进入，重新取数，不把列表旧对象当可提交依据（02 §4）。 */
+export function findTaskById(taskId: string): WorkbenchTask | undefined {
+  return DEMO_TASKS.find((t) => t.taskId === taskId)
+}
+
+/**
+ * 逾期判断用**固定演示日期**比较，不用运行当天（fixtures.demoPolicy.dateRule）。
+ *
+ * ⚠️ V1 样本里没有逾期项（openItems G-14），所以本分支在演示数据下不会被触发。
+ * 实现保留并由单测单独构造用例覆盖，避免「因为没有样本就把需求删掉」。
+ * 02 §4 要求逾期必须写出「已逾期」，不能只变红。
+ */
+export function isOverdueTask(task: WorkbenchTask): boolean {
+  if (task.dueAt === null) return false
+  return task.dueAt.slice(0, 10) < DEMO_DATE
+}
