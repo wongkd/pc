@@ -2,7 +2,6 @@
 
 > 用途：把下面代码块里的内容整段复制到新对话，即可无缝接手。
 > 维护人：每次收工前更新本文件（改「收工状态」与「下一步」两节即可）。
-> 专项开卡：只做 **T05a** 时，改用 [T05-KICKOFF.md](./T05-KICKOFF.md)（更聚焦，已钉规格行号）。
 
 ---
 
@@ -22,58 +21,38 @@
 规划入口：docs/plans/2026-09-17-web-wechat-plan/（7 份，T00–T22 卡）。
 推进规则：**一次只执行一张子卡**，每卡产 docs/verification/<日期>-<卡号>/README.md。
 
-【收工状态 · 2026-09-17】
-- 已完成：T00 / T01（契约 v1 冻结，校验 3047 项）/ T02a（网页六导航壳 + 今天工作台）/
-  T02b（小程序壳 + 排版层对齐设计稿）/ T02b-rev2（修 R-14 统计条金额溢出）/
-  **T04（一致性与幂等基础 a/b/c）← 本轮新增**
-- 负责人裁定（2026-09-17）：**跳过 T02c**（组件提取），视觉细化并入 G2 收尾。
-  本轮只单独记下一个真 bug 隐患：网页端 describeAmount 缺 store_due 分支，
-  「应付客户」被显示成「待收」——方向反转（OPEN-ITEMS T-10），尚未修。
-- **T04 做了什么**（这是本轮唯一改动，细节见验证记录）：
-  · 新增迁移 `backend/migrations/0006_consistency_core.sql`：
-    operations（幂等记录）/ assertion_guards（守卫表 + RAISE 触发器）/
-    entity_version_log（版本日志）/ operation_failures（脱敏诊断）。
-    **只新增，未动 0000–0005 任何表**。
-  · 新增 `backend/src/domains/operations.ts`：幂等执行器 runIdempotent、
-    守卫 guardStatement、版本推进 bumpVersionStatement、结果查询 queryOperation。
-  · 新增 `backend/scripts/sync-error-codes.mjs`：契约错误码单向生成到后端
-    （生成物 `backend/src/generated/error-codes.ts`，可 `--check` 防漂移）。
-  · 新增 `backend/tests/`：本地 D1 测试入口。**命令 `npm --prefix backend test`，21 用例通过**。
-  · 契约 `contracts/v1/legacy-mapping.json` 纯追加 51 行（登记 4 张新表，校验脚本要求
-    「迁移表必须被映射覆盖」）。未改任何枚举/字段/校验规则。
-  · `backend/src/index.ts` **一行未动**；旧 Worker 与新基础设施暂未接线。
-- **T04 的核心结论（后续所有业务卡都要用）**：
-  · **D1 里「条件 UPDATE 影响 0 行」不是报错**，批次会继续跑 → 静默产生半截账。
-    已实测复现（反例测试），这是 T04 存在的唯一理由。
-  · 解法是**约束即断言**，不靠「检查影响行数」：
-    幂等 → UNIQUE(store_id, request_id)；有效逐件预留 → 部分唯一索引 WHERE status='active'；
-    非负/不超额 → CHECK；其余复合条件 → assertion_guards 守卫 + RAISE(ABORT, code)
-    （实测能把契约错误码带进异常消息）。
-  · **版本推进用「插入版本日志」**，不要用「条件 UPDATE + 查影响行数」——
-    并发下后者会把别人的推进误判成自己的成功（主键 (entity_type, entity_id, version)
-    天然决出唯一胜者）。
-  · **不依赖 changes()、不依赖 Worker 内存锁**（D1 禁了 sqlite_version()；
-    changes() 是连接级的，跨语句不可靠）。
-  · ⚠️ **后续卡必须遵守**：幂等记录与业务语句在同一个 batch 内写入，因此
-    **动作结果不能依赖自增主键**（batch 内取不到自增 ID）——
-    实体 ID 必须在拼 SQL 之前由服务端生成。
-- 验证基线（本轮实测）：后端 **21 用例** ✅、契约校验 ✅ 3047 项、两端生成物防漂移 ✅、
-  后端错误码防漂移 ✅、前端 50 用例 ✅ + build ✅、小程序 39 用例 ✅、
-  `wrangler deploy --dry-run` ✅（99.52 KiB，**未部署**）。
-- **顺带做了的只读检查**：`backend/tests/lib/build.mjs` 用 esbuild 预打包 TS 供测试调用；
-  这是为了绕开「miniflare 的 scriptPath 不编译 TS」与「Node 类型擦除不解析无扩展名导入」
-  两个限制，不必为此改生产代码的导入风格。
+【收工状态 · 2026-09-18（T03b 收工后）】
+- 已完成：T00 / T01（契约 v1 冻结，校验 3109 项）/ T02a / T02b / T02b-rev2 /
+  T04（一致性与幂等基础，21 用例）/ **T05a（商品、实物与期初库存，58 用例，2026-09-18）** /
+  **T03b（两端请求层与错误码映射，2026-09-18）← 本轮新增**；T02c 已裁定跳过。
+  （图片与动效资源补充 2026-09-18 已单独提交：四类 AI 示意图接入两端演示，非业务卡。）
+- **T03b 做了什么**（细节见 docs/verification/2026-09-18-T03b/README.md）：
+  · 两端请求核心（零运行时依赖、同构）：requestId 生成/复用、载荷摘要、Idempotency-Key、
+    超时→「结果未知」不当失败、401/403 区别处理、错误码 → 结构化行为枚举（非文本）。
+  · 核心规则：结果未知后重试**复用同一 requestId**（防重复扣款）；载荷变了换新 ID；
+    只在服务端明确成功后清除；AUTH_REQUIRED 保留草稿与 pending；SESSION_REVOKED 全清（03 §8 L194）。
+  · 新增**跨端一致性门禁** `node contracts/tools/check-client-parity.mjs`（36 项）——
+    T-10（金额口径无门禁导致方向反转）的教训不再重演；当场抓出「撤权没清 pending」的缺口。
+  · **请求层未被任何页面使用**、未连真实后端、backend/index.ts 一行未动、契约冻结未动。
+  · 新待裁定项 **D-J**（错误行为枚举是否升入契约，与 D-A/D-H 合并考虑）。
+- 验证基线（本轮实测，2026-09-18）：后端 **58 用例** ✅、前端 **91 用例**（8 文件）✅、
+  小程序 **67 用例**（6 文件）✅、契约 **3109 项** ✅、两端生成物防漂移 ✅、
+  后端错误码防漂移 ✅、**跨端门禁 36 项** ✅、两端 tsc ✅、wrangler dry-run ✅（未部署）。
+  lint 全仓既有失败未跑未修（新文件 src/api 0 错误）。
+- **下一对话开卡提示**：docs/T05-KICKOFF.md 已过时（按 T05a 写的，T05a 已完成）。
 
 【下一步优先级】
-1. **T03（身份、微信绑定与请求层）** —— 仍缺微信主体 / 小程序成员 / API 域名（T-05）。
-   可先做不依赖微信的部分：T03b 两端请求封装 + 错误码映射 + 401/403 + requestId 保存。
-   ⚠️ T03 必须保证 runIdempotent 的 storeId / actorUserId **来自会话**，
-   绝不采信客户端请求体——T04 的接口目前只是「由调用方传入」。
-2. **T05（商品、实物与期初库存）** —— 前置 T04 已就绪，**这是第一张能让人真用起来的卡**。
-   开卡前先读 04 §2 的 Product / StockBalance / StockItem 与 05 卡面；
-   写库一律走 runIdempotent + 约束断言，不要新写裸 SQL。
-3. T07/T08 之前需要负责人裁定 **D-H**（operations.result_json 是否升入契约）与
-   **D-A**（amountSummary / primaryAction 是否升入 objects.json）——两者都涉及是否建 contracts/v2。
+1. **T03a（后端绑定码 / 微信身份交换 / 撤权登出）** —— 阻塞在负责人条件（OPEN-ITEMS T-05）：
+   需要微信小程序 **AppSecret**（只进 wrangler secret / .dev.vars）、**主体类型**（个人/企业）、
+   **API 域名**（小程序只能请求登记过的 HTTPS 域名）。条件齐了才开卡。
+2. **T05b（网页库存表格 / 逐件视图，小程序搜索 / 实物页）** —— 请求层已就绪，但
+   B12/B13 的 HTTP 路由仍未接（依赖 T03a）。开卡前先裁定接入方式：
+   演示数据 + 请求层并存，还是等 T03a 一次接通。页面必须走 createWebApiClient /
+   createMiniProgramApiClient，不得绕过核心自己拼 fetch / wx.request。
+3. **T05c（样本执行）** —— 把 T05a 已测通的约束落成契约 fixtures（同型号不同实物、
+   无 SN 二手、客户寄存、未知成本、重复 SN、数量守恒）。
+4. 待负责人裁定：**D-J**（新，错误行为枚举）、**D-A / D-H**（是否建 contracts/v2）、
+   **C-2**（specs 数组/字符串冲突）、**G-07** 停用语义、**D-C**（六导航权限可见性，T03 装配权限时迟早要定）。
 
 【操作铁律（踩过的坑，别重踩）】
 - **注释里不要出现「星号紧跟斜杠」**：T04 的文件头写了目录通配 `.validation-*` + `/`，
@@ -108,6 +87,12 @@
 - jsdom 不加载资源 → 图片降级要用 `fireEvent.error` 主动触发。
 - **用设计稿核对排版时，宽度按「真实渲染文案」算，别用稿上的示例值**（设计稿写 `¥12,800`，
   真实必须渲染 `¥12,800.00`）→ 这类约束要写成可机械执行的测试。
+- **Windows 下动态 `import()` 裸绝对路径（`c:/…`）报 ERR_UNSUPPORTED_ESM_URL_SCHEME**（P-22）→
+  用 `pathToFileURL(p).href`；T03b 的 `contracts/tools/check-client-parity.mjs` 有现成写法。
+- **两端请求层的铁律（T03b 起）**：页面接入必须走 `createWebApiClient` /
+  `createMiniProgramApiClient`，不得绕过核心自己拼 fetch / wx.request；
+  结果未知（unknownResult）**不是失败**，写动作先用原 requestId 查 operation；
+  改错误行为必须**两端同步改**并跑跨端门禁。
 
 【证据等级要求】
 - 模拟器截图 ≠ 真机；设计原型 ≠ 已批准设计；本地原型 ≠ 已上线。

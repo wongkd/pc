@@ -16,6 +16,7 @@
 - [微信小程序端（T02b）](./miniprogram/README.md)：独立小程序项目、原生 tabBar 四项、列表与详情的真实页面跳转；排版层已对齐 v3 设计稿（AppID 已配置）。验证记录见 [T02b](./docs/verification/2026-09-17-T02b/README.md)。
 - [后端一致性与幂等基础（T04）](./docs/verification/2026-09-17-T04/README.md)：幂等执行器、断言守卫、版本日志与新迁移 `0006`；本地 D1 测试入口（`npm --prefix backend test`，21 用例）。核心机制：**约束即断言**。
 - [商品、实物与期初库存（T05a）](./docs/verification/2026-09-18-T05a/README.md)：Product 就地扩展 `hardware`、新建 `stock_items` / `stock_balances` / `inventory_movements` 与新迁移 `0007`；库存首次有真实账（余额只由流水触发器写入，三桶结构上不可能混算）。命令 `npm --prefix backend test`，58 用例。**HTTP 路由未接（等 T03 鉴权），0007 未应用到远端**。
+- [两端请求层（T03b）](./docs/verification/2026-09-18-T03b/README.md)：错误码 → 行为枚举、requestId 复用（结果未知重试不重复记账）、401/403 区别处理、撤权清会话、登录后恢复目标页；新增**跨端一致性门禁** `node contracts/tools/check-client-parity.mjs`（36 项）。**未被任何页面使用、未连真实后端**。
 - [前一轮独立 A / B / C 提案](./docs/design/2026-09-17-style-exploration/v2/README.md)：历史对照，保留原稿。
 
 融合版目前是独立本地原型，尚未接入业务 API、部署或实现原生小程序 / App。预览命令与验证结果见对应说明。本目录已建立 Git 基线（`main` 分支，起始提交 `e5ca594`，见 T00 记录）。
@@ -32,7 +33,8 @@
 | G0 基线 | T02c 组件提取 | **已裁定跳过**（2026-09-17 负责人选 D4：视觉细化并入 G2 收尾） |
 | G0 基线 | T04 一致性与幂等基础（a/b/c） | **本地通过**（21 用例，真实 workerd + D1；0006 未应用到远端） |
 | G1+ | T05a 商品、实物与期初库存（后端） | **本地通过**（58 用例含本卡 37；B12/B13/查询；0007 未应用到远端） |
-| G1+ | T03、T05b–T22 | 未开始 |
+| G1+ | T03b 两端请求层与错误码映射 | **本地通过**（前端 91 / 小程序 67 用例含本卡新增；跨端门禁 36 项；未接页面、未连后端） |
+| G1+ | T03a/T03c、T05b–T22 | 未开始（T03a 阻塞在微信条件 T-05） |
 
 **⚠️ 当前前端仍是演示数据源**：`dist` 产物里含 `DEMO-` 前缀样本，不得当作可用版本发布；详见 [OPEN-ITEMS](./docs/OPEN-ITEMS.md) 的 D-E 与 T-01。
 

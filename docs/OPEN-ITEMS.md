@@ -1,6 +1,6 @@
 # 未决项与踩坑台账（跨卡片）
 
-更新：2026-09-18（最后由 T05a 维护）
+更新：2026-09-18（最后由 T03b 维护）
 用途：**把「规格没写的」「需要你拍板的」「已经踩过的坑」集中在一处**，便于换一个 AI 继续做，也便于你逐条决定。
 
 - 本文件只做索引与结论，**不复述业务规范**；业务规则以 `docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md` 与契约 `contracts/` 为准。
@@ -13,9 +13,10 @@ git log --oneline -8                       # 看做到哪张卡
 node contracts/tools/validate-contracts.mjs # 契约自洽（应 3047 项、退出码 0）
 node frontend/scripts/sync-contracts.mjs --check    # 网页端内生成物未漂移
 node miniprogram/scripts/sync-contracts.mjs --check # 小程序端内生成物未漂移
-npm --prefix frontend run test              # 应 6 文件 / 50 用例通过
-npm --prefix miniprogram test               # 应 4 文件 / 39 用例通过（T02b-rev2 后；需先 npm --prefix miniprogram install）
-npm --prefix backend test                   # 应 21 用例通过（T04 后；真实 workerd + 真实 D1）
+npm --prefix frontend run test              # T03b 后应 8 文件 / 91 用例通过
+npm --prefix miniprogram test               # T03b 后应 6 文件 / 67 用例通过（需先 npm --prefix miniprogram install）
+npm --prefix backend test                   # T05a 后应 58 用例通过（真实 workerd + 真实 D1）
+node contracts/tools/check-client-parity.mjs        # 跨端一致性门禁（T03b 新增，36 项）
 node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物未漂移（T04 新增）
 ```
 
@@ -38,6 +39,7 @@ node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物�
 | **D-H** | `operations.result_json` 的结构是否升入契约（成为规范性定义） | T04 把动作结果（summary / effects / entityType / entityId / version）存进 `operations.result_json`。结构目前由 `backend/src/domains/operations.ts` 的 `OperationOutcome` 定义，**契约未声明**（与 D-A 的 `amountSummary` 同类问题） | 与 D-A 合并考虑：若两者都升入 `objects.json`，属于新增规范性表面，须提 `contractVersion` → 建 `contracts/v2/`。若不升，两端只能按实现约定消费，客户端拿不到类型 | 影响「结果未知查询」的响应结构（GET /operations/:requestId 已在 T04 预留 `queryOperation`）。D4 已裁定跳 T02c，但本项与 D-A 应在 T07/T08 前定 |
 
 | **D-I** | `specs` 的类型：`actions.json` L305 写 B12 输入为 `specs:Spec[]`（数组），`objects.json` L43 写 `Product.specs` 为 `string` | 两处都是冻结文件。T05a 按**对象定义**（string）实现，B12 接受 `string \| null` | 这不是「规格留白」而是**契约内部相互矛盾** —— 两个文件都被称作唯一来源。改哪一边都会动规范性表面 | B12 的请求结构无法最终确定；两端由契约生成的类型会与后端实现不一致。T05a 已按 string 落地并记录在验证文档 §7 C-2 |
+| **D-J** | 错误码的**客户端行为枚举**是否升入契约（成为规范性定义） | T03b 把每个错误码的客户端行为固化为端内结构化表（`frontend/src/api/error-behavior.ts` 与 `miniprogram/features/error-behavior.ts`），由 `node contracts/tools/check-client-parity.mjs` 强制两端一致并与 `errors.json` 对齐。契约 `clientHandling` 是给人看的文本，程序不能靠它分支 | 与 D-A / D-H 合并考虑：升入契约须提 `contractVersion` → 建 `contracts/v2/`，届时应**删除两端行为表**改为消费生成物 | 不定则行为表持续作为端内实现存在（有门禁兜底，风险可控）；影响后续所有错误处理路径的单一来源归属 |
 
 ---
 
@@ -97,6 +99,7 @@ node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物�
 | P-19 | **同一个 D1 批次内，后面的语句看得见前面语句的效果** | B13 一个请求带两行时，第二行的「该商品是否已有库存」守卫命中了第一行刚建的数据，整批被自己拦下；**单行请求却完全正常**，极易误判成「约束写错了」 | 「本批之前是否已存在」类的守卫，必须**排除本次 requestId 写入的行**（按 `request_id <> ?` / 期初单号排除）。T05a 的两处守卫已按此修正并有对应用例 |
 | P-20 | **UPSERT 的 INSERT 分支先校验 CHECK，再判定唯一冲突** | 把桶间转移的算术写进 `INSERT ... ON CONFLICT DO UPDATE` 的 INSERT 分支时，`available → reserved`（delta 为负）被 `available_qty >= 0` 拒绝，报错指向一个完全合法的余额 | 改为**先 `INSERT OR IGNORE` 建零行，再 `UPDATE` 累加**。此时「对不存在的余额做扣减」仍会因 CHECK 失败整批回滚（正确行为），合法转移则可通过 |
 | P-21 | **`db.prepare(...).bind(...)` 本身不会执行语句** | 测试夹具漏写 `.run()`，INSERT 静默不生效；后续断言全拿到 `null`，症状看起来像「外键或约束坏了」，实际是语句从没跑过 | 构造完必须 `.run()` / `.first()` / `.all()`；夹具里统一封装成「执行并返回错误消息」的助手，不要让裸 PreparedStatement 在测试代码里传递 |
+| P-22 | **Windows 下动态 `import()` 一个绝对路径（`c:/…`）报 `ERR_UNSUPPORTED_ESM_URL_SCHEME`** | ESM loader 只接受 file / data / node 三种 scheme；POSIX 习惯的裸绝对路径在 Windows 上全是非法 URL | 一律 `pathToFileURL(p).href`（或拼 `file://` + 正斜杠）再传给 import；T03b 的跨端门禁脚本 `check-client-parity.mjs` 有现成写法 |
 
 ---
 
