@@ -1,6 +1,6 @@
 # contracts · 跨端契约
 
-日期：2026-09-17。状态：v1 部分冻结（T01a、T01b 完成并经 T01-rev1 修订，T01c 待做）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。
+日期：2026-09-17。状态：v1 已冻结（T01a、T01b 完成并经 T01-rev1 修订，T01c 补齐虚构样本与 DTO 生成流程）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。
 
 本目录是电脑网页端与微信小程序共用的协议唯一来源。两端不得各自维护一份枚举、金额公式或错误码。
 
@@ -15,8 +15,10 @@
 | `v1/money-rules.json` | 金额公式、冲销策略、优惠分摊、部分退货、成本与毛利 | T01a |
 | `v1/legacy-mapping.json` | 旧表 → 新模型映射、保留的数据库机制、单位换算、未决问题 | T01a |
 | `v1/actions.json` | B01–B36 动作目录、多路径操作的分别权限、49 个新权限码、11 个旧权限码映射、状态机缺口登记（含 `specBasis` 依据） | T01b（T01-rev1 修订） |
-| `v1/fixtures.json` | 虚构样本、边界输入、预期结果、DTO 生成配置 | **T01c（未产出）** |
-| `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b + T01-rev1 |
+| `v1/fixtures.json` | 06 §2 的 V1–V4 虚构样本、边界输入、预期结果、可机械重算的金额算例、DTO 生成配置 | T01c |
+| `generated/` | 由 `tools/generate-dto.mjs` 从 v1 单向生成的端内枚举与类型。**生成物禁止手工编辑** | T01c |
+| `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b + T01-rev1 + T01c |
+| `tools/generate-dto.mjs` | 端内 DTO 生成器（单向生成，带 `--check`） | T01c |
 
 ## 2. 校验方式
 
@@ -36,27 +38,29 @@ node contracts/tools/validate-contracts.mjs
 - **解析 `02-ui-specification.md` §5 的页面清单**，检查每个正式页面至少映射一个动作（防止按钮找不到动作）；
 - **强制 `noWidening`**：`owner_only` 权限码不得继承「店员可得」的旧权限（`quote/edit`、`library/edit` 等），即旧宽权限不得自动获得退款、折抵、报损等能力；
 - **校验每条状态机缺口的 `specBasis`**：文件存在、行号在文件范围内、引文字符串**逐字出现在该行**。拿不出可核对原文者不得登记为缺口（起因见 [T01-rev1 验证记录](../docs/verification/2026-09-17-T01-rev1/README.md)）；
-- **解析 `04-data-and-api.md` §2「数据对象与最低字段」表格**，逐行与 `objects.json` 双向核对字段覆盖（复合行如 `Purchase / Receipt` 按两对象并集比对），防止对象字段漏抄。
+- **解析 `04-data-and-api.md` §2「数据对象与最低字段」表格**，逐行与 `objects.json` 双向核对字段覆盖（复合行如 `Purchase / Receipt` 按两对象并集比对），防止对象字段漏抄；
+- **机械重算 `fixtures.json`**：V1 的 7 条样本逐条核对 TaskReadModel 字段覆盖、枚举取值、金额恒等式与 metrics 汇总；12 组金额算例按 `money-rules.json` 的公式逐阶段重算，结果为 `null` 的必须写明原因；优惠分摊与部分退货用整数运算复算余分顺序与累计上限；
+- **重建并逐字节比对生成物**：调用 `generate-dto.mjs` 重新生成，与 `contracts/generated/` 下的文件比对，并核对清单里的源文件哈希。手工编辑生成物会被直接判为失败。
 
 退出码 0 表示通过，1 表示存在失败项。提示项不阻断，代表方案本身尚未定义的规则缺口。
 
 校验闸门自身做过负向测试，改脚本后应照此复验：
 
 - 注入「`sales/refund` 伪装继承 `quote/edit`」与「抽掉盘点页动作归属」→ T01b 已验；
-- 注入「缺口 `specBasis` 引文不存在」「`origin` 不在取值表内」「删掉 `Purchase.orderedQty`」→ T01-rev1 已验，三项分别报出对应失败项。
+- 注入「缺口 `specBasis` 引文不存在」「`origin` 不在取值表内」「删掉 `Purchase.orderedQty`」→ T01-rev1 已验，三项分别报出对应失败项；
+- 注入「手改生成物一个字符」「改一个算例的期望金额」「抽掉一条 V1 样本」「删掉算例的空值原因」→ T01c 已验，四项分别报出对应失败项。
 
 ## 3. 变更流程
 
 1. 已冻结文件**不原地改写**。需要变更时新增 `v1.x` 或 `v2` 目录并提升 `contractVersion`。
 2. 新增枚举值、错误码、字段、动作编号，都必须先改本目录，再改两端实现。
 3. 补充动作（采购取消、退供、报损、价格调整）已在 `actions.json` 的 `supplementaryActions` 中预留编号并标 `status: "reserved"`、`path: null`。对应任务补齐路径与载荷后改为 `frozen`，**不得由两端自行取名**，也不得用通用 `PUT status` 绕过业务。
-4. 生成物（端内枚举与 DTO）由 T01c 定义生成流程，**生成文件不得手工编辑**。
+4. 生成物（端内枚举与 DTO）由 `node contracts/tools/generate-dto.mjs` 从 v1 **单向生成**到 `contracts/generated/`，**生成文件不得手工编辑**。改契约源文件 → 重新生成 → `node contracts/tools/generate-dto.mjs --check` 复验。端内目录（`frontend/src/contracts/generated`、小程序同名目录）由 T02a / T02b 建立后接同一份产物。
 
 ## 4. 已知缺口（不要当成已完成）
 
 | 项 | 状态 | 归属 |
 |---|---|---|
-| 虚构样本与 DTO 生成 | 未产出 | T01c |
 | `closed` / `expired` 状态的进入条件 | 方案未定义，校验脚本列为提示 | 对应业务卡实现前补 |
 | **状态机缺口 8 项**（Reservation、ReturnRecord、Offset、Attachment、Operation、CashEntry、Product、QuoteVersion） | 已在 `actions.json` 的 `stateMachineGaps` 登记，每条附 `specBasis` 依据。经 T01-rev1 更正：**8 项全部属「规格未定义」，无一项是转录遗漏** | T08a / T11a / T14a / T16a / T04a / T09a / T05a / T07a |
 | ReturnRecord 的「贷项」是否需独立状态 | 规格未定义，T01-rev1 拆出的未决项 | T11a |
@@ -65,6 +69,11 @@ node contracts/tools/validate-contracts.mjs
 | `library` 表是否有历史数据 | 未核实（代码零引用） | T20 |
 | `quotes.data` blob 实际结构 | 未核实（现为单行工作副本） | T07 |
 | 生产 `permissions` 表实际行内容 | 未核实（已改为按代码守卫映射，不依赖表行） | T20 |
+| 取消未交付单时原确认成交额如何退出销售净应计 | 方案未定义，fixtures 的 `openItems` F01 已登记 | T08a |
+| 回收未取得所有权时剩余应付的表示（null 还是另有约定） | 方案未定义，`openItems` F02 已登记 | T14a |
+| `amountSummary` / `primaryAction` 子结构是否升为 objects.json 的规范性定义 | 本契约暂冻结在 `fixtures.json`，`openItems` F03 待裁定 | 项目负责人 |
+| 生成物落地到端内目录的方式 | 本卡只产中立生成物，接入由 T02 执行，`openItems` F04 | T02a / T02b |
+| V1 样本的列表排序 | 本卡只冻数据不冻顺序，`openItems` F05 | T18 |
 
 **已澄清、不再视为缺口**：`Purchase` 不需要存储状态字段 —— 采购进度由 `orderedQty / receivedQty / cancelledQty` 派生（在途 = 三者相减），04 §2 的最低字段列本就没有状态字段。派生式见 `objects.json` 的 `Purchase.derivedFields`。T01b 曾误将其登记为「对象层遗漏」，T01-rev1 已更正。
 
@@ -72,6 +81,7 @@ node contracts/tools/validate-contracts.mjs
 
 - 业务规则细节以 `docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md` 为准，本目录只做机器可读化，不新增业务规则。
 - 接口设计草案见同目录 `04-data-and-api.md`；本目录兑现其中可冻结的部分，并把无法从草案推断的内容（如 `closed` 进入条件）显式标为缺口。
+- 虚构样本与边界输入以 `docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md` §2 为准；`v1/fixtures.json` 只是把 §2 的样本数值化并提供可重算的算例，**不代替 06 的验收矩阵**（A01–A46、U01–U15 仍由各自任务卡执行）。
 - 设计原型 `docs/design/2026-09-17-style-exploration/v3/` 不是契约来源。
 
 ## 6. 权限模型要点
@@ -94,5 +104,8 @@ node contracts/tools/validate-contracts.mjs
 | T01a | 2026-09-17 | 冻结约定、枚举、对象、错误码、金额规则、旧表映射六份契约 + 校验脚本 | 建立 `v1` |
 | T01b | 2026-09-17 | 新增 `actions.json`（动作、权限、旧权限映射、状态机缺口登记）；校验脚本加第 10 节 | v1 不变 |
 | T01-rev1 | 2026-09-17 | 更正状态机缺口登记：`Purchase` 移出 gaps（在途为派生值）、`ReturnRecord` 重述为规格未定义；全部条目补 `specBasis` 与 `origin`；`objects.json` 补派生态与事实映射；校验脚本加第 11 节 | v1 不变（见下） |
+| T01c | 2026-09-17 | 新增 `v1/fixtures.json`（V1–V4 样本、边界输入、12 组金额算例、DTO 生成配置、5 项未决项）；新增 `tools/generate-dto.mjs` 与 `generated/`；校验脚本加第 12 节（样本重算 + 生成物防手改） | v1 不变（见下） |
 
 T01-rev1 **未变更任何规范性表面** —— 字段名、类型、枚举取值、动作编号、错误码均无变化，新增的 `derivedFields` / `factMapping` / `notStored` / `specBasis` / `originValues` 均为非规范性注解，故未提升 `contractVersion`，改为在原文件内留 `revisions` 记录。⚠️ **此判断属治理决策，须项目负责人裁定**；若要求严格按第 3 节第 1 条执行，应改建 `contracts/v2/`。
+
+T01c **同样未变更 T01a / T01b 六份文件的规范性表面** —— `fixtures.json` 是新增文件，`generated/` 是编译产物。唯一需要裁定的是 `fixtures.json` 的 `shapeDefinitions`：它为 `objects.json` 里声明为 `object` 类型、结构未定的 `TaskReadModel.amountSummary` 与 `primaryAction` 首次给出结构，这是**新增的规范性内容**。本卡的处置是把它留在 `fixtures.json` 内并登记 `openItems` F03，不动 `objects.json`；若要求进入 `objects.json` 的规范性表面，应按第 3 节第 1 条改建 `contracts/v2/`。

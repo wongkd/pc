@@ -1,0 +1,60 @@
+{
+  "generator": "contracts/tools/generate-dto.mjs",
+  "generatorVersion": "1",
+  "command": "node contracts/tools/generate-dto.mjs",
+  "checkCommand": "node contracts/tools/generate-dto.mjs --check",
+  "neutralOutputDir": "contracts/generated",
+  "contractVersion": "v1",
+  "contractsFrozenBy": [
+    "T01a",
+    "T01b",
+    "T01c"
+  ],
+  "headerRule": "// AUTO-GENERATED FROM contracts/v1 — DO NOT EDIT",
+  "editPolicy": "生成物禁止手工编辑；改契约源文件后重新生成。validate-contracts.mjs 第 12 节重算本清单的哈希。",
+  "targets": [
+    {
+      "id": "web",
+      "rootPath": "frontend/src/contracts/generated",
+      "owner": "T02a",
+      "status": "pending"
+    },
+    {
+      "id": "miniprogram",
+      "rootPath": "miniprogram/contracts/generated",
+      "owner": "T02b",
+      "status": "pending"
+    }
+  ],
+  "generatedFrom": {
+    "contracts/v1/conventions.json": "7bb796c30321dd1704daa9b402688d36b3837126c0ab4d5b3c6aaa2b54014468",
+    "contracts/v1/enums.json": "21566fea1b5a808b73bf1f6f56dbbbd3e6ec8325be434a1885d3c0e1d8ecc725",
+    "contracts/v1/objects.json": "5c17376cb06deba11b860e72bffa7729730de245c01c192e7dcbb3a126022b41",
+    "contracts/v1/errors.json": "5a8982770fadae12c9a5b9383931695386d3ead9786414641452917321d9d330",
+    "contracts/v1/money-rules.json": "40909ace82363a4e4715ac5d044160b92dfd9346a180425f41e7a72e264aa595",
+    "contracts/v1/actions.json": "d97b502219f4225e9f1328890081a528624df9abe88d6c31af928a50ed86bc1f"
+  },
+  "artifacts": [
+    {
+      "file": "actions.ts",
+      "sha256": "f3f158ea0b51a59ff6a2fd0713b207c5270219b1980784c24236bccfb9bec772"
+    },
+    {
+      "file": "enums.ts",
+      "sha256": "cd1a4b3641fd1f146cb5b90257fde80c9a961bdfb09c99d0dc793fb13dceeb99"
+    },
+    {
+      "file": "errors.ts",
+      "sha256": "4fed1d49a3f1484a239d18c0859b1d78b7bb1dac0a22e43a8d6d88d47889f988"
+    },
+    {
+      "file": "money.ts",
+      "sha256": "f0be71b5c0d9705778a20a652f50b58bd305e7005e8c43079ba226554e0a7388"
+    },
+    {
+      "file": "objects.ts",
+      "sha256": "9da88d50e85a0952bbefb6905662eda73d47b1095de4851ab5230a4d3570476f"
+    }
+  ],
+  "selfHashNote": "manifest.json 与 artifacts 的 sha256 均指文件正文（不含 manifest 自身哈希）。"
+}

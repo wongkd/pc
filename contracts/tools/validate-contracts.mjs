@@ -10,9 +10,11 @@
  * 说明：本脚本只做静态结构校验与源码文本核对，不连接任何数据库、不部署、不读取生产数据。
  */
 
-import { readFileSync, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join, resolve } from 'node:path'
+import { createHash } from 'node:crypto'
+import { buildArtifacts, HEADER as GENERATED_HEADER, GENERATE_COMMAND } from './generate-dto.mjs'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const contractsDir = resolve(here, '..')
@@ -44,6 +46,10 @@ function loadJson(file) {
     failures.push(`JSON 解析失败：v1/${file} —— ${error.message}`)
     return null
   }
+}
+
+function sha256Text(text) {
+  return createHash('sha256').update(text, 'utf8').digest('hex')
 }
 
 // ── 载入 ────────────────────────────────────────────────────────────────
@@ -524,6 +530,472 @@ if (specLines) {
   check('04 §2 覆盖检查至少解析到 20 行对象', coverageRows >= 20, `仅 ${coverageRows} 行`)
 }
 
+// ── 12. 虚构样本、金额算例与 DTO 生成物（T01c）─────────────────────────────
+// 起因：05 T01c 要求「所有 7 个首页样本和资金算例能逐项核算」，并要求「生成文件不手改」。
+//      文档里声称「已核对」不算证据；本节把两件事都变成机械重算。
+const fixturesPath = join(v1Dir, 'fixtures.json')
+let fixturesDoc = null
+if (!existsSync(fixturesPath)) {
+  failures.push('contracts/v1/fixtures.json 不存在 —— T01c 的样本与算例未产出')
+} else {
+  try {
+    fixturesDoc = JSON.parse(readFileSync(fixturesPath, 'utf8'))
+  } catch (error) {
+    failures.push(`JSON 解析失败：v1/fixtures.json —— ${error.message}`)
+  }
+}
+
+let fixtureCheckCount = 0
+if (fixturesDoc) {  check('fixtures.json 声明 contractVersion', fixturesDoc.contractVersion === 'v1', `实际为 ${fixturesDoc.contractVersion}`)
+  check('fixtures.json 标记冻结来源', typeof fixturesDoc.frozenBy === 'string' && fixturesDoc.frozenBy.length > 0)
+
+  // 12.1 子结构定义
+  const errCodeSet = new Set(errorsDoc.errors.map((e) => e.code))
+  for (const [shapeName, shape] of Object.entries(fixturesDoc.shapeDefinitions ?? {})) {
+    if (shapeName === 'note') continue
+    check(`子结构 ${shapeName} 声明 definedBy`, typeof shape.definedBy === 'string' && shape.definedBy.length > 0)
+    check(`子结构 ${shapeName} 含 fields`, shape.fields && Object.keys(shape.fields).length > 0)
+    for (const [fname, fdef] of Object.entries(shape.fields ?? {})) {
+      if (fdef.type === 'array') {
+        check(`子结构 ${shapeName}.${fname} 的数组元素声明 itemFields`, Boolean(fdef.itemFields))
+        for (const [iname, idef] of Object.entries(fdef.itemFields ?? {})) {
+          check(`子结构 ${shapeName}.${fname}[].${iname} 声明类型`, typeof idef.type === 'string')
+          if (idef.type !== 'string') {
+            check(`子结构 ${shapeName}.${fname}[].${iname} 的类型在约定集合内`, TYPE_NAMES.includes(idef.type), `type=${idef.type}`)
+          }
+        }
+        continue
+      }
+      check(`子结构 ${shapeName}.${fname} 的类型在约定集合内`, TYPE_NAMES.includes(fdef.type), `type=${fdef.type}`)
+      check(`子结构 ${shapeName}.${fname} 显式声明 nullable`, typeof fdef.nullable === 'boolean')
+      if (fdef.type === 'enum') {
+        check(`子结构 ${shapeName}.${fname} 的 enumRef 存在`, ENUM_NAMES.includes(fdef.enumRef), `enumRef=${fdef.enumRef}`)
+      }
+      if (fdef.type === 'cents') {
+        check(`子结构 ${shapeName}.${fname} 的金额字段名以 Cents 结尾`, fname.endsWith('Cents'), `字段名 ${fname}`)
+      }
+    }
+  }
+
+  // 12.2 V1 读取样本：字段集合、枚举取值、金额恒等式、metrics 重算
+  const v1 = fixturesDoc.datasets?.V1
+  check('fixtures 含 V1 数据集', Boolean(v1))
+  if (v1) {
+    const readModelFields = Object.keys(objectsDoc.objects.TaskReadModel?.fields ?? {})
+    check('TaskReadModel 字段可读', readModelFields.length > 0)
+    const tasks = v1.tasks ?? []
+    check('V1 任务数为 7', tasks.length === 7, `实际 ${tasks.length}`)
+    const taskIds = tasks.map((t) => t.taskId)
+    const entityIds = tasks.map((t) => t.entityId)
+    check('V1 taskId 无重复', new Set(taskIds).size === taskIds.length)
+    check('V1 entityId 无重复', new Set(entityIds).size === entityIds.length)
+    check('V1 全部使用 DEMO- 标识', taskIds.every((t) => String(t).startsWith('DEMO-')) && entityIds.every((t) => String(t).startsWith('DEMO-')),
+      '演示标识由 ID 前缀承载')
+
+    const amountShape = Object.keys(fixturesDoc.shapeDefinitions?.amountSummary?.fields ?? {})
+    const actionShape = Object.keys(fixturesDoc.shapeDefinitions?.primaryAction?.fields ?? {})
+
+    for (const task of tasks) {
+      const label = `V1 ${task.entityId}`
+      const keys = Object.keys(task)
+      const missing = readModelFields.filter((f) => !keys.includes(f))
+      const extra = keys.filter((f) => !readModelFields.includes(f))
+      check(`${label} 覆盖 TaskReadModel 全部字段`, missing.length === 0, `缺 ${missing.join(', ')}`)
+      check(`${label} 无未定义字段`, extra.length === 0, `多出 ${extra.join(', ')}`)
+      check(`${label} 的 entityType 合法`, (enumsDoc.enums.EntityType?.values ?? []).includes(task.entityType), `entityType=${task.entityType}`)
+      check(`${label} 的 category 合法`, (enumsDoc.enums.TaskCategory?.values ?? []).includes(task.category), `category=${task.category}`)
+      if (task.photoKind !== null) {
+        check(`${label} 的 photoKind 合法`, (enumsDoc.enums.AttachmentPurpose?.values ?? []).includes(task.photoKind), `photoKind=${task.photoKind}`)
+      }
+      if (task.dueAt !== null) {
+        check(`${label} 的 dueAt 为 UTC 瞬时格式`, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(task.dueAt), `dueAt=${task.dueAt}`)
+      }
+      check(`${label} 的 detailTarget 非空`, typeof task.detailTarget === 'string' && task.detailTarget.startsWith('/'))
+
+      const a = task.amountSummary
+      const aMissing = amountShape.filter((f) => !(f in a))
+      const aExtra = Object.keys(a).filter((f) => !amountShape.includes(f))
+      check(`${label} 的 amountSummary 结构完整`, aMissing.length === 0 && aExtra.length === 0,
+        `缺 ${aMissing.join(', ')} / 多 ${aExtra.join(', ')}`)
+      check(`${label} 声明 countsTowardReceivable`, typeof a.countsTowardReceivable === 'boolean')
+      if (a.countsTowardReceivable) {
+        check(`${label} 计入待收时 balanceCents 为整数`, Number.isInteger(a.balanceCents), `balanceCents=${a.balanceCents}`)
+        check(`${label} 计入待收时 balanceDirection 合法`, (enumsDoc.enums.BalanceDirection?.values ?? []).includes(a.balanceDirection), `balanceDirection=${a.balanceDirection}`)
+        const identity = a.totalCents - a.receivedCents - a.offsetCents
+        check(`${label} 满足 balanceCents = totalCents - receivedCents - offsetCents`, identity === a.balanceCents,
+          `重算 ${identity} ≠ 声明 ${a.balanceCents}`)
+        check(`${label} 的 balanceDirection 与余额方向一致`,
+          (a.balanceCents > 0 && a.balanceDirection === 'client_due') || (a.balanceCents === 0 && a.balanceDirection === 'settled') || (a.balanceCents < 0 && a.balanceDirection === 'store_due'),
+          `balanceCents=${a.balanceCents} direction=${a.balanceDirection}`)
+      } else {
+        check(`${label} 不计待收时不得用余额字段冒充`, a.balanceCents === null && a.balanceDirection === null,
+          `balanceCents=${a.balanceCents} balanceDirection=${a.balanceDirection}`)
+        check(`${label} 不计待收时给出可读原因`, typeof a.note === 'string' && a.note.length > 0)
+      }
+      check(`${label} 的 estimateCents 未被计入待收`, !a.countsTowardReceivable || a.estimateCents === null)
+
+      const pa = task.primaryAction
+      const pMissing = actionShape.filter((f) => !(f in pa))
+      check(`${label} 的 primaryAction 结构完整`, pMissing.length === 0, `缺 ${pMissing.join(', ')}`)
+      check(`${label} 的 primaryAction.code 是已登记动作`, (enumsDoc.enums.ActionCode?.values ?? []).includes(pa.code), `code=${pa.code}`)
+      check(`${label} 的 label 为界面文案`, typeof pa.label === 'string' && pa.label.length > 0)
+      check(`${label} 的 enabled 为布尔`, typeof pa.enabled === 'boolean')
+      check(`${label} 禁用时必须给出可读阻断原因`, pa.enabled || (Array.isArray(pa.blockers) && pa.blockers.length > 0))
+      for (const blk of pa.blockers ?? []) {
+        check(`${label} 的阻断码 ${blk.code} 是标准错误码`, errCodeSet.has(blk.code), `不在 errors.json`)
+        check(`${label} 的阻断原因非空`, typeof blk.message === 'string' && blk.message.length > 0)
+      }
+    }
+
+    // metrics 机械重算
+    const expected = v1.expected ?? {}
+    const m = v1.metrics ?? {}
+    const catCount = (c) => tasks.filter((t) => t.category === c).length
+    const recv = tasks.filter((t) => t.amountSummary.countsTowardReceivable).reduce((s, t) => s + t.amountSummary.balanceCents, 0)
+    check('V1 待交机数可重算', m.pendingDelivery?.value === catCount('delivery'), `声明 ${m.pendingDelivery?.value} / 重算 ${catCount('delivery')}`)
+    check('V1 缺货订单数可重算', m.stockShortage?.value === catCount('stock_shortage'), `声明 ${m.stockShortage?.value} / 重算 ${catCount('stock_shortage')}`)
+    check('V1 维修待办数可重算', m.servicePending?.value === catCount('service'), `声明 ${m.servicePending?.value} / 重算 ${catCount('service')}`)
+    check('V1 待办总数可重算', m.taskTotal?.value === tasks.length, `声明 ${m.taskTotal?.value} / 重算 ${tasks.length}`)
+    check('V1 待收款可重算', m.receivable?.valueCents === recv, `声明 ${m.receivable?.valueCents} / 重算 ${recv}`)
+    check('V1 expected 待收款与 metrics 一致', expected.receivableCents === recv, `${expected.receivableCents} ≠ ${recv}`)
+    check('V1 expected 待办总数与样本一致', expected.taskTotal === tasks.length)
+    for (const [c, n] of Object.entries(expected.categoryCounts ?? {})) {
+      check(`V1 类别 ${c} 计数可重算`, catCount(c) === n, `声明 ${n} / 重算 ${catCount(c)}`)
+    }
+    const catSum = Object.values(expected.categoryCounts ?? {}).reduce((s, n) => s + n, 0)
+    check('V1 类别计数之和等于待办总数', catSum === tasks.length, `${catSum} ≠ ${tasks.length}`)
+    for (const ex of expected.excludedFromReceivable ?? []) {
+      const t = tasks.find((x) => x.entityId === ex.entityId)
+      check(`V1 排除项 ${ex.entityId} 在样本内`, Boolean(t))
+      if (t) check(`V1 排除项 ${ex.entityId} 确实不计待收`, t.amountSummary.countsTowardReceivable === false)
+    }
+    check('V1 声明固定演示日期', fixturesDoc.demoPolicy?.demoDate === '2026-09-17', `demoDate=${fixturesDoc.demoPolicy?.demoDate}`)
+    check('V1 声明业务时区', fixturesDoc.demoPolicy?.demoTimezone === 'Asia/Shanghai')
+  }
+
+  // 12.3 V2 二手循环
+  const v2 = fixturesDoc.datasets?.V2
+  check('fixtures 含 V2 数据集', Boolean(v2))
+  if (v2) {
+    const lineSources = enumsDoc.enums.LineSource?.values ?? []
+    for (const q of v2.quotes ?? []) {
+      for (const line of q.lines ?? []) {
+        check(`V2 ${q.id} 的行来源 ${line.source} 合法`, lineSources.includes(line.source), `source=${line.source}`)
+        if (line.source === 'used') {
+          check(`V2 ${q.id} 的二手行指定具体实物`, typeof line.stockItemId === 'string' && line.stockItemId.length > 0,
+            'used 必须指定具体实物（enums.json LineSource）')
+        }
+        if (line.source === 'customer') {
+          check(`V2 ${q.id} 的客供行售价为 0`, line.unitPriceCents === 0, `unitPriceCents=${line.unitPriceCents}`)
+        }
+      }
+    }
+    const expectedCost = v2.stockItem?.acquisitionCostCents + (v2.refurbishmentCosts ?? []).filter((c) => c.capitalizable).reduce((s, c) => s + c.amountCents, 0)
+    check('V2 成本为收购 + 可归属整备', v2.expectedCostCents === expectedCost, `声明 ${v2.expectedCostCents} / 重算 ${expectedCost}`)
+    check('V2 声明客户输出不含原卖方', (v2.expectations ?? []).some((e) => e.includes('不含 sellerRef')))
+  }
+
+  // 12.4 V3 / V4 索引完整性
+  const computeCaseIds = new Set((fixturesDoc.computeCases ?? []).map((c) => c.id))
+  const behaviorCaseIds = new Set((fixturesDoc.behaviorCases ?? []).map((c) => c.id))
+  const boundaryIds = new Set((fixturesDoc.boundaryInputs ?? []).map((b) => b.id))
+  for (const id of fixturesDoc.datasets?.V3?.computeCaseIds ?? []) {
+    check(`V3 引用的算例 ${id} 存在`, computeCaseIds.has(id), 'computeCases 中未定义')
+  }
+  for (const id of fixturesDoc.datasets?.V3?.behaviorCaseIds ?? []) {
+    check(`V3 引用的行为算例 ${id} 存在`, behaviorCaseIds.has(id), 'behaviorCases 中未定义')
+  }
+  for (const id of fixturesDoc.datasets?.V4?.boundaryInputIds ?? []) {
+    check(`V4 引用的边界输入 ${id} 存在`, boundaryIds.has(id), 'boundaryInputs 中未定义')
+  }
+
+  // 12.5 金额算例逐项重算
+  const moneyTerms = new Set(fixturesDoc.moneyFormulaContract?.terms ?? [])
+  const moneyComputed = new Set(fixturesDoc.moneyFormulaContract?.computed ?? [])
+  const knownComputed = new Set()
+  const knownTerms = new Set()
+  for (const f of moneyDoc.formulas) {
+    knownComputed.add(f.id)
+    for (const t of f.derivedTerms ?? []) {
+      knownComputed.add(t)
+      knownTerms.add(t)
+    }
+    for (const ref of f.objectFields ?? []) {
+      const leaf = ref.slice(ref.indexOf('.') + 1)
+      if (leaf) knownTerms.add(leaf)
+    }
+  }
+  for (const k of moneyComputed) {
+    check(`口径结果项 ${k} 对应 money-rules 公式`, knownComputed.has(k), '不是任何公式的 id 或 derivedTerm')
+  }
+  for (const k of moneyTerms) {
+    check(`口径输入项 ${k} 是 money-rules 公式的派生项或对象字段`, knownTerms.has(k), '不是任何公式的 derivedTerm 或 objectFields')
+  }
+
+  // 口径实现：逐字对应 money-rules.json 的 expression
+  function computeMoney(terms) {
+    const got = (k) => Object.prototype.hasOwnProperty.call(terms, k)
+    const isNull = (k) => !got(k) || terms[k] === null
+    const out = {}
+    const nullReason = {}
+    const setNull = (key, deps) => {
+      const bad = deps.filter(isNull)
+      out[key] = null
+      nullReason[key] = `依赖 ${bad.join('、')} 为 null（conventions.nullable：null 表示未知或不适用，禁止用 0 代替）`
+    }
+    const dep1 = ['confirmedTotalCents', 'approvedIncreaseCents', 'approvedDecreaseCents', 'returnCreditCents']
+    dep1.some(isNull) ? setNull('salesNetAccruedCents', dep1)
+      : (out.salesNetAccruedCents = terms.confirmedTotalCents + terms.approvedIncreaseCents - terms.approvedDecreaseCents - terms.returnCreditCents)
+    const dep2 = ['validReceiptsCents', 'validRefundsCents']
+    dep2.some(isNull) ? setNull('cashNetReceivedCents', dep2)
+      : (out.cashNetReceivedCents = terms.validReceiptsCents - terms.validRefundsCents)
+    const dep3 = ['appliedOffsetsCents', 'reversedOffsetsCents']
+    dep3.some(isNull) ? setNull('offsetNetCents', dep3)
+      : (out.offsetNetCents = terms.appliedOffsetsCents - terms.reversedOffsetsCents)
+    const dep4 = ['salesNetAccruedCents', 'cashNetReceivedCents', 'offsetNetCents']
+    const isMissingOut = (k) => out[k] === null || out[k] === undefined
+    dep4.some(isMissingOut)
+      ? setNull('salesBalanceCents', dep4)
+      : (out.salesBalanceCents = out.salesNetAccruedCents - out.cashNetReceivedCents - out.offsetNetCents)
+    out.balanceDirection = out.salesBalanceCents === null ? null
+      : out.salesBalanceCents > 0 ? 'client_due' : out.salesBalanceCents === 0 ? 'settled' : 'store_due'
+    if (out.balanceDirection === null) nullReason.balanceDirection = '依赖 salesBalanceCents 为 null'
+    const dep6 = ['finalAcquisitionCents', 'lawfulAdjustmentCents', 'validOffsetsCents', 'cashNetPaidCents']
+    dep6.some(isNull) ? setNull('recoveryPayableRemainingCents', dep6)
+      : (out.recoveryPayableRemainingCents = terms.finalAcquisitionCents + terms.lawfulAdjustmentCents - terms.validOffsetsCents - terms.cashNetPaidCents)
+    const dep7 = ['salesBalanceCents', 'recoveryPayableRemainingCents']
+    if (out.salesBalanceCents === null || out.recoveryPayableRemainingCents === null) setNull('offsetAmountCents', dep7)
+    else out.offsetAmountCents = Math.min(Math.max(out.salesBalanceCents, 0), Math.max(out.recoveryPayableRemainingCents, 0))
+    if (out.salesBalanceCents === null || isNull('refundableCashNetCents')) setNull('refundableCashCents', ['salesBalanceCents', 'refundableCashNetCents'])
+    else out.refundableCashCents = out.salesBalanceCents >= 0 ? 0 : Math.min(-out.salesBalanceCents, terms.refundableCashNetCents)
+    if (out.salesBalanceCents === null) setNull('collectableCents', ['salesBalanceCents'])
+    else out.collectableCents = Math.max(out.salesBalanceCents, 0)
+    return { out, nullReason }
+  }
+
+  const seenCaseIds = new Set()
+  for (const c of fixturesDoc.computeCases ?? []) {
+    check(`算例 ${c.id} 唯一`, !seenCaseIds.has(c.id))
+    seenCaseIds.add(c.id)
+    check(`算例 ${c.id} 声明 kind`, typeof c.kind === 'string' && c.kind.length > 0)
+    check(`算例 ${c.id} 声明来源`, typeof c.source === 'string' && c.source.length > 0)
+    check(`算例 ${c.id} 含 stages`, Array.isArray(c.stages) && c.stages.length > 0)
+    for (const st of c.stages ?? []) {
+      const where = `${c.id}/${st.id}`
+      const kindTerms = c.kind === 'assetCost' || c.kind === 'discountAllocation' || c.kind === 'partialReturn'
+        ? new Set((fixturesDoc.moneyFormulaContract?.otherKinds ?? {})[c.kind] ?? [])
+        : moneyTerms
+      for (const k of Object.keys(st.terms ?? {})) {
+        check(`${where} 的输入项 ${k} 在口径表内`, kindTerms.has(k), `不在 ${c.kind} 的输入口径中`)
+      }
+      for (const k of Object.keys(st.expected ?? {})) {
+        check(`${where} 的期望项 ${k} 可被公式重算`, moneyComputed.has(k) || ['assetCostCents', 'capitalizableRefurbishmentCents', 'nonCapitalizableCents', 'discountAllocationCents', 'allocationSumCents', 'floorNumerator', 'floorCents', 'remainderNumerator', 'remainderOrder', 'perUnitCents', 'creditCents', 'cumulativeCreditCents', 'capCents'].includes(k),
+          `未知期望项 ${k}`)
+      }
+
+      if (c.kind === 'assetCost') {
+        const cap = (st.terms.refurbishmentCosts ?? []).filter((r) => r.capitalizable).reduce((s, r) => s + r.amountCents, 0)
+        const nonCap = (st.terms.refurbishmentCosts ?? []).filter((r) => !r.capitalizable).reduce((s, r) => s + r.amountCents, 0)
+        const total = st.terms.acquisitionCostCents + cap
+        check(`${where} 可归属整备可重算`, st.expected.capitalizableRefurbishmentCents === cap, `${st.expected.capitalizableRefurbishmentCents} ≠ ${cap}`)
+        check(`${where} 不可归属整备可重算`, st.expected.nonCapitalizableCents === nonCap, `${st.expected.nonCapitalizableCents} ≠ ${nonCap}`)
+        check(`${where} 实物成本 = 收购 + 可归属整备`, st.expected.assetCostCents === total, `${st.expected.assetCostCents} ≠ ${total}`)
+        continue
+      }
+
+      if (c.kind === 'discountAllocation') {
+        const lines = st.terms.lines ?? []
+        const total = lines.reduce((s, l) => s + l.grossCents, 0)
+        const floor = {}
+        const rem = {}
+        for (const l of lines) {
+          const num = st.terms.discountCents * l.grossCents
+          floor[l.lineId] = Math.floor(num / total)
+          rem[l.lineId] = num % total
+        }
+        const alloc = { ...floor }
+        let left = st.terms.discountCents - Object.values(floor).reduce((s, v) => s + v, 0)
+        const order = [...lines].map((l) => l.lineId).sort((a, b) => (rem[b] - rem[a]) || (a < b ? -1 : a > b ? 1 : 0))
+        for (const id of order) {
+          if (left <= 0) break
+          alloc[id] += 1
+          left -= 1
+        }
+        for (const l of lines) {
+          check(`${where} 行 ${l.lineId} 的向下取整可重算`, st.expected.floorCents[l.lineId] === floor[l.lineId], `${st.expected.floorCents[l.lineId]} ≠ ${floor[l.lineId]}`)
+          check(`${where} 行 ${l.lineId} 的余数可重算`, st.expected.remainderNumerator[l.lineId] === rem[l.lineId], `${st.expected.remainderNumerator[l.lineId]} ≠ ${rem[l.lineId]}`)
+          check(`${where} 行 ${l.lineId} 的分摊额可重算`, st.expected.discountAllocationCents[l.lineId] === alloc[l.lineId], `${st.expected.discountAllocationCents[l.lineId]} ≠ ${alloc[l.lineId]}`)
+        }
+        const expectOrder = order.filter((id) => rem[id] > 0)
+        check(`${where} 余分顺序可重算`, JSON.stringify(st.expected.remainderOrder) === JSON.stringify(expectOrder),
+          `声明 ${JSON.stringify(st.expected.remainderOrder)} / 重算 ${JSON.stringify(expectOrder)}`)
+        const sum = Object.values(st.expected.discountAllocationCents).reduce((s, v) => s + v, 0)
+        check(`${where} 分摊合计等于整单优惠`, sum === st.terms.discountCents && st.expected.allocationSumCents === sum, `${sum} ≠ ${st.terms.discountCents}`)
+        continue
+      }
+
+      if (c.kind === 'partialReturn') {
+        const { netLineCents, qty, returnQty } = st.terms
+        const base = Math.floor(netLineCents / qty)
+        const perUnit = []
+        for (let i = 0; i < qty; i++) perUnit.push(i === qty - 1 ? netLineCents - base * (qty - 1) : base)
+        const credit = perUnit.slice(0, returnQty).reduce((s, v) => s + v, 0)
+        check(`${where} 按件分配可重算`, JSON.stringify(st.expected.perUnitCents) === JSON.stringify(perUnit), `${JSON.stringify(st.expected.perUnitCents)} ≠ ${JSON.stringify(perUnit)}`)
+        check(`${where} 贷项可重算`, st.expected.creditCents === credit, `${st.expected.creditCents} ≠ ${credit}`)
+        check(`${where} 累计不超原行净额`, credit <= netLineCents && st.expected.capCents === netLineCents, 'cap 必须为原行净额')
+        check(`${where} 累计贷项可重算`, st.expected.cumulativeCreditCents === credit, `${st.expected.cumulativeCreditCents} ≠ ${credit}`)
+        continue
+      }
+
+      // 其余 kind 走金额公式
+      const { out, nullReason } = computeMoney(st.terms ?? {})
+      let nullChecked = 0
+      for (const [k, v] of Object.entries(st.expected ?? {})) {
+        if (!moneyComputed.has(k)) continue
+        if (v === null) {
+          check(`${where} 的 ${k} 应为 null`, out[k] === null, `重算得到 ${JSON.stringify(out[k])}`)
+          const reason = (st.nullReasons ?? {})[k]
+          check(`${where} 的 ${k} 为 null 时必须写明原因`, typeof reason === 'string' && reason.length > 0, '缺 nullReasons')
+          nullChecked++
+        } else {
+          check(`${where} 的 ${k} 可重算`, out[k] === v, `声明 ${v} / 重算 ${JSON.stringify(out[k])}`)
+        }
+      }
+      for (const [k, v] of Object.entries(out)) {
+        check(`${where} 的重算结果 ${k} 已写入期望`, !(k in (st.expected ?? {})) || st.expected[k] === v || st.expected[k] === null,
+          '期望值与公式结果不一致')
+        if (v === null) check(`${where} 的重算空值 ${k} 有原因说明`, typeof (st.nullReasons ?? {})[k] === 'string', '重算为 null 但未说明原因')
+      }
+
+      if (c.kind === 'tradeIn') {
+        const sc = st.scenarioExpected ?? {}
+        const balanceBefore = out.salesBalanceCents
+        const payableBefore = out.recoveryPayableRemainingCents
+        const offset = out.offsetAmountCents
+        check(`${where} 折抵金额与公式一致`, sc.offsetAppliedCents === offset, `${sc.offsetAppliedCents} ≠ ${offset}`)
+        check(`${where} 本次现金收可重算`, sc.cashCollectCents === Math.max(balanceBefore - offset, 0), `${sc.cashCollectCents} ≠ ${Math.max(balanceBefore - offset, 0)}`)
+        check(`${where} 本次现金付可重算`, sc.cashPayCustomerCents === Math.max(payableBefore - offset, 0), `${sc.cashPayCustomerCents} ≠ ${Math.max(payableBefore - offset, 0)}`)
+        check(`${where} 不得同时收与付`, !(sc.cashCollectCents > 0 && sc.cashPayCustomerCents > 0), '折抵取 min，不可能两端同时为正')
+      }
+      if (c.kind === 'return' && st.scenarioExpected) {
+        const sc = st.scenarioExpected
+        if ('refundCents' in sc) {
+          check(`${where} 退款额不超可退上限`, sc.refundCents <= out.refundableCashCents, `${sc.refundCents} > ${out.refundableCashCents}`)
+        }
+        if ('inventoryDisposition' in sc) {
+          check(`${where} 退货实物处置为待检且不自动可卖`, sc.inventoryDisposition === 'quarantine' && sc.autoSellable === false,
+            '03 §7：库存先进入待检，绝不自动可卖')
+        }
+      }
+      if (c.kind === 'cancel' && st.scenarioExpected) {
+        const sc = st.scenarioExpected
+        if ('refundDueCents' in sc) {
+          check(`${where} 取消不自动现金退款`, sc.cashRefundedCents === 0 && sc.refundRequiresAction === 'B18',
+            'B11：预收转为应退，不自动产生现金退款')
+        }
+      }
+    }
+
+    for (const u of c.unresolved ?? []) {
+      check(`算例 ${c.id} 的未决项附归属`, typeof u.owner === 'string' && u.owner.length > 0)
+      check(`算例 ${c.id} 的未决项附原因`, typeof u.why === 'string' && u.why.length > 0)
+      fixtureCheckCount++
+    }
+    for (const k of Object.keys(moneyTerms)) {
+      check(`口径项 ${k} 被至少一个算例使用`, JSON.stringify(fixturesDoc.computeCases).includes(`"${k}"`), '声明了口径却无人使用')
+    }
+  }
+
+  // 12.6 行为算例
+  const actionCodeSet = new Set(enumsDoc.enums.ActionCode?.values ?? [])
+  for (const b of fixturesDoc.behaviorCases ?? []) {
+    check(`行为算例 ${b.id} 引用已登记动作`, actionCodeSet.has(b.request?.action), `action=${b.request?.action}`)
+    if (b.expect?.errorCode) {
+      check(`行为算例 ${b.id} 的期望错误码存在`, errCodeSet.has(b.expect.errorCode), `errorCode=${b.expect.errorCode}`)
+    }
+    check(`行为算例 ${b.id} 声明归属任务`, typeof b.owner === 'string' && b.owner.length > 0)
+    check(`行为算例 ${b.id} 附依据`, Array.isArray(b.specBasis) && b.specBasis.length > 0, '登记必须钉规格原文行号')
+    verifyBasis(`行为算例 ${b.id}`, b.specBasis)
+  }
+
+  // 12.7 边界输入
+  for (const b of fixturesDoc.boundaryInputs ?? []) {
+    check(`边界输入 ${b.id} 声明期望行为`, typeof b.expect === 'string' && b.expect.length > 0)
+    check(`边界输入 ${b.id} 声明归属任务`, typeof b.owner === 'string' && b.owner.length > 0)
+    check(`边界输入 ${b.id} 附依据`, Array.isArray(b.basis) && b.basis.length > 0, '登记必须钉规格原文行号')
+    verifyBasis(`边界输入 ${b.id}`, b.basis)
+  }
+
+  // 12.8 未决项
+  for (const o of fixturesDoc.openItems ?? []) {
+    check(`未决项 ${o.id} 声明归属`, typeof o.owner === 'string' && o.owner.length > 0)
+    check(`未决项 ${o.id} 声明原因`, typeof o.why === 'string' && o.why.length > 0)
+    for (const a of o.affects ?? []) {
+      check(`未决项 ${o.id} 的影响项 ${a} 存在`,
+        computeCaseIds.has(a) || boundaryIds.has(a) || ['shapeDefinitions', 'dtoGeneration', 'datasets.V1'].includes(a),
+        '引用了不存在的项')
+    }
+  }
+
+  // 12.9 DTO 生成流程与生成物不可手改
+  const dto = fixturesDoc.dtoGeneration
+  check('fixtures 声明 dtoGeneration', Boolean(dto))
+  if (dto) {
+    check('生成器文件存在', existsSync(join(repoRoot, dto.generator)), `缺 ${dto.generator}`)
+    check('生成器路径与本脚本一致', dto.generator === 'contracts/tools/generate-dto.mjs')
+    const { files: builtFiles } = buildArtifacts()
+    const builtNames = Object.keys(builtFiles).sort()
+    const declared = (dto.artifacts ?? []).map((a) => a.file).sort()
+    check('声明的生成物与实际产出一致', JSON.stringify(declared) === JSON.stringify(builtNames),
+      `声明 ${declared.join(', ')} / 实际 ${builtNames.join(', ')}`)
+    for (const a of dto.artifacts ?? []) {
+      check(`生成物 ${a.file} 声明来源`, Array.isArray(a.from) && a.from.length > 0)
+      for (const src of a.from ?? []) {
+        check(`生成物 ${a.file} 的来源 ${src} 存在`,
+          src === 'contracts/v1 全部 JSON' || existsSync(join(v1Dir, src)), `契约中无 ${src}`)
+      }
+    }
+    check('声明生成物禁止手工编辑', typeof dto.forbiddenManualEdit === 'string' && dto.forbiddenManualEdit.length > 0)
+
+    // 逐字节比对磁盘生成物与重新生成的结果
+    const outDir = join(repoRoot, 'contracts', 'generated')
+    check('生成物目录存在', existsSync(outDir), `缺 contracts/generated —— 请运行 ${GENERATE_COMMAND}`)
+    if (existsSync(outDir)) {
+      for (const [name, content] of Object.entries(builtFiles)) {
+        const target = join(outDir, name)
+        check(`生成物 ${name} 已落地`, existsSync(target), '缺失')
+        if (!existsSync(target)) continue
+        const onDisk = readFileSync(target, 'utf8')
+        check(`生成物 ${name} 与契约一致（未手改）`, onDisk === content,
+          '内容与重新生成的结果不同 —— 生成物禁止手工编辑，请改契约源文件后重新生成')
+      }
+      const stray = readdirSync(outDir).filter((f) => !Object.prototype.hasOwnProperty.call(builtFiles, f))
+      check('生成物目录无手写文件', stray.length === 0, `多出 ${stray.join(', ')}`)
+      const manifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf8'))
+      check('manifest 记录契约来源哈希', Object.keys(manifest.generatedFrom ?? {}).length > 0)
+      for (const [rel, expectedHash] of Object.entries(manifest.generatedFrom ?? {})) {
+        const p = join(repoRoot, rel)
+        check(`manifest 的来源 ${rel} 存在`, existsSync(p))
+        if (!existsSync(p)) continue
+        const actual = sha256Text(readFileSync(p, 'utf8'))
+        check(`manifest 的来源哈希 ${rel} 与文件一致`, actual === expectedHash, '源文件已变更，须重新生成')
+      }
+      for (const a of manifest.artifacts ?? []) {
+        const actual = sha256Text(builtFiles[a.file] ?? '')
+        check(`manifest 的生成物哈希 ${a.file} 与产出一致`, actual === a.sha256, '生成物哈希不匹配')
+      }
+      if (!builtFiles['manifest.json'].includes(GENERATED_HEADER)) {
+        failures.push('生成器未在文件头写入 DO NOT EDIT 标记')
+      } else {
+        passes.push('生成物带 DO NOT EDIT 标记')
+      }
+      for (const name of builtNames.filter((n) => n.endsWith('.ts'))) {
+        check(`生成物 ${name} 首行为生成标记`, builtFiles[name].startsWith(GENERATED_HEADER), '缺 AUTO-GENERATED 头')
+      }
+    }
+  }
+}
+
 // ── 输出 ────────────────────────────────────────────────────────────────
 console.log('契约自洽性校验 · contractVersion v1')
 console.log('─'.repeat(64))
@@ -535,6 +1007,11 @@ console.log(`错误码 ${errorCount} 个`)
 console.log(`金额公式 ${formulaCount} 条`)
 console.log(`旧表映射 ${mappedTables.size} 张 / 迁移实际表 ${sqlTables.size} 张`)
 console.log(`缺口依据核验 ${basisVerified} 条 / 规格 §2 字段覆盖 ${coverageRows} 行`)
+if (fixturesDoc) {
+  const stageCount = (fixturesDoc.computeCases ?? []).reduce((s, c) => s + (c.stages ?? []).length, 0)
+  console.log(`虚构样本 ${(fixturesDoc.datasets?.V1?.tasks ?? []).length} 条 / 金额算例 ${(fixturesDoc.computeCases ?? []).length} 个（${stageCount} 阶段）/ 行为算例 ${(fixturesDoc.behaviorCases ?? []).length} 个 / 边界输入 ${(fixturesDoc.boundaryInputs ?? []).length} 条`)
+  console.log(`DTO 生成物 ${Object.keys(buildArtifacts().files).length} 个（已逐字节比对，哈希一致）`)
+}
 console.log('─'.repeat(64))
 console.log(`通过 ${passes.length} 项`)
 
