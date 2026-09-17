@@ -1,0 +1,23 @@
+name = "pc-backend"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pc-db"
+database_id = "2218dbef-fb7d-4248-8430-07dcd4fd0a17"
+
+# ── 凭据规则（2026-09-17 起）────────────────────────────────
+# 本文件不再写任何明文凭据，可安全提交到 Git。
+# 本地开发：值放 backend/.dev.vars（已被根 .gitignore 排除）。
+# 生产环境：用 wrangler secret 写入，命令在 backend/ 目录执行：
+#
+#   wrangler secret put PDD_CLIENT_ID
+#   wrangler secret put PDD_CLIENT_SECRET
+#   wrangler secret put PDD_PID
+#   wrangler secret put DEEPSEEK_KEY
+#   wrangler secret put JWT_SECRET
+#
+# ⚠️ 在生产 secret 建立之前不要执行 wrangler deploy：
+#    当前线上 Worker 的 PDD_* 来自上一次带 vars 的部署，
+#    部署新配置会让这三个变量消失。

@@ -1,0 +1,63 @@
+# ============================================================
+# pc-quote · Git 忽略规则
+# 建立于 2026-09-17（T00 基线）。
+# 原则：依赖、构建产物、凭据、本地备份、同步临时文件一律不进仓库；
+#       docs/verification 下的验证证据（含日志）要进仓库。
+# ============================================================
+
+# ── 依赖 ─────────────────────────────────────────────────────
+node_modules/
+
+# ── 构建产物 ─────────────────────────────────────────────────
+dist/
+dist-ssr/
+build/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# ── 凭据与环境变量（绝不提交）─────────────────────────────────
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+*.p12
+
+# ── 本地备份（含生产数据与明文配置）───────────────────────────
+backups/
+
+# ── 同步 / 解包临时目录 ──────────────────────────────────────
+.sync_temp_dir/
+
+# ── Wrangler / Cloudflare 本地状态 ───────────────────────────
+.wrangler/
+.wrangler.toml.bak
+
+# ── 本地验证运行产物（miniflare / D1 持久化数据库，绝不提交）──
+.validation-*/
+.validation-*.sqlite
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+
+# ── AI 工作区数据（由坚果云同步，不进 Git）─────────────────────
+.workbuddy/
+.learnings/
+
+# ── 日志（验证证据目录下的日志例外保留）───────────────────────
+*.log
+!docs/verification/**/logs/*.log
+
+# ── 操作系统与编辑器 ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+*.suo
+*.sw?
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

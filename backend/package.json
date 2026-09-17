@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "@cloudflare/workerd-windows-64": "^1.20260625.1",
+    "@cloudflare/workers-types": "^4.20260702.1",
+    "wrangler": "^4.105.0"
+  }
+}

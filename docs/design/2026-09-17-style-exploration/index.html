@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>装机店工作台 · 多端视觉提案</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#f3f2ee;color:#242824;font:15px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}
+    main{max-width:1600px;margin:auto;padding:32px 36px 48px}header{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-bottom:22px}.eyebrow{font-size:12px;letter-spacing:.12em;color:#6a7069}h1{font-size:28px;line-height:1.3;margin:8px 0}p{margin:0;color:#667064}.badge{border:1px solid #ccd6ca;background:#e8eee4;color:#36523e;border-radius:6px;padding:7px 12px;white-space:nowrap;font-size:13px}
+    nav{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:24px 0 18px}button{font:inherit;cursor:pointer;text-align:left;border:1px solid #d6d8d0;background:#fafaf7;border-radius:10px;padding:16px 20px;color:#282d28;transition:border-color .15s,background .15s}button:hover{background:white}button[aria-pressed="true"]{border:2px solid #3c5641;background:white;padding:15px 19px}button:focus-visible,a:focus-visible{outline:3px solid #5277b5;outline-offset:4px}.option-title{font-size:17px;font-weight:600}.option-note{display:block;font-size:13px;color:#667064;margin-top:3px}.swatches{display:flex;gap:5px;margin-top:11px}.swatches i{display:block;width:20px;height:8px;border-radius:2px;border:1px solid #0000000d}
+    .caption{display:flex;justify-content:space-between;align-items:center;gap:24px;margin:14px 2px}.caption strong{font-weight:500}a{color:#365640;text-underline-offset:4px}.stage{background:#e7e7e2;border:1px solid #d8dad2;border-radius:12px;overflow:hidden}.stage img{display:block;width:100%;height:auto}.footer{display:grid;grid-template-columns:1fr 1fr;gap:24px;padding-top:22px;font-size:13px}.footer strong{color:#343d33}.footer p{margin-top:4px}.hint{font-size:12px;color:#798175;margin-top:18px}
+    @media(max-width:760px){main{padding:22px 16px}header{display:block}.badge{display:inline-block;margin-top:12px}h1{font-size:24px}nav{gap:7px}button{padding:12px 10px}button[aria-pressed="true"]{padding:11px 9px}.option-title{font-size:14px}.option-note{font-size:11px}.caption{align-items:flex-start;font-size:13px}.footer{grid-template-columns:1fr;gap:12px}}
+    @media(prefers-reduced-motion:reduce){button{transition:none}}
+  </style>
+</head>
+<body>
+<main>
+  <header><div><div class="eyebrow">PC QUOTE / DESIGN STUDY / 2026.09.17</div><h1>装机店工作台 · 多端视觉提案</h1><p>同一组业务内容，比较三种视觉表达。每版包含桌面与手机布局。</p></div><span class="badge">建议：以 A 为基础，底色适度偏暖</span></header>
+  <nav aria-label="切换视觉方案">
+    <button type="button" data-style="apple" aria-pressed="true"><span class="option-title">A · 苹果式轻质感</span><span class="option-note">清楚、精致、轻盈</span><span class="swatches" aria-hidden="true"><i style="background:#f5f5f7"></i><i style="background:#202124"></i><i style="background:#2563eb"></i></span></button>
+    <button type="button" data-style="oce" aria-pressed="false"><span class="option-title">B · OCE 灵感</span><span class="option-note">自然、亲和、门店气质</span><span class="swatches" aria-hidden="true"><i style="background:#f7f5ef"></i><i style="background:#37584c"></i><i style="background:#c4d1be"></i></span></button>
+    <button type="button" data-style="muji" aria-pressed="false"><span class="option-title">C · MUJI 灵感</span><span class="option-note">朴素、温暖、秩序感</span><span class="swatches" aria-hidden="true"><i style="background:#f5f2eb"></i><i style="background:#33312e"></i><i style="background:#7c2d35"></i></span></button>
+  </nav>
+  <div class="caption"><strong id="description" aria-live="polite">浅灰白、清晰层级与精细硬件图；玻璃质感仅用于局部导航。</strong><a id="original" href="./apple-rendered-desktop-mobile.png" target="_blank" rel="noopener">打开原图 ↗</a></div>
+  <div class="stage"><img id="mockup" src="./apple-rendered-desktop-mobile.png" alt="A：苹果式轻质感，装机店桌面与手机工作台概念图"></div>
+  <div class="footer"><div><strong>多端设计</strong><p>桌面侧重报价、表格、库存和账本。手机侧重扫码、拍照、查单与处理进度。共享业务与视觉规范，按终端重新组织布局。</p></div><div><strong>图像资源</strong><p>统一商品图、配置模板图、二手实拍与状态插画。具体型号、成色和故障必须使用对应实物或有授权的图片。</p></div></div>
+  <p class="hint">效果图由独立 HTML 页面渲染，使用示例数据；不代表功能已经实现。支持使用左右方向键切换方案。<a href="./README.md">查看设计说明</a> · <a href="./prompts.md">查看完整提示词</a></p>
+</main>
+<script>
+  const variants={apple:{title:'A：苹果式轻质感',description:'浅灰白、清晰层级与精细硬件图；玻璃质感仅用于局部导航。'},oce:{title:'B：OCE 灵感生活方式',description:'奶油白、低饱和色块与自然光摄影，让装机店更有亲和力。'},muji:{title:'C：MUJI 灵感朴素工具',description:'暖白、墨灰、细分隔线与克制的产品图，适合长时间工作。'}};
+  const keys=Object.keys(variants);let current='apple';
+  function select(key){current=key;document.querySelectorAll('[data-style]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.style===key)));document.getElementById('description').textContent=variants[key].description;document.getElementById('mockup').src=`./${key}-rendered-desktop-mobile.png`;document.getElementById('mockup').alt=`${variants[key].title}，装机店桌面与手机工作台概念图`;document.getElementById('original').href=`./${key}-rendered-desktop-mobile.png`;}
+  document.querySelectorAll('[data-style]').forEach(button=>button.addEventListener('click',()=>select(button.dataset.style)));
+  document.addEventListener('keydown',event=>{if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;event.preventDefault();select(keys[(keys.indexOf(current)+(event.key==='ArrowRight'?1:2))%keys.length]);});
+</script>
+</body>
+</html>

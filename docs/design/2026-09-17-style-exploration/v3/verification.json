@@ -1,0 +1,102 @@
+{
+  "scope": "Local browser prototype only; no backend, WeChat or native App validation",
+  "layouts": [
+    {
+      "width": 1366,
+      "height": 768,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 3,
+      "mainActionBottom": 730.6875
+    },
+    {
+      "width": 1440,
+      "height": 1000,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 5,
+      "mainActionBottom": 813.6875
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 3,
+      "mainActionBottom": 1187.21875
+    },
+    {
+      "width": 768,
+      "height": 1024,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 6,
+      "mainActionBottom": 1187.21875
+    },
+    {
+      "width": 320,
+      "height": 740,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 3,
+      "mainActionBottom": 0
+    },
+    {
+      "width": 375,
+      "height": 812,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 3,
+      "mainActionBottom": 0
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 4,
+      "mainActionBottom": 0
+    },
+    {
+      "width": 430,
+      "height": 932,
+      "overflow": false,
+      "badImages": 0,
+      "fallbacks": 0,
+      "visibleTasks": 5,
+      "mainActionBottom": 0
+    }
+  ],
+  "interactions": [
+    "Summary filters to two shortage orders",
+    "Filtering automatically opens matching order",
+    "Shortage view has its own facts and actions",
+    "SN search is case insensitive",
+    "No results clears stale detail",
+    "Receivable total links to three outstanding orders",
+    "Delivery dialog shows outstanding checklist and payment",
+    "Checklist updates count",
+    "Switching orders updates amount and paid status",
+    "Checklist state is isolated and retained by order",
+    "Trade-in separates provisional estimate and ownership",
+    "Gallery has all seven devices",
+    "Gallery opens same order processing view",
+    "Device details use selected order data",
+    "Ctrl+K focuses order search",
+    "Mobile opens full task details",
+    "Closing dialog preserves mobile detail",
+    "Mobile back restores task list interaction",
+    "Browser back restores originating device gallery",
+    "Compact mobile photo expands on demand",
+    "Resizing restores desktop controls"
+  ],
+  "errors": [],
+  "checkedAt": "2026-09-17T11:22:53.233Z"
+}

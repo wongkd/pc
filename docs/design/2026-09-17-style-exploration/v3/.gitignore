@@ -1,0 +1,3 @@
+# Local preview process output and temporary debugging captures.
+server*.log
+debug-*.png

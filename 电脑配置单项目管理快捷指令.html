@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电脑配置单 · 项目管理快捷指令</title>
+<style>
+:root {
+  --bg: #f5f3f0; --card: #ffffff; --text: #2c2c2c; --text2: #5a5a5a;
+  --accent: #ae8555; --accent2: #3a7cc5; --green: #2d8a56; --border: #e5e0da;
+  --code-bg: #f0ece6; --danger: #c53030; --warning: #c5761a; --purple: #6b46c1;
+  --dark: #1f2933; --dark2: #111827;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a; --card: #252525; --text: #e8e6dc; --text2: #b0aea5;
+    --accent: #d7ad72; --accent2: #74a5de; --green: #3da86a; --border: #3a3a3a;
+    --code-bg: #2a2825; --dark: #0f1318; --dark2: #080b10;
+  }
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; padding: 20px; }
+.wrap { max-width: 760px; margin: 0 auto; }
+
+.header { text-align: center; padding: 48px 20px 36px; }
+.eyebrow { display: inline-block; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: .12em; margin-bottom: 10px; }
+.header h1 { font-size: 26px; font-weight: 760; margin-bottom: 6px; }
+.header .sub { font-size: 14px; color: var(--text2); }
+
+/* Config bar */
+.config-bar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+  padding: 12px 18px; margin-bottom: 20px; font-size: 13px;
+}
+.config-bar .label { color: var(--text2); white-space: nowrap; }
+.config-bar input {
+  flex: 1; min-width: 260px; border: 1px solid var(--border); border-radius: 6px;
+  padding: 6px 10px; font: 13px "SF Mono","Consolas",monospace;
+  background: var(--bg); color: var(--text);
+}
+.config-bar .btn-sm {
+  background: var(--accent); color: #fff; border: none; border-radius: 6px;
+  padding: 6px 14px; font-size: 12px; cursor: pointer; white-space: nowrap;
+}
+.config-bar .btn-sm:hover { opacity: .85; }
+.config-bar .status { font-size: 12px; color: var(--green); white-space: nowrap; }
+
+.scene-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 28px 0; }
+.scene-btn {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 18px; border-radius: 12px;
+  border: 2px solid var(--border); background: var(--card);
+  cursor: pointer; text-align: left; width: 100%;
+  transition: border-color .18s, background .18s, transform .15s;
+  font: inherit; color: var(--text);
+}
+.scene-btn:hover { border-color: var(--accent); background: rgba(174,133,85,.06); transform: translateY(-2px); }
+.scene-btn.active { border-color: var(--accent); background: rgba(174,133,85,.1); }
+.scene-btn.green:hover, .scene-btn.green.active { border-color: var(--green); background: rgba(45,138,86,.08); }
+.scene-btn.blue:hover, .scene-btn.blue.active { border-color: var(--accent2); background: rgba(58,124,197,.08); }
+.scene-btn.purple:hover, .scene-btn.purple.active { border-color: var(--purple); background: rgba(107,70,193,.08); }
+.scene-icon { font-size: 24px; flex-shrink: 0; }
+.scene-label strong { display: block; font-size: 15px; font-weight: 700; }
+.scene-label span { font-size: 12px; color: var(--text2); }
+
+.panel { display: none; }
+.panel.show { display: block; animation: fadeIn .22s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.panel-card {
+  background: var(--dark); color: #e5e7eb;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px; padding: 28px;
+  margin-bottom: 16px;
+}
+.panel-card h2 { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.panel-card .desc { font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.6; }
+
+.prompt-block {
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 10px; padding: 16px; position: relative;
+  font-family: "SF Mono","Consolas",monospace;
+  font-size: 13px; white-space: pre-wrap; word-break: break-word;
+  color: #f1f5f9; line-height: 1.75; margin-bottom: 12px;
+}
+.prompt-label {
+  display: inline-block; font-size: 11px; font-weight: 700;
+  color: #94a3b8; letter-spacing: .08em; margin-bottom: 10px;
+  font-family: inherit;
+}
+.copy-btn {
+  position: absolute; top: 12px; right: 12px;
+  background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+  color: #e2e8f0; border-radius: 6px; padding: 4px 10px;
+  font-size: 12px; cursor: pointer; font-family: inherit;
+  transition: background .15s; z-index: 1;
+}
+.copy-btn:hover { background: rgba(255,255,255,.2); }
+
+.fill-hint { color: #fbbf24; font-style: normal; }
+.path-placeholder { color: #60a5fa; }
+
+.rules { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 18px 22px; }
+.rules h3 { font-size: 14px; font-weight: 700; color: var(--text2); letter-spacing: .06em; margin-bottom: 10px; }
+.rules ul { padding-left: 18px; }
+.rules li { font-size: 13px; color: var(--text2); margin-bottom: 5px; }
+.rules li strong { color: var(--text); }
+
+.welcome {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 14px; padding: 28px 30px; text-align: center;
+}
+.welcome .big { font-size: 40px; margin-bottom: 12px; }
+.welcome p { color: var(--text2); font-size: 14px; line-height: 1.8; }
+
+.pill { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 700; margin-right: 4px; }
+.pill.orange { background: rgba(197,118,26,.1); color: var(--warning); }
+.pill.red { background: rgba(197,48,48,.1); color: var(--danger); }
+.pill.green { background: rgba(45,138,86,.15); color: var(--green); }
+
+.footer { text-align: center; color: var(--text2); font-size: 12px; padding: 28px 0 16px; }
+.footer code { font-size: 11px; background: var(--code-bg); padding: 2px 6px; border-radius: 4px; }
+.footer a { color: var(--accent); text-decoration: none; }
+
+@media (max-width: 600px) {
+  .scene-grid { grid-template-columns: 1fr; }
+  .header h1 { font-size: 22px; }
+  .panel-card { padding: 20px; }
+  .config-bar { flex-direction: column; align-items: stretch; }
+  .config-bar input { min-width: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div class="eyebrow">AI 项目管理工具箱 · 电脑配置单报价系统</div>
+  <h1>选情景 → 复制指令 → 粘贴发送</h1>
+  <p class="sub">按项目接手说明、任务清单、变更日志三件套交接，少绕路</p>
+</div>
+
+<div class="config-bar">
+  <span class="label">项目根目录：</span>
+  <input id="projPath" type="text" spellcheck="false">
+  <button class="btn-sm" onclick="savePath()">锁定</button>
+  <button class="btn-sm" style="background:transparent;border:1px solid var(--border);color:var(--text2)" onclick="resetPath()">自动检测</button>
+  <span id="pathStatus" class="status"></span>
+</div>
+
+<div class="rules" style="margin-bottom:16px">
+  <h3>说明</h3>
+  <ul>
+    <li>上面的路径会自动检测（根据这个 HTML 文件所在位置推算）</li>
+    <li>换电脑打开后，路径会自动适配该电脑的用户名</li>
+    <li>如果自动检测不准确，可以手动修改后点「锁定」</li>
+    <li>锁定后的路径存在浏览器本地，下次打开自动恢复</li>
+    <li><strong>复制指令时，所有路径里的蓝色文字会被自动替换成实际路径</strong></li>
+  </ul>
+</div>
+
+<div id="welcome" class="welcome">
+  <div class="big">👇</div>
+  <p>下面按钮，对应你现在遇到的情况<br>点一下，直接拿到可复制的指令</p>
+</div>
+
+<div class="scene-grid">
+  <button class="scene-btn" onclick="show('new')">
+    <span class="scene-icon">🆕</span>
+    <div class="scene-label"><strong>我有新需求</strong><span>整理任务单 / 开始开发</span></div>
+  </button>
+  <button class="scene-btn" onclick="show('bug')">
+    <span class="scene-icon">🔧</span>
+    <div class="scene-label"><strong>小BUG / 小修补</strong><span>改个小东西，不影响大局</span></div>
+  </button>
+  <button class="scene-btn" onclick="show('redo')">
+    <span class="scene-icon">😤</span>
+    <div class="scene-label"><strong>结果不满意</strong><span>想调整，但不要大改</span></div>
+  </button>
+  <button class="scene-btn green" onclick="show('done')">
+    <span class="scene-icon">✅</span>
+    <div class="scene-label"><strong>做完了，要收尾</strong><span>更新交接文档，准备下次</span></div>
+  </button>
+  <button class="scene-btn purple" onclick="show('hardware')">
+    <span class="scene-icon">🖥️</span>
+    <div class="scene-label"><strong>硬件库管理</strong><span>导入 / 标准化 / 刷新价格</span></div>
+  </button>
+  <button class="scene-btn blue" onclick="show('deploy')">
+    <span class="scene-icon">🚀</span>
+    <div class="scene-label"><strong>部署更新</strong><span>部署 Worker / D1 / Pages</span></div>
+  </button>
+  <button class="scene-btn blue" onclick="show('newchat')" style="grid-column: 1/-1">
+    <span class="scene-icon">🔄</span>
+    <div class="scene-label"><strong>要开新对话 / 继续上次</strong><span>对话太卡了，或者换个新任务</span></div>
+  </button>
+</div>
+
+<!-- Panel: 新需求 -->
+<div id="panel-new" class="panel">
+  <div class="panel-card">
+    <h2>🆕 第一步：先整理任务单（不改代码）</h2>
+    <p class="desc">把你的想法告诉 AI，让它先写清楚要改什么、不能改什么，你确认后再动手。</p>
+    <div class="prompt-label">复制这段，把黄色部分换成你的需求</div>
+    <div class="prompt-block">先不要改代码，请把下面这个需求整理成任务清单写到：
+<span class="path-placeholder">__ROOT__</span>/电脑配置单网页TODO.md
+
+需求：
+<span class="fill-hint">【在这里描述你想要什么效果，不懂技术没关系，说人话就行】</span>
+
+要求：
+- 写清楚要改什么
+- 写清楚不允许改什么
+- 写清楚做完怎么检查<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+
+    <h2 style="margin-top:24px">🆕 第二步：确认任务单后，让 AI 开始干</h2>
+    <p class="desc">任务单写好你看完没问题后，发这段让 AI 开始改代码。</p>
+    <div class="prompt-label">直接复制，不用改任何内容</div>
+    <div class="prompt-block">这是我的项目：
+<span class="path-placeholder">__ROOT__</span>
+
+请先按顺序阅读这 3 份交接文档：
+1. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页开发完成记录.md（项目接手说明）
+2. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页TODO.md（任务与交接清单）
+3. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页CHANGELOG.md（短变更日志）
+
+读完先告诉我：当前状态、下一步建议、需要我确认什么。
+
+工作规则：
+- 不要读取整个项目
+- 只处理 TODO.md 里面的任务
+- 不要顺手优化
+- 不要改任务外的文件
+- 改超过 2 个文件要先告诉我
+- 做完后告诉我改了哪些文件、怎么验证<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+  </div>
+  <div class="rules">
+    <h3>记住这条</h3>
+    <ul>
+      <li>永远先整理任务单，确认没问题再让 AI 动代码。</li>
+      <li>做完记得用"✅ 收尾"那个按钮更新交接文档。</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Panel: 小BUG -->
+<div id="panel-bug" class="panel">
+  <div class="panel-card">
+    <h2>🔧 小BUG / 小修补</h2>
+    <p class="desc">改一个字、一个颜色、一个逻辑判断，不需要写任务单，直接说清楚问题就行。</p>
+    <div class="prompt-label">复制这段，把黄色部分换成你的问题描述</div>
+    <div class="prompt-block">这是一个小修补，不要大改。
+
+项目路径：<span class="path-placeholder">__ROOT__</span>
+
+问题：
+<span class="fill-hint">【描述你看到的问题，比如：前端某个按钮点不了 / API 返回不对 / 数据显示错了】</span>
+
+要求：
+- 只修这一个问题
+- 不要重构任何东西
+- 不要改无关文件
+- 如果需要改超过 2 个文件，先告诉我，不要直接改<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+  </div>
+  <div class="rules">
+    <h3>什么叫"小修补"</h3>
+    <ul>
+      <li><strong>可以直接改：</strong>文案、样式、小逻辑错误、API 参数</li>
+      <li><strong><span class="pill orange">谨慎</span></strong> 同一个问题改了 3 次还不对：换情景用"结果不满意"</li>
+      <li><strong><span class="pill red">注意</span></strong> 涉及前后端联动：先写任务单</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Panel: 不满意 -->
+<div id="panel-redo" class="panel">
+  <div class="panel-card">
+    <h2>😤 结果不满意，想微调</h2>
+    <p class="desc">AI 刚改完但你觉得不对劲，用这个让它微调，不要推翻重做。</p>
+    <div class="prompt-label">复制这段，把黄色部分换成你不满意的地方</div>
+    <div class="prompt-block">当前效果我不满意，先不要大改。
+
+我不满意的地方：
+<span class="fill-hint">1. 【描述第一个问题，比如：颜色太深了】
+2. 【描述第二个问题，比如：字体太小了】</span>
+
+请只做小范围微调：
+- 不要推翻重做
+- 不要重构
+- 不要改其他区域
+- 优先在现有代码基础上调整
+- 改完告诉我具体改了哪里<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+  </div>
+  <div class="rules">
+    <h3>判断口诀</h3>
+    <ul>
+      <li>微调 1-2 次还在接受范围 → 继续当前对话</li>
+      <li>连续微调 3 次还不满意 → 换用"开新对话"</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Panel: 收尾 -->
+<div id="panel-done" class="panel">
+  <div class="panel-card">
+    <h2>✅ 做完了，更新交接文档</h2>
+    <p class="desc">每次做完一件事，让 AI 更新记录。下次开新对话就能无缝继续。</p>
+    <div class="prompt-label">直接复制，不用改任何内容</div>
+    <div class="prompt-block">请把本次完成内容更新到：
+1. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页开发完成记录.md（项目接手说明）
+2. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页CHANGELOG.md（短变更日志）
+3. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页TODO.md（任务与交接清单，标记已完成）
+
+要求：
+- 写简短、准确、方便下个 AI 接手
+- 记录改了哪些文件、怎么验证、是否部署
+- TODO 里同步更新当前状态和下次优先事项<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+  </div>
+  <div class="rules">
+    <h3>养成习惯</h3>
+    <ul>
+      <li>每次做完一个功能就更新，别攒着</li>
+      <li>交接文档更新后，下次开新对话不会忘东西</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Panel: 硬件库管理 -->
+<div id="panel-hardware" class="panel">
+  <div class="panel-card">
+    <h2>🖥️ 硬件库管理 — 批量操作</h2>
+    <p class="desc">硬件数据的采集、标准化、刷新。前端网页操作 + AI 辅助。</p>
+
+    <div class="prompt-label">采集新硬件（搜索电商价格）</div>
+    <div class="prompt-block">请在硬件库页面搜索以下关键词，把结果加入硬件库：
+
+<span class="fill-hint">【列出要搜索的硬件关键词，一行一个】</span><button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+
+    <div class="prompt-label">AI 标准化硬件标题</div>
+    <div class="prompt-block">请对硬件库中以下分类的未标准化条目，调用 AI 标准化接口：
+
+分类：<span class="fill-hint">【CPU / 显卡 / 内存 / 硬盘 / 主板 / 散热器 / 电源 / 机箱 / 显示器 / 其他】</span><button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+
+    <div class="prompt-label">批量刷新硬件价格</div>
+    <div class="prompt-block">请刷新硬件库中以下分类的价格数据：
+
+分类：<span class="fill-hint">【CPU / 显卡 / 内存 / 硬盘 / 主板 / 散热器 / 电源 / 机箱 / 显示器 / 其他】</span><button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+
+    <div class="prompt-label">运行采集脚本</div>
+    <div class="prompt-block">请帮我运行后端采集脚本：
+
+脚本：<span class="path-placeholder">__ROOT__</span>/backend/collect-v2.js
+注意：运行前需要设置环境变量 PC_QUOTE_EMAIL 和 PC_QUOTE_PASSWORD<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+  </div>
+  <div class="rules">
+    <h3>硬件库操作路径</h3>
+    <ul>
+      <li>搜索新硬件 → 通过后端 /api/search 调用电商 API</li>
+      <li>标准化 → 调 DeepSeek API（/api/normalize），消耗 AI 额度</li>
+      <li>刷新价格 → 重新搜索已有硬件名称，更新 price 和 refreshed_at</li>
+      <li>批量导入 → 使用 collect.js / collect-v2.js 脚本</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Panel: 部署 -->
+<div id="panel-deploy" class="panel">
+  <div class="panel-card">
+    <h2>🚀 部署更新</h2>
+    <p class="desc">改完代码后部署到 Cloudflare。</p>
+
+    <div class="prompt-label">部署 Worker（后端代码改动时）</div>
+    <div class="prompt-block">Worker 代码有改动，请重新部署。
+
+Worker 目录：<span class="path-placeholder">__ROOT__</span>/backend/
+Worker 名：pc-backend
+D1 数据库：pc-db
+
+请执行：npx wrangler deploy
+部署前检查 D1 schema 是否需要更新。<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+
+    <div class="prompt-label">更新 D1 数据库 Schema</div>
+    <div class="prompt-block">Schema 文件有改动，请应用到远程 D1。
+
+目录：<span class="path-placeholder">__ROOT__</span>/backend/
+命令：npx wrangler d1 execute pc-db --remote --file=./schema.sql<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+
+    <div class="prompt-label">部署前端（Pages 或本地预览）</div>
+    <div class="prompt-block">前端代码有改动。
+
+目录：<span class="path-placeholder">__ROOT__</span>/frontend/
+构建命令：npm run build
+输出目录：dist/ 或者通过 wrangler pages deploy<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+
+    <div class="prompt-label">重新设置 Worker Secrets</div>
+    <div class="prompt-block">请帮我在 Cloudflare Worker pc-backend 中设置以下 Secrets：
+- DEEPSEEK_KEY：<span class="fill-hint">【新的 API Key】</span>
+- JWT_SECRET：<span class="fill-hint">【新的 JWT 密钥】</span>
+
+可以在 Cloudflare 控制台操作：Workers & Pages → pc-backend → 设置 → 变量和密钥
+或者命令行：npx wrangler secret put<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+  </div>
+  <div class="rules">
+    <h3>部署信息</h3>
+    <ul>
+      <li>Worker：pc-backend</li>
+      <li>D1 数据库：pc-db（database_id: 2218dbef-fb7d-4248-8430-07dcd4fd0a17）</li>
+      <li>Secrets：DEEPSEEK_KEY、JWT_SECRET（已通过控制台配置）</li>
+      <li>前端：React + Vite，base 路径为 /pc/</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Panel: 开新对话 -->
+<div id="panel-newchat" class="panel">
+  <div class="panel-card">
+    <h2>🔄 开新对话前：先让 AI 更新项目接手文档</h2>
+    <p class="desc">开新对话前先用"✅ 收尾"更新三件套，然后用下面这段开启新对话。</p>
+    <div class="prompt-label">新对话第一句，直接复制</div>
+    <div class="prompt-block">这是我的项目：
+<span class="path-placeholder">__ROOT__</span>
+
+请先按顺序读取这 3 份文档：
+1. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页开发完成记录.md（项目接手说明）
+2. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页TODO.md（任务与交接清单）
+3. <span class="path-placeholder">__ROOT__</span>/电脑配置单网页CHANGELOG.md（短变更日志）
+
+读完后请简短告诉我：
+- 当前项目状态
+- 最近完成了什么
+- 下一步建议先做什么
+- 有没有需要我先确认的点
+
+工作规则：
+- 不要读取整个项目
+- 不要顺手优化
+- 不要改任务外的文件
+- 改超过 2 个文件要先告诉我<button class="copy-btn" onclick="copyBlock(this)">复制</button></div>
+  </div>
+  <div class="rules">
+    <h3>什么时候该开新对话</h3>
+    <ul>
+      <li><strong><span class="pill red">一定要换</span></strong> 对话变卡 / AI 开始忘事情</li>
+      <li><strong><span class="pill orange">建议换</span></strong> 一个功能做完 / 同一问题改了 3 次</li>
+      <li><strong><span class="pill green">不用换</span></strong> 只问一句话 / 小修补</li>
+    </ul>
+  </div>
+</div>
+
+<div class="footer">
+  项目路径：<code id="footerPath"></code>
+  &nbsp;·&nbsp;
+  Worker：<code>pc-backend</code>
+  &nbsp;·&nbsp;
+  数据库：<code>pc-db</code>
+</div>
+
+</div>
+<script>
+// ── 路径自动检测 ──
+const STORAGE_KEY = 'pc-quote-project-root';
+const DEFAULT_FALLBACK = 'C:/Users/你的用户名/Nutstore/1/active/pc-quote';
+
+function detectProjectRoot() {
+  // 尝试从 HTML 文件 URL 推导
+  // file:///C:/Users/xxx/Nutstore/1/active/pc-quote/电脑配置单项目管理快捷指令.html
+  const href = window.location.href;
+  // 去掉 file:// 前缀
+  let path = href;
+  if (path.startsWith('file:///')) {
+    path = path.slice(8);
+  }
+  // URL 解码（处理中文路径）
+  path = decodeURIComponent(path);
+  // 正斜杠统一
+  path = path.replace(/\//g, '\\');
+  // 去掉文件名，拿到目录
+  const lastSep = path.lastIndexOf('\\');
+  if (lastSep > 0) {
+    path = path.slice(0, lastSep);
+  }
+  // 去掉末尾的反斜杠
+  if (path.endsWith('\\')) {
+    path = path.slice(0, -1);
+  }
+  // 确认这个目录名包含 pc-quote
+  if (path.toLowerCase().endsWith('\\pc-quote')) {
+    return path;
+  }
+  return null;
+}
+
+function getProjectRoot() {
+  // 1. 优先用 localStorage 锁定值
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) return saved;
+  // 2. 自动检测
+  const detected = detectProjectRoot();
+  if (detected) return detected;
+  // 3. 回退
+  return DEFAULT_FALLBACK;
+}
+
+function setProjectRoot(val) {
+  localStorage.setItem(STORAGE_KEY, val);
+}
+
+function clearProjectRoot() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+// ── 页面初始化 ──
+const pathInput = document.getElementById('projPath');
+const pathStatus = document.getElementById('pathStatus');
+const footerPath = document.getElementById('footerPath');
+
+function refreshUI() {
+  const root = getProjectRoot();
+  pathInput.value = root;
+  footerPath.textContent = root;
+  const locked = !!localStorage.getItem(STORAGE_KEY);
+  pathStatus.textContent = locked ? '已锁定' : '自动检测';
+  pathStatus.style.color = locked ? 'var(--accent)' : 'var(--green)';
+}
+
+refreshUI();
+
+// ── 路径操作 ──
+function savePath() {
+  const val = pathInput.value.trim();
+  if (val) {
+    setProjectRoot(val);
+    refreshUI();
+    // 短暂反馈
+    pathStatus.textContent = '已锁定';
+    pathStatus.style.color = 'var(--accent)';
+    setTimeout(refreshUI, 1500);
+  }
+}
+
+function resetPath() {
+  clearProjectRoot();
+  refreshUI();
+  pathStatus.textContent = '已重置';
+  pathStatus.style.color = 'var(--green)';
+  setTimeout(refreshUI, 1500);
+}
+
+// ── 场景切换 ──
+const btns = document.querySelectorAll('.scene-btn');
+function show(id) {
+  document.getElementById('welcome').style.display = 'none';
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+  btns.forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('show');
+  const idx = ['new','bug','redo','done','hardware','deploy','newchat'].indexOf(id);
+  if(idx >= 0) btns[idx].classList.add('active');
+  document.getElementById('panel-' + id).scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// ── 复制（替换路径占位符） ──
+function copyBlock(btn) {
+  const block = btn.parentElement;
+  const root = getProjectRoot();
+  let text = '';
+  block.childNodes.forEach(node => {
+    if (node.nodeType === 3) {
+      text += node.textContent;
+    } else if (node.classList && node.classList.contains('fill-hint')) {
+      text += node.textContent;
+    } else if (node.classList && node.classList.contains('path-placeholder')) {
+      text += root;
+    } else if (node.classList && node.classList.contains('copy-btn')) {
+      // skip
+    } else if (node.classList && node.classList.contains('prompt-label')) {
+      // skip
+    } else {
+      text += node.textContent;
+    }
+  });
+  text = text.trim();
+  // 兜底：如果还有 __ROOT__ 没被替换
+  text = text.replace(/__ROOT__/g, root);
+
+  navigator.clipboard && navigator.clipboard.writeText(text).then(() => {
+    const old = btn.textContent;
+    btn.textContent = '✓ 已复制';
+    setTimeout(() => btn.textContent = old, 1400);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); btn.textContent = '✓ 已复制'; } catch(e) {}
+    document.body.removeChild(ta);
+    setTimeout(() => btn.textContent = '复制', 1400);
+  });
+}
+</script>
+</body>
+</html>

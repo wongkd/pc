@@ -1,0 +1,124 @@
+{
+  "layouts": [
+    {
+      "name": "apple",
+      "width": 1366,
+      "height": 768,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "apple",
+      "width": 1440,
+      "height": 1000,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "apple",
+      "width": 375,
+      "height": 812,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "apple",
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "apple",
+      "width": 430,
+      "height": 932,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "oce",
+      "width": 1366,
+      "height": 768,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "oce",
+      "width": 1440,
+      "height": 1000,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "oce",
+      "width": 375,
+      "height": 812,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "oce",
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "oce",
+      "width": 430,
+      "height": 932,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "muji",
+      "width": 1366,
+      "height": 768,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "muji",
+      "width": 1440,
+      "height": 1000,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "muji",
+      "width": 375,
+      "height": 812,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "muji",
+      "width": 390,
+      "height": 844,
+      "horizontalOverflow": false,
+      "badImages": 0
+    },
+    {
+      "name": "muji",
+      "width": 430,
+      "height": 932,
+      "horizontalOverflow": false,
+      "badImages": 0
+    }
+  ],
+  "interactions": [
+    "Apple mobile opens detail",
+    "Apple checklist count updates",
+    "Apple returns to task list",
+    "Apple filters to two shortage tasks",
+    "OCE device opens drawer",
+    "OCE drawer closes on Escape",
+    "OCE filters to inspection device",
+    "MUJI filters repair records",
+    "MUJI selects visible records",
+    "MUJI opens record dialog",
+    "Gallery grayscale comparison",
+    "Gallery mobile preview"
+  ],
+  "errors": []
+}

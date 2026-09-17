@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>A+B · 装机店工作台</title>
+  <link rel="stylesheet" href="workspace.css">
+  <script src="../v2/shared.js" defer></script>
+  <script src="workspace.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#taskList">跳到待办订单</a>
+  <header class="shop-header">
+    <a class="brand" href="./index.html">装机店<span>工作台</span></a>
+    <nav class="desktop-nav" aria-label="主导航">
+      <button class="active" aria-current="page">今天</button>
+      <button data-preview="开单">开单</button>
+      <button data-preview="库存">库存</button>
+      <button data-preview="售后">售后</button>
+      <button data-preview="回收置换">回收置换</button>
+      <button data-preview="账本">账本</button>
+    </nav>
+    <div class="header-tools">
+      <span class="prototype-tag">融合原型 · 示例数据</span>
+      <button class="primary mobile-new-order" data-preview="新建订单"><span data-icon="plus"></span>开单</button>
+      <button class="icon-button" id="searchShortcut" aria-label="搜索订单"><span data-icon="search"></span></button>
+      <button class="avatar" data-preview="店长设置" aria-label="王店长设置">王</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-heading" aria-labelledby="pageTitle">
+      <div class="date-block"><strong>17</strong><span>九月<br>星期四</span></div>
+      <div class="page-title"><p>今天</p><h1 id="pageTitle">门店工作台</h1></div>
+      <button class="primary new-order" data-preview="新建订单"><span data-icon="plus"></span>开单</button>
+    </section>
+
+    <section class="daily-strip" aria-label="今日事项，点击筛选">
+      <button data-filter="交付"><span>待交机</span><strong id="deliveryCount">02</strong><span class="stat-arrow">↗</span></button>
+      <button data-filter="缺货"><span>缺货订单</span><strong id="shortageCount">02</strong><span class="stat-arrow">↗</span></button>
+      <button data-filter="维修"><span>维修待办</span><strong id="repairCount">02</strong><span class="stat-arrow">↗</span></button>
+      <button data-filter="待收款" class="money-stat"><span>待收款</span><strong id="receivableTotal">¥12,800</strong><span class="stat-arrow">↗</span></button>
+      <button class="scan-action" id="findDevice"><span data-icon="scan"></span><span>查件 / SN</span></button>
+    </section>
+
+    <div class="workspace-toolbar">
+      <div class="workspace-title"><h2 id="workspaceTitle">待办订单</h2><span id="resultCount" aria-live="polite">07</span></div>
+      <div class="view-switch" role="group" aria-label="切换查看方式">
+        <button data-view="orders" aria-pressed="true"><span data-icon="order"></span>订单处理</button>
+        <button data-view="devices" aria-pressed="false"><span data-icon="more"></span>设备看板</button>
+      </div>
+    </div>
+
+    <section class="workbench" id="workbench" aria-label="订单工作台">
+      <aside class="task-pane">
+        <label class="search-field"><span data-icon="search"></span><input type="search" id="search" placeholder="客户、单号、设备 / SN" aria-label="搜索客户、单号、设备或SN"><kbd>Ctrl K</kbd></label>
+        <div class="task-filters" role="group" aria-label="筛选订单">
+          <button data-filter="全部" aria-pressed="true">全部</button>
+          <button data-filter="交付" aria-pressed="false">交付</button>
+          <button data-filter="缺货" aria-pressed="false">缺货</button>
+          <button data-filter="维修" aria-pressed="false">维修</button>
+          <button data-filter="回收" aria-pressed="false">回收</button>
+        </div>
+        <div class="list-caption"><span id="filterCaption">今日待处理</span><button id="resetFilters" hidden>清除筛选</button></div>
+        <div id="taskList" class="task-list" tabindex="-1"></div>
+        <div class="task-empty" id="emptyList" hidden><span data-icon="search"></span><h3>没有匹配的订单</h3><p>换个关键词，或清除当前筛选。</p><button class="outline" id="clearSearch">显示全部订单</button></div>
+        <div class="quick-actions"><button data-preview="接收维修"><span data-icon="repair"></span>接收维修</button><button data-preview="到货入库"><span data-icon="box"></span>到货入库</button></div>
+      </aside>
+
+      <article class="order-detail" id="orderDetail" aria-labelledby="detailTitle" tabindex="-1"></article>
+      <div class="detail-empty" id="emptyDetail" hidden><span data-icon="order"></span><p>找到订单后，在这里查看设备与处理事项。</p></div>
+      <div class="device-gallery" id="deviceGallery" hidden></div>
+    </section>
+    <footer class="page-footer"><span>本地交互原型 · 操作不会写入门店数据</span><a href="../v2/index.html">查看原 A / B 方案 ↗</a></footer>
+  </main>
+
+  <nav class="mobile-nav" aria-label="手机主导航"><button aria-current="page"><span data-icon="home"></span>今天</button><button data-preview="开单"><span data-icon="order"></span>开单</button><button data-preview="库存"><span data-icon="box"></span>库存</button><button data-preview="更多功能"><span data-icon="more"></span>更多</button></nav>
+  <dialog id="actionDialog" aria-labelledby="dialogTitle"><div class="dialog-heading"><div><span class="eyebrow">操作预览</span><h2 id="dialogTitle"></h2></div><button class="icon-button" id="closeDialog" aria-label="关闭对话框"><span data-icon="close"></span></button></div><div id="dialogContent"></div><p class="dialog-note">示例数据，仅预览流程；未提交收款、库存或交付。</p><form method="dialog"><button class="primary">返回订单</button></form></dialog>
+</body>
+</html>
