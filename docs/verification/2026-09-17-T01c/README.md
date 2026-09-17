@@ -2,6 +2,7 @@
 
 日期：2026-09-17
 状态：**本地通过** —— T01 的三张子卡（T01a / T01b / T01c）至此全部完成，可汇总判定
+提交：`a2b88f7`（本卡全部产出）
 依据：[05-implementation-tasks.md · T01c](../../plans/2026-09-17-web-wechat-plan/05-implementation-tasks.md#t01--冻结契约与样本)、[06 §2 固定虚构样本](../../plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md)、[03 §7 金额与折返](../../plans/2026-09-17-web-wechat-plan/03-domain-rules.md)、[04 §3/§4/§9](../../plans/2026-09-17-web-wechat-plan/04-data-and-api.md)
 
 本卡只新增与更新 `contracts/` 目录内容与本文档。未修改任何业务代码、未新增迁移、未部署、**未接触生产数据**、未建立小程序项目。
