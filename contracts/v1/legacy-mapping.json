@@ -3,6 +3,7 @@
   "frozenBy": "T01a",
   "frozenAt": "2026-09-17",
   "status": "frozen",
+  "revisionNote": "T01b（2026-09-17）仅更新了 openQuestions 中 Q04 的 owner 与 resolution：权限映射依据改为 backend/src/index.ts 的实际守卫资源，生产表行核实移交 T20。表映射、数据库机制、单位换算等协议内容未改动。",
   "sources": [
     "backend/migrations/0000_baseline.sql",
     "backend/migrations/0001_erp2_stores_members_permissions.sql",
@@ -412,9 +413,11 @@
     {
       "id": "Q04",
       "question": "permissions 表实际有哪些行，与代码中 11 个权限码是否一致？",
-      "why": "无种子迁移；若不一致，旧权限映射会失准。",
-      "affects": "T01b 权限映射、T03",
-      "owner": "T01b"
+      "why": "无种子迁移；表行内容决定「旧门店实际授予了谁」。",
+      "resolution": "T01b 决定不接触生产 D1，改为按 backend/src/index.ts 中 requirePermission 的实际守卫资源完成映射。该依据不依赖表行内容，映射已冻结为 contracts/v1/actions.json 的 legacyPermissionMap，并可由校验脚本按源码逐条复核。表行内容的用途因此缩小为「T20 迁移时确认旧门店授权现状」，不再阻塞权限映射。",
+      "affects": "T20 数据迁移；不再阻塞 T03 会话权限装配",
+      "owner": "T20",
+      "movedFrom": "T01b"
     }
   ]
 }

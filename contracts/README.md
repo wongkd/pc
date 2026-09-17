@@ -1,6 +1,6 @@
 # contracts · 跨端契约
 
-日期：2026-09-17。状态：v1 部分冻结（T01a 完成）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。
+日期：2026-09-17。状态：v1 部分冻结（T01a、T01b 完成，T01c 待做）。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。
 
 本目录是电脑网页端与微信小程序共用的协议唯一来源。两端不得各自维护一份枚举、金额公式或错误码。
 
@@ -14,9 +14,9 @@
 | `v1/errors.json` | 标准错误码、HTTP 状态、客户端处理、结果未知的处理流程 | T01a |
 | `v1/money-rules.json` | 金额公式、冲销策略、优惠分摊、部分退货、成本与毛利 | T01a |
 | `v1/legacy-mapping.json` | 旧表 → 新模型映射、保留的数据库机制、单位换算、未决问题 | T01a |
-| `v1/actions.json` | 动作目录、请求响应、权限映射 | **T01b（未产出）** |
+| `v1/actions.json` | B01–B36 动作目录、多路径操作的分别权限、49 个新权限码、11 个旧权限码映射、状态机缺口登记 | T01b |
 | `v1/fixtures.json` | 虚构样本、边界输入、预期结果、DTO 生成配置 | **T01c（未产出）** |
-| `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a |
+| `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b |
 
 ## 2. 校验方式
 
@@ -24,37 +24,57 @@
 node contracts/tools/validate-contracts.mjs
 ```
 
-脚本做静态检查，不连接数据库、不部署、不读生产数据。它会：
+脚本做静态检查与源码文本核对，不连接数据库、不部署、不读生产数据。它会：
 
 - 校验各文件 JSON 可解析、`contractVersion` 一致、冻结来源已声明；
 - 校验每个字段的类型在约定集合内、枚举引用存在、金额字段以 `Cents` 结尾；
 - 校验状态机与库存桶转换的取值都在对应枚举内、动作编号已登记；
 - 校验金额公式与分摊规则引用的 `对象.字段` 真实存在于 `objects.json`；
-- **反向读取 `backend/migrations/*.sql` 提取实际表名**，与旧表映射逐表双向比对，防止映射漏表或多列不存在的表。
+- **反向读取 `backend/migrations/*.sql` 提取实际表名**，与旧表映射逐表双向比对，防止映射漏表或多列不存在的表；
+- **反向读取 `backend/src/index.ts`**，检查旧权限映射是否覆盖了源码里实际出现的每一个权限码，并核对每条映射的 `evidence` 行号真实存在、且该行确实涉及权限判断；
+- **校验动作编号与 `ActionCode` 枚举双向一致**、动作的 permission / entity / stateMachine / errors 引用都不悬空；
+- **解析 `02-ui-specification.md` §5 的页面清单**，检查每个正式页面至少映射一个动作（防止按钮找不到动作）；
+- **强制 `noWidening`**：`owner_only` 权限码不得继承「店员可得」的旧权限（`quote/edit`、`library/edit` 等），即旧宽权限不得自动获得退款、折抵、报损等能力。
 
 退出码 0 表示通过，1 表示存在失败项。提示项不阻断，代表方案本身尚未定义的规则缺口。
+
+校验闸门自身做过负向测试：注入「`sales/refund` 伪装继承 `quote/edit`」与「抽掉盘点页动作归属」两个错误，脚本分别报出对应失败项。改脚本后可照此复验。
 
 ## 3. 变更流程
 
 1. 已冻结文件**不原地改写**。需要变更时新增 `v1.x` 或 `v2` 目录并提升 `contractVersion`。
 2. 新增枚举值、错误码、字段、动作编号，都必须先改本目录，再改两端实现。
-3. 补充动作（采购取消、报损、退供、价格调整、盘点等）先在 `enums.json` 的 `pendingEnums` 中登记，由对应任务补齐动作编号与请求响应后转为正式枚举。
+3. 补充动作（采购取消、退供、报损、价格调整）已在 `actions.json` 的 `supplementaryActions` 中预留编号并标 `status: "reserved"`、`path: null`。对应任务补齐路径与载荷后改为 `frozen`，**不得由两端自行取名**，也不得用通用 `PUT status` 绕过业务。
 4. 生成物（端内枚举与 DTO）由 T01c 定义生成流程，**生成文件不得手工编辑**。
 
 ## 4. 已知缺口（不要当成已完成）
 
 | 项 | 状态 | 归属 |
 |---|---|---|
-| 动作路径、请求响应、旧权限 → 新 action 映射 | 未产出 | T01b |
 | 虚构样本与 DTO 生成 | 未产出 | T01c |
 | `closed` / `expired` 状态的进入条件 | 方案未定义，校验脚本列为提示 | 对应业务卡实现前补 |
-| 5 个待补枚举（盘点、报损原因、采购取消原因、价格调整原因、置换单状态） | 已登记未定义 | T06c / T01b / T14 |
-| 生产 D1 实际已应用哪些迁移（0004 / 0005） | 未核实 | T20 |
+| **状态机缺口 9 项**（Purchase / ReturnRecord 缺状态字段；Reservation / Offset / Attachment / Operation / CashEntry / Product / QuoteVersion 有状态字段无状态机） | 已在 `actions.json` 的 `stateMachineGaps` 登记 | T06a / T11a / T08a / T14a / T16a / T04a / T09a / T05a / T07a |
+| 补充动作 B37–B41（采购取消、退供、报损、价格调整、售后收款） | B37–B39 标 reserved、B40 阻塞、B41 已定路径 | T06a / T06c / 待指定 / T12c |
+| 生成 D1 实际已应用哪些迁移（0004 / 0005） | 未核实 | T20 |
 | `library` 表是否有历史数据 | 未核实（代码零引用） | T20 |
 | `quotes.data` blob 实际结构 | 未核实（现为单行工作副本） | T07 |
+| 生产 `permissions` 表实际行内容 | 未核实（本卡已改为按代码守卫映射，不依赖表行） | T20 |
 
 ## 5. 与其他文档的关系
 
 - 业务规则细节以 `docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md` 为准，本目录只做机器可读化，不新增业务规则。
 - 接口设计草案见同目录 `04-data-and-api.md`；本目录兑现其中可冻结的部分，并把无法从草案推断的内容（如 `closed` 进入条件）显式标为缺口。
 - 设计原型 `docs/design/2026-09-17-style-exploration/v3/` 不是契约来源。
+
+## 6. 权限模型要点
+
+| 项 | 内容 |
+|---|---|
+| 规模 | 49 个权限码，分 sales / inventory / service / recovery / tradein / finance / platform 七个域 |
+| 命名 | `域/动作`，沿用旧 `resource/verb` 形态；语义一致的旧码（`store/manage`、`member/manage`、`role/view`）**不改名** |
+| `grantPolicy` | `default` 默认角色可授予；`explicit` 须老板单独勾选（收款、入库、交付）；`owner_only` 仅老板 |
+| 字段级 vs 动作级 | `inventory/cost-view`、`inventory/margin-view` 是**字段级**，只决定响应是否返回成本 / 毛利，不守卫动作。旧 `cost/view`、`margin/view` 就是字段级，不是路由守卫 |
+| 宽权限来源 | 唯一宽权限是 `*`（`owner` / `admin` 角色），保留但不再扩大适用范围 |
+| `noWidening` | 旧 `quote/edit`、`library/edit` 是高危宽权限，**不得**自动映射为退款、折抵、报损、盘差批准、欠款放行、付款、冲销等 `owner_only` 能力。校验脚本第 10.3 节强制此约束 |
+
+旧权限映射的完整依据（含 `backend/src/index.ts` 行号证据）见 `v1/actions.json` 的 `legacyPermissionMap`。映射按**代码实际守卫的资源**判定，不按权限码字面名 —— 例如 `library/*` 实际守卫的是商品与 SN 接口。
