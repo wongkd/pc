@@ -1,0 +1,420 @@
+{
+  "contractVersion": "v1",
+  "frozenBy": "T01a",
+  "frozenAt": "2026-09-17",
+  "status": "frozen",
+  "sources": [
+    "backend/migrations/0000_baseline.sql",
+    "backend/migrations/0001_erp2_stores_members_permissions.sql",
+    "backend/migrations/0002_product_master_data.sql",
+    "backend/migrations/0003_orders.sql",
+    "backend/migrations/0004_sn.sql",
+    "backend/migrations/0005_sn_hardening.sql",
+    "backend/src/index.ts（实际 SQL 用法核对，2026-09-17）"
+  ],
+  "methodNote": "本映射依据实际迁移文件与实际代码用法编制，不依据旧回执或口头描述。标记为 unverified 的项必须在下游任务中核实后才能依赖。",
+  "actionVocabulary": ["keep", "extend", "split", "deprecated", "unmapped"],
+  "actionMeaning": {
+    "keep": "结构继续使用，不改语义",
+    "extend": "在原表上增量加字段或约束，历史行保持可读",
+    "split": "一个旧表拆为多个新对象，需要行级解析与映射",
+    "deprecated": "不再写入，保留数据待核实后再决定归档或清理",
+    "unmapped": "不再进入新模型，旧接口按兼容任务单独处理"
+  },
+
+  "tables": [
+    {
+      "table": "users",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": ["Session"],
+      "action": "keep",
+      "codeUsage": "登录身份、token_version 撤权机制仍在使用",
+      "notes": [
+        "现有登录为邮箱 + 密码；小程序侧不接入该注册流程。",
+        "auth context 的 createdBy 语义应指向 memberId，不是 users.id；两者不能混用。",
+        "「注册即老板」的旧流程不得被微信登录复用。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "hardware",
+      "definedIn": "0000_baseline.sql，扩展于 0002 与 0004",
+      "targetObjects": ["Product"],
+      "action": "extend",
+      "codeUsage": "商品 CRUD、批量导入、报价源数据；权限码为 library/view 与 library/edit",
+      "notes": [
+        "0002 已加入 sku、item_type、is_serialized、is_salable、is_purchasable、default_price_cents 等 ERP 列，映射基础已存在。",
+        "price（REAL，元）与 default_price_cents（整数分）在当前代码中双写：INSERT/UPDATE 时写 price = defaultPrice / 100。",
+        "sku 由 'LEGACY-' || id 生成或随机生成，非厂商编码。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "library",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": [],
+      "action": "deprecated",
+      "codeUsage": "核对结果：backend/src/index.ts 中没有任何 SQL 语句读写 library 表；'library' 仅作为权限码与路由名出现，实际读写目标为 hardware",
+      "notes": [
+        "该表与 hardware 结构几乎完全重复（同列名、同索引模式）。",
+        "不得直接删除：是否有历史数据未核实，且旧回执可能引用过它。",
+        "若确认无数据，在 T20 迁移任务中归档或清理，本卡只记录事实。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "quotes",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": ["Quote", "QuoteVersion"],
+      "action": "split",
+      "codeUsage": "handleQuote 始终 SELECT ... ORDER BY updated_at DESC LIMIT 1 后 UPDATE 同一行；data 为 JSON blob",
+      "notes": [
+        "核对结论：现有报价是「单一工作副本」模型，只保留最新一份，没有版本序列。",
+        "因此不能把旧行直接当成 QuoteVersion 序列，也不能假设历史客户版本仍存在。",
+        "data blob 内部是否含客户端历史版本，需在 T07 前实际取样核实。",
+        "单位：blob 内若为元级 unitPrice，需经旧元→分适配器。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "templates",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": [],
+      "action": "unmapped",
+      "codeUsage": "/api/templates CRUD，data 为 JSON blob；权限码 template/view、template/edit",
+      "notes": [
+        "04 §2 未定义模板对象，新契约暂不覆盖。",
+        "旧接口按兼容任务保留；T07 需明确模板归属，不得让两端自行取名。"
+      ],
+      "status": "pending",
+      "risk": "medium"
+    },
+    {
+      "table": "stores",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "storeId 来自 JWT 的 sid，服务端强制校验成员资格",
+      "notes": ["首版单店，但后端仍检查 storeId，不因单店而省略校验。"],
+      "status": "ok"
+    },
+    {
+      "table": "store_members",
+      "definedIn": "0001",
+      "targetObjects": ["WechatIdentity", "Session"],
+      "action": "keep",
+      "codeUsage": "loadAuthContext 校验 store_members.status='active'；is_owner 参与权限计算",
+      "notes": [
+        "微信身份绑定的是 memberId，不是 userId；同一 user 在多店的成员 ID 不同。",
+        "撤权后两端旧会话都必须失效。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "roles",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "extend",
+      "codeUsage": "loadAuthContext 中 roles 含 'owner' 或 'admin' 时权限为 ['*']",
+      "notes": [
+        "角色名 owner / admin 被硬编码为全权，属宽权限来源。",
+        "旧宽权限不得自动获得退款、欠款放行、折抵等新能力；权限→action 映射由 T01b 冻结。"
+      ],
+      "status": "ok",
+      "risk": "medium"
+    },
+    {
+      "table": "permissions",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "extend",
+      "codeUsage": "代码中实际使用的权限码共 11 个：library/view、library/edit、quote/view、quote/edit、template/view、template/edit、store/manage、member/manage、role/view、cost/view、margin/view",
+      "notes": [
+        "权限码与所守卫的资源不一致：library/* 实际守卫 hardware 商品接口。",
+        "T01b 映射必须以实际守卫资源为准，不能按权限码字面名推断。",
+        "权限表无种子数据迁移，实际行内容未核实。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "role_permissions",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "loadAuthContext 联表得出 permissions 数组",
+      "notes": ["与 member_roles、roles 一起构成三重校验中的 permission 段。"],
+      "status": "ok"
+    },
+    {
+      "table": "member_roles",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "同上",
+      "notes": [],
+      "status": "ok"
+    },
+    {
+      "table": "member_invites",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "extend",
+      "codeUsage": "邮箱邀请，状态 pending/accepted/revoked/expired，有 token 与 expires_at",
+      "notes": [
+        "新方案用电脑端生成一次性绑定码，与邮箱邀请不是同一机制。",
+        "沿用该表的过期 / 状态思路，但绑定码需另建表并只存摘要、限尝试次数。",
+        "是否保留邮箱邀请并存，由 T03 决定。"
+      ],
+      "status": "pending"
+    },
+    {
+      "table": "audit_logs",
+      "definedIn": "0001",
+      "targetObjects": ["AuditEvent"],
+      "action": "extend",
+      "codeUsage": "auditStatement / auditLastInsertStatement 写入；details 为自由 JSON",
+      "notes": [
+        "details 内容不受约束，可能含敏感字段；脱敏策略需在 T19 明确。",
+        "审计是脱敏诊断，不能把失败审计当成功账务。"
+      ],
+      "status": "ok",
+      "risk": "medium"
+    },
+    {
+      "table": "product_categories",
+      "definedIn": "0002",
+      "targetObjects": ["Product"],
+      "action": "keep",
+      "codeUsage": "hardware.category_id 引用；导入时按名称查找或创建",
+      "notes": ["LEGACY- 前缀自动生成的分类 code 需在 T20 核对是否可读。"],
+      "status": "ok"
+    },
+    {
+      "table": "product_brands",
+      "definedIn": "0002",
+      "targetObjects": ["Product"],
+      "action": "keep",
+      "codeUsage": "hardware.brand_id 引用，normalized_name 唯一",
+      "notes": [],
+      "status": "ok"
+    },
+    {
+      "table": "orders",
+      "definedIn": "0003",
+      "targetObjects": ["SaleOrder", "Delivery"],
+      "action": "extend",
+      "codeUsage": "创建订单、直接改履约状态、收款；quote_snapshot 存报价快照",
+      "notes": [
+        "无 version 列：新模型必须补，历史单默认只读。",
+        "fulfillment_status 取值集为 pending_purchase/preparing/pending_delivery/delivered/cancelled，与新枚举 wait_stock 系列不是同一套，需逐值映射。",
+        "payment_status 与 received_amount_cents 由触发器维护；新模型不再把它当权威，改为从流水计算，但字段保留用于对账。",
+        "旧直接改履约状态的写入口对迁入 v2 的单据必须禁止或改调同一动作服务。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "order_items",
+      "definedIn": "0003",
+      "targetObjects": ["SaleLine"],
+      "action": "extend",
+      "codeUsage": "订单行，source_item_id 指向 hardware.id",
+      "notes": [
+        "没有 source 列：新品 / 二手 / 客供 / 服务无法区分，只有 item_type='service' 可推出服务行。",
+        "存量行的二手与客供来源需人工核对，不得默认判为新品并据此计算库存与成本。",
+        "unit_price_cents 已是整数分，无需单位换算。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "order_payments",
+      "definedIn": "0003",
+      "targetObjects": ["CashEntry"],
+      "action": "extend",
+      "codeUsage": "收款记录，配合两个触发器维护订单累计金额与支付状态",
+      "notes": [
+        "无 requestId、无 reversalOf、无 direction：全部为收款方向，无退款与冲销引用。",
+        "幂等缺口：同载荷重复提交仍可能形成两笔，T04 必须在数据库边界补幂等记录。",
+        "amount_cents 已为整数分。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "serial_numbers",
+      "definedIn": "0004",
+      "targetObjects": ["StockItem"],
+      "action": "split",
+      "codeUsage": "SN 台账，状态 in_stock/reserved/picked/delivered/in_service/returned_to_supplier/scrapped",
+      "notes": [
+        "只覆盖有 SN 的实物；无 SN 二手与数量件不在其中，新模型需补 assetCode 与数量件路径。",
+        "current_customer_name / current_customer_phone 是当前值，不是所有权历史，不能直接覆盖成永久归属记录。",
+        "purchase_cost_cents 默认 0，无法区分「成本为 0」与「成本未知」，迁移时必须走人工核对。",
+        "in_service 状态在新模型中对应 location=external 且 bucket=quarantine，需明确规则后再迁。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "sn_events",
+      "definedIn": "0004",
+      "targetObjects": ["InventoryMovement", "AuditEvent"],
+      "action": "extend",
+      "codeUsage": "append-only 事件时间线，event_type 10 种",
+      "notes": [
+        "event_type 与 InventoryMovementSource 不是同一套词，需逐值映射后再作为库存流水使用。",
+        "uq_sn_events_inbound_once 保证每 SN 只有一条 inbound，迁移时不得重造第二条。"
+      ],
+      "status": "pending"
+    },
+    {
+      "table": "order_item_sn",
+      "definedIn": "0004，硬化于 0005",
+      "targetObjects": ["Reservation", "Delivery"],
+      "action": "extend",
+      "codeUsage": "订单行与 SN 的绑定，软删除用 unbound_at",
+      "notes": [
+        "uq_order_item_sn_effective_sn 保证同一 SN 只有一条有效绑定，映射为逐件预留的唯一性基础。",
+        "order_item_sn_before_insert_hardening 校验同店、商品匹配与订购数量，保留并审计，不重复实现同一规则。"
+      ],
+      "status": "ok"
+    }
+  ],
+
+  "preservedDatabaseMechanisms": [
+    {
+      "name": "order_payments_before_insert",
+      "type": "trigger",
+      "keeps": true,
+      "limitation": "在数据库层阻止超收，但不阻止同载荷重复提交形成两笔",
+      "action": "保留；T04 另建幂等记录与条件更新，不以它作为唯一防线"
+    },
+    {
+      "name": "order_payments_after_insert",
+      "type": "trigger",
+      "keeps": true,
+      "limitation": "直接累加 received_amount_cents，无 requestId 去重",
+      "action": "保留用于对账；新模型以流水净和为准，二者必须一致"
+    },
+    {
+      "name": "uq_order_item_sn_effective_sn",
+      "type": "unique index",
+      "keeps": true,
+      "limitation": "仅覆盖 SN 实物，不覆盖数量件预留",
+      "action": "保留；新模型补齐非 SN 实物与数量预留的约束"
+    },
+    {
+      "name": "uq_sn_events_inbound_once",
+      "type": "unique index",
+      "keeps": true,
+      "limitation": "只约束 inbound 事件",
+      "action": "保留"
+    },
+    {
+      "name": "order_item_sn_before_insert_hardening",
+      "type": "trigger",
+      "keeps": true,
+      "limitation": "依赖 order_items.source_item_id 非空",
+      "action": "保留；注意 source_item_id 为空的存量行会被该触发器拒绝"
+    }
+  ],
+
+  "unitConversions": [
+    {
+      "from": "hardware.price（REAL，元）",
+      "to": "Product.defaultSalePriceCents（整数分）",
+      "method": "乘 100 后取整",
+      "currentState": "代码已双写（price = defaultPrice / 100），适配器应以 cents 列为准",
+      "risk": "非整数元或历史脏数据会产生精度差"
+    },
+    {
+      "from": "quotes.data 内的行价格（元）",
+      "to": "QuoteVersion.lines[].unitPriceCents",
+      "method": "专用适配器转换，非法 / 超精度 / 缺失标异常",
+      "currentState": "未核实 blob 实际结构",
+      "risk": "同一字段随调用方变化单位是明确禁止项"
+    },
+    {
+      "from": "order_items.unit_price_cents / line_total_cents",
+      "to": "SaleLine.unitPriceCents / netLineCents",
+      "method": "无需换算，已是整数分",
+      "currentState": "已一致",
+      "risk": "无"
+    },
+    {
+      "from": "order_payments.amount_cents / orders.total_amount_cents",
+      "to": "CashEntry.amountCents / SaleOrder.totalCents",
+      "method": "无需换算，已是整数分",
+      "currentState": "已一致",
+      "risk": "无"
+    },
+    {
+      "from": "serial_numbers.purchase_cost_cents",
+      "to": "StockItem.acquisitionCostCents",
+      "method": "不得直接搬运",
+      "currentState": "默认 0，无法区分免费与未知",
+      "risk": "直接搬运会把未知成本变成 0 成本"
+    }
+  ],
+
+  "objectsWithoutLegacyTable": [
+    "StockBalance",
+    "Customer",
+    "CustomerDevice",
+    "Reservation",
+    "Purchase",
+    "Receipt",
+    "Checklist",
+    "TestRecord",
+    "Delivery",
+    "Recovery",
+    "RefurbishmentCost",
+    "ServiceOrder",
+    "DeviceConfiguration",
+    "DeviceChange",
+    "ReturnRecord",
+    "Refund",
+    "Offset",
+    "Attachment",
+    "Operation",
+    "WechatIdentity",
+    "Session",
+    "绑定码表（T03 定义）",
+    "盘点单（T06c 定义，枚举待补）"
+  ],
+
+  "openQuestions": [
+    {
+      "id": "Q01",
+      "question": "生产 D1 实际已应用哪些迁移？0004 / 0005 是否已执行？",
+      "why": "本卡无 D1 访问权限；历史记录只确认 0000–0003 已登记，0004 与 0005（2026-07-23 创建）是否生效未核实。",
+      "affects": "T04、T20；未核实前不得按「全部已应用」设计增量迁移。",
+      "owner": "T20"
+    },
+    {
+      "id": "Q02",
+      "question": "library 表是否有历史数据？",
+      "why": "代码零引用，但删除前必须确认数据情况。",
+      "affects": "T20 归档策略",
+      "owner": "T20"
+    },
+    {
+      "id": "Q03",
+      "question": "quotes.data blob 的实际结构与是否含历史版本？",
+      "why": "代码只保留单行最新副本，无法从表结构推断版本能力。",
+      "affects": "T07 报价版本模型是否可行",
+      "owner": "T07"
+    },
+    {
+      "id": "Q04",
+      "question": "permissions 表实际有哪些行，与代码中 11 个权限码是否一致？",
+      "why": "无种子迁移；若不一致，旧权限映射会失准。",
+      "affects": "T01b 权限映射、T03",
+      "owner": "T01b"
+    }
+  ]
+}
