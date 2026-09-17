@@ -10,7 +10,8 @@
 
 【先做这三件事，不要跳过】
 1. 读 docs/OPEN-ITEMS.md（跨卡片未决项 + 踩坑台账，含需要负责人裁定的项）
-2. 读 docs/verification/2026-09-17-T02b/README.md，**重点 §12–§14**（排版对齐、工具踩坑、模拟器实拍验收）
+2. 读 docs/verification/2026-09-17-T02b-rev2/README.md（最新卡：R-14 金额溢出修复）
+   → 再读 docs/verification/2026-09-17-T02b/README.md 的 §12–§14（排版对齐、工具踩坑、模拟器实拍）
 3. git log --oneline -10 确认进度到哪张卡
 
 【项目是什么】
@@ -20,26 +21,38 @@
 规划入口：docs/plans/2026-09-17-web-wechat-plan/（7 份，T00–T22 卡）。
 推进规则：**一次只执行一张子卡**，每卡产 docs/verification/<日期>-<卡号>/README.md。
 
-【收工状态 · 2026-09-17 23:16】
+【收工状态 · 2026-09-17 23:40】
 - 已完成：T00 / T01（契约 v1 冻结，校验 3047 项）/ T02a（网页六导航壳 + 今天工作台）/
-  T02b（小程序壳 + 契约目标回写 + **排版层对齐设计稿**）
+  T02b（小程序壳 + 契约目标回写 + **排版层对齐设计稿**）/ **T02b-rev2（修 R-14 统计条金额溢出）**
 - 小程序端：`miniprogram/`，原生 tabBar 四项（今天/开单/库存/更多）+ 分包
   `packages/sales/order-detail`。AppID `wx1b14bf01ef71718d` 已配。
-  **今天页已在开发者工具模拟器实拍确认**（截图：docs/verification/2026-09-17-T02b/screenshots/today-01.png）
+  **今天页已在开发者工具模拟器实拍确认过一次**（截图：docs/verification/2026-09-17-T02b/screenshots/today-01.png）
+  —— 但那是**修复前**的形态。
 - 项目归属已裁定（用户选 A）：**`pc-quote/miniprogram` 是本项目唯一的小程序项目**。
   同盘原「装一下机小程序」（云开发模板，无业务代码）已移除，完整保留在 backups/（已 gitignore）。
-- 验证基线：小程序 32 用例 ✅、tsc --noEmit ✅、check-pages ✅、check-classes ✅、
-  check-contracts ✅；网页端 50 用例 + build ✅，lint **39 项既有失败**（不是新引入，别说成通过）
-- **待修缺陷**：统计条「待收款」金额溢出（`¥12,800.00` 超宽被裁）→ OPEN-ITEMS **R-14**
+- **R-14 已修**（提交 `b8ea5e8`）：根因是**格宽与内容不匹配**（四格等分单格内容宽 ≈89.75px，
+  带分位金额 10 字符 ≈117px），不是字号选错。修法＝金额格 `min-width: 260rpx` + 数值按字符类别
+  分档（40/36/32/28rpx，下限 28rpx、永不省略）。设计稿那一行写 `¥12,800`（不带分位）所以看着够用，
+  02 §1 却要求保留分位 —— **这是设计稿与规格的冲突，不是笔误**（OPEN-ITEMS P-14）。
+- 验证基线：小程序 **39 用例** ✅、tsc --noEmit ✅、check-pages ✅、check-classes ✅、
+  check-contracts ✅、契约校验 3047 项 ✅；**`cli.js preview` 实际编译通过** ✅
+  （总 77.4KB / 主包 68.5KB / 分包 9.0KB）；网页端 50 用例 + build ✅，
+  lint **39 项既有失败**（不是新引入，别说成通过）
+- **待负责人裁定**：OPEN-ITEMS **D-F** —— 统计条修好后不再四格等分（1 宽 + 3 窄）。
+  维持严格等分只能把金额压到 ≈30rpx（比同排计数小 25%）。
 
 【下一步优先级】
-1. **修 R-14**：统计条金额溢出。必须同时满足 02 §103「不把 ¥128,000.50 缩成极小字号
-   或省略成无法核账的数」—— 既要放得下，又不能缩到不可读。改完补一条约束测试。
-2. **补视觉验收缺口**：在工具模拟器里看 `packages/sales/order-detail` 详情页、
-   320 / 375 / 430 宽度档、字体放大、对比度、页面末尾的数据来源说明条。
-3. **T02c 组件提取**：TaskRow / DeviceSummary / ProgressSteps / AmountActionBar / Feedback。
+1. **补视觉验收**（当前最大缺口，且必须在工具/真机里由人完成）：
+   - 今天页统计条复拍一张（确认 `¥12,800.00` 不被裁、不换行）；
+   - 逐档切 320 / 375 / 390 / 430；系统字号放大一档再看；
+   - 详情页 `packages/sales/order-detail`（从未在渲染环境里看过）；
+   - 页面末尾的数据来源说明条（要滚到底）、返回恢复的滚动位置；
+   - 对比度（`danger` 是 02 §1 新增语义色）。
+2. **T02c 组件提取**：TaskRow / DeviceSummary / ProgressSteps / AmountActionBar / Feedback。
    注意 02 §T02c 明确要求**不共享 React 组件给微信**，两端各自实现、共用契约与口径。
-4. 之后 T03 / T04 可并行（T03 仍缺微信主体 / 成员 / API 域名）。
+   顺手把统计格视图模型从 `pages/today/index.ts` 提成纯模块（现在有一条正则查源码的结构检查，
+   届时换成真正的单元测试）。
+3. 之后 T03 / T04 可并行（T03 仍缺微信主体 / 成员 / API 域名）。
 
 【操作铁律（踩过的坑，别重踩）】
 - **契约 JSON 禁止整体 JSON.stringify 重写**（紧凑排版被毁），用纯文本外科替换。
@@ -53,6 +66,11 @@
     会报「在项目根目录未找到 app.json」。
   · `cli.js open` 对**已打开的项目**会报 `TypeError: d.on is not a function` → 先 `cli.js quit` 再 open。
   · 本版本 `cli.js auto` **没有 `--auto-port`**，miniprogram-automator 连不上 → **自动化截图不可用**。
+  · **编译验证走 `preview`**：`node.exe cli.js preview --project "<…\pc-quote\miniprogram>" --qr-format image --qr-output "<gitignore 内的路径>"`。
+    它会真编译、报 AppID、给体积报告（T02b-rev2 实测 总 77.4KB / 主包 68.5KB / 分包 9.0KB），
+    并在**不打开新窗口**的前提下产出预览码（约 25 分钟失效）→ 扫码即可在自己手机上看真机观感，
+    这是本机唯一绕开「截不了屏」的通道。登录态用 `cli.js islogin` 查（应输出 `{"login":true}`）。
+  · 服务端口状态在 `%LOCALAPPDATA%\微信开发者工具\User Data\<hash>\Default\.ide-status`（`On` = 已开）。
   · **本机安全策略封了 PowerShell 截屏**（Add-Type / 反射加载 / COM 全被拒）→ 要截图只能在工具界面手动截。
   · CLI spawn 的 IDE 实例会随 CLI 退出而关；要工具留着得手动启动工具本体。
 - 工具会**自动改写 `miniprogram/project.config.json`**（加 minifyWXML + 重排格式），
@@ -60,6 +78,9 @@
 - 小程序 JSCore 的 `toLocaleString` 支持不完整 → 金额格式化一律用纯字符串运算（已在 amount-view.ts）。
 - `@testing-library/react` 在本项目不自动清理 DOM（vitest 未开 globals）→ 测试文件内显式 `afterEach(cleanup)`。
 - jsdom 不加载资源 → 图片降级要用 `fireEvent.error` 主动触发。
+- **用设计稿核对排版时，宽度按「真实渲染文案」算，别用稿上的示例值**：设计稿统计条写 `¥12,800`，
+  实际必须渲染 `¥12,800.00`（02 §1 不许为了好看掩盖分），等分格因此装不下 → R-14。
+  这类约束要写成可机械执行的测试，不要靠眼看。
 
 【证据等级要求】
 - 模拟器截图 ≠ 真机；设计原型 ≠ 已批准设计；本地原型 ≠ 已上线。
