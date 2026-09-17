@@ -11,19 +11,46 @@
     "enhance": true,
     "postcss": true,
     "minified": true,
-    "useCompilerPlugins": ["typescript"],
-    "ignoreDevUnusedFiles": false
+    "useCompilerPlugins": [
+      "typescript"
+    ],
+    "ignoreDevUnusedFiles": false,
+    "minifyWXML": true
   },
   "packOptions": {
     "ignore": [
-      { "type": "file", "value": "package.json" },
-      { "type": "file", "value": "package-lock.json" },
-      { "type": "file", "value": "tsconfig.json" },
-      { "type": "file", "value": "README.md" },
-      { "type": "folder", "value": "scripts" },
-      { "type": "folder", "value": "tests" },
-      { "type": "folder", "value": "node_modules" },
-      { "type": "file", "value": "contracts/generated/manifest.json" }
+      {
+        "type": "file",
+        "value": "package.json"
+      },
+      {
+        "type": "file",
+        "value": "package-lock.json"
+      },
+      {
+        "type": "file",
+        "value": "tsconfig.json"
+      },
+      {
+        "type": "file",
+        "value": "README.md"
+      },
+      {
+        "type": "folder",
+        "value": "scripts"
+      },
+      {
+        "type": "folder",
+        "value": "tests"
+      },
+      {
+        "type": "folder",
+        "value": "node_modules"
+      },
+      {
+        "type": "file",
+        "value": "contracts/generated/manifest.json"
+      }
     ],
     "include": []
   },
