@@ -1,0 +1,25 @@
+契约自洽性校验 · contractVersion v1
+────────────────────────────────────────────────────────────────
+枚举 39 个 / 取值 191 项
+对象 31 个 / 字段 243 个（其中枚举引用 39 个）
+状态机 5 个 / 转换 37 条
+库存桶转换 9 条
+错误码 16 个
+金额公式 9 条
+旧表映射 31 张 / 迁移实际表 31 张
+缺口依据核验 15 条 / 规格 §2 字段覆盖 24 行
+虚构样本 7 条 / 金额算例 12 个（15 阶段）/ 行为算例 4 个 / 边界输入 17 条
+DTO 生成物 6 个（已逐字节比对，哈希一致）
+────────────────────────────────────────────────────────────────
+通过 3109 项
+
+提示 7 项（不阻断）：
+  · 状态机 QuoteStatus 的 issued → expired 未绑定动作编号：超过 validUntil
+  · 状态机 QuoteStatus 的 draft → closed 未绑定动作编号：未在本方案中明确，实现前须补
+  · 状态机 QuoteStatus 的 issued → closed 未绑定动作编号：未在本方案中明确，实现前须补
+  · 状态机 SaleTradeState 的 confirmed → closed 未绑定动作编号：03 未明确 closed 进入条件，实现前须补契约
+  · 状态机 ServiceState 的 returned → closed 未绑定动作编号：未在本方案中明确，实现前须补
+  · 新增老板专属权限码 13 个，T03 装配默认角色时不得自动授予：sales/order-credit-approval、sales/refund、inventory/opening、inventory/count-approve、inventory/damage、recovery/acquire、tradein/offset、tradein/reverse、finance/ledger-view、finance/payment、finance/reverse、document/export、auth/binding-code
+  · 已登记状态机缺口 8 项（不影响本次校验结论，须由对应任务卡补全）
+
+✓ 全部检查通过：契约文件彼此自洽，且与迁移文件中的实际表结构一致。

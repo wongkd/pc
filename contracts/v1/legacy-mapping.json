@@ -3,7 +3,7 @@
   "frozenBy": "T01a",
   "frozenAt": "2026-09-17",
   "status": "frozen",
-  "revisionNote": "T04（2026-09-17）在 tables 末尾追加 4 条非旧表登记：operations、assertion_guards、entity_version_log、operation_failures，均来自 0006_consistency_core.sql，无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入该迁移文件。未新增或修改任何 action 取值、目标对象名与校验规则，规范性表面零变化，故不提升 contractVersion。此前记录：T01b（2026-09-17）仅更新了 openQuestions 中 Q04 的 owner 与 resolution：权限映射依据改为 backend/src/index.ts 的实际守卫资源，生产表行核实移交 T20。表映射、数据库机制、单位换算等协议内容未改动。",
+  "revisionNote": "T05a（2026-09-18）在 tables 末尾追加 6 条非旧表登记：stock_items、stock_balances、inventory_movements、stock_reservations、inventory_openings、inventory_opening_lines，均来自 0007_inventory_core.sql，无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入该迁移文件。hardware 的就地扩展（tracking_mode / requires_sn / specs / version / entity_id）落在其原有 extend 条目语义内，未改该条目的 action 与目标对象。serial_numbers 与 sn_events 的既有登记（split / extend）保持不变，行级映射仍留待 T20。未新增或修改任何 action 取值、目标对象名与校验规则，规范性表面零变化，故不提升 contractVersion。此前记录：T04（2026-09-17）在 tables 末尾追加 4 条非旧表登记：operations、assertion_guards、entity_version_log、operation_failures，均来自 0006_consistency_core.sql，无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入该迁移文件。未新增或修改任何 action 取值、目标对象名与校验规则，规范性表面零变化，故不提升 contractVersion。此前记录：T01b（2026-09-17）仅更新了 openQuestions 中 Q04 的 owner 与 resolution：权限映射依据改为 backend/src/index.ts 的实际守卫资源，生产表行核实移交 T20。表映射、数据库机制、单位换算等协议内容未改动。",
   "sources": [
     "backend/migrations/0000_baseline.sql",
     "backend/migrations/0001_erp2_stores_members_permissions.sql",
@@ -12,6 +12,7 @@
     "backend/migrations/0004_sn.sql",
     "backend/migrations/0005_sn_hardening.sql",
     "backend/migrations/0006_consistency_core.sql（T04 新增表，非旧结构）",
+    "backend/migrations/0007_inventory_core.sql（T05a 新增库存核心表，非旧结构）",
     "backend/src/index.ts（实际 SQL 用法核对，2026-09-17）"
   ],
   "methodNote": "本映射依据实际迁移文件与实际代码用法编制，不依据旧回执或口头描述。标记为 unverified 的项必须在下游任务中核实后才能依赖。",
@@ -330,6 +331,83 @@
       "notes": [
         "表名即语义：绝不能被读作「动作成功」的证据。",
         "只存诊断摘要，禁止写 token、原始请求体或完整客户载荷。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_items",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应；serial_numbers 仍标为 split，行级映射留待 T20）",
+      "targetObjects": ["StockItem"],
+      "action": "keep",
+      "codeUsage": "逐件实物：内部编号 assetCode、成色、SN 原始值与规范化值、所有权、可用性、位置、成本与成本是否已知",
+      "notes": [
+        "新建表而不是就地改 serial_numbers：旧表只有一个 status 轴，装不下 ownership / availability / location 三轴（04 §2 L21）。",
+        "旧 serial_numbers 的行不自动搬入。库存只来自采购入库、期初实盘、回收取得与退货接收。",
+        "同一实物的有效占用由 stock_reservations 的部分唯一索引保证，不靠应用层层判断。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_balances",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["StockBalance"],
+      "action": "keep",
+      "codeUsage": "型号 × 位置的数量余额；只由 inventory_movements 的触发器写入，应用层不直接改这三列",
+      "notes": [
+        "表里只有 available / reserved / quarantine 三列，在途与客户保管没有位置可放，因此结构上不可能被混算（03 §4 L84）。",
+        "三列各有 CHECK >= 0：扣成负数会让整个批次回滚，而不是静默截断。",
+        "「余额 = 流水净和」是跨表聚合，CHECK 无法表达；改为唯一写入路径 + 可重算对账（见 backend/src/domains/inventory.ts 的 reconcileProductBalance）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_movements",
+      "definedIn": "0007_inventory_core.sql（T05a 新增；sn_events 仍标为 extend，新表承载数量件与逐件两条路径）",
+      "targetObjects": ["InventoryMovement"],
+      "action": "keep",
+      "codeUsage": "库存流水：有符号 qty、from / to 桶、来源标识、冲销引用、发生时间与 requestId",
+      "notes": [
+        "新建表而不是就地扩展 sn_events：旧表 sn_id 为 NOT NULL（0004_sn.sql L48），数量件（无 SN）的流水无处安放。",
+        "qty 与 from / to 桶的组合语义（qty 作用在哪个桶）契约未规定，由 T05a 定并已记入验证文档的口径说明。",
+        "所有改变库存的动作都必须写这里；建实物而不写流水会让实物游离在余额之外，可用 findStockItemsWithoutMovements 对账发现。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_reservations",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["Reservation"],
+      "action": "keep",
+      "codeUsage": "逐件实物的占用；部分唯一索引 uq_stock_reservations_active_item 保证同一实物同一时刻最多一条 active",
+      "notes": [
+        "T05a 只建形状与约束；真正写占用的动作属 B05，归 T08。",
+        "order_ref / line_ref 是不透明引用：SaleOrder 尚未建表，因此不做外键。",
+        "qty 恒为 1（03 §3 L50：序列化 / 二手实物行数量为 1）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_openings",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["StockItem", "InventoryMovement", "StockBalance"],
+      "action": "keep",
+      "codeUsage": "期初单头：人工确认的实盘凭据 approved_count_ref、成本口径说明、操作人与 requestId",
+      "notes": [
+        "这不是 B16 的盘点单（其状态枚举 CountState 仍未定义，见 enums.json pendingEnums），只是让「有人数过」成为落库事实的审计载体。",
+        "B13 必须携带 approvedCountRef；没有它就无法建立期初。",
+        "历史 SN 表的行数永远不能当作期初：代码中不存在任何从 serial_numbers 计数搬运的路径。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_opening_lines",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["StockItem"],
+      "action": "keep",
+      "codeUsage": "期初逐行明细：数量、成色、内部编号、单件成本与成本是否已知",
+      "notes": [
+        "unit_cost_cents 与 cost_known 成对约束：未知成本必须为 NULL，不得写成 0。",
+        "逐件行与 stock_items 一一对应；数量件行的 stock_item_id 为空。"
       ],
       "status": "ok"
     }

@@ -1,6 +1,6 @@
 # 未决项与踩坑台账（跨卡片）
 
-更新：2026-09-17（最后由 T04 维护）
+更新：2026-09-18（最后由 T05a 维护）
 用途：**把「规格没写的」「需要你拍板的」「已经踩过的坑」集中在一处**，便于换一个 AI 继续做，也便于你逐条决定。
 
 - 本文件只做索引与结论，**不复述业务规范**；业务规则以 `docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md` 与契约 `contracts/` 为准。
@@ -37,6 +37,8 @@ node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物�
 | **D-G** | 详情页「阶段」两端做法**互相矛盾**，T02c 的 `ProgressSteps` 提取被它卡住 | 网页端（T02a）在 `WorkbenchTodayPage.tsx` 里**硬编码三步** `['已确认成交','备货 / 检测','收款与交付']`，并用「有没有卡点」**推测**当前进度（`index===1 && blockerSummary ? is-blocked : ...`）；小程序端（T02b D8）因为 V1 读模型没有阶段字段，**明确拒绝画推测进度**，只写承位说明。同一规格点（02 §107）两端相反 | 要定「阶段」的数据来源：① 照网页端做法（阶段=按事项类型手写模板 + 由卡点推测状态）② 等契约补详情读模型（阶段/检查项字段 + 样本）后再两端一起做 ③ 两端都退成承位说明。**Q-T02b-2 的升级版**；不定就无法提取 ProgressSteps | 阻塞 T02c；涉及是否新增契约对象与扩 V1 样本（T08 / T12 / T14） |
 | **D-H** | `operations.result_json` 的结构是否升入契约（成为规范性定义） | T04 把动作结果（summary / effects / entityType / entityId / version）存进 `operations.result_json`。结构目前由 `backend/src/domains/operations.ts` 的 `OperationOutcome` 定义，**契约未声明**（与 D-A 的 `amountSummary` 同类问题） | 与 D-A 合并考虑：若两者都升入 `objects.json`，属于新增规范性表面，须提 `contractVersion` → 建 `contracts/v2/`。若不升，两端只能按实现约定消费，客户端拿不到类型 | 影响「结果未知查询」的响应结构（GET /operations/:requestId 已在 T04 预留 `queryOperation`）。D4 已裁定跳 T02c，但本项与 D-A 应在 T07/T08 前定 |
 
+| **D-I** | `specs` 的类型：`actions.json` L305 写 B12 输入为 `specs:Spec[]`（数组），`objects.json` L43 写 `Product.specs` 为 `string` | 两处都是冻结文件。T05a 按**对象定义**（string）实现，B12 接受 `string \| null` | 这不是「规格留白」而是**契约内部相互矛盾** —— 两个文件都被称作唯一来源。改哪一边都会动规范性表面 | B12 的请求结构无法最终确定；两端由契约生成的类型会与后端实现不一致。T05a 已按 string 落地并记录在验证文档 §7 C-2 |
+
 ---
 
 ## 2 · 规格缺口（规格没写，实现时不许自己编）
@@ -51,6 +53,8 @@ node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物�
 | G-13 | 列表排序规则 | 契约 V1 明确 `order: "unspecified"` | T18 |
 | G-14 | 缺少「已逾期」样本 | V1 七条没有逾期项，02 §4 却要求「逾期明确写已逾期」 | 需要补样本，否则该体验项无法验 |
 | G-15 | 统计条金额的**宽度预算上限**没有规格依据 | 02 §103 只说「不缩成极小字号、不省略成无法核账的数」，没给金额量级上限或格宽预算。T02b-rev2 按 375px 设计宽度把预算定为 120px，覆盖到千万级；亿级以上落到下限档后可能溢出（`¥128,000,000.00` 估算 120.3px 刚好越界） | T02c 或 T15（账本）按实际资金规模定 |
+| G-16 | `OpeningLine` 与 `CostBasis` 的**结构**（04 §5 L99 只给了类型名，没给字段） | T05a 已实现为最小结构并记录在 [2026-09-18-T05a](verification/2026-09-18-T05a/README.md) §7 C-3：`OpeningLine = productRef / qty / condition? / assetCode? / snRaw? / unitCostCents?`，`costBasis.kind ∈ known \| unknown` | 定了才谈得上契约化；未定则两端只能按实现约定消费，T05c 的样本也没有依据可写 |
+| G-17 | `InventoryMovement` 的 `qty`（04 §2 L29「增量，可正可负」）与 `fromBucket` / `toBucket` 的**组合语义**未规定 | T05a 已定口径并记录（验证文档 §7 C-1）：`to_bucket` 桶 `+qty`、`from_bucket` 桶 `-qty`；两者可同时出现表示一笔桶间转移 | 桶间转移（可卖 → 已订）的流水形态由它决定；T08 / T10 写流水时必须遵守同一口径 |
 
 ---
 
@@ -90,6 +94,9 @@ node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物�
 | P-16 | **miniflare 的 `scriptPath` 不编译 TypeScript** | 用它托管 `worker.ts` 直接报 `Unable to parse ...: Unexpected token` —— 只有 wrangler 才走 esbuild 转译 | 测试要调 TS 代码时，先用 esbuild 打包成 `.mjs` 再 import（见 `backend/tests/lib/build.mjs`） |
 | P-17 | **D1 的 `exec()` 按换行切分语句** | 多行 `CREATE TABLE` 被切成半句，报 `incomplete input`；而触发器体内自带分号，按 `;` 裸拆同样会切坏 | 自己写拆分器：跳过注释与字符串字面量，并把 `CREATE TRIGGER ... BEGIN ... END` 整体当一条语句（见 `backend/tests/lib/sql.mjs`） |
 | P-18 | **`node --test` 不会因为测试跑完就退出** | 留下活动句柄（未 dispose 的 workerd）时会挂住；管道缓冲让外面看不到任何输出，表现为「跑了 4 分钟没动静」，极易误判为卡死 | 确保 `dispose()`；探测类脚本显式 `process.exit()`。日志**重定向到文件再读**，不要依赖管道 `tail` |
+| P-19 | **同一个 D1 批次内，后面的语句看得见前面语句的效果** | B13 一个请求带两行时，第二行的「该商品是否已有库存」守卫命中了第一行刚建的数据，整批被自己拦下；**单行请求却完全正常**，极易误判成「约束写错了」 | 「本批之前是否已存在」类的守卫，必须**排除本次 requestId 写入的行**（按 `request_id <> ?` / 期初单号排除）。T05a 的两处守卫已按此修正并有对应用例 |
+| P-20 | **UPSERT 的 INSERT 分支先校验 CHECK，再判定唯一冲突** | 把桶间转移的算术写进 `INSERT ... ON CONFLICT DO UPDATE` 的 INSERT 分支时，`available → reserved`（delta 为负）被 `available_qty >= 0` 拒绝，报错指向一个完全合法的余额 | 改为**先 `INSERT OR IGNORE` 建零行，再 `UPDATE` 累加**。此时「对不存在的余额做扣减」仍会因 CHECK 失败整批回滚（正确行为），合法转移则可通过 |
+| P-21 | **`db.prepare(...).bind(...)` 本身不会执行语句** | 测试夹具漏写 `.run()`，INSERT 静默不生效；后续断言全拿到 `null`，症状看起来像「外键或约束坏了」，实际是语句从没跑过 | 构造完必须 `.run()` / `.first()` / `.all()`；夹具里统一封装成「执行并返回错误消息」的助手，不要让裸 PreparedStatement 在测试代码里传递 |
 
 ---
 
@@ -118,7 +125,9 @@ node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物�
 | **微信开发者工具编译**（T02b 的「小程序必须编译出原生页面」） | ✅ **T02b-rev2 已跑通**：`cli.js preview` 实际编译通过、AppID 正确识别、无编译错误，并首次拿到体积（总 77.4KB / 主包 68.5KB / 分包 9.0KB）。**但 `preview` 不产出截图，渲染结论仍未验**；`preview` 会生成预览码（约 25 分钟失效），这是本机唯一能拿到真机观感的通道 |
 | 小程序真机 / iOS / Android | AppID 已配置（现由本项目单独使用）；**模拟器实拍已确认今天页渲染正常**（T02b §14）；**真机条件仍缺** —— 02 §188 要求的 iOS / Android 实机截图未提供 |
 | 小程序视觉验收（320 / 375 / 390 / 430、字体放大、返回恢复的滚动位置） | 需开发者工具或真机。今天页已在模拟器实拍过一次（T02b §14），**R-14 修复后的形态尚未实拍**（T02b-rev2 §7）；详情页仍从未在渲染环境里看过 |
-| ~~后端集成、并发、幂等~~ | ✅ **T04 已重建**：`npm --prefix backend test` = 真实 workerd + 真实 D1，21 用例覆盖中途失败回滚、0 行断言、幂等复用/冲突、并发争用、结果恢复。**但「并发」是同一实例内两条请求同时在途**，跨实例 / 跨机房竞争仍未测 |
+| ~~后端集成、并发、幂等~~ | ✅ **T04 已重建**：`npm --prefix backend test` = 真实 workerd + 真实 D1，覆盖中途失败回滚、0 行断言、幂等复用/冲突、并发争用、结果恢复。**T05a 后共 58 用例**（T04 原有 21 + 库存 37）。**但「并发」是同一实例内两条请求同时在途**，跨实例 / 跨机房竞争仍未测 |
+| 库存的浏览器 / 真机验收（库存列表、逐件视图、搜索） | **T05b 未开始**，界面尚未实现，无可验收对象 |
+| T05a 的存量回填路径（`hardware` 的 `tracking_mode` / `entity_id` 回填） | 本地测试库在 0007 执行时 `hardware` 为空，**没有可回填的行**，该路径只在真实存量库上生效，未被测试覆盖 |
 | 生产 D1 的迁移状态（含 0006） | 0004 / 0005 是否应用本就未核实；0006 **确认未应用**。在 T20 与明确授权前不得 apply |
 
 ---
@@ -142,3 +151,4 @@ node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物�
 | R-13 | **小程序项目归属（已裁定）** | **`pc-quote/miniprogram` 是本项目唯一的小程序项目**（2026-09-17 用户选 A）。原同盘另一条线 `工作同步\装一下机小程序`（云开发 QuickStart 模板，58 文件 / 1.4MB，**内容已核实无任何业务代码**）按用户指示**已于 2026-09-17 23:15 移除**，完整保留在 `pc-quote/backups/装一下机小程序-已移除-20260917`（放该目录是因为 `backups/` 已被 gitignore）。**AppID `wx1b14bf01ef71718d` 现已归本项目单独使用**。另：在工具里「打开项目」必须选到 **`…\pc-quote\miniprogram` 这一层**；只选到 `…\pc-quote` 会报「在项目根目录未找到 app.json」 |
 | R-14 | **统计条金额溢出** | ✅ **T02b-rev2 已修**。根因不是字号选错，而是**格宽与内容不匹配**：四格等分时单格内容宽 ≈89.75px，而 `¥12,800.00` 是 10 字符 ≈117px（T02b §14 的记载写「`.metric-value` 用 `--mp-fs-amount` 48rpx」与代码不符 —— 排版修订已降到 40rpx，记载没跟上，rev2 已更正）。修法：金额格 `min-width: 260rpx`（02 §1 明文许可「金额位数超过样图时允许布局增长」）+ 数值按字符类别分档（40/36/32/28rpx，下限 28rpx、永不省略）。见 [2026-09-17-T02b-rev2](../verification/2026-09-17-T02b-rev2/README.md)。**修复后的渲染仍未实拍**（本机截不了屏），视觉确认待做；布局是否维持等分见 §1 的 D-F |
 | R-15 | **本地 D1 测试入口与一致性基础设施（原 T-04）** | ✅ **T04 已重建**（2026-09-17）。`backend/tests/` 用 miniflare 起**真实 workerd + 真实 D1**，按序应用全部迁移，被测 TS 经 esbuild 打包后直接调用；命令 `npm --prefix backend test`，**21 用例通过**。同时新增：`0006_consistency_core.sql`（operations / assertion_guards+触发器 / entity_version_log / operation_failures）、`backend/src/domains/operations.ts`（幂等执行器与断言守卫）、`backend/scripts/sync-error-codes.mjs`（契约错误码单向生成到后端，可 `--check`）。核心机制一句话：**约束即断言** —— 唯一约束管幂等与逐件预留、CHECK 管非负与不超额、守卫表管其余复合条件；**不依赖 `changes()`、不依赖 Worker 内存锁**。详见 [2026-09-17-T04](../verification/2026-09-17-T04/README.md) |
+| R-16 | **商品属性、逐件实物、数量余额、库存流水、期初与客户财产边界（T05a）** | ✅ **T05a 本地通过**（2026-09-18）。要点：①**Product 就地扩展 `hardware`**（`tracking_mode` / `requires_sn` / `specs` / `version` / `entity_id`），不建第二套主数据；`entity_id` 解决「batch 内取不到自增 ID」，`tracking_mode` 与旧列 `is_serialized` 双写防漂移。②**StockItem / StockBalance / InventoryMovement 新建表**：旧 `serial_numbers` 只有一个 status 轴、旧 `sn_events.sn_id` 是 NOT NULL，装不下契约字段（`legacy-mapping` 本就把前者标为 `split`）。③**余额只由 `inventory_movements` 的触发器写入**，且 `stock_balances` 只有三桶列 —— 在途与客户保管**结构上没有位置**，因此不可能被混算。④**期初必须带人工实盘凭据** `approvedCountRef`，且代码中不存在从旧 SN 表计数搬运的路径（卡面通过标准）。⑤客户财产边界写成两条 CHECK。命令 `npm --prefix backend test` 共 **58 用例**（含本卡 37）。详见 [2026-09-18-T05a](../verification/2026-09-18-T05a/README.md)。**注意：HTTP 路由未接（等 T03 鉴权），0007 未应用到任何远端。** |

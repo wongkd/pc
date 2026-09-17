@@ -1,0 +1,40 @@
+迁移数: 8
+迁移清单: 0000_baseline.sql:15, 0001_erp2_stores_members_permissions.sql:13, 0002_product_master_data.sql:21, 0003_orders.sql:11, 0004_sn.sql:11, 0005_sn_hardening.sql:3, 0006_consistency_core.sql:10, 0007_inventory_core.sql:27
+--- 0 结构 ---
+  stock_items: 1
+  stock_balances: 1
+  inventory_movements: 1
+  stock_reservations: 1
+  inventory_openings: 1
+  inventory_opening_lines: 1
+  inventory_movements_apply_balance: 1
+  uq_stock_items_store_owned_sn: 1
+  uq_stock_reservations_active_item: 1
+  hardware 新列: tracking_mode,requires_sn,specs,version,entity_id
+--- 1 商品与回填 ---
+[OK  ] 插入商品（带 entity_id / tracking_mode）
+  商品 tracking_mode = item
+--- 2 客户财产边界（R03）---
+[FAIL] 客户所有 + available（应被拒绝） :: D1_ERROR: CHECK constraint failed: availability NOT IN ('available', 'reserved', 'quarantine', 'sold') OR ownership = 'store': SQLITE_CONSTRAINT (extended: SQLI
+[FAIL] 门店所有 + customer_custody（应被拒绝） :: D1_ERROR: CHECK constraint failed: availability <> 'customer_custody' OR ownership <> 'store': SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_CHECK)
+[OK  ] 客户所有 + customer_custody（应通过）
+--- 3 未知成本（R01）---
+[FAIL] cost_known=0 且成本为 0（应被拒绝） :: D1_ERROR: CHECK constraint failed: cost_known = 1 OR acquisition_cost_cents IS NULL: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_CHECK)
+[OK  ] cost_known=0 且成本为 NULL（应通过）
+--- 4 重复 SN ---
+[OK  ] 店有 SN 首件（应通过）
+[FAIL] 同 SN 第二件店有（应被拒绝） :: D1_ERROR: UNIQUE constraint failed: stock_items.store_id, stock_items.sn_normalized: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_UNIQUE)
+[OK  ] 同 SN 客户所有（应通过：不同所有者记录）
+--- 5 余额触发器 ---
+[OK  ] 入库 +5 到 available
+  balances: {"available_qty":5,"reserved_qty":0,"quarantine_qty":0,"version":2}
+[OK  ] 桶间转移 available -> reserved 2
+  balances: {"available_qty":3,"reserved_qty":2,"quarantine_qty":0}
+[FAIL] 出库 reserved -10（应被 CHECK 拒绝） :: D1_ERROR: CHECK constraint failed: reserved_qty >= 0: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_CHECK)
+  拒绝后 balances: {"available_qty":3,"reserved_qty":2,"quarantine_qty":0}
+[OK  ] in_transit 与 customer_custody 不落地余额表
+  在途后 balances: {"available_qty":3,"reserved_qty":2,"quarantine_qty":0}
+--- 6 逐件占用 ---
+[OK  ] 首条 active 占用（应通过）
+[FAIL] 同实物第二条 active（应被拒绝） :: D1_ERROR: UNIQUE constraint failed: stock_reservations.stock_item_id: SQLITE_CONSTRAINT (extended: SQLITE_CONSTRAINT_UNIQUE)
+[OK  ] 同实物 released（应通过）

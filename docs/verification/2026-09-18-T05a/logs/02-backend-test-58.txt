@@ -1,0 +1,358 @@
+TAP version 13
+# Subtest: 迁移与结构：0006 的四处对象都已建立
+ok 1 - 迁移与结构：0006 的四处对象都已建立
+  ---
+  duration_ms: 5995.7262
+  type: 'test'
+  ...
+# Subtest: 守卫表在静息状态必须为空
+ok 2 - 守卫表在静息状态必须为空
+  ---
+  duration_ms: 60.0838
+  type: 'test'
+  ...
+# Subtest: 正常路径：扣减、流水、幂等记录、版本日志各一笔
+ok 3 - 正常路径：扣减、流水、幂等记录、版本日志各一笔
+  ---
+  duration_ms: 1194.3352
+  type: 'test'
+  ...
+# Subtest: 同 requestId 同载荷：复用原结果，副作用不叠加
+ok 4 - 同 requestId 同载荷：复用原结果，副作用不叠加
+  ---
+  duration_ms: 1088.9657
+  type: 'test'
+  ...
+# Subtest: 同 requestId 改载荷：IDEMPOTENCY_MISMATCH，且不产生副作用
+ok 5 - 同 requestId 改载荷：IDEMPOTENCY_MISMATCH，且不产生副作用
+  ---
+  duration_ms: 1263.1904
+  type: 'test'
+  ...
+# Subtest: 版本不匹配：VERSION_CONFLICT，无任何副作用
+ok 6 - 版本不匹配：VERSION_CONFLICT，无任何副作用
+  ---
+  duration_ms: 1161.3048
+  type: 'test'
+  ...
+# Subtest: 余量不足：STOCK_CONFLICT，无任何副作用
+ok 7 - 余量不足：STOCK_CONFLICT，无任何副作用
+  ---
+  duration_ms: 1028.4784
+  type: 'test'
+  ...
+# Subtest: 批次中途失败：整批回滚，业务副作用为零
+ok 8 - 批次中途失败：整批回滚，业务副作用为零
+  ---
+  duration_ms: 1398.9446
+  type: 'test'
+  ...
+# Subtest: 反例：不设防时「影响 0 行」会静默放过后续写入
+ok 9 - 反例：不设防时「影响 0 行」会静默放过后续写入
+  ---
+  duration_ms: 6555.6502
+  type: 'test'
+  ...
+# Subtest: 设防后：同一场景被守卫拦下，整批回滚
+ok 10 - 设防后：同一场景被守卫拦下，整批回滚
+  ---
+  duration_ms: 1040.2399
+  type: 'test'
+  ...
+# Subtest: CHECK 约束即断言：扣成负数会让整批失败
+ok 11 - CHECK 约束即断言：扣成负数会让整批失败
+  ---
+  duration_ms: 638.5521
+  type: 'test'
+  ...
+# Subtest: 唯一约束即断言：版本日志重复插入会让整批失败
+ok 12 - 唯一约束即断言：版本日志重复插入会让整批失败
+  ---
+  duration_ms: 605.7441
+  type: 'test'
+  ...
+# Subtest: 守卫表在任何运行结束后都必须是空的
+ok 13 - 守卫表在任何运行结束后都必须是空的
+  ---
+  duration_ms: 79.6383
+  type: 'test'
+  ...
+# Subtest: 失败动作不留下 operations 成功记录，只留脱敏诊断
+ok 14 - 失败动作不留下 operations 成功记录，只留脱敏诊断
+  ---
+  duration_ms: 1025.7544
+  type: 'test'
+  ...
+# Subtest: 并发：两个客户端从同一版本抢同一资源，只有一个生效
+ok 15 - 并发：两个客户端从同一版本抢同一资源，只有一个生效
+  ---
+  duration_ms: 7543.5254
+  type: 'test'
+  ...
+# Subtest: 并发：同一 requestId 被同时提交两次，副作用仍然恰好一次
+ok 16 - 并发：同一 requestId 被同时提交两次，副作用仍然恰好一次
+  ---
+  duration_ms: 1538.7166
+  type: 'test'
+  ...
+# Subtest: 不同 requestId 抢同一实物：业务唯一约束拒绝第二个
+ok 17 - 不同 requestId 抢同一实物：业务唯一约束拒绝第二个
+  ---
+  duration_ms: 1182.3116
+  type: 'test'
+  ...
+# Subtest: 写成功但响应丢失：查询可恢复结果，重发复用不重复扣减
+ok 18 - 写成功但响应丢失：查询可恢复结果，重发复用不重复扣减
+  ---
+  duration_ms: 1102.9868
+  type: 'test'
+  ...
+# Subtest: 查询未知 requestId：如实返回 found=false，不编造结果
+ok 19 - 查询未知 requestId：如实返回 found=false，不编造结果
+  ---
+  duration_ms: 77.3683
+  type: 'test'
+  ...
+# Subtest: 查询时载荷不一致：如实标出 mismatch
+ok 20 - 查询时载荷不一致：如实标出 mismatch
+  ---
+  duration_ms: 838.8735
+  type: 'test'
+  ...
+# Subtest: 失败之后用新 requestId 重试：允许，且不会留下失败请求的残留
+ok 21 - 失败之后用新 requestId 重试：允许，且不会留下失败请求的残留
+  ---
+  duration_ms: 1484.3614
+  type: 'test'
+  ...
+# Subtest: 型号汇总：三桶分别可查，自有在库合计等于三者之和
+ok 22 - 型号汇总：三桶分别可查，自有在库合计等于三者之和
+  ---
+  duration_ms: 6740.9455
+  type: 'test'
+  ...
+# Subtest: 在途与客户保管都不算在库
+ok 23 - 在途与客户保管都不算在库
+  ---
+  duration_ms: 1195.5971
+  type: 'test'
+  ...
+# Subtest: 同型号的不同实物分别定位；客户保管件另列一行
+ok 24 - 同型号的不同实物分别定位；客户保管件另列一行
+  ---
+  duration_ms: 1415.593
+  type: 'test'
+  ...
+# Subtest: 查询筛选：condition 与 availability 生效
+ok 25 - 查询筛选：condition 与 availability 生效
+  ---
+  duration_ms: 1752.5201
+  type: 'test'
+  ...
+# Subtest: 成本字段按权限返回：无权时字段根本不出现，不是置空
+ok 26 - 成本字段按权限返回：无权时字段根本不出现，不是置空
+  ---
+  duration_ms: 1335.5123
+  type: 'test'
+  ...
+# Subtest: 列表分页：cursor 不改变汇总口径
+ok 27 - 列表分页：cursor 不改变汇总口径
+  ---
+  duration_ms: 1580.066
+  type: 'test'
+  ...
+# Subtest: 实物详情：来源、有效占用、流水都能查到
+ok 28 - 实物详情：来源、有效占用、流水都能查到
+  ---
+  duration_ms: 1971.2692
+  type: 'test'
+  ...
+# Subtest: 查不到的实物：如实返回 null，不抛错
+ok 29 - 查不到的实物：如实返回 null，不抛错
+  ---
+  duration_ms: 541.7189
+  type: 'test'
+  ...
+# Subtest: 对账：脱离流水的实物能被发现（有实无账）
+ok 30 - 对账：脱离流水的实物能被发现（有实无账）
+  ---
+  duration_ms: 1052.803
+  type: 'test'
+  ...
+# Subtest: 迁移与结构：0007 的表、索引与触发器都已建立
+ok 31 - 迁移与结构：0007 的表、索引与触发器都已建立
+  ---
+  duration_ms: 5628.0909
+  type: 'test'
+  ...
+# Subtest: Product 属性就地扩展在 hardware 上，新行有默认值
+ok 32 - Product 属性就地扩展在 hardware 上，新行有默认值
+  ---
+  duration_ms: 743.7
+  type: 'test'
+  ...
+# Subtest: 客户端边界：非店有实物不得进入可卖 / 已订 / 待处理（R03）
+ok 33 - 客户端边界：非店有实物不得进入可卖 / 已订 / 待处理（R03）
+  ---
+  duration_ms: 920.8076
+  type: 'test'
+  ...
+# Subtest: 未知成本保持 NULL，不得写成 0（R01）
+ok 34 - 未知成本保持 NULL，不得写成 0（R01）
+  ---
+  duration_ms: 966.1831
+  type: 'test'
+  ...
+# Subtest: 重复 SN：店有重复被拒，客户件同 SN 可并存（不自动合并所有权）
+ok 35 - 重复 SN：店有重复被拒，客户件同 SN 可并存（不自动合并所有权）
+  ---
+  duration_ms: 952.1478
+  type: 'test'
+  ...
+# Subtest: 余额只由流水改变：三桶互斥、非负、在途与客户保管不落地
+ok 36 - 余额只由流水改变：三桶互斥、非负、在途与客户保管不落地
+  ---
+  duration_ms: 1446.3795
+  type: 'test'
+  ...
+# Subtest: 数量守恒：余额可以按流水逐笔重算，结果一致
+ok 37 - 数量守恒：余额可以按流水逐笔重算，结果一致
+  ---
+  duration_ms: 1179.5767
+  type: 'test'
+  ...
+# Subtest: 逐件占用：同一实物同时只能有一条有效占用（部分唯一索引）
+ok 38 - 逐件占用：同一实物同时只能有一条有效占用（部分唯一索引）
+  ---
+  duration_ms: 1248.6728
+  type: 'test'
+  ...
+# Subtest: 数量件期初：流水、余额、成本与审计一起成立
+ok 39 - 数量件期初：流水、余额、成本与审计一起成立
+  ---
+  duration_ms: 7349.2861
+  type: 'test'
+  ...
+# Subtest: 逐件期初：每件实物独立成行并带内部编号
+ok 40 - 逐件期初：每件实物独立成行并带内部编号
+  ---
+  duration_ms: 1854.5149
+  type: 'test'
+  ...
+# Subtest: 未知成本保持 NULL，不估成 0（R01）
+ok 41 - 未知成本保持 NULL，不估成 0（R01）
+  ---
+  duration_ms: 1600.9815
+  type: 'test'
+  ...
+# Subtest: 缺人工确认凭据：拒绝，且不留任何账
+ok 42 - 缺人工确认凭据：拒绝，且不留任何账
+  ---
+  duration_ms: 883.4967
+  type: 'test'
+  ...
+# Subtest: 商品不存在或不属于本店：ENTITY_NOT_FOUND
+ok 43 - 商品不存在或不属于本店：ENTITY_NOT_FOUND
+  ---
+  duration_ms: 669.1427
+  type: 'test'
+  ...
+# Subtest: 逐件商品的期初行必须有内部编号，且数量恒为 1
+ok 44 - 逐件商品的期初行必须有内部编号，且数量恒为 1
+  ---
+  duration_ms: 1553.0422
+  type: 'test'
+  ...
+# Subtest: 数量件行不得带内部编号（事实必须与商品属性一致）
+ok 45 - 数量件行不得带内部编号（事实必须与商品属性一致）
+  ---
+  duration_ms: 1390.3661
+  type: 'test'
+  ...
+# Subtest: 期初不是日常入库捷径：已有在库的商品不得再走期初
+ok 46 - 期初不是日常入库捷径：已有在库的商品不得再走期初
+  ---
+  duration_ms: 1908.6225
+  type: 'test'
+  ...
+# Subtest: 成本口径声明与实际不一致：拒绝
+ok 47 - 成本口径声明与实际不一致：拒绝
+  ---
+  duration_ms: 730.5491
+  type: 'test'
+  ...
+# Subtest: 同 requestId 复用：不重复建账
+ok 48 - 同 requestId 复用：不重复建账
+  ---
+  duration_ms: 1572.3638
+  type: 'test'
+  ...
+# Subtest: 不从历史 SN 表推断期初：旧表有行，库存仍为 0
+ok 49 - 不从历史 SN 表推断期初：旧表有行，库存仍为 0
+  ---
+  duration_ms: 2519.226
+  type: 'test'
+  ...
+# Subtest: 建立商品：写入幂等记录与版本日志，逐件属性与旧列同步
+ok 50 - 建立商品：写入幂等记录与版本日志，逐件属性与旧列同步
+  ---
+  duration_ms: 6705.0087
+  type: 'test'
+  ...
+# Subtest: 同 requestId 同载荷：复用原结果，不重复建档
+ok 51 - 同 requestId 同载荷：复用原结果，不重复建档
+  ---
+  duration_ms: 1011.5507
+  type: 'test'
+  ...
+# Subtest: 同 requestId 改载荷：IDEMPOTENCY_MISMATCH，且不产生新商品
+ok 52 - 同 requestId 改载荷：IDEMPOTENCY_MISMATCH，且不产生新商品
+  ---
+  duration_ms: 1211.6009
+  type: 'test'
+  ...
+# Subtest: SKU 重复被拒，且不留半截记录
+ok 53 - SKU 重复被拒，且不留半截记录
+  ---
+  duration_ms: 1251.5994
+  type: 'test'
+  ...
+# Subtest: 修改商品：推进版本并写版本日志
+ok 54 - 修改商品：推进版本并写版本日志
+  ---
+  duration_ms: 1456.5677
+  type: 'test'
+  ...
+# Subtest: 关键属性已发生业务后不得改写：改 trackingMode 被拒且无副作用
+ok 55 - 关键属性已发生业务后不得改写：改 trackingMode 被拒且无副作用
+  ---
+  duration_ms: 2161.2329
+  type: 'test'
+  ...
+# Subtest: 版本不匹配：VERSION_CONFLICT，无副作用
+ok 56 - 版本不匹配：VERSION_CONFLICT，无副作用
+  ---
+  duration_ms: 1444.3902
+  type: 'test'
+  ...
+# Subtest: 参数非法：在拼 SQL 之前就被拦住，不落库
+ok 57 - 参数非法：在拼 SQL 之前就被拦住，不落库
+  ---
+  duration_ms: 651.0338
+  type: 'test'
+  ...
+# Subtest: 修改不存在的商品：ENTITY_NOT_FOUND
+ok 58 - 修改不存在的商品：ENTITY_NOT_FOUND
+  ---
+  duration_ms: 978.0632
+  type: 'test'
+  ...
+1..58
+# tests 58
+# suites 0
+# pass 58
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 109181.9461
