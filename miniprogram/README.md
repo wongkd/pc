@@ -21,7 +21,7 @@
 
 ```
 miniprogram/
-├── project.config.json     小程序项目配置（无 AppID 模式、miniprogramRoot = 项目根、TS 编译插件）
+├── project.config.json     小程序项目配置（AppID wx1b14bf01ef71718d、miniprogramRoot = 项目根、TS 编译插件）
 ├── app.json                页面注册、原生 tabBar 四项、分包 packages/sales
 ├── app.ts                  入口，globalData（演示门店 / 演示模式）
 ├── app.wxss                设计变量（--mp-*）与全局基础类、域落地页排版
@@ -37,7 +37,7 @@ miniprogram/
 │   └── sales/order-detail/ 事项详情（分包），底部固定金额与动作条
 ├── features/
 │   ├── demo-data.ts        V1 演示样本与指标、演示排序、逾期判断
-│   ├── amount-view.ts      金额格式化与呈现口径（待收 / 应付 / 已结清 / 预计 / 待确认）
+│   ├── amount-view.ts      金额格式化与呈现口径（待收 / 应付 / 已结清 / 预计 / 待确认）+ 统计数值宽度档位
 │   └── display-text.ts     文案切分的纯函数（详情页主标题的设备简称）
 ├── templates/
 │   └── landing.wxml        三个域落地页共用的排版模板
@@ -55,7 +55,7 @@ miniprogram/
 cd miniprogram
 npm install            # 仅类型依赖：typescript、miniprogram-api-typings
 
-npm test               # 样本 ↔ 契约一致性、金额口径、设备简称切分（32 用例）
+npm test               # 样本 ↔ 契约一致性、金额口径、设备简称切分、统计数值宽度预算（39 用例）
 npm run typecheck      # tsc --noEmit，strict
 npm run check-contracts # 端内生成物未被手改
 npm run check-pages    # app.json 注册与磁盘文件一致
@@ -69,15 +69,28 @@ node contracts/tools/generate-dto.mjs        # 在仓库根
 node miniprogram/scripts/sync-contracts.mjs
 ```
 
-**微信开发者工具**：导入本目录（`D:\Software\微信web开发者工具`）。首次使用需选择「不使用 AppID」；
-`project.config.json` 里已写 `"appid": "touristappid"`，若工具提示 AppID 无效，在工具内重新选择一次即可。
+**微信开发者工具**：导入本目录（路径必须选到 `…\pc-quote\miniprogram` 这一层，只选到 `pc-quote` 会报「未找到 app.json」）。
+项目已配置真实 AppID `wx1b14bf01ef71718d`，因此**打开项目需要登录**，且微信号须是该小程序的开发者 / 管理员 ——
+免登录的 `touristappid` 预览模式已不再可用。
+
+CLI 驱动（需先在 **设置 → 安全设置** 打开服务端口）：
+
+```bash
+cd "D:\Software\微信web开发者工具"
+node.exe cli.js islogin     # 应输出 {"login":true}
+node.exe cli.js preview --project "C:\Users\wuerl\Documents\工作同步\pc-quote\miniprogram" \
+  --qr-format image --qr-output "<gitignore 内的路径>\preview-qr.png"
+```
+
+`preview` 会真编译并产出预览码（约 25 分钟失效），是当前拿到真机观感的唯一通道（本机安全策略封死了系统截屏）。
 
 ## 4. 已实现 / 未实现
 
 **已实现（骨架层）**
 
 - 原生 tabBar 四项（今天 / 开单 / 库存 / 更多），选中森林绿 `#334B42`，用系统导航栏；
-- 今天页：四项统计（窄屏两行两列，不压小大金额）、事项筛选、竖向任务列表，
+- 今天页：四项统计（金额格比计数格宽 + 数值按字符类别分档，保证大额放得下又不缩到不可读；
+  窄屏 ≤360px 两行两列），事项筛选、竖向任务列表，
   每行含缩略图降级、客户与设备、卡点、时间与动作、金额方向、禁用原因；
 - 列表 → 详情为**真实页面跳转**（分包页），只传 `taskId`，详情重新取数；
 - 详情页：单号 / 类别 / 交期 → 客户与事项 → 设备摘要 → 当前处理 → 下一步 → 底部固定金额与动作；
