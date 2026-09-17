@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>装机店 · 图片与交互资源</title>
+<link rel="stylesheet" href="../../../frontend/src/styles/theme.css">
+<link rel="stylesheet" href="../../../frontend/src/styles/motion.css">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#f8f6ef;color:#334b42;font-family:system-ui,"Microsoft YaHei",sans-serif}main{max-width:1240px;margin:auto;padding:48px 32px}header{display:flex;justify-content:space-between;align-items:end;gap:24px;border-bottom:1px solid #d9ddd0;padding-bottom:24px}.eyebrow{font-size:12px;letter-spacing:2px}h1{font-family:Georgia,"SimSun",serif;font-weight:500;font-size:36px;margin:16px 0}p{line-height:1.7;color:#687365}.stamp{white-space:nowrap;font-size:13px}.gallery{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px;margin:32px 0}figure{margin:0}figure img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:4px}figcaption{padding:12px 0;font-size:14px}small{display:block;color:#687365;font-size:12px;margin-top:6px}.bottom{display:grid;grid-template-columns:1fr 1fr;gap:32px;border-top:1px solid #d9ddd0;padding-top:24px}h2{font-size:18px;font-weight:500}.wb-btn{border:1px solid #334b42;background:#334b42;color:#fffef9;padding:12px 24px;min-height:48px;border-radius:4px;font:inherit;cursor:pointer}.wb-btn:focus-visible{outline:3px solid #826021;outline-offset:4px}.hint{min-height:24px;font-size:13px}.mark{width:80px;height:64px;color:#687365}footer{margin-top:36px;border-top:1px solid #d9ddd0;padding-top:16px;font-size:12px;color:#687365}@media(max-width:700px){main{padding:24px 20px}header{display:block}h1{font-size:28px}.gallery{grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.bottom{grid-template-columns:1fr}}
+</style>
+<main class="app-shell">
+<header><div><div class="eyebrow">PC QUOTE / VISUAL ASSETS</div><h1>让设备更容易辨认。</h1><p>奶油白底色，低饱和绿意。图片用于识别，交互反馈保持轻巧。</p></div><p class="stamp">2026.09.18 · 本地资源预览</p></header>
+<section class="gallery" aria-label="设备示意资源">
+<figure><img src="../../../frontend/public/assets/workbench/tower.jpg" alt="白色主机 AI 示意"><figcaption>01 / 主机<small>AI 示意 · 非实物照片</small></figcaption></figure>
+<figure><img src="../../../frontend/public/assets/workbench/gpu.jpg" alt="显卡 AI 示意"><figcaption>02 / 显卡<small>AI 示意 · 非验机证据</small></figcaption></figure>
+<figure><img src="../../../frontend/public/assets/workbench/laptop.jpg" alt="笔记本 AI 示意"><figcaption>03 / 笔记本<small>AI 示意 · 非接修照片</small></figcaption></figure>
+<figure><img src="../../../frontend/public/assets/workbench/monitor.jpg" alt="显示器 AI 示意"><figcaption>04 / 显示器<small>AI 示意 · 非库存实拍</small></figcaption></figure>
+</section>
+<section class="bottom"><div><h2>有反馈，不打断</h2><p>按钮按压 120ms，松开即恢复。列表、搜索、键盘操作保持即时；系统开启减少动态效果时关闭位移。</p><button class="wb-btn" type="button" id="try">试一下按压反馈</button><p class="hint" role="status" id="feedback">仅体验界面，不提交业务数据。</p></div><div><h2>没有结果，也有下一步</h2><svg class="mark" viewBox="0 0 80 64" fill="none" aria-hidden="true"><rect x="8" y="8" width="56" height="44" rx="6" fill="#e8edde"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21h23M20 29h14M20 37h10"/><circle cx="51" cy="39" r="11" fill="#f8f6ef"/><path d="m59 47 11 10"/></g></svg><p>空状态与图片失败使用轻量线稿，保留设备名称、状态说明和清空筛选入口。</p></div></section>
+<footer>四类图仅作为演示素材，不能证明型号、配置、成色、库存或检测结果。网页 640px / 小程序 320px；来源与提示词见同目录 README。</footer>
+</main>
+<script>document.getElementById('try').onclick=()=>{document.getElementById('feedback').textContent='已响应本次点击 · 没有提交任何业务数据。'}</script>
+</html>

@@ -302,10 +302,24 @@
 }
 
 .thumb {
+  position: relative;
   flex: 0 0 120rpx;
   border-radius: var(--mp-radius);
   overflow: hidden;
   background: var(--mp-photo);
+}
+
+.thumb-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 2rpx;
+  background: var(--mp-paper);
+  color: var(--mp-muted);
+  font-size: 20rpx;
+  line-height: 1.3;
+  text-align: center;
 }
 
 .thumb-fallback {

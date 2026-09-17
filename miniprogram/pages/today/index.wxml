@@ -73,6 +73,7 @@
           wx:if="{{item.hasPhoto && !item.photoBroken}}"
           class="thumb-img"
           src="{{item.photoUrl}}"
+          lazy-load="{{true}}"
           mode="aspectFill"
           data-index="{{index}}"
           binderror="onThumbError"
@@ -80,6 +81,7 @@
         <view wx:else class="thumb-fallback">
           <text class="thumb-fallback-text">{{item.photoLabel}}</text>
         </view>
+        <text wx:if="{{item.hasPhoto && !item.photoBroken}}" class="thumb-label">{{item.photoLabel}}</text>
       </view>
 
       <view class="row-main">

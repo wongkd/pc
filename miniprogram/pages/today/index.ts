@@ -22,6 +22,7 @@ import {
 } from '../../features/demo-data'
 import type { WorkbenchTask } from '../../features/demo-data'
 import { describeAction, describeAmount, formatYuan, metricValueClass } from '../../features/amount-view'
+import { demoVisual } from '../../features/demo-visuals'
 
 /** 缩略图缺失或加载失败时的降级文案（02 §6 DeviceSummary：不暴露内部图片）。 */
 const PHOTO_KIND_LABELS: Record<AttachmentPurpose, string> = {
@@ -121,6 +122,7 @@ const GROUP_LABELS: Record<string, string> = {
 
 /** 任务行视图。WXML 不能调用任意函数，显示值一律在此预算好。 */
 export function toRowView(task: WorkbenchTask): TaskRowView {
+  const visual = demoVisual(task.photoUrl)
   const amount = describeAmount(task.amountSummary)
   const action = describeAction(task.primaryAction)
   const overdue = isOverdueTask(task)
@@ -134,9 +136,9 @@ export function toRowView(task: WorkbenchTask): TaskRowView {
     device: task.deviceSummary ?? '未登记设备',
     deadlineText: overdue ? `已逾期 · ${deadline}` : deadline,
     isOverdue: overdue,
-    photoLabel: task.photoKind ? PHOTO_KIND_LABELS[task.photoKind] : '无照片',
-    hasPhoto: task.photoUrl !== null,
-    photoUrl: task.photoUrl ?? '',
+    photoLabel: visual.isIllustration ? 'AI 示意 · 非实拍' : task.photoKind ? PHOTO_KIND_LABELS[task.photoKind] : '无照片',
+    hasPhoto: visual.url !== null,
+    photoUrl: visual.url ?? '',
     photoBroken: false,
     blockerSummary: task.blockerSummary ?? '',
     amountPrimary: amount.primary,

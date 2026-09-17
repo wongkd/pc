@@ -12,6 +12,9 @@ import {
 } from './demoData'
 import type { TaskCategory } from '../../contracts/generated/enums'
 import '../../styles/workbench.css'
+import '../../styles/motion.css'
+import { demoVisual } from './demoVisuals'
+import { StateGraphic } from './StateGraphic'
 
 type ViewMode = 'list' | 'board'
 type CategoryFilter = TaskCategory | 'all'
@@ -58,20 +61,25 @@ function describeAmount(summary: WorkbenchAmountSummary | null): { primary: stri
 
 /** 设备摘要：图片失败或无图时必须保留设备名称（02 §7）。 */
 function DevicePhoto({ task }: { task: WorkbenchTask }) {
-  const [failed, setFailed] = useState(false)
-  const label = task.photoKind ? PHOTO_KIND_LABELS[task.photoKind] ?? '图片' : '无图'
-  const showImage = Boolean(task.photoUrl) && !failed
+  const [failedUrl, setFailedUrl] = useState<string | null>(null)
+  const visual = demoVisual(task.photoUrl)
+  const label = visual.isIllustration ? 'AI 示意 · 非实拍' : task.photoKind ? PHOTO_KIND_LABELS[task.photoKind] ?? '图片' : '无图'
+  const showImage = Boolean(visual.url) && failedUrl !== visual.url
   return (
     <figure className="wb-device-photo">
       {showImage ? (
         <img
-          src={task.photoUrl ?? ''}
+          src={visual.url ?? ''}
           alt=""
-          onError={() => setFailed(true)}
+          onError={() => setFailedUrl(visual.url)}
+          loading="lazy"
+          decoding="async"
+          width={88}
+          height={88}
           className="wb-tabular"
         />
       ) : (
-        <span className="wb-photo-placeholder">未加载图片</span>
+        <span className="wb-photo-placeholder"><StateGraphic kind="photo" />未加载图片</span>
       )}
       <figcaption>{label}</figcaption>
     </figure>
@@ -305,6 +313,7 @@ export function WorkbenchTodayPage() {
 
           {filtered.length === 0 ? (
             <div className="wb-empty">
+              <StateGraphic />
               <strong>当前筛选没有事项</strong>
               <span>关键词「{keyword || '无'}」、类别「{category === 'all' ? '全部' : TASK_CATEGORY_LABELS[category]}」。</span>
               <button
@@ -392,7 +401,7 @@ export function WorkbenchTodayPage() {
                       <dd>{selected.deadlineText ?? '未约定时间'}</dd>
                     </div>
                   </dl>
-                  <DevicePhoto task={selected} />
+                  <DevicePhoto key={selected.taskId} task={selected} />
                 </section>
 
                 <section className="wb-detail-block" aria-labelledby="wb-detail-step">

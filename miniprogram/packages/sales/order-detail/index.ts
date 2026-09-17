@@ -24,6 +24,7 @@ import {
 } from '../../../features/demo-data'
 import { describeAction, describeAmount } from '../../../features/amount-view'
 import { deviceShortName } from '../../../features/display-text'
+import { demoVisual } from '../../../features/demo-visuals'
 
 const PHOTO_KIND_LABELS: Record<AttachmentPurpose, string> = {
   [AttachmentPurpose.PRODUCT_REFERENCE]: '型号示意',
@@ -102,9 +103,9 @@ Page({
         isOverdue: overdue,
         customer,
         device: source.deviceSummary ?? '未登记设备',
-        photoLabel: source.photoKind ? PHOTO_KIND_LABELS[source.photoKind] : '无照片',
-        hasPhoto: source.photoUrl !== null,
-        photoUrl: source.photoUrl ?? '',
+        photoLabel: demoVisual(source.photoUrl).isIllustration ? 'AI 示意 · 非实拍' : source.photoKind ? PHOTO_KIND_LABELS[source.photoKind] : '无照片',
+        hasPhoto: demoVisual(source.photoUrl).url !== null,
+        photoUrl: demoVisual(source.photoUrl).url ?? '',
         photoBroken: false,
         stageNote: STAGE_NOTE,
         eventNote: EVENT_NOTE,

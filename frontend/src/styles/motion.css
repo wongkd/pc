@@ -1,0 +1,21 @@
+/* Feedback only: frequent list/search/navigation changes stay instant. */
+.app-shell {
+  --wb-motion-press: 120ms;
+  --wb-motion-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.app-shell .wb-btn {
+  transition: transform var(--wb-motion-press) var(--wb-motion-out);
+}
+
+.app-shell .wb-btn:active:not(:disabled):not(:focus-visible) {
+  transform: scale(.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-shell .wb-btn { transition: none; }
+  .app-shell .wb-btn:active:not(:disabled):not(:focus-visible) { transform: none; }
+}
+
+/* Focus stays immediate for keyboard users, including menu and task navigation. */
+.app-shell .wb-btn:focus-visible { transition: none; }

@@ -206,13 +206,16 @@ describe('今天工作台', () => {
   it('图片加载失败时保留设备名称与降级占位', () => {
     renderWorkbench()
     const detail = screen.getByRole('article')
-    // jsdom 不加载资源，必须主动触发 error 才能验证降级路径（浏览器里 demo:// 必然失败）
+    // jsdom 不加载资源，主动触发 error 验证本地图片丢失的降级路径。
     const img = detail.querySelector('.wb-device-photo img') as HTMLImageElement
     expect(img).toBeTruthy()
     fireEvent.error(img)
     expect(within(detail).getByText('未加载图片')).toBeTruthy()
-    expect(within(detail).getByText('实物照片')).toBeTruthy()
+    expect(within(detail).getByText('AI 示意 · 非实拍')).toBeTruthy()
     expect(within(detail).getByText('白色设计主机 · 设计用装机')).toBeTruthy()
+    // 两个演示事项可以复用同一资源；切换后也必须重试加载。
+    selectTask('DEMO-SO-002')
+    expect(detail.querySelector('.wb-device-photo img')).toBeTruthy()
   })
 
   it('＋开单 只把已存在的入口放行，其余如实说明', () => {

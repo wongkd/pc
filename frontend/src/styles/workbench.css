@@ -479,6 +479,9 @@
   text-align: center;
 }
 
+.wb-state-graphic { width: 80px; height: 64px; color: var(--wb-muted); flex: none; }
+.wb-photo-placeholder .wb-state-graphic { width: 44px; height: 36px; align-self: end; }
+
 .wb-device-photo figcaption {
   margin-top: var(--wb-s1);
   color: var(--wb-muted);
