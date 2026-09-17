@@ -1,7 +1,7 @@
 # T00 · 可追踪基线与条件登记
 
 日期：2026-09-17
-状态：**T00c 本地通过 · T00a 待授权 · T00b 待用户提供信息**
+状态：**T00a 本地通过（基线已建立）· T00b 部分完成（凭据已迁移，平台条件待登记）· T00c 本地通过**
 依据：[05-implementation-tasks.md · T00](../../plans/2026-09-17-web-wechat-plan/05-implementation-tasks.md)、[01 第 5、7 节](../../plans/2026-09-17-web-wechat-plan/01-scope-and-architecture.md)、根 [AGENTS.md](../../../AGENTS.md)
 
 本卡为只读核对与基线记录，未修改任何业务代码、未新增迁移、未部署、未接触生产数据。
@@ -33,9 +33,22 @@
 | 上级目录是否仓库 | 在 `C:\Users\wuerl\Documents\工作同步\` 执行 | 同样不是仓库 |
 | 实际工作目录 | — | `C:\Users\wuerl\Documents\工作同步\pc-quote` |
 
-**结论**：当前目录及上级目录均无 Git 仓库，无可追踪提交基线。本卡按卡片要求**不擅自初始化 Git**，该决定上报用户。
+**结论**：核对时当前目录及上级目录均无 Git 仓库，无可追踪提交基线。本卡按卡片要求**未擅自初始化**，将该决定上报用户，并在获得"授权初始化"的明确答复后执行。
 
-**连带发现（需修正历史认知）**：项目记忆中的本地 D1 验证 harness（`verification/local-d1-20260722/` 下的 `d1-adapter.mjs`、`run-migrations.mjs`、`verify-handler.mjs`）**在本机已不存在**；该目录为空（`find verification -type f` 仅返回本卡今天生成的日志）。历史回执中引用的验证资产不能当作现存资产，T04 需要重新建立本地测试入口。
+**执行结果（用户授权后，2026-09-17 20:05 起）**
+
+| 项目 | 结果 |
+|---|---|
+| 仓库 | `C:\Users\wuerl\Documents\工作同步\pc-quote`，`git init -b main` |
+| 分支 | `main` |
+| 基线提交 | `e5ca594c05cb034db5331f53506c51f69f50ea31`（短 `e5ca594`） |
+| 纳管文件 | 151 个（`docs` 64、`frontend` 52、`backend` 14、根文档等） |
+| 提交后状态 | 工作区干净，无未跟踪残留 |
+| `.git` 体积 | 6.8 MB |
+| 身份配置 | **仓库级**（`--local`）：`user.name=wongkd`、`user.email=563838884@qq.com`；未改动全局配置 |
+| 换行符策略 | `core.autocrlf=false`（保持工作区原样，避免批量伪改动） |
+
+**连带发现与认知修正**：项目记忆中记录的本地 D1 验证 harness（根目录 `verification/local-d1-20260722/` 下的 `d1-adapter.mjs`、`run-migrations.mjs`、`verify-handler.mjs`）**脚本文件在本机已不存在**，该目录为空。但同时在 `backend/` 下发现了 5 个 miniflare 运行产物目录（`.validation-d1`、`.validation-d1-apply`、`.validation-d1-final`、`.validation-d1-runner`、`.validation-d1-runner-final`）与 `.validation-stage1b.sqlite`，说明**本地 D1 验证确实跑通过、基础设施可用，只是脚本没有留在仓库内**。T04 应重建可复现的测试入口，而不是重造运行环境。
 
 ---
 
@@ -57,19 +70,34 @@
 | 后端类型检查 | `backend/tsconfig.json` 为 `strict` + `noEmit`；但 `backend/node_modules` **未安装 `typescript`** | 现无开箱即用的 `tsc`；T04 需补齐或改用其他静态检查 |
 | 前端环境变量 | `frontend/` 无 `.env*` 文件 | 接口地址走代码内配置 |
 
-### 3.2 ⚠️ 明文凭据（安全事项）
+### 3.2 明文凭据（已处理）
 
-`backend/wrangler.toml` 的 `[vars]` 段存在**明文第三方凭据**：
+核对时 `backend/wrangler.toml` 的 `[vars]` 段存在**明文第三方凭据**：`PDD_CLIENT_ID`、`PDD_CLIENT_SECRET`、`PDD_PID`。
 
-| 键名 | 状态 |
+用户决策为"改用 `wrangler secret` 并清除明文"，执行结果：
+
+| 步骤 | 结果 |
 |---|---|
-| `PDD_CLIENT_ID` | 明文，需迁出并轮换 |
-| `PDD_CLIENT_SECRET` | 明文，需迁出并轮换 |
-| `PDD_PID` | 明文，需迁出并轮换 |
+| 备份原文件 | `backups/wrangler.toml.bak-20260917`（`backups/` 已被 `.gitignore` 排除） |
+| 值迁出 | 三个变量写入 `backend/.dev.vars`（长度校验与原值一致：32 / 40 / 18 字符） |
+| 清除明文 | `wrangler.toml` 的 `[vars]` 段删除，替换为 secret 使用说明注释 |
+| 残留检查 | `grep -E '^PDD_[A-Z_]+ *=' wrangler.toml` 结果为 **0** |
+| 提交验证 | `git grep` 确认 HEAD 内 `wrangler.toml` 不含任何凭据赋值；`.dev.vars` 未被跟踪 |
 
-`DEEPSEEK_KEY` 与 `JWT_SECRET` **已不再明文**——文件中仅有注释提示用 `wrangler secret put` 配置，此项历史风险已消除。
+`DEEPSEEK_KEY` 与 `JWT_SECRET` 此前**已不再明文**——文件中仅有注释提示用 `wrangler secret put` 配置，该项历史风险已消除。
 
-**处理要求**：该文件在完成凭据迁出前**不得进入任何新 Git 仓库**（若后续建立基线，必须先加入 `.gitignore` 或先把凭据改为 `wrangler secret`）。
+**⚠️ 未完成的前置动作（重要）**：本机 `wrangler` 4.105.0 可用，但**没有 Cloudflare 登录态，也没有 API Token 环境变量**，因此三个生产 secret **尚未写入远端**。当前线上 Worker 的 `PDD_*` 来自上一次带 `[vars]` 的部署。
+
+- 在完成下列命令前，**不要执行 `wrangler deploy`**，否则新配置会让这三个变量从线上消失：
+
+```bash
+cd backend
+wrangler secret put PDD_CLIENT_ID
+wrangler secret put PDD_CLIENT_SECRET
+wrangler secret put PDD_PID
+```
+
+- PDD 集成代码仍在 `backend/src/index.ts`（含网关地址常量），说明该功能未废弃，凭据必须保留而非删除。
 
 ### 3.3 待用户提供（本卡无法自行核实）
 
@@ -80,7 +108,7 @@
 | B-03 | 照片 / 文件的私有对象存储方案 | **未知**（历史用 Cloudflare，未确认） | 阻塞 T16 |
 | B-04 | 店内网络环境（带宽 / 稳定性 / 是否已有扫码枪、打印机） | **未知** | 影响 G3 试用与性能目标校准 |
 | B-05 | iOS / Android 真机测试设备 | **未知** | 阻塞 T21b |
-| B-06 | 是否授权在本目录初始化 Git 并建立基线分支 | **未决定** | 阻塞 T00a 收尾与后续所有可追溯改动 |
+| B-06 | 在本目录初始化 Git 并建立基线 | ✅ **已完成**（提交 `e5ca594`，分支 `main`，仓库级身份） | 不再阻塞 |
 
 ---
 
@@ -115,33 +143,57 @@
 
 ---
 
-## 5. 通过的判定
+## 5. 基线纳入范围与忽略规则
+
+新建 `.gitignore`（根目录）。**纳入**：`frontend/`、`backend/` 源码与迁移、`docs/`（含设计与验证记录）、根层文档与配置。
+**排除**（附排除理由）：
+
+| 规则 | 排除内容 | 理由 |
+|---|---|---|
+| `node_modules/` | 三处依赖目录 | 可重建，体积大 |
+| `dist/` `build/` `coverage/` | 构建产物 | 可重建 |
+| `.dev.vars` `.env*` `*.pem` `*.key` | 凭据与环境变量 | 安全 |
+| `backups/` | 本地备份（含生产数据与明文配置） | 安全 |
+| `.sync_temp_dir/` | 坚果云同步临时目录 | 非项目内容 |
+| `.validation-*/` `*.sqlite*` | miniflare / D1 本地验证数据库 | 含本地业务数据，可重建 |
+| `.workbuddy/` `.learnings/` | AI 工作区数据与项目记忆 | 由坚果云同步承担，避免高频噪音提交 |
+| `*.log` | 日志 | 保留例外：`docs/verification/**/logs/*.log` |
+
+**刻意保留在仓库内**：`frontend/public/pc/`（1.3 MB 静态资产）——它是部署时会被原样复制的运行依赖，不是可重建的构建产物。
+
+审阅中修正的问题：初次暂存时 `backend/.validation-*` 下 31 个 miniflare 数据库文件被误纳入（当时规则未覆盖），已补齐规则并重建索引；另修正了 T00 日志初次写错到根目录 `verification/` 的路径不一致。
+
+---
+
+## 6. 通过的判定
 
 | 卡片条件 | 状态 |
 |---|---|
-| 正确目标可追踪 | ⏳ 目录已确认，**基线（Git）未建立，待授权** |
-| 不会误触生产 | ✅ 本卡全程只读，未运行 wrangler 部署、未连接 D1、未接触生产 |
-| 后续知道哪些检查原本就失败 | ✅ lint 39 项已登记；后端无 test 脚本已登记 |
+| 正确目标可追踪 | ✅ 基线提交 `e5ca594`（分支 `main`，151 个文件），此后改动可追溯 |
+| 不会误触生产 | ✅ 未运行 `wrangler deploy`、未连接 D1、未接触生产数据 |
+| 后续知道哪些检查原本就失败 | ✅ lint 39 项、后端无 `test` 脚本均已登记 |
 
-**本卡不标"通过"**，因为 T00a 的基线建立与 T00b 的 6 项登记尚未闭环。
+**T00a / T00c 判定为「本地通过」。** T00b 因微信侧平台条件尚未提供，记为「部分完成」，不标通过。
 
 ---
 
-## 6. 未完成 / 阻断
+## 7. 未完成 / 阻断
 
-| 项 | 原因 | 是否阻塞后续 |
+| 项 | 原因 | 影响 |
 |---|---|---|
-| Git 基线未建立 | 等用户授权（B-06） | 阻塞所有会产生改动的卡（T01 起） |
-| 微信平台条件未知 | 等用户提供（B-01~B-05） | 阻塞 T03 / T16 / T21，不阻塞 T01 / T02 |
-| 明文 PDD 凭据未迁出 | 需用户决定轮换方式 | 阻塞建库动作，不阻塞文档与契约工作 |
-| 后端本地测试入口缺失 | 历史 harness 已丢失，且无 `test` 脚本 | 阻塞 T04 的验证；T04 需重建 |
+| 三个生产 secret 未写入远端 | 本机无 Cloudflare 登录态与 API Token | 仅阻塞 `wrangler deploy`；**部署前必须补做**，否则线上 PDD 变量丢失 |
+| 微信平台条件未知 | 等用户提供（B-01~B-05） | 阻塞 T03 / T16 / T21，**不阻塞 T01 / T02** |
+| 后端本地测试入口缺失 | 历史脚本未留存，且无 `test` 脚本 | 阻塞 T04 的验证；T04 需重建（miniflare 环境已具备） |
+| 根目录 `verification/` 空目录残留 | 历史遗留（含空的 `local-d1-20260722/`） | 不影响 Git（空目录不被跟踪）；建议后续清理以统一到 `docs/verification/` |
 
 ---
 
-## 7. 下一步
+## 8. 下一步
 
-建议顺序：**T01（冻结契约与样本）** 可与平台条件登记并行推进，因为它只依赖 `contracts/` 目录与既有规格，不依赖 AppID 与 Git。
+**T01（冻结契约与样本）** 可以立即开始：它只产出 `contracts/` 目录与协议文档，不依赖 AppID、不依赖 Cloudflare 凭据，也不触碰生产。
 
-T00 收尾需要用户先给出两项决定：
-1. 是否授权在 `pc-quote` 初始化 Git 仓库并建立首个基线提交（需先排除 `wrangler.toml` 明文凭据与 `node_modules`）。
-2. 明文 PDD 凭据的处理方式（立即轮换为 `wrangler secret`，还是先建迁出清单后置）。
+三项待办并行跟进（均不阻塞 T01）：
+
+1. 补做三个 `wrangler secret put`（需要 Cloudflare 登录或 API Token）。
+2. 提供微信侧平台条件（AppID / 主体 / 成员、API 域名、对象存储、店内网络、测试手机）。
+3. 后端本地 D1 测试入口在 T04 重建时一并解决。
