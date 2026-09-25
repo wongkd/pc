@@ -1,0 +1,5 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "我的",
+  "usingComponents": { "customer-nav": "/components/customer-nav/index" }
+}

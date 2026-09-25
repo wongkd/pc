@@ -58,7 +58,7 @@ const DEFAULT_DRAFTS_KEY = 'pc-quote:v2:drafts'
 const DEFAULT_TARGET_KEY = 'pc-quote:v2:post-login-target'
 
 /**
- * 目标页必须是站内路径。小程序页面路径（/pages/sales/index?tab=used）与
+ * 目标页必须是站内路径。小程序页面路径（/pages/shop/index?category=used）与
  * 网页相对路径（/inventory?tab=used）形状一致，两端共用同一判断。
  */
 const SAFE_TARGET = /^\/(?!\/)[A-Za-z0-9\-._~!$&'()*+,;=:@%/?#[\]]*$/

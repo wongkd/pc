@@ -1,0 +1,209 @@
+{
+  "date": "2026-09-19",
+  "archived": [
+    {
+      "from": "2026-07-22-ERP正式生产上线回执.md",
+      "to": "docs/archive/legacy/2026-07-22-ERP正式生产上线回执.md"
+    },
+    {
+      "from": "2026-07-22-Worker与Pages串行发布完整回执.md",
+      "to": "docs/archive/legacy/2026-07-22-Worker与Pages串行发布完整回执.md"
+    },
+    {
+      "from": "cloudflare-setup-commands.md",
+      "to": "docs/archive/legacy/cloudflare-setup-commands.md"
+    },
+    {
+      "from": "overview.md",
+      "to": "docs/archive/legacy/overview.md"
+    },
+    {
+      "from": "SN先行版开发前基线与文件范围-20260723.md",
+      "to": "docs/archive/legacy/SN先行版开发前基线与文件范围-20260723.md"
+    },
+    {
+      "from": "docs/T05-KICKOFF.md",
+      "to": "docs/archive/legacy/T05-KICKOFF.md"
+    },
+    {
+      "from": "电脑店轻量ERP完整产品方案.md",
+      "to": "docs/archive/legacy/电脑店轻量ERP完整产品方案.md"
+    },
+    {
+      "from": "电脑配置单网页CHANGELOG.md",
+      "to": "docs/archive/legacy/电脑配置单网页CHANGELOG.md"
+    },
+    {
+      "from": "电脑配置单网页TODO.md",
+      "to": "docs/archive/legacy/电脑配置单网页TODO.md"
+    },
+    {
+      "from": "电脑配置单网页开发完成记录.md",
+      "to": "docs/archive/legacy/电脑配置单网页开发完成记录.md"
+    },
+    {
+      "from": "阶段0与阶段1商品主数据准备方案.md",
+      "to": "docs/archive/legacy/阶段0与阶段1商品主数据准备方案.md"
+    },
+    {
+      "from": "阶段0备份与基线记录.md",
+      "to": "docs/archive/legacy/阶段0备份与基线记录.md"
+    },
+    {
+      "from": "阶段1A备份与恢复基线记录.md",
+      "to": "docs/archive/legacy/阶段1A备份与恢复基线记录.md"
+    },
+    {
+      "from": "阶段1B生产迁移执行异常记录-20260722.md",
+      "to": "docs/archive/legacy/阶段1B生产迁移执行异常记录-20260722.md"
+    },
+    {
+      "from": "阶段1B生产迁移预检审核材料-20260722.md",
+      "to": "docs/archive/legacy/阶段1B生产迁移预检审核材料-20260722.md"
+    }
+  ],
+  "snapshots": [
+    {
+      "from": "README.md",
+      "to": "docs/archive/2026-09-19-before-cleanup/README.md"
+    },
+    {
+      "from": "AGENTS.md",
+      "to": "docs/archive/2026-09-19-before-cleanup/AGENTS.md"
+    },
+    {
+      "from": "docs/NEXT-SESSION-PROMPT.md",
+      "to": "docs/archive/2026-09-19-before-cleanup/docs/NEXT-SESSION-PROMPT.md"
+    },
+    {
+      "from": "docs/OPEN-ITEMS.md",
+      "to": "docs/archive/2026-09-19-before-cleanup/docs/OPEN-ITEMS.md"
+    },
+    {
+      "from": "frontend/README.md",
+      "to": "docs/archive/2026-09-19-before-cleanup/frontend/README.md"
+    },
+    {
+      "from": "miniprogram/README.md",
+      "to": "docs/archive/2026-09-19-before-cleanup/miniprogram/README.md"
+    }
+  ],
+  "rewrittenLinkFiles": 17,
+  "removed": [
+    {
+      "path": ".validation-t02b-rev2/preview-info.json",
+      "type": "file",
+      "bytes": 257,
+      "sha256": "8596816a9f65d3deac57e80e4c4845444795e736192fe04cb887829daa429ba1",
+      "reason": "T02b-rev2 阶段的过期微信预览信息；所在目录由 .gitignore 的 .validation-*/ 覆盖，可用 preview 命令重新生成"
+    },
+    {
+      "path": ".validation-t02b-rev2/preview-qr.png",
+      "type": "file",
+      "bytes": 47245,
+      "sha256": "c89fe1270d0dd58d3261bc52e8ad28857956ed38da8f18dfad7618661bf84da0",
+      "reason": "微信真机预览二维码，约 25 分钟失效；T02b-rev2 README 第 166 行已记录“预览码失效后可直接删除”"
+    },
+    {
+      "path": ".validation-t02b-rev2/",
+      "type": "directory",
+      "reason": "清空上述两个文件后为空的过期预览目录"
+    },
+    {
+      "path": "research/",
+      "type": "directory-tree",
+      "files": 0,
+      "emptyDirs": 7,
+      "reason": "仅剩空目录骨架（research、research/inventree-1.4.2 及 assets/config/contrib/docs/src），0 个文件；InvenTree 参考源码实际不在本机"
+    },
+    {
+      "path": "verification/",
+      "type": "directory-tree",
+      "files": 0,
+      "emptyDirs": 2,
+      "reason": "仅剩空目录骨架（verification、verification/local-d1-20260722），0 个文件；T00 验证记录第 51 行已登记本地 D1 脚本在本机不存在、该目录为空。真实验证证据在 docs/verification/"
+    },
+    {
+      "path": "logs/t03b-tsc-mp.log",
+      "type": "file",
+      "bytes": 0,
+      "reason": "T03b 期间 0 字节的空日志"
+    },
+    {
+      "path": "logs/t03b-tsc-mp2.log",
+      "type": "file",
+      "bytes": 0,
+      "reason": "T03b 期间 0 字节的空日志"
+    },
+    {
+      "path": "logs/t03b-tsc-web.log",
+      "type": "file",
+      "bytes": 0,
+      "reason": "T03b 期间 0 字节的空日志"
+    }
+  ],
+  "cleanupAttempts": [
+    {
+      "at": "2026-09-19（M01 首次尝试）",
+      "result": "blocked",
+      "reason": "Automatic approval review: blocked by policy; command did not execute",
+      "removedCount": 0
+    },
+    {
+      "at": "2026-09-19 02:52（本轮，用户再次授权后）",
+      "result": "executed",
+      "removedTargets": 6,
+      "removedFiles": 5,
+      "removedDirs": 10,
+      "method": "逐个核实路径、位置、内容后，用精确路径 rm -f 删文件 + rmdir 删空目录（非空即报错，作为自我校验）；未使用 rm -rf",
+      "preChecks": [
+        "6 个目标均在仓库根内（realpath 确认）",
+        "git ls-files 确认均未被 Git 追踪",
+        ".validation-*/ 与 *.log 均被 .gitignore 覆盖",
+        "grep 确认无现行文档/脚本以链接或代码方式依赖这些路径"
+      ],
+      "postChecks": [
+        "6 个目标逐项确认不存在",
+        "node_modules、backups、.wrangler、.sync_temp_dir、docs/design、docs/verification 均在位",
+        "backend/.validation* 本地 D1 目录与 .validation-stage1b.sqlite 未动",
+        "非空日志（含 t03b-eslint-web.log 7 字节）与旧小程序 ERP 页面未动"
+      ]
+    }
+  ],
+  "entrypointSizes": [
+    {
+      "file": "README.md",
+      "beforeLines": 80,
+      "afterLines": 49
+    },
+    {
+      "file": "docs/NEXT-SESSION-PROMPT.md",
+      "beforeLines": 247,
+      "afterLines": 43
+    },
+    {
+      "file": "docs/OPEN-ITEMS.md",
+      "beforeLines": 167,
+      "afterLines": 54
+    }
+  ],
+  "validation": {
+    "active": {
+      "files": 15,
+      "links": 73,
+      "broken": 0
+    },
+    "allMarkdown": {
+      "files": 72,
+      "links": 269,
+      "broken": 0
+    },
+    "contracts": {
+      "passed": 3161,
+      "failed": 23,
+      "warnings": 7
+    },
+    "archiveTargetsChecked": 21,
+    "removedCount": 6
+  }
+}

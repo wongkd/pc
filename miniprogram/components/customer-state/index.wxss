@@ -1,0 +1,58 @@
+@import "../../styles/customer-tokens.wxss";
+
+.customer-state {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 220rpx;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12rpx;
+  padding: 28rpx 32rpx;
+  color: var(--customer-ink);
+  text-align: center;
+}
+
+.customer-state__title,
+.customer-state__description {
+  display: block;
+  max-width: 100%;
+  word-break: break-all;
+}
+
+.customer-state__title {
+  font-size: 30rpx;
+  line-height: 1.45;
+}
+
+.customer-state__description {
+  color: var(--customer-muted);
+  font-size: 25rpx;
+  line-height: 1.5;
+}
+
+.customer-state__spinner {
+  width: 38rpx;
+  height: 38rpx;
+  border: 4rpx solid #e5e5e5;
+  border-top-color: #111;
+  border-radius: 50%;
+  animation: customer-state-spin 800ms linear infinite;
+}
+
+.customer-state__retry {
+  min-width: 144rpx;
+  min-height: 72rpx;
+  margin-top: 4rpx;
+  padding: 0 24rpx;
+  color: #fff;
+  font-size: 25rpx;
+  line-height: 72rpx;
+  background: #111;
+  border-radius: 4rpx;
+}
+
+@keyframes customer-state-spin {
+  to { transform: rotate(360deg); }
+}

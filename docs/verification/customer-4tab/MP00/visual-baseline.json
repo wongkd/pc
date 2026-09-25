@@ -1,0 +1,104 @@
+{
+  "id": "MP00",
+  "status": "review",
+  "measuredAt": "2026-09-23",
+  "reference": {
+    "layout": {
+      "path": "docs/design/2026-09-22-customer-ip/four-tab-board-clean.png",
+      "sha256": "ca40531ab05b063569731af21bc38717bfd8df821a74d508992dc48fc50ae81c",
+      "dimensionsPx": { "width": 1536, "height": 1024 }
+    },
+    "typography": {
+      "path": "docs/design/2026-09-22-customer-ip/four-tab-board-font-only.png",
+      "sha256": "11b1e8946f481b23a09b3e881d7c800b0f9a72c60de55f94793f24a5634d6fa3",
+      "dimensionsPx": { "width": 1536, "height": 1024 }
+    }
+  },
+  "referencePanel": {
+    "outerBoundsPx": [21, 40, 376, 994],
+    "contentWidthPx": 355,
+    "contentHeightPx": 954,
+    "normalizedWidth": 1,
+    "notes": [
+      "第二至第四个面板的 x 起点分别约为 400、779、1158；本表按首屏 355px 内容宽度归一化。",
+      "这是概念稿中的手机面板，不是 375px 原生截图；状态栏、胶囊和安全区不得照抄进页面。",
+      "所有约数来自已人工查看的图像；需以微信开发者工具的实际截图完成 MP04 后复测。"
+    ]
+  },
+  "global": {
+    "contentInsetPxAt375": { "left": 16, "right": 16, "normalized": 0.045 },
+    "navigation": { "topContentStartY": 91, "tabBarTopY": 918, "tabBarHeightPx": 76 },
+    "tokens": {
+      "page": "#ffffff",
+      "ink": "#111111",
+      "muted": "#808080",
+      "line": "#e5e5e5",
+      "archiveCard": "#f8f0dc"
+    },
+    "typographyAt375Px": {
+      "pageTitle": { "size": 21, "weight": 400 },
+      "body": { "size": 15, "weight": 400 },
+      "secondary": { "size": 12.5, "weight": 400 },
+      "tabLabel": { "size": 11.5, "weight": 400 },
+      "emphasis": { "size": 15, "weight": 500 }
+    },
+    "implementationGuidance": {
+      "rpxAt375": "px × 2",
+      "touchTarget": "at least 88rpx (44 CSS px), transparent hit area may exceed the visual icon",
+      "corners": "2–4px visual radius; do not apply rounded-card styling to every block"
+    }
+  },
+  "screens": {
+    "home": {
+      "sourcePanel": 1,
+      "sections": [
+        { "id": "store", "boundsPx": [37, 97, 347, 124], "normalized": [0.045, 0.06, 0.873, 0.028], "text": "广州天河旗舰店" },
+        { "id": "brand", "boundsPx": [49, 171, 259, 239], "normalized": [0.079, 0.137, 0.592, 0.071], "asset": "BRAND" },
+        { "id": "slogan", "boundsPx": [50, 264, 182, 282], "normalized": [0.082, 0.235, 0.372, 0.019], "text": "不挣钱，交个朋友" },
+        { "id": "hero", "boundsPx": [22, 286, 376, 647], "normalized": [0.003, 0.258, 0.997, 0.378], "asset": "HERO-H", "focus": "right 62%, center" },
+        { "id": "services", "boundsPx": [37, 672, 362, 746], "normalized": [0.045, 0.662, 0.915, 0.078], "asset": "SERVICE-ICONS" },
+        { "id": "banner", "boundsPx": [37, 786, 361, 889], "normalized": [0.045, 0.782, 0.913, 0.108], "asset": "BANNER", "focus": "right 66%, center" }
+      ]
+    },
+    "shop": {
+      "sourcePanel": 2,
+      "sections": [
+        { "id": "title", "boundsPx": [416, 104, 461, 126], "normalized": [0.045, 0.067, 0.127, 0.023], "text": "商城" },
+        { "id": "categories", "boundsPx": [416, 151, 739, 183], "normalized": [0.045, 0.116, 0.91, 0.034], "text": "整机 / 配件 / 我的报价" },
+        { "id": "hero", "boundsPx": [415, 202, 740, 486], "normalized": [0.042, 0.17, 0.915, 0.298], "asset": "HERO-S", "focus": "right 70%, center" },
+        { "id": "recommendations", "boundsPx": [416, 506, 740, 916], "normalized": [0.045, 0.489, 0.913, 0.43], "assets": ["PRODUCT-01", "PRODUCT-02", "PRODUCT-03", "PRODUCT-04"] }
+      ]
+    },
+    "community": {
+      "sourcePanel": 3,
+      "sections": [
+        { "id": "title", "boundsPx": [795, 104, 840, 126], "normalized": [0.045, 0.067, 0.127, 0.023], "text": "社区" },
+        { "id": "categories", "boundsPx": [795, 151, 1119, 183], "normalized": [0.045, 0.116, 0.913, 0.034], "text": "装机案例 / 电脑知识 / 门店公告" },
+        { "id": "postPrimary", "boundsPx": [794, 199, 1119, 430], "normalized": [0.042, 0.167, 0.915, 0.242], "asset": "POST-01" },
+        { "id": "postSecondary", "boundsPx": [794, 553, 1119, 689], "normalized": [0.042, 0.538, 0.915, 0.143], "asset": "POST-02" },
+        { "id": "postKnowledge", "boundsPx": [794, 808, 922, 900], "normalized": [0.042, 0.805, 0.361, 0.096], "asset": "POST-03" }
+      ]
+    },
+    "mine": {
+      "sourcePanel": 4,
+      "sections": [
+        { "id": "title", "boundsPx": [1174, 104, 1218, 126], "normalized": [0.045, 0.067, 0.124, 0.023], "text": "我的" },
+        { "id": "profile", "boundsPx": [1178, 151, 1498, 236], "normalized": [0.056, 0.116, 0.901, 0.089], "asset": "AVATAR" },
+        { "id": "archive", "boundsPx": [1174, 258, 1498, 368], "normalized": [0.045, 0.229, 0.913, 0.115], "asset": "CAT-U" },
+        { "id": "stats", "boundsPx": [1189, 399, 1487, 447], "normalized": [0.087, 0.377, 0.839, 0.05], "text": "报价 / 订单 / 预约 / 回收" },
+        { "id": "menu", "boundsPx": [1174, 511, 1498, 773], "normalized": [0.045, 0.494, 0.913, 0.275], "assets": ["MENU-ICONS", "CAT-C"] }
+      ]
+    }
+  },
+  "sharedComponentProposal": [
+    { "name": "customer-image", "props": ["assetId", "mode", "focus", "alt"], "events": ["error", "tap"] },
+    { "name": "customer-section-tabs", "props": ["items", "activeKey"], "events": ["change"] },
+    { "name": "customer-list-row", "props": ["icon", "title", "detail", "trailing"], "events": ["tap"] },
+    { "name": "customer-state", "props": ["kind", "title", "description", "actionLabel"], "events": ["action"] }
+  ],
+  "knownGaps": [
+    "现有 app.json 与 app.wxss 仍是旧奶油绿变量、系统 tabBar 和旧 assets/ui 图标；MP02–MP05 再按卡迁移，MP00 不改生产文件。",
+    "现有四个 Tab 均读取 demo-customer；视觉版可使用固定演示样本，但 MP16 起必须将顾客身份与真实数据隔离。",
+    "当前并无微信开发者工具截图，因此顶部系统区域、胶囊避让、底部安全区和跨尺寸误差尚未验证。"
+  ]
+}

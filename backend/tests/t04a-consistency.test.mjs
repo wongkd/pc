@@ -44,6 +44,21 @@ test('迁移与结构：0006 的四处对象都已建立', async () => {
   ])
 })
 
+test('数据库失败诊断不会被通用 VALIDATION_ERROR 吞掉', () => {
+  assert.equal(
+    env.demo.readableDiagnostic('UNIQUE constraint failed: sale_orders.store_id, sale_orders.order_no'),
+    '订单号已存在（订单号生成冲突）',
+  )
+  assert.equal(
+    env.demo.readableDiagnostic('FOREIGN KEY constraint failed'),
+    '关联对象不存在，或不属于当前门店',
+  )
+  assert.equal(
+    env.demo.appendReadableDiagnostic('报价没有通过转单校验', 'UNIQUE constraint failed: sale_orders.store_id, sale_orders.order_no'),
+    '报价没有通过转单校验（具体原因：订单号已存在（订单号生成冲突））',
+  )
+})
+
 test('守卫表在静息状态必须为空', async () => {
   assert.equal(await scalar(env.db, 'SELECT COUNT(*) FROM assertion_guards'), 0)
 })

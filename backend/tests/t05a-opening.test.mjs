@@ -170,17 +170,23 @@ test('商品不存在或不属于本店：ENTITY_NOT_FOUND', async () => {
   assert.equal(await scalar(db, 'SELECT COUNT(*) FROM operations'), 0)
 })
 
-test('逐件商品的期初行必须有内部编号，且数量恒为 1', async () => {
+test('逐件商品的期初行数量恒为 1；不填编号由服务端自动分配', async () => {
   await resetInventory(db)
   await seedProduct(db, { entityId: 'prod-item-rules', trackingMode: 'item', requiresSn: 1 })
 
-  const noCode = await opening('req-open-nocode', {
+  // 内部编号由服务端自动生成（AS02 用户确认规则），不是手填项；没给编号也必须能建账。
+  const auto = await opening('req-open-autocode', {
     approvedCountRef: '实盘单 D',
     costBasis: { kind: 'known' },
     lines: [{ productRef: 'prod-item-rules', qty: 1, condition: 'used', unitCostCents: 100 }],
   })
-  assert.equal(noCode.ok, false)
-  assert.equal(noCode.code, 'VALIDATION_ERROR')
+  assert.equal(auto.ok, true, JSON.stringify(auto))
+  const generated = await rows(db, 'SELECT asset_code FROM stock_items')
+  assert.equal(generated.length, 1)
+  assert.match(generated[0].asset_code, /^IT-0001-\d{8}-[0-9A-F]{10}$/, `内部编号应由服务端生成：${generated[0].asset_code}`)
+
+  await resetInventory(db)
+  await seedProduct(db, { entityId: 'prod-item-rules', trackingMode: 'item', requiresSn: 1 })
 
   const badQty = await opening('req-open-badqty', {
     approvedCountRef: '实盘单 D',
@@ -189,9 +195,7 @@ test('逐件商品的期初行必须有内部编号，且数量恒为 1', async 
   })
   assert.equal(badQty.ok, false)
   assert.equal(badQty.code, 'VALIDATION_ERROR')
-
   assert.equal(await scalar(db, 'SELECT COUNT(*) FROM stock_items'), 0)
-  assert.equal(await scalar(db, 'SELECT COUNT(*) FROM operations'), 0)
 })
 
 test('数量件行不得带内部编号（事实必须与商品属性一致）', async () => {

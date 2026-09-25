@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Q01 · 顾客打开专属报价链接</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='5' fill='%23334b42'/%3E%3Cpath d='M9 11h14M9 16h9M9 21h12' stroke='%23f8f6ef' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="./quote.css">
+</head>
+<body>
+
+<!-- ===== 演示控制台（评审用，不是顾客页面内容） ===== -->
+<aside class="console" id="console">
+  <header class="console-head">
+    <p class="console-kicker">Q01 流程原型 · v1</p>
+    <h1 class="console-title">顾客打开专属报价链接</h1>
+    <p class="console-desc">
+      只演示一段：门店发出专属入口 → 顾客打开 → 看到每件配件的单价明细与付款选项。
+      不接真实支付、不写业务库、不发布。资料全部虚构。
+    </p>
+  </header>
+
+  <section class="console-block">
+    <h2 class="console-h2">专属分享链接</h2>
+    <p class="console-note">
+      门店生成后发给顾客的入口。真实的分享形式（微信卡片 / 二维码 / 链接）待微信能力核实，
+      本原型不承诺任意跳转，也不在这里伪造二维码。
+    </p>
+    <div class="share">
+      <input id="shareUrl" readonly spellcheck="false" aria-label="专属分享链接">
+      <div class="share-actions">
+        <button type="button" class="btn-sm btn-sm-strong" id="btnOpen">打开顾客视角</button>
+        <button type="button" class="btn-sm" id="btnCopy">复制</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="console-block">
+    <h2 class="console-h2">演示状态</h2>
+    <p class="console-note">
+      切换后手机页面立即呈现该状态；状态也会写进链接的 <code>state</code> 参数，便于逐条走查。
+    </p>
+    <div class="states" id="states" role="group" aria-label="演示状态切换"></div>
+  </section>
+
+  <section class="console-block">
+    <h2 class="console-h2">顾客预算</h2>
+    <p class="console-note">
+      预算 = 顾客咨询时说的心理预算，是配置单的输入参数，不是一个付款动作。
+      两档都要走查：够用时怎么显示，超了又怎么显示。
+    </p>
+    <div class="states" id="budgets" role="group" aria-label="顾客预算切换"></div>
+  </section>
+
+  <section class="console-block">
+    <h2 class="console-h2">本原型的硬边界</h2>
+    <ul class="console-rules">
+      <li>未登录、无权访问、链接失效、加载中、加载失败、已撤回六态，不出现任何金额、明细与预算。</li>
+      <li>预算只做对照，不参与金额计算，也不暗示「还有余量可以加配置」。</li>
+      <li>点付款只说明「尚未接通」，不产生付款成功，不写任何业务数据。</li>
+      <li>顾客侧不出现成本、供应商、内部备注与 SN。</li>
+      <li>报价不锁定库存；未付款不排产、不触发采购。</li>
+      <li>报价单写「定金」，不写「订金」。</li>
+    </ul>
+  </section>
+
+  <section class="console-block">
+    <h2 class="console-h2">本刀没做的部分</h2>
+    <ul class="console-rules">
+      <li>ERP 侧的开单、预览顾客版、生成入口与管理（下一张子卡）。</li>
+      <li>「我的报价单」列表、多张报价、历史报价。</li>
+      <li>真实支付、微信登录、订单与售后。</li>
+    </ul>
+  </section>
+</aside>
+
+<!-- ===== 手机预览 ===== -->
+<main class="stage">
+  <div class="device" id="device">
+    <div class="device-chrome">
+      <button type="button" class="chrome-back" id="btnBack" aria-label="返回演示控制台">‹</button>
+      <span class="chrome-title" id="chromeTitle">专属报价单</span>
+      <span class="chrome-hint">示意标题栏</span>
+    </div>
+    <div class="screen" id="screen" tabindex="-1"></div>
+  </div>
+  <p class="stage-note" id="stageNote"></p>
+  <p class="stage-disclaimer">
+    手机框只是网页原型，不等于微信真机验收；示意标题栏不是微信系统栏。
+  </p>
+</main>
+
+<!-- ===== 演示弹层：所有未接通的动作都走这里，不伪造成功 ===== -->
+<dialog id="demoDialog" class="sheet" aria-labelledby="demoDialogTitle">
+  <h2 class="sheet-title" id="demoDialogTitle">提示</h2>
+  <p class="sheet-body" id="demoDialogBody"></p>
+  <div class="sheet-actions" id="demoDialogActions"></div>
+</dialog>
+
+<script src="./quote.js"></script>
+</body>
+</html>

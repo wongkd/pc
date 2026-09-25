@@ -1,0 +1,191 @@
+/* 报价编辑器：字段按填写顺序分组，打印前的数据也能快速核对。 */
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-lines {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 14px;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line {
+  display: grid;
+  grid-template-columns: 142px 92px minmax(180px, 2fr) minmax(96px, 1fr) 64px 100px minmax(120px, 1.35fr) minmax(150px, 1.5fr) 68px;
+  grid-template-areas: "category source name spec quantity price remark reference remove";
+  align-items: end;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius);
+  background: var(--wb-photo);
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line--service {
+  grid-template-columns: 142px 92px minmax(180px, 2fr) minmax(96px, 1fr) 64px 100px minmax(120px, 1.35fr) 68px;
+  grid-template-areas: "category source name spec quantity price remark remove";
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-head,
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-head,
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-fields {
+  display: contents;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-heading {
+  grid-area: category;
+  min-width: 0;
+  align-self: center;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-category {
+  padding: 4px 9px;
+  border-radius: 999px;
+  color: var(--wb-ink);
+  background: var(--wb-photo);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-retained {
+  color: #8a5a16;
+  font-size: 12px;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-remove {
+  grid-area: remove;
+  min-height: 40px;
+  padding: 6px 8px;
+  color: #8a3d3d;
+  border: 1px solid #ead9d9;
+  border-radius: 7px;
+  background: #fff;
+  font-size: 12px;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: var(--wb-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field > :is(input, select) {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--wb-line);
+  border-radius: 7px;
+  background: #fff;
+  color: var(--wb-ink);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field > :is(input, select):focus {
+  border-color: var(--wb-ink);
+  outline: 3px solid var(--wb-sage);
+  outline-offset: 0;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--quantity > input,
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--price > input {
+  font-variant-numeric: tabular-nums;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--name { grid-area: name; }
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--spec { grid-area: spec; }
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--source { grid-area: source; }
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--quantity { grid-area: quantity; }
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--price { grid-area: price; }
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--remark { grid-area: remark; }
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--reference { grid-area: reference; }
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--reference .wb-form-hint {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 10px;
+  border: 1px dashed var(--wb-line);
+  border-radius: 7px;
+  background: #fff;
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-summary {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  padding: 14px 16px;
+  border: 1px solid var(--wb-line);
+  border-radius: 9px;
+  background: var(--wb-photo);
+}
+
+.app-shell .wb-quote-page .wb-quote-editor .wb-quote-summary strong {
+  margin-left: auto;
+  color: var(--wb-ink);
+  font-size: 20px;
+}
+
+@media (max-width: 1240px) {
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-line {
+    display: block;
+    padding: 11px 12px;
+  }
+
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-head {
+    display: flex;
+    justify-content: space-between;
+    min-height: 30px;
+    margin-bottom: 9px;
+  }
+
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-fields {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 9px 10px;
+    min-width: 0;
+  }
+
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field { grid-area: auto; }
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--name { grid-column: span 2; }
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--spec,
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--source,
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--quantity,
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--price { grid-column: span 1; }
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--remark { grid-column: span 2; }
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--reference { grid-column: 1 / -1; }
+
+}
+
+@media (max-width: 640px) {
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-line {
+    padding: 11px;
+  }
+
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-line-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px 10px;
+  }
+
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-line--service .wb-quote-line-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--name,
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--remark,
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-field--reference { grid-column: 1 / -1; }
+
+  .app-shell .wb-quote-page .wb-quote-editor .wb-quote-summary strong {
+    margin-left: 0;
+  }
+}

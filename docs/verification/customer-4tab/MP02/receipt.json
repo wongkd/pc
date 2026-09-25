@@ -1,0 +1,22 @@
+{
+  "id": "MP02",
+  "status": "review",
+  "updatedAt": "2026-09-23T19:54:14+08:00",
+  "summary": "新增隔离的顾客 4Tab 颜色、字体、间距、细线、圆角、触控与等宽金额令牌；旧 --mp-* 变量和旧员工样式保持不变。",
+  "evidence": [
+    "miniprogram/styles/customer-tokens.wxss",
+    "miniprogram/app.wxss",
+    "docs/verification/customer-4tab/MP02/README.md"
+  ],
+  "checks": [
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass (92/92)" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p miniprogram/tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass" },
+    { "command": "node scripts/check-doc-links.mjs", "result": "pass" }
+  ],
+  "visual": "not_run",
+  "blockedBy": [],
+  "next": "MP03 顾客基础组件；在 MP04 使用微信开发者工具截图复测，并记录 iOS/Android 字体回退。"
+}

@@ -1,0 +1,117 @@
+/*
+ * 顾客 4Tab 专用视觉令牌（MP02）。
+ *
+ * 来源：docs/verification/customer-4tab/MP00/visual-baseline.json。
+ * 布局/图片以清爽版为准，字体以细字体版为准。令牌使用 customer 前缀，
+ * 不覆盖旧员工页正在使用的 --mp-* 变量；后续 MP03 起仅在顾客四页根节点
+ * 添加 customer-page 后采用这些基础类。
+ */
+
+page,
+.customer-page,
+.customer-nav,
+.customer-tabbar,
+.customer-image-frame,
+.customer-state {
+  --customer-page: #ffffff;
+  --customer-ink: #111111;
+  --customer-muted: #808080;
+  --customer-line: #e5e5e5;
+  --customer-archive: #f8f0dc;
+  --customer-photo: #f5f5f5;
+
+  --customer-font-sans: -apple-system, BlinkMacSystemFont, 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --customer-font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', monospace;
+
+  --customer-fs-title: 42rpx;
+  --customer-fs-body: 30rpx;
+  --customer-fs-secondary: 25rpx;
+  --customer-fs-tab: 23rpx;
+  --customer-fw-regular: 400;
+  --customer-fw-emphasis: 500;
+
+  --customer-inset: 32rpx;
+  --customer-gap-1: 8rpx;
+  --customer-gap-2: 16rpx;
+  --customer-gap-3: 24rpx;
+  --customer-gap-4: 32rpx;
+  --customer-radius-sm: 4rpx;
+  --customer-radius-md: 8rpx;
+  --customer-touch: 88rpx;
+}
+
+/* 后续四个顾客 Tab 的根容器共用；旧页面不添加此 class 即不受影响。 */
+.customer-page {
+  background: var(--customer-page);
+  color: var(--customer-ink);
+  font-family: var(--customer-font-sans);
+  font-size: 30rpx;
+  font-weight: var(--customer-fw-regular);
+  line-height: 1.5;
+}
+
+.customer-scroll {
+  box-sizing: border-box;
+  min-height: 0;
+  background: var(--customer-page);
+}
+
+.customer-content {
+  padding-left: 32rpx;
+  padding-right: 32rpx;
+}
+
+.customer-title {
+  font-size: 42rpx;
+  font-weight: var(--customer-fw-regular);
+  line-height: 1.3;
+  color: var(--customer-ink);
+}
+
+.customer-body {
+  font-size: 30rpx;
+  font-weight: var(--customer-fw-regular);
+  color: var(--customer-ink);
+}
+
+.customer-secondary {
+  font-size: 25rpx;
+  font-weight: var(--customer-fw-regular);
+  color: var(--customer-muted);
+}
+
+.customer-tab-label {
+  font-size: 23rpx;
+  font-weight: var(--customer-fw-regular);
+  color: var(--customer-muted);
+}
+
+.customer-emphasis {
+  font-weight: var(--customer-fw-emphasis);
+}
+
+.customer-hairline {
+  height: 1rpx;
+  background: var(--customer-line);
+}
+
+.customer-archive-card {
+  background: var(--customer-archive);
+  border-radius: 8rpx;
+}
+
+.customer-image {
+  display: block;
+  background: var(--customer-photo);
+  border-radius: 4rpx;
+}
+
+.customer-tap {
+  min-height: 88rpx;
+}
+
+.customer-tabular {
+  font-family: var(--customer-font-mono);
+  font-variant-numeric: tabular-nums;
+}

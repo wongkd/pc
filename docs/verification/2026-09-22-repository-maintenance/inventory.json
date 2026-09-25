@@ -1,0 +1,221 @@
+{
+  "groups": {
+    "(root)": {
+      "files": 9,
+      "bytes": 80539
+    },
+    "backend": {
+      "files": 100,
+      "bytes": 1836491
+    },
+    "contracts": {
+      "files": 19,
+      "bytes": 584923
+    },
+    "docs": {
+      "files": 636,
+      "bytes": 46844644
+    },
+    "frontend": {
+      "files": 113,
+      "bytes": 2778236
+    },
+    "miniprogram": {
+      "files": 124,
+      "bytes": 605463
+    },
+    "scripts": {
+      "files": 3,
+      "bytes": 6144
+    }
+  },
+  "reading": [
+    {
+      "path": "README.md",
+      "characters": 925,
+      "lines": 33
+    },
+    {
+      "path": "AGENTS.md",
+      "characters": 2282,
+      "lines": 65
+    },
+    {
+      "path": "docs/STATUS.md",
+      "characters": 1627,
+      "lines": 28
+    },
+    {
+      "path": "docs/NEXT-SESSION-PROMPT.md",
+      "characters": 1101,
+      "lines": 27
+    }
+  ],
+  "largeSources": [
+    {
+      "path": "backend/src/domains/sale.ts",
+      "bytes": 111140,
+      "lines": 2665
+    },
+    {
+      "path": "backend/src/domains/inventory.ts",
+      "bytes": 83747,
+      "lines": 2175
+    },
+    {
+      "path": "backend/src/domains/assembly.ts",
+      "bytes": 70306,
+      "lines": 1795
+    },
+    {
+      "path": "backend/src/index.ts",
+      "bytes": 119508,
+      "lines": 1764
+    },
+    {
+      "path": "backend/src/domains/purchase.ts",
+      "bytes": 65381,
+      "lines": 1656
+    },
+    {
+      "path": "frontend/src/styles/workbench.css",
+      "bytes": 35357,
+      "lines": 1641
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchQuotePage.tsx",
+      "bytes": 63139,
+      "lines": 1421
+    },
+    {
+      "path": "backend/src/domains/quote.ts",
+      "bytes": 54213,
+      "lines": 1360
+    },
+    {
+      "path": "backend/src/domains/service.ts",
+      "bytes": 56842,
+      "lines": 1332
+    },
+    {
+      "path": "backend/src/domains/recovery.ts",
+      "bytes": 52943,
+      "lines": 1247
+    },
+    {
+      "path": "backend/src/routes/sales-v2.ts",
+      "bytes": 44328,
+      "lines": 1037
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchSalesPage.tsx",
+      "bytes": 43855,
+      "lines": 965
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchInventoryPage.tsx",
+      "bytes": 43993,
+      "lines": 963
+    },
+    {
+      "path": "backend/src/domains/attachment.ts",
+      "bytes": 33735,
+      "lines": 836
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchPurchasePage.tsx",
+      "bytes": 36356,
+      "lines": 823
+    },
+    {
+      "path": "backend/src/domains/tradein.ts",
+      "bytes": 32428,
+      "lines": 813
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "bytes": 34193,
+      "lines": 805
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchRecoveryPage.tsx",
+      "bytes": 35982,
+      "lines": 799
+    },
+    {
+      "path": "backend/src/routes/inventory-v2.ts",
+      "bytes": 35326,
+      "lines": 795
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchServicePage.tsx",
+      "bytes": 36463,
+      "lines": 791
+    },
+    {
+      "path": "backend/src/domains/workbench.ts",
+      "bytes": 30488,
+      "lines": 743
+    },
+    {
+      "path": "backend/src/domains/finance.ts",
+      "bytes": 26067,
+      "lines": 638
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchFulfillmentPage.tsx",
+      "bytes": 27031,
+      "lines": 607
+    }
+  ],
+  "skipped": [
+    ".git",
+    ".learnings",
+    ".sync_temp_dir",
+    ".validation-e03",
+    ".validation-maintenance",
+    ".validation-q01",
+    ".workbuddy",
+    ".wrangler",
+    "backend/.dev.vars",
+    "backend/.validation-all.log",
+    "backend/.validation-d1",
+    "backend/.validation-d1-apply",
+    "backend/.validation-d1-final",
+    "backend/.validation-d1-runner",
+    "backend/.validation-d1-runner-final",
+    "backend/.validation-stage1b.sqlite",
+    "backend/.validation-t03a.log",
+    "backend/.validation-t04",
+    "backend/.wrangler",
+    "backend/node_modules",
+    "backups",
+    "docs/verification/2026-09-17-T00/logs",
+    "docs/verification/2026-09-17-T04/logs",
+    "docs/verification/2026-09-18-T05a/logs",
+    "docs/verification/2026-09-18-V01/logs",
+    "docs/verification/2026-09-19-E04-customers/logs",
+    "docs/verification/2026-09-19-E04b-inventory/logs",
+    "docs/verification/2026-09-19-E05-quote/logs",
+    "docs/verification/2026-09-19-E05b-confirm/logs",
+    "docs/verification/2026-09-19-V02/logs",
+    "docs/verification/2026-09-21-E03/logs",
+    "docs/verification/2026-09-21-E06/logs",
+    "docs/verification/2026-09-21-E07/logs",
+    "docs/verification/2026-09-22-repository-maintenance/logs",
+    "docs/verification/E08-current/logs",
+    "docs/verification/E09-current/logs",
+    "docs/verification/E10-current/logs",
+    "docs/verification/E11-current/logs",
+    "frontend/.validation-assets",
+    "frontend/.validation-inventory",
+    "frontend/.validation-visual",
+    "frontend/.wrangler",
+    "frontend/dist",
+    "frontend/node_modules",
+    "logs",
+    "miniprogram/node_modules",
+    "node_modules"
+  ],
+  "note": "行数仅用于定位维护热点，不代表无用代码；未执行删除，未扫描凭据和业务数据。"
+}

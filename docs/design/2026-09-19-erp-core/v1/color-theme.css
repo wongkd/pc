@@ -1,0 +1,102 @@
+/* 2026-09-19：用户要求彩色。原型专用主题，不加载到营业前端。 */
+:root {
+  --blue: #3658cf;
+  --ink: #25314b;
+  --muted: #616b80;
+  --line: #e2e7f1;
+  --mint: #d5f3e8;
+  --peach: #ffe7cc;
+  --lilac: #e9e0ff;
+  --rose: #ffe0e4;
+  background: #eef2fa;
+  color: var(--ink);
+}
+.sidebar { background: #f9faff; border-right-color: #dce3f2; }
+.brand-mark { background: #4565d9; box-shadow: 0 5px 12px #3658cf26; }
+.brand strong { color: #2f4485; }
+.topbar { background: #fbfcff; }
+.nav-item .icon { color: #4b68cf; }
+.nav-item[href*="quote"] .icon { color: #8963ba; }
+.nav-item[href*="order"] .icon { color: #ba7432; }
+.nav-item[href*="inventory"] .icon { color: #25806c; }
+.nav-item.active { background: #dee7ff; color: #2947ae; }
+.nav-item[href*="quote"].active { background: var(--lilac); color: #664098; }
+.nav-item[href*="order"].active { background: var(--peach); color: #92521e; }
+.nav-item[href*="inventory"].active { background: var(--mint); color: #236b59; }
+.nav-item .count { background: #4664c9; color: white; }
+.avatar { background: #e8dffe; color: #654190; }
+.page-head h1 { color: #283c72; }
+.page-head p, .breadcrumb, .task .when, .list-footer,
+.sample-controls, .inventory-bottom, .dialog-note { color: #647087; }
+.panel { box-shadow: 0 4px 18px #31477506; }
+.stats .stat { border-color: transparent; }
+.stats .stat:nth-child(1) { background: var(--mint); color: #205f50; }
+.stats .stat:nth-child(2) { background: var(--peach); color: #8b4f21; }
+.stats .stat:nth-child(3) { background: var(--lilac); color: #674293; }
+.stats .stat:nth-child(4) { background: var(--rose); color: #9e3e54; }
+.stats .stat .stat-label, .stats .stat strong small { color: inherit; }
+.stats .stat .stat-symbol { background: #ffffff80; color: inherit; }
+.stats .stat.chosen { outline: 2px solid currentColor; outline-offset: -2px; }
+.task-panel .panel-head { background: #edf2ff; }
+.task-tools { padding-top: 14px; }
+.task.selected { background: #e8efff; }
+.task.selected:before { background: #4565d9; }
+.task-detail-head { background: #edf2ff; border-bottom-color: #dce5fa; }
+.device-summary { background: #f9fbff; }
+.next-action { background: #fff0d9; border-color: #f1d4aa; color: #835421; }
+.next-action small { color: #856844; }
+.next-action .btn.dark { background: #8c561f; border-color: #8c561f; }
+.stock-mini > * { background: #f1f6ff; border-color: #e2eaf9; }
+.work-grid .stack > .panel:last-child .panel-head { background: #e4f5ef; }
+.badge { font-weight: 600; }
+.badge.blue { background: #e0e9ff; color: #3655ae; }
+.badge.green { background: #d9f2e7; color: #25684e; }
+.badge.amber { background: #ffe8c5; color: #86551d; }
+.badge.red { background: #ffe0e4; color: #a03a4e; }
+.badge.purple { background: #eae0fc; color: #704596; }
+.quote-grid .field-grid { background: #f2edff; }
+.quote-toolbar { background: #fcfaff; }
+.quote-table thead { background: #f3effb; }
+.summary { background: #f0eaff; border-color: #dfd3f5; }
+.summary .total { color: #62468b; }
+.summary .summary-lines, .summary .deposit { color: #5f5076; }
+.summary input { background: #fff; color: #443354; }
+.summary .btn.primary { background: #7450a6; border-color: #7450a6; }
+.budget { color: #66517f; }
+.budget-track { background: #e1d5f2; }
+.budget-track span { background: #9774c7; }
+.order-hero { background: #fff2e2; }
+.steps { background: #fffcf8; }
+.payment-card { background: #e0f3ef; border-color: #c9e7df; }
+.payment-card .total { color: #226956; }
+.payment-meter { background: #c5e6dd; }
+.payment-meter span { background: #3e9b80; }
+.next-step { background: #fff0d9; }
+.next-step p { color: #79674b; }
+.inventory-stats { background: transparent; border: 0; gap: 10px; padding: 0; }
+.inventory-stat { background: #d9f2e7; border: 0; border-radius: 12px; padding: 19px 20px; color: #28664f; }
+.inventory-stat:nth-child(2) { background: #dfe8ff; color: #3655a2; }
+.inventory-stat:nth-child(3) { background: #ffe8cc; color: #885821; }
+.inventory-stat:nth-child(4) { background: #e8e0fb; color: #72519a; }
+.inventory-stat:nth-child(5) { background: #f6e1ec; color: #945276; }
+.inventory-stat span, .inventory-stat small, .inventory-stat.active span { color: inherit; }
+.inventory-stat.active { outline: 2px solid currentColor; outline-offset: -2px; }
+.inventory-table thead { background: #edf8f3; }
+.tabs button.active { color: #286c59; border-bottom-color: #3b9c7c; }
+.drawer-art { background: #eff6f5; }
+.dialog-head { background: #edf2ff; }
+@media (hover:hover) and (pointer:fine) {
+  .stat:hover, .inventory-stat:hover { box-shadow: inset 0 0 0 2px #263c6b35; }
+  .nav-item.active:hover { filter: brightness(.98); }
+  .summary .btn.primary:hover { background: #62438d; }
+}
+@media (max-width: 560px) {
+  .sidebar { background: #f9faff; }
+  .inventory-stat { padding: 14px 12px; }
+  .inventory-stats { gap: 8px; }
+  .prototype { display: inline; border: 0; padding: 0; font-size: 10px; }
+  .top-actions > .avatar { display: none; }
+}
+@media print {
+  .dialog-body, .deposit, .summary-lines { background: white; color: #222; }
+}

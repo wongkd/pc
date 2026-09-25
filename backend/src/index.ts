@@ -1,3 +1,25 @@
+import { signJWT, verifyJWT } from './domains/session'
+import { requiredStorageFailure } from './domains/storage'
+import { routeInventoryV2 } from './routes/inventory-v2'
+import { CUSTOMER_READ_CODES, CUSTOMER_WRITE_CODES } from './domains/access'
+import { routeQuoteV2 } from './routes/quote-v2'
+// E07 / E06 新增的两条 v2 链路。字面量型权限码全部留在各自模块内 ——
+// 写进入口会让 validate-contracts.mjs 第 10.6 节把新码当旧码校验（见各文件头注释）。
+import { routePurchaseV2 } from './routes/purchase-v2'
+import { routeSalesV2 } from './routes/sales-v2'
+// E09：账本链路（B34 反冲 + 基础应收应付读模型）。字面量型权限码留在 finance-v2.ts 内。
+import { routeFinanceV2 } from './routes/finance-v2'
+// E10：售后维修链路（B20–B25 + B41 收款 + R09）。字面量型权限码留在 service-v2.ts 内。
+import { routeServiceV2 } from './routes/service-v2'
+// E10：回收拆件链路（B26–B29 + B44 拆件 + R10）。字面量型权限码留在 recovery-v2.ts 内。
+import { routeRecoveryV2 } from './routes/recovery-v2'
+// E12：抵用额度（置换折抵）链路（B31/B32 + R11）。字面量型权限码留在 tradein-v2.ts 内。
+import { routeTradeinV2 } from './routes/tradein-v2'
+// F1：附件基础（B35）。字面量型权限码（attachment/upload）留在 attach-v2.ts 内。
+import { routeAttachV2 } from './routes/attach-v2'
+// R02：工作台读模型（待办派生，无权限门槛）。读模型链路留在 workbench-v2.ts 内。
+import { routeWorkbenchV2 } from './routes/workbench-v2'; import { routeDocumentsV2 } from './routes/documents-v2'
+
 interface Env {
   DB: D1Database
   DEEPSEEK_KEY: string
@@ -5,38 +27,14 @@ interface Env {
   PDD_CLIENT_ID: string
   PDD_CLIENT_SECRET: string
   PDD_PID: string
+  /** F1：附件对象存储（Cloudflare R2）。本地与测试不配，回落到内存实现。 */
+  BUCKET?: R2Bucket
+  /** 正式环境设为 true，缺少 R2 时附件 API 必须失败，不能降级到内存。 */
+  REQUIRE_PERSISTENT_STORAGE?: string
 }
 
-// ── JWT (simple HMAC-SHA256, no external libs) ──
-async function signJWT(payload: object, secret: string): Promise<string> {
-  const header = b64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
-  const body = b64url(JSON.stringify({ ...payload, iat: Math.floor(Date.now() / 1000), exp: Math.floor(Date.now() / 1000) + 86400 * 7 }))
-  const sig = await hmacSha256(`${header}.${body}`, secret)
-  return `${header}.${body}.${sig}`
-}
-
-async function verifyJWT(token: string, secret: string): Promise<Record<string, any> | null> {
-  try {
-    const parts = token.split('.')
-    if (parts.length !== 3) return null
-    const expectedSig = await hmacSha256(`${parts[0]}.${parts[1]}`, secret)
-    if (parts[2] !== expectedSig) return null
-    const payload = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(parts[1]), (c) => c.charCodeAt(0))))
-    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null
-    return payload
-  } catch { return null }
-}
-
-function b64url(s: string): string {
-  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
-
-async function hmacSha256(data: string, secret: string): Promise<string> {
-  const enc = new TextEncoder()
-  const key = await crypto.subtle.importKey('raw', enc.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(data))
-  return btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
-}
+// ── JWT ── 实现已搬到 src/domains/session.ts（T03a）：微信登录与旧登录共用同一份凭证实现，
+// 同一仓库里不能并存两套 JWT —— 登录凭证上的漂移是安全事故，不是代码风格问题。
 
 // ── Password hash ──
 async function hashPassword(pw: string): Promise<string> {
@@ -140,8 +138,8 @@ async function auth(req: Request, env: Env): Promise<AuthContext | Response> {
   return loadAuthContext(env, payload.uid as number, payload.sid as number, payload.tv as number)
 }
 
-function requirePermission(context: AuthContext, permission: string): Response | null {
-  return context.permissions.includes('*') || context.permissions.includes(permission) ? null : json({ error: '无此操作权限' }, 403)
+function requirePermission(context: AuthContext, permission: string | readonly string[]): Response | null {
+  return context.permissions.includes('*') || (typeof permission === 'string' ? context.permissions.includes(permission) : permission.some((code) => context.permissions.includes(code))) ? null : json({ error: '无此操作权限' }, 403)
 }
 
 function redactFinancialFields(value: unknown): unknown {
@@ -647,7 +645,7 @@ async function handleProducts(req: Request, env: Env, context: AuthContext): Pro
       const status = body.status || current.status; if (!['active', 'disabled'].includes(status)) return json({ error: '状态无效' }, 400)
       if (body.purchasePriceCents !== undefined || body.averageCostCents !== undefined) { if (!hasCostView(context)) return json({ error: '无查看或维护成本权限' }, 403) }
       const serialized = itemType === 'service' ? 0 : asBooleanInt(body.isSerialized, current.is_serialized); const salable = asBooleanInt(body.isSalable, current.is_salable); const purchasable = itemType === 'service' ? 0 : asBooleanInt(body.isPurchasable, current.is_purchasable)
-      const reference = asNonNegativeInteger(body.referencePriceCents, 'referencePriceCents', current.reference_price_cents); const defaultPrice = asNonNegativeInteger(body.defaultPriceCents, 'defaultPriceCents', current.default_price_cents); const min = asNonNegativeInteger(body.minPriceCents, 'minPriceCents', current.min_price_cents); const purchase = asNonNegativeInteger(body.purchasePriceCents, 'purchasePriceCents', current.purchase_price_cents); const average = asNonNegativeInteger(body.averageCostCents, 'averageCostCents', current.average_cost_cents);       const safety = itemType === 'service' ? 0 : asNonNegativeInteger(body.safetyStockQty, 'safetyStockQty', current.safety_stock_qty)
+      const reference = asNonNegativeInteger(body.referencePriceCents, 'referencePriceCents', current.reference_price_cents); if (body.defaultPriceCents !== undefined) return json({ error: 'B40 改价首发暂缓；既有商品挂牌价不能通过通用编辑修改' }, 409); const defaultPrice = current.default_price_cents; const min = asNonNegativeInteger(body.minPriceCents, 'minPriceCents', current.min_price_cents); const purchase = asNonNegativeInteger(body.purchasePriceCents, 'purchasePriceCents', current.purchase_price_cents); const average = asNonNegativeInteger(body.averageCostCents, 'averageCostCents', current.average_cost_cents);       const safety = itemType === 'service' ? 0 : asNonNegativeInteger(body.safetyStockQty, 'safetyStockQty', current.safety_stock_qty)
       const warrantyMonths = itemType === 'service' ? 36 : Math.max(1, asNonNegativeInteger(body.warrantyMonths, 'warrantyMonths', current.warranty_months ?? 36))
       const nextName = body.name?.trim() || current.name
       const changed = {
@@ -779,7 +777,7 @@ async function handleLibrary(req: Request, env: Env, context: AuthContext): Prom
       sets.push('name=?'); values.push(body.name.trim())
       if (body.name.trim() !== current.name) changed.name = { before: current.name, after: body.name.trim() }
     }
-    if (body.price !== undefined) {
+    if (body.price !== undefined) return json({ error: 'B40 改价首发暂缓；既有商品挂牌价不能通过通用编辑修改' }, 409); if (body.price !== undefined) {
       const price = Number(body.price)
       if (!Number.isFinite(price) || price < 0) return json({ error: '价格必须是非负数字' }, 400)
       const cents = Math.round(price * 100)
@@ -967,6 +965,180 @@ async function handleStores(req: Request, env: Env, context: AuthContext): Promi
     return json({ ok: true })
   }
   return json({ error: 'Not found' }, 404)
+}
+
+// ── 客户主数据（E02/E04）──────────────────────────────────────────
+//
+// 台账口径：`customers` 是门店自有的客户档案；`customer_devices` 是「这个客户带过哪些机器来」
+// 的轻量登记（label / serial_number / remark 三项）。
+// 契约 objects.json 的 CustomerDevice 关心的是客户财产的**保管归属**（custodyLocation、
+// stockItemRef、originalOrderId…），本表并不承担那件事，留待维修与客供件卡（E10）另建。
+// 不要把「能查到客户有哪些机器」当成「客户财产已进入库存账」。
+//
+// 两个已修的口径错误（都来自「手机号当身份用、但手机号可以为空」）：
+//   1. 列表里的订单数与累计金额用 `o.customer_phone = c.phone` 关联。手机号为空时，
+//      空串会匹配到全部无电话订单 —— 不给手机号的散客会凭空多出一堆别人的单。现已加
+//      `c.phone <> ''` 前置条件：没有手机号就不做订单归属，只当档案。
+//   2. 0010 原本用表级 `UNIQUE(store_id, phone)`，两个空号散客互相冲突，已改成部分唯一索引。
+
+const CUSTOMER_TEXT_LIMIT = { name: 200, phone: 100, email: 200, address: 500, remark: 2000, sourceChannel: 40 } as const
+const CUSTOMER_SOURCE_CHANNELS = ['walk_in', 'phone', 'wechat', 'referral', 'mini_program', 'other'] as const
+const CUSTOMER_DEVICE_TEXT_LIMIT = { label: 200, serialNumber: 200, remark: 1000 } as const
+
+/** 客户档案的手机号是身份键，必须门店内唯一；命中唯一索引时报 409 而不是 500。 */
+function isDuplicateCustomerPhone(error: unknown): boolean {
+  const message = String((error as { message?: string } | null)?.message ?? error)
+  return message.includes('UNIQUE constraint failed: customers.store_id, customers.phone')
+    || message.includes('idx_customers_store_phone')
+}
+
+function customerText(value: unknown, field: string, max: number, required = false): string {
+  if (value == null) {
+    if (required) throw new Error(`${field}不能为空`)
+    return ''
+  }
+  if (typeof value !== 'string') throw new Error(`${field}必须是文本`)
+  const trimmed = value.trim()
+  if (required && !trimmed) throw new Error(`${field}不能为空`)
+  if (trimmed.length > max) throw new Error(`${field}长度不能超过${max}字符`)
+  return trimmed
+}
+
+async function customerExists(env: Env, context: AuthContext, customerId: number): Promise<boolean> {
+  const row = await env.DB.prepare('SELECT id FROM customers WHERE id=? AND store_id=?').bind(customerId, context.storeId).first()
+  return Boolean(row)
+}
+
+async function handleCustomerDevices(req: Request, env: Env, context: AuthContext, customerId: number, deviceId: number | null): Promise<Response> {
+  // 设备挂在客户名下，客户必须属于当前门店 —— 否则猜到别家客户 ID 就能往里塞数据。
+  if (!(await customerExists(env, context, customerId))) return json({ error: '客户不存在' }, 404)
+
+  if (req.method === 'GET') {
+    const devices = await env.DB.prepare(`SELECT id, label, serial_number AS serialNumber, remark, created_at AS createdAt
+      FROM customer_devices WHERE customer_id=? AND store_id=? ORDER BY id DESC`).bind(customerId, context.storeId).all()
+    return json({ items: devices.results })
+  }
+
+  if (req.method === 'DELETE') {
+    if (!deviceId) return json({ error: '缺少设备ID' }, 400)
+    // 先查后动：确认这台设备确实挂在该客户名下，避免「影响 0 行也算成功」的静默无操作。
+    const device = await env.DB.prepare('SELECT id FROM customer_devices WHERE id=? AND customer_id=? AND store_id=?')
+      .bind(deviceId, customerId, context.storeId).first()
+    if (!device) return json({ error: '设备不存在' }, 404)
+    await env.DB.prepare('DELETE FROM customer_devices WHERE id=? AND customer_id=? AND store_id=?')
+      .bind(deviceId, customerId, context.storeId).run()
+    await audit(env, context, 'customer.device_removed', 'customer_device', deviceId, { customerId })
+    return json({ ok: true })
+  }
+
+  try {
+    // 只有 POST / PUT 带 JSON 体。DELETE 走上面的分支 —— 对空 body 调 req.json() 会抛错，
+    // 结果是把一次正常删除报成 400（已由 e04-customers 用例挡下）。
+    const body = await req.json<{ label?: unknown; serialNumber?: unknown; remark?: unknown }>()
+    const label = customerText(body.label, '设备名称', CUSTOMER_DEVICE_TEXT_LIMIT.label, true)
+    const serialNumber = customerText(body.serialNumber, '机身序列号', CUSTOMER_DEVICE_TEXT_LIMIT.serialNumber)
+    const remark = customerText(body.remark, '设备备注', CUSTOMER_DEVICE_TEXT_LIMIT.remark)
+
+    if (req.method === 'POST') {
+      const result = await env.DB.prepare('INSERT INTO customer_devices (store_id, customer_id, label, serial_number, remark) VALUES (?,?,?,?,?)')
+        .bind(context.storeId, customerId, label, serialNumber, remark).run()
+      await audit(env, context, 'customer.device_added', 'customer_device', result.meta.last_row_id, { customerId })
+      return json({ ok: true, id: result.meta.last_row_id }, 201)
+    }
+
+    if (!deviceId) return json({ error: '缺少设备ID' }, 400)
+    const device = await env.DB.prepare('SELECT id FROM customer_devices WHERE id=? AND customer_id=? AND store_id=?')
+      .bind(deviceId, customerId, context.storeId).first()
+    if (!device) return json({ error: '设备不存在' }, 404)
+
+    if (req.method === 'PUT') {
+      await env.DB.prepare('UPDATE customer_devices SET label=?, serial_number=?, remark=? WHERE id=? AND customer_id=? AND store_id=?')
+        .bind(label, serialNumber, remark, deviceId, customerId, context.storeId).run()
+      await audit(env, context, 'customer.device_updated', 'customer_device', deviceId, { customerId })
+      return json({ ok: true })
+    }
+    return json({ error: 'Not found' }, 404)
+  } catch (error: any) {
+    return json({ error: error.message || '设备数据无效' }, 400)
+  }
+}
+
+async function handleCustomers(req: Request, env: Env, context: AuthContext): Promise<Response> {
+  const denied = requirePermission(context, req.method === 'GET' ? CUSTOMER_READ_CODES : CUSTOMER_WRITE_CODES)
+  if (denied) return denied
+  const path = new URL(req.url).pathname
+  const deviceMatch = path.match(/^\/api\/customers\/(\d+)\/devices(?:\/(\d+))?$/)
+  if (deviceMatch) return handleCustomerDevices(req, env, context, Number(deviceMatch[1]), deviceMatch[2] ? Number(deviceMatch[2]) : null)
+
+  const idMatch = path.match(/^\/api\/customers\/(\d+)$/)
+  const id = idMatch ? Number(idMatch[1]) : null
+
+  if (req.method === 'GET') {
+    if (id) {
+      // orderCount / totalCents / receivedCents 必须与列表用同一套口径一起返回：
+      // 少了它们详情页只能显示 undefined（实测就是 ¥NaN），
+      // 而让前端拿列表数据凑是不行的 —— 列表可能已被搜索过滤。
+      const customer = await env.DB.prepare(`SELECT id, name, phone, email, address, remark, NULLIF(source_channel, '') AS sourceChannel, status,
+          created_at AS createdAt, updated_at AS updatedAt,
+          CASE WHEN phone='' THEN 0 ELSE (SELECT COUNT(*) FROM orders o WHERE o.store_id=customers.store_id AND o.customer_phone=customers.phone) END AS orderCount,
+          CASE WHEN phone='' THEN 0 ELSE (SELECT COALESCE(SUM(o.total_amount_cents),0) FROM orders o WHERE o.store_id=customers.store_id AND o.customer_phone=customers.phone) END AS totalCents,
+          CASE WHEN phone='' THEN 0 ELSE (SELECT COALESCE(SUM(o.received_amount_cents),0) FROM orders o WHERE o.store_id=customers.store_id AND o.customer_phone=customers.phone) END AS receivedCents
+        FROM customers WHERE id=? AND store_id=?`).bind(id, context.storeId).first<Record<string, unknown>>()
+      if (!customer) return json({ error: '客户不存在' }, 404)
+      const devices = await env.DB.prepare(`SELECT id, label, serial_number AS serialNumber, remark, created_at AS createdAt
+        FROM customer_devices WHERE customer_id=? AND store_id=? ORDER BY id DESC`).bind(id, context.storeId).all()
+      // 订单按手机号归属；没留手机号就不带订单 —— 空串不是身份。
+      // 排序补 id DESC：datetime('now') 只到秒，同一秒建的两单靠时间排不稳定。
+      const phone = String(customer.phone ?? '')
+      const orders = phone
+        ? await env.DB.prepare(`SELECT id, order_no AS orderNo, project_title AS projectTitle, total_amount_cents AS totalCents,
+            received_amount_cents AS paidCents, fulfillment_status AS status, updated_at AS updatedAt
+            FROM orders WHERE store_id=? AND customer_phone=? ORDER BY updated_at DESC, id DESC LIMIT 50`).bind(context.storeId, phone).all()
+        : { results: [] }
+      return json({ ...customer, devices: devices.results, orders: orders.results })
+    }
+    const q = new URL(req.url).searchParams.get('q')?.trim() || ''
+    const result = await env.DB.prepare(`SELECT c.id, c.name, c.phone, c.email, c.address, c.remark, NULLIF(c.source_channel, '') AS sourceChannel, c.status,
+        c.created_at AS createdAt, c.updated_at AS updatedAt,
+        CASE WHEN c.phone='' THEN 0 ELSE (SELECT COUNT(*) FROM orders o WHERE o.store_id=c.store_id AND o.customer_phone=c.phone) END AS orderCount,
+        CASE WHEN c.phone='' THEN 0 ELSE (SELECT COALESCE(SUM(o.total_amount_cents),0) FROM orders o WHERE o.store_id=c.store_id AND o.customer_phone=c.phone) END AS totalCents,
+        CASE WHEN c.phone='' THEN 0 ELSE (SELECT COALESCE(SUM(o.received_amount_cents),0) FROM orders o WHERE o.store_id=c.store_id AND o.customer_phone=c.phone) END AS receivedCents
+      FROM customers c WHERE c.store_id=? AND c.status='active' AND (?='' OR c.name LIKE ? OR c.phone LIKE ?)
+      ORDER BY c.updated_at DESC, c.id DESC`).bind(context.storeId, q, `%${q}%`, `%${q}%`).all()
+    return json({ items: result.results })
+  }
+
+  try {
+    const body = await req.json<{ name?: unknown; phone?: unknown; email?: unknown; address?: unknown; remark?: unknown; sourceChannel?: unknown; status?: unknown }>()
+    const name = customerText(body.name, '客户名称', CUSTOMER_TEXT_LIMIT.name, true)
+    const phone = customerText(body.phone, '客户电话', CUSTOMER_TEXT_LIMIT.phone)
+    const email = customerText(body.email, '邮箱', CUSTOMER_TEXT_LIMIT.email)
+    const address = customerText(body.address, '地址', CUSTOMER_TEXT_LIMIT.address)
+    const remark = customerText(body.remark, '备注', CUSTOMER_TEXT_LIMIT.remark)
+    const sourceChannel = customerText(body.sourceChannel, '来源渠道', CUSTOMER_TEXT_LIMIT.sourceChannel)
+    if (sourceChannel && !CUSTOMER_SOURCE_CHANNELS.includes(sourceChannel as typeof CUSTOMER_SOURCE_CHANNELS[number])) {
+      throw new Error('客户来源渠道无效')
+    }
+
+    if (req.method === 'POST') {
+      const result = await env.DB.prepare('INSERT INTO customers (store_id,name,phone,email,address,remark,source_channel,created_by,updated_by) VALUES (?,?,?,?,?,?,?,?,?)')
+        .bind(context.storeId, name, phone, email, address, remark, sourceChannel, context.userId, context.userId).run()
+      await audit(env, context, 'customer.created', 'customer', result.meta.last_row_id)
+      return json({ ok: true, id: result.meta.last_row_id }, 201)
+    }
+    if (!id) return json({ error: '缺少客户ID' }, 400)
+    // 改之前先确认这个客户是本店在册的：否则 UPDATE 影响 0 行也会返回成功。
+    if (!(await customerExists(env, context, id))) return json({ error: '客户不存在' }, 404)
+    const status = body.status === undefined ? 'active' : customerText(body.status, '状态', 20)
+    if (!['active', 'archived'].includes(status)) return json({ error: '客户状态无效' }, 400)
+    await env.DB.prepare('UPDATE customers SET name=?, phone=?, email=?, address=?, remark=?, source_channel=?, status=?, updated_by=?, updated_at=datetime(\'now\') WHERE id=? AND store_id=?')
+      .bind(name, phone, email, address, remark, sourceChannel, status, context.userId, id, context.storeId).run()
+    await audit(env, context, 'customer.updated', 'customer', id)
+    return json({ ok: true })
+  } catch (error: any) {
+    if (isDuplicateCustomerPhone(error)) return json({ error: '该手机号已有客户档案，请直接搜索该号码' }, 409)
+    return json({ error: error.message || '客户数据无效' }, 400)
+  }
 }
 
 async function handleMembers(req: Request, env: Env, context: AuthContext): Promise<Response> {
@@ -1491,8 +1663,13 @@ export default {
     const url = new URL(req.url)
     const path = url.pathname
 
+    if (path.startsWith('/api/v2/attachments') || path.startsWith('/api/v2/documents')) {
+      const storageUnavailable = requiredStorageFailure(env)
+      if (storageUnavailable) return cors(storageUnavailable, origin)
+    }
+
     try {
-      // Auth (no middleware needed)
+      if (['/api/search', '/api/pdd/detail', '/api/normalize', '/api/dashboard/todos'].includes(path) || ['/api/library', '/api/templates', '/api/quotes'].some((route) => path.startsWith(route)) || /^\/api\/orders(?:\/\d+(?:\/(?:payments|status))?)?$/.test(path)) return cors(json({ error: '此旧版接口已下线' }, 410), origin) // Remove old quote, order, library and demo tools.
       if (path.startsWith('/api/auth')) return cors(await handleAuth(req, env), origin)
 
       // Rate-limited public routes
@@ -1529,6 +1706,7 @@ export default {
 
       // 门店与权限管理
       if (path === '/api/stores/current') return cors(await handleStores(req, env, authResult), origin)
+      if (path === '/api/customers' || /^\/api\/customers\/\d+(?:\/devices(?:\/\d+)?)?$/.test(path)) return cors(await handleCustomers(req, env, authResult), origin)
       if (path === '/api/members' || path === '/api/members/invitations' || /^\/api\/members\/\d+$/.test(path)) return cors(await handleMembers(req, env, authResult), origin)
       if (path === '/api/roles' && req.method === 'GET') return cors(await handleRoles(env, authResult), origin)
 
@@ -1542,6 +1720,62 @@ export default {
       if (path === '/api/orders' || /^\/api\/orders\/\d+(?:\/(payments|status))?$/.test(path)) return cors(await handleOrders(req, env, authResult), origin)
       if (path.startsWith('/api/sn')) return cors(await handleSN(req, env, authResult), origin)
       if (path === '/api/dashboard/todos' && req.method === 'GET') return cors(await handleDashboardTodos(env, authResult), origin)
+
+      // 契约 /api/v2：客户与保管设备（R13）。不得把旧 /api 客户轻量设备列表当作等价实现。
+      // 延迟载入避免改变入口前部的绝对行号：契约门禁会反读既有权限映射的证据行。
+      const { routeCustomerDeviceV2 } = await import('./routes/customer-device-v2')
+      const customerDeviceV2Response = await routeCustomerDeviceV2(req, env, authResult)
+      if (customerDeviceV2Response) return cors(customerDeviceV2Response, origin)
+
+      // 契约 /api/v2：采购到货（E07）。必须排在库存模块**之前** ——
+      // 采购 / 到货 / 退供三条路径都在 /api/v2/inventory 前缀下，而 inventory-v2.ts
+      // 对自己的前缀有兜底 404；排后面会被那个 404 吃掉（E05 已踩过同类坑）。
+      // 本模块只认领 /inventory/purchases、/inventory/receipts、/inventory/supplier-returns 三条精确路径。
+      const purchaseV2Response = await routePurchaseV2(req, env, authResult)
+      if (purchaseV2Response) return cors(purchaseV2Response, origin)
+
+      // 契约 /api/v2：库存与商品（E04b）。新路由于此接管，旧 /api 一律不受影响；
+      // 返回 null 表示不是本模块的路径，继续往下走原来的 404。
+      const v2Response = await routeInventoryV2(req, env, authResult)
+      if (v2Response) return cors(v2Response, origin)
+
+      // 契约 /api/v2：报价单（E05）。必须排在库存之后 —— `/api/v2/operations/:requestId`
+      // 两个模块都声明了，靠调用顺序保证只有一条取数路径生效。
+      const quoteV2Response = await routeQuoteV2(req, env, authResult)
+      if (quoteV2Response) return cors(quoteV2Response, origin)
+
+      // 契约 /api/v2：销售单与收款（E06）。必须排在报价之后 ——
+      // B03 的 /sales/quotes/:id/convert 与报价同前缀，靠报价模块先返回 null 才落到这里。
+      const salesV2Response = await routeSalesV2(req, env, authResult)
+      if (salesV2Response) return cors(salesV2Response, origin)
+
+      // 契约 /api/v2：账本（E09）。路径 /api/v2/finance/* 不与其他模块重叠，排在销售之后即可。
+      const financeV2Response = await routeFinanceV2(req, env, authResult)
+      if (financeV2Response) return cors(financeV2Response, origin)
+
+      // 契约 /api/v2：售后维修（E10）。路径 /api/v2/service/* 不与其他模块重叠，排在账本之后即可。
+      const serviceV2Response = await routeServiceV2(req, env, authResult)
+      if (serviceV2Response) return cors(serviceV2Response, origin)
+
+      // 契约 /api/v2：回收拆件（E10）。路径 /api/v2/recovery/* 不与其他模块重叠，排在售后之后即可。
+      const recoveryV2Response = await routeRecoveryV2(req, env, authResult)
+      if (recoveryV2Response) return cors(recoveryV2Response, origin)
+
+      // 契约 /api/v2：抵用额度 / 置换折抵（E12）。路径 /api/v2/trade-ins/* 不与其他模块重叠，排在回收之后即可。
+      const tradeinV2Response = await routeTradeinV2(req, env, authResult)
+      if (tradeinV2Response) return cors(tradeinV2Response, origin)
+
+      // 契约 /api/v2：附件基础（F1）。路径 /api/v2/attachments/* 不与其他模块重叠，排在最后即可。
+      const attachV2Response = await routeAttachV2(req, env, authResult)
+      if (attachV2Response) return cors(attachV2Response, origin)
+
+      // 契约 /api/v2：工作台读模型（R02）。只认领 /api/v2/workbench 这一条精确路径，
+      // 不对更宽前缀兜底，避免吃掉后续链路。
+      const workbenchV2Response = await routeWorkbenchV2(req, env, authResult)
+      if (workbenchV2Response) return cors(workbenchV2Response, origin)
+
+      const documentsV2Response = await routeDocumentsV2(req, env, authResult)
+      if (documentsV2Response) return cors(documentsV2Response, origin)
 
       return cors(json({ error: 'Not found' }, 404), origin)
     } catch (e: any) {

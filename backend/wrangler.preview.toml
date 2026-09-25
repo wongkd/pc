@@ -1,0 +1,28 @@
+# Isolated Cloudflare preview only. Never replace the production wrangler.toml.
+name = "pc-erp-preview"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+workers_dev = true
+preview_urls = false
+
+[vars]
+# 预览也拒绝内存附件，避免将不持久的上传误当成远端验收通过。
+REQUIRE_PERSISTENT_STORAGE = "true"
+# 仅供隔离预览建测试库存；不是正式期初成本放行。
+INVENTORY_OPENING_MODE = "preview"
+
+[[routes]]
+pattern = "erp.huangqidong.cn/*"
+zone_name = "huangqidong.cn"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "pc-erp-preview-20260924"
+database_id = "05601ff0-8e47-460f-8997-431712d83da4"
+migrations_dir = "migrations"
+
+[assets]
+directory = "../frontend/dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+not_found_handling = "single-page-application"

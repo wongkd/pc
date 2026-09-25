@@ -1,0 +1,6785 @@
+{
+  "groups": {
+    "(root)": {
+      "files": 9,
+      "bytes": 80748
+    },
+    "backend": {
+      "files": 115,
+      "bytes": 2081101
+    },
+    "contracts": {
+      "files": 19,
+      "bytes": 605262
+    },
+    "docs": {
+      "files": 788,
+      "bytes": 72015992
+    },
+    "frontend": {
+      "files": 137,
+      "bytes": 2927891
+    },
+    "miniprogram": {
+      "files": 203,
+      "bytes": 1613812
+    },
+    "scripts": {
+      "files": 4,
+      "bytes": 8559
+    }
+  },
+  "reading": [
+    {
+      "path": "README.md",
+      "characters": 1052,
+      "lines": 35
+    },
+    {
+      "path": "AGENTS.md",
+      "characters": 2282,
+      "lines": 65
+    },
+    {
+      "path": "docs/STATUS.md",
+      "characters": 6674,
+      "lines": 44
+    },
+    {
+      "path": "docs/NEXT-SESSION-PROMPT.md",
+      "characters": 6041,
+      "lines": 51
+    }
+  ],
+  "files": [
+    {
+      "path": ".gitignore",
+      "bytes": 2468,
+      "category": "support"
+    },
+    {
+      "path": ".rgignore",
+      "bytes": 205,
+      "category": "support"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 4898,
+      "category": "support"
+    },
+    {
+      "path": "backend/collect-v2.js",
+      "bytes": 5380,
+      "category": "support"
+    },
+    {
+      "path": "backend/collect.js",
+      "bytes": 6908,
+      "category": "support"
+    },
+    {
+      "path": "backend/migrations/0000_baseline.sql",
+      "bytes": 2547,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0001_erp2_stores_members_permissions.sql",
+      "bytes": 3284,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0002_product_master_data.sql",
+      "bytes": 3949,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0003_orders.sql",
+      "bytes": 4383,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0004_sn.sql",
+      "bytes": 3316,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0005_sn_hardening.sql",
+      "bytes": 1223,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0006_consistency_core.sql",
+      "bytes": 6786,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0007_inventory_core.sql",
+      "bytes": 17826,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0008_wechat_identity.sql",
+      "bytes": 2574,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0009_quote_core.sql",
+      "bytes": 16426,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0010_customers.sql",
+      "bytes": 1987,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0011_quote_customer_fk.sql",
+      "bytes": 5280,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0012_quote_confirmed.sql",
+      "bytes": 6594,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0013_sales_core.sql",
+      "bytes": 14624,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0014_purchase_core.sql",
+      "bytes": 13049,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0015_quote_line_ref_and_quantity_reservation.sql",
+      "bytes": 7528,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0016_sale_fulfillment.sql",
+      "bytes": 10450,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0017_sale_refund_credit.sql",
+      "bytes": 15042,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0018_inventory_movement_sources.sql",
+      "bytes": 7302,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0019_service_core.sql",
+      "bytes": 11341,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0020_recovery.sql",
+      "bytes": 9710,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0021_tradein.sql",
+      "bytes": 7300,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0022_attachments.sql",
+      "bytes": 7884,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0023_purchase_cancellations.sql",
+      "bytes": 1290,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0024_inventory_counts.sql",
+      "bytes": 6740,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0025_refurbishment_costs.sql",
+      "bytes": 3261,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0026_customer_wechat_identity.sql",
+      "bytes": 2669,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0027_auto_serials_and_batches.sql",
+      "bytes": 1238,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/migrations/0028_document_export_attachments.sql",
+      "bytes": 3213,
+      "category": "migrations"
+    },
+    {
+      "path": "backend/package-lock.json",
+      "bytes": 48856,
+      "category": "support"
+    },
+    {
+      "path": "backend/package.json",
+      "bytes": 498,
+      "category": "support"
+    },
+    {
+      "path": "backend/README.md",
+      "bytes": 2677,
+      "category": "support"
+    },
+    {
+      "path": "backend/schema.sql",
+      "bytes": 5981,
+      "category": "support"
+    },
+    {
+      "path": "backend/scripts/check-migration-sequence.mjs",
+      "bytes": 3335,
+      "category": "support"
+    },
+    {
+      "path": "backend/scripts/dev-server.mjs",
+      "bytes": 12832,
+      "category": "support"
+    },
+    {
+      "path": "backend/scripts/sync-error-codes.mjs",
+      "bytes": 4206,
+      "category": "support"
+    },
+    {
+      "path": "backend/scripts/verify-staff-invitation.mjs",
+      "bytes": 6887,
+      "category": "support"
+    },
+    {
+      "path": "backend/src/domains/access.ts",
+      "bytes": 11374,
+      "lines": 231,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/assembly.ts",
+      "bytes": 70725,
+      "lines": 1805,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/attachment.ts",
+      "bytes": 33756,
+      "lines": 837,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/finance.ts",
+      "bytes": 26067,
+      "lines": 638,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/identity.ts",
+      "bytes": 13322,
+      "lines": 344,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/inventory.ts",
+      "bytes": 101595,
+      "lines": 2453,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/operations.ts",
+      "bytes": 19637,
+      "lines": 536,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/purchase.ts",
+      "bytes": 64863,
+      "lines": 1636,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/quote.ts",
+      "bytes": 60002,
+      "lines": 1447,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/recovery.ts",
+      "bytes": 54009,
+      "lines": 1263,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/sale.ts",
+      "bytes": 113312,
+      "lines": 2702,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/serial-codes.ts",
+      "bytes": 939,
+      "lines": 20,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/service.ts",
+      "bytes": 57680,
+      "lines": 1349,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/session.ts",
+      "bytes": 2368,
+      "lines": 48,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/storage.ts",
+      "bytes": 10124,
+      "lines": 222,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/tradein.ts",
+      "bytes": 33229,
+      "lines": 831,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/warranty.ts",
+      "bytes": 3823,
+      "lines": 61,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/domains/workbench.ts",
+      "bytes": 30486,
+      "lines": 743,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/generated/error-codes.ts",
+      "bytes": 4291,
+      "category": "generated"
+    },
+    {
+      "path": "backend/src/index.ts",
+      "bytes": 120862,
+      "lines": 1781,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/attach-v2.ts",
+      "bytes": 13783,
+      "lines": 366,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/customer-device-v2.ts",
+      "bytes": 6615,
+      "lines": 137,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/documents-v2.ts",
+      "bytes": 10803,
+      "lines": 114,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/finance-v2.ts",
+      "bytes": 12427,
+      "lines": 318,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/inventory-v2.ts",
+      "bytes": 41876,
+      "lines": 881,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/purchase-v2.ts",
+      "bytes": 22932,
+      "lines": 531,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/quote-v2.ts",
+      "bytes": 22683,
+      "lines": 543,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/recovery-v2.ts",
+      "bytes": 17567,
+      "lines": 407,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/sales-v2.ts",
+      "bytes": 44328,
+      "lines": 1037,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/service-v2.ts",
+      "bytes": 25695,
+      "lines": 597,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/tradein-v2.ts",
+      "bytes": 11857,
+      "lines": 283,
+      "category": "production"
+    },
+    {
+      "path": "backend/src/routes/workbench-v2.ts",
+      "bytes": 5676,
+      "lines": 135,
+      "category": "production"
+    },
+    {
+      "path": "backend/tests/.last-full-run.log",
+      "bytes": 82939,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/as02-stock-batches.test.mjs",
+      "bytes": 7937,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/b16-count-http.test.mjs",
+      "bytes": 27433,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/b30-refurbishment.test.mjs",
+      "bytes": 11840,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/b36-documents.test.mjs",
+      "bytes": 7465,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e04-customers.test.mjs",
+      "bytes": 12493,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e04b-inventory-http.test.mjs",
+      "bytes": 29434,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e05-quote-http.test.mjs",
+      "bytes": 37395,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e05b-quote-confirm.test.mjs",
+      "bytes": 16773,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e06-sales-http.test.mjs",
+      "bytes": 43703,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e07-purchase-http.test.mjs",
+      "bytes": 23789,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e08-fulfillment-http.test.mjs",
+      "bytes": 37489,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e09-cancel-return-refund-http.test.mjs",
+      "bytes": 31113,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e10-service-http.test.mjs",
+      "bytes": 29250,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e11-recovery-http.test.mjs",
+      "bytes": 29477,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/e12-tradein-http.test.mjs",
+      "bytes": 29609,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/f1-attachments.test.mjs",
+      "bytes": 31606,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/f2-inspection.test.mjs",
+      "bytes": 25283,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/f3-purchase-cancel-http.test.mjs",
+      "bytes": 18629,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/f3-purchase-payment-http.test.mjs",
+      "bytes": 9584,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/harness/demo-action.ts",
+      "bytes": 4491,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/harness/demo-schema.sql",
+      "bytes": 1414,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/lib/build.mjs",
+      "bytes": 1529,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/lib/demo.mjs",
+      "bytes": 1522,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/lib/env.mjs",
+      "bytes": 3537,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/lib/inventory.mjs",
+      "bytes": 3058,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/lib/quote.mjs",
+      "bytes": 4057,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/lib/sql.mjs",
+      "bytes": 2107,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/lib/worker.mjs",
+      "bytes": 6203,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/p2-erp-flow.test.mjs",
+      "bytes": 13957,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/q01-quote-core.test.mjs",
+      "bytes": 19650,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/r02-workbench.test.mjs",
+      "bytes": 24529,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/r13-customer-device-http.test.mjs",
+      "bytes": 5604,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t03a-identity.test.mjs",
+      "bytes": 12729,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t04a-consistency.test.mjs",
+      "bytes": 6788,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t04b-zero-row-assertion.test.mjs",
+      "bytes": 5026,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t04c-concurrency.test.mjs",
+      "bytes": 6779,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t05a-inventory-query.test.mjs",
+      "bytes": 12718,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t05a-inventory-schema.test.mjs",
+      "bytes": 12410,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t05a-opening.test.mjs",
+      "bytes": 12367,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tests/t05a-product-write.test.mjs",
+      "bytes": 8599,
+      "category": "tests"
+    },
+    {
+      "path": "backend/tsconfig.json",
+      "bytes": 368,
+      "category": "support"
+    },
+    {
+      "path": "backend/wrangler.preview.toml",
+      "bytes": 810,
+      "category": "support"
+    },
+    {
+      "path": "backend/wrangler.toml",
+      "bytes": 2526,
+      "category": "support"
+    },
+    {
+      "path": "contracts/generated/actions.ts",
+      "bytes": 18495,
+      "category": "generated"
+    },
+    {
+      "path": "contracts/generated/enums.ts",
+      "bytes": 29397,
+      "category": "generated"
+    },
+    {
+      "path": "contracts/generated/errors.ts",
+      "bytes": 6134,
+      "category": "generated"
+    },
+    {
+      "path": "contracts/generated/manifest.json",
+      "bytes": 2234,
+      "category": "generated"
+    },
+    {
+      "path": "contracts/generated/money.ts",
+      "bytes": 4942,
+      "category": "generated"
+    },
+    {
+      "path": "contracts/generated/objects.ts",
+      "bytes": 13703,
+      "category": "generated"
+    },
+    {
+      "path": "contracts/README.md",
+      "bytes": 14404,
+      "category": "support"
+    },
+    {
+      "path": "contracts/tools/check-client-parity.mjs",
+      "bytes": 19392,
+      "category": "support"
+    },
+    {
+      "path": "contracts/tools/generate-dto.mjs",
+      "bytes": 19340,
+      "category": "support"
+    },
+    {
+      "path": "contracts/tools/validate-contracts.mjs",
+      "bytes": 66079,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/actions.json",
+      "bytes": 85582,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/actions.json.bak-r02",
+      "bytes": 81742,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/conventions.json",
+      "bytes": 8147,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/enums.json",
+      "bytes": 23074,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/errors.json",
+      "bytes": 6186,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/fixtures.json",
+      "bytes": 76994,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/legacy-mapping.json",
+      "bytes": 78354,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/money-rules.json",
+      "bytes": 7814,
+      "category": "support"
+    },
+    {
+      "path": "contracts/v1/objects.json",
+      "bytes": 43249,
+      "category": "support"
+    },
+    {
+      "path": "docs/2026-09-19-小程序主体与上线方案.md",
+      "bytes": 25148,
+      "category": "support"
+    },
+    {
+      "path": "docs/2026-09-19-报价单业务规则.md",
+      "bytes": 5709,
+      "category": "support"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-cleanup/AGENTS.md",
+      "bytes": 3889,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-cleanup/docs/NEXT-SESSION-PROMPT.md",
+      "bytes": 22188,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-cleanup/docs/OPEN-ITEMS.md",
+      "bytes": 39189,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-cleanup/frontend/README.md",
+      "bytes": 2968,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-cleanup/miniprogram/README.md",
+      "bytes": 7167,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-cleanup/README.md",
+      "bytes": 7874,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-erp-first/docs__NEXT-SESSION-PROMPT.md.txt",
+      "bytes": 5538,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-erp-first/docs__plans__2026-09-19-quote-flow__README.md.txt",
+      "bytes": 4536,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-erp-first/docs__README.md.txt",
+      "bytes": 2055,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-erp-first/docs__STATUS.md.txt",
+      "bytes": 4608,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-erp-first/README.md",
+      "bytes": 672,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-19-before-erp-first/README.md.txt",
+      "bytes": 2416,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/backend/README.md",
+      "bytes": 1978,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/docs/NEXT-SESSION-PROMPT.md",
+      "bytes": 28869,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/docs/OPEN-ITEMS.md",
+      "bytes": 16777,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/docs/README.md",
+      "bytes": 2606,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/docs/STATUS.md",
+      "bytes": 24640,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/frontend/README.md",
+      "bytes": 1882,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/README.md",
+      "bytes": 509,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-before-maintenance/ROOT-README.md",
+      "bytes": 2810,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/2026-09-22-customer-plan/README.md",
+      "bytes": 7143,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/2026-07-22-ERP正式生产上线回执.md",
+      "bytes": 3058,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/2026-07-22-Worker与Pages串行发布完整回执.md",
+      "bytes": 3119,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/cloudflare-setup-commands.md",
+      "bytes": 795,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/overview.md",
+      "bytes": 1365,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/README.md",
+      "bytes": 1521,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/SN先行版开发前基线与文件范围-20260723.md",
+      "bytes": 4798,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/T05-KICKOFF.md",
+      "bytes": 9071,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/电脑店轻量ERP完整产品方案.md",
+      "bytes": 27947,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/电脑配置单网页CHANGELOG.md",
+      "bytes": 13782,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/电脑配置单网页TODO.md",
+      "bytes": 7188,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/电脑配置单网页开发完成记录.md",
+      "bytes": 8852,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/阶段0与阶段1商品主数据准备方案.md",
+      "bytes": 21712,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/阶段0备份与基线记录.md",
+      "bytes": 8765,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/阶段1A备份与恢复基线记录.md",
+      "bytes": 5835,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/阶段1B生产迁移执行异常记录-20260722.md",
+      "bytes": 4173,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/legacy/阶段1B生产迁移预检审核材料-20260722.md",
+      "bytes": 2999,
+      "category": "archive"
+    },
+    {
+      "path": "docs/archive/README.md",
+      "bytes": 1127,
+      "category": "archive"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/apple-rendered-desktop-mobile.png",
+      "bytes": 359770,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/index.html",
+      "bytes": 6361,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/muji-rendered-desktop-mobile.png",
+      "bytes": 352844,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/oce-rendered-desktop-mobile.png",
+      "bytes": 365651,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/prompts.md",
+      "bytes": 8219,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/README.md",
+      "bytes": 7317,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/render-previews.cjs",
+      "bytes": 1194,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/rendered-preview.html",
+      "bytes": 17013,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/apple-board.png",
+      "bytes": 380812,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/apple-desktop.png",
+      "bytes": 208724,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/apple-mobile.png",
+      "bytes": 94568,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/apple.css",
+      "bytes": 11078,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/apple.html",
+      "bytes": 8248,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/base.css",
+      "bytes": 1291,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/board.html",
+      "bytes": 2066,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/check-preview.cjs",
+      "bytes": 3804,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/index.html",
+      "bytes": 3936,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/muji-board.png",
+      "bytes": 295780,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/muji-desktop.png",
+      "bytes": 151176,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/muji-mobile.png",
+      "bytes": 47063,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/muji.css",
+      "bytes": 11408,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/muji.html",
+      "bytes": 8172,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/oce-board.png",
+      "bytes": 560795,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/oce-desktop.png",
+      "bytes": 446634,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/oce-mobile.png",
+      "bytes": 134435,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/oce.css",
+      "bytes": 12493,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/oce.html",
+      "bytes": 8076,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/photo-review-desktop.png",
+      "bytes": 696941,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/photo-review-mobile.png",
+      "bytes": 272360,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/photo-review.html",
+      "bytes": 537,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/README.md",
+      "bytes": 4991,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/render.cjs",
+      "bytes": 1389,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/serve.cjs",
+      "bytes": 926,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/shared.js",
+      "bytes": 2585,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v2/verification.json",
+      "bytes": 2472,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/.gitignore",
+      "bytes": 89,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-desktop.png",
+      "bytes": 156976,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-detail-320.png",
+      "bytes": 38771,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-detail-375.png",
+      "bytes": 44785,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-detail-390.png",
+      "bytes": 44879,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-detail-430.png",
+      "bytes": 45833,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-devices-desktop.png",
+      "bytes": 397094,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-mobile-board.png",
+      "bytes": 183560,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-mobile-detail.png",
+      "bytes": 44879,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/hybrid-mobile.png",
+      "bytes": 55042,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/index.html",
+      "bytes": 5964,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/mobile-review.html",
+      "bytes": 1907,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/README.md",
+      "bytes": 5520,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/serve.cjs",
+      "bytes": 1461,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/server-error.log",
+      "bytes": 0,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/server.log",
+      "bytes": 49,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/verification.json",
+      "bytes": 2631,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/verify.cjs",
+      "bytes": 9297,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/workspace.css",
+      "bytes": 26171,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-17-style-exploration/v3/workspace.js",
+      "bytes": 22258,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/board.png",
+      "bytes": 153094,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/empty.png",
+      "bytes": 61001,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/gallery.png",
+      "bytes": 329842,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/index.html",
+      "bytes": 4172,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/optimize.cjs",
+      "bytes": 1464,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/originals/gpu.png",
+      "bytes": 1954008,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/originals/laptop.png",
+      "bytes": 1356319,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/originals/monitor.png",
+      "bytes": 1241667,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/originals/tower.png",
+      "bytes": 1956625,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/prompts.md",
+      "bytes": 2757,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/README.md",
+      "bytes": 5929,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/verification.json",
+      "bytes": 883,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/verify.cjs",
+      "bytes": 5881,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-assets/workbench.png",
+      "bytes": 129337,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/build.cjs",
+      "bytes": 5957,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/index.html",
+      "bytes": 4516,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/optimize.cjs",
+      "bytes": 1405,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/originals/brand-avatar.png",
+      "bytes": 1946628,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/originals/empty-cats.png",
+      "bytes": 1128787,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/preview-1440.png",
+      "bytes": 130591,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/preview-320.png",
+      "bytes": 124408,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/preview-375.png",
+      "bytes": 127602,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/preview-390.png",
+      "bytes": 127232,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/preview-430.png",
+      "bytes": 126956,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/prompts.md",
+      "bytes": 1920,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/README.md",
+      "bytes": 3354,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/build-default.svg",
+      "bytes": 272,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/build-muted.svg",
+      "bytes": 272,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/build-white.svg",
+      "bytes": 272,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/cat-default.svg",
+      "bytes": 226,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/cat-muted.svg",
+      "bytes": 226,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/cat-white.svg",
+      "bytes": 226,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/inventory-default.svg",
+      "bytes": 227,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/inventory-muted.svg",
+      "bytes": 227,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/inventory-white.svg",
+      "bytes": 227,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/ledger-default.svg",
+      "bytes": 240,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/ledger-muted.svg",
+      "bytes": 240,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/ledger-white.svg",
+      "bytes": 240,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/more-default.svg",
+      "bytes": 353,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/more-muted.svg",
+      "bytes": 353,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/more-white.svg",
+      "bytes": 353,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/plus-default.svg",
+      "bytes": 189,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/plus-muted.svg",
+      "bytes": 189,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/plus-white.svg",
+      "bytes": 189,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/recycle-default.svg",
+      "bytes": 242,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/recycle-muted.svg",
+      "bytes": 242,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/recycle-white.svg",
+      "bytes": 242,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/repair-default.svg",
+      "bytes": 239,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/repair-muted.svg",
+      "bytes": 239,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/repair-white.svg",
+      "bytes": 239,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/retail-default.svg",
+      "bytes": 211,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/retail-muted.svg",
+      "bytes": 211,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/retail-white.svg",
+      "bytes": 211,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/sales-default.svg",
+      "bytes": 212,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/sales-muted.svg",
+      "bytes": 212,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/sales-white.svg",
+      "bytes": 212,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/scan-default.svg",
+      "bytes": 233,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/scan-muted.svg",
+      "bytes": 233,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/scan-white.svg",
+      "bytes": 233,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/search-default.svg",
+      "bytes": 220,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/search-muted.svg",
+      "bytes": 220,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/search-white.svg",
+      "bytes": 220,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/settings-default.svg",
+      "bytes": 340,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/settings-muted.svg",
+      "bytes": 340,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/settings-white.svg",
+      "bytes": 340,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/today-default.svg",
+      "bytes": 256,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/today-muted.svg",
+      "bytes": 256,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/svg/today-white.svg",
+      "bytes": 256,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/verification.json",
+      "bytes": 813,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-miniprogram-icons/verify.cjs",
+      "bytes": 2400,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-18-visual-gap/README.md",
+      "bytes": 10191,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/index.html",
+      "bytes": 4620,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/quote.css",
+      "bytes": 17461,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/quote.js",
+      "bytes": 31693,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/README.md",
+      "bytes": 5267,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/console-desktop-1366.png",
+      "bytes": 115663,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/customer-valid-1440.png",
+      "bytes": 51583,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/customer-valid-320.png",
+      "bytes": 45015,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/customer-valid-375.png",
+      "bytes": 51963,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/customer-valid-390.png",
+      "bytes": 53875,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/customer-valid-430.png",
+      "bytes": 59733,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/dialog-pay-390.png",
+      "bytes": 44022,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/long-expired-390.png",
+      "bytes": 164881,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/long-updated-390.png",
+      "bytes": 165371,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/long-valid-390.png",
+      "bytes": 155376,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/long-valid-tight-390.png",
+      "bytes": 155508,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/panel-cmp-390.png",
+      "bytes": 4768,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/panel-cmp-over-390.png",
+      "bytes": 4885,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/panel-pay-390.png",
+      "bytes": 12358,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/panel-sum-390.png",
+      "bytes": 13142,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-auth-390.png",
+      "bytes": 21549,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-deposit-390.png",
+      "bytes": 50600,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-error-390.png",
+      "bytes": 18725,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-expired-390.png",
+      "bytes": 51647,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-forbidden-390.png",
+      "bytes": 23202,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-loading-390.png",
+      "bytes": 5756,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-notfound-390.png",
+      "bytes": 18633,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-updated-390.png",
+      "bytes": 49674,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-valid-390.png",
+      "bytes": 49967,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/screenshots/state-withdrawn-390.png",
+      "bytes": 43281,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/serve.cjs",
+      "bytes": 1346,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/verification.json",
+      "bytes": 10084,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-customer-quote/v1/verify.cjs",
+      "bytes": 26377,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/app.js",
+      "bytes": 47299,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/assets/hardware-atlas.png",
+      "bytes": 1833738,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/color-theme.css",
+      "bytes": 5024,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/data.js",
+      "bytes": 6842,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/index.html",
+      "bytes": 844,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/serve.cjs",
+      "bytes": 1221,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/styles.css",
+      "bytes": 32896,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v1/ui.js",
+      "bytes": 3567,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/app.js",
+      "bytes": 43254,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/color-theme.css",
+      "bytes": 15084,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/data.js",
+      "bytes": 6842,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/index.html",
+      "bytes": 844,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/README.md",
+      "bytes": 2277,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/serve.cjs",
+      "bytes": 1349,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/styles.css",
+      "bytes": 32902,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/ui.js",
+      "bytes": 3567,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-core/v2/workbench.js",
+      "bytes": 6556,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-recovery/v1/app.js",
+      "bytes": 3850,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-recovery/v1/index.html",
+      "bytes": 763,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-recovery/v1/README.md",
+      "bytes": 732,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-recovery/v1/serve.cjs",
+      "bytes": 396,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-recovery/v1/styles.css",
+      "bytes": 2410,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/01.jpg",
+      "bytes": 428365,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/02.jpg",
+      "bytes": 570525,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/03.jpg",
+      "bytes": 574806,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/04.jpg",
+      "bytes": 596602,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/05.jpg",
+      "bytes": 540885,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/06.jpg",
+      "bytes": 568438,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/07.jpg",
+      "bytes": 512518,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-references/README.md",
+      "bytes": 1515,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-service/v1/app.js",
+      "bytes": 4350,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-service/v1/index.html",
+      "bytes": 803,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-service/v1/README.md",
+      "bytes": 797,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-service/v1/serve.cjs",
+      "bytes": 396,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-19-erp-service/v1/styles.css",
+      "bytes": 2516,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/blueprint-1920.png",
+      "bytes": 171386,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/build.cjs",
+      "bytes": 1311,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/build.py",
+      "bytes": 208,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/dashboard-1366.png",
+      "bytes": 133485,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/dashboard-template.html",
+      "bytes": 16068,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/dashboard.html",
+      "bytes": 34894,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/desktop.png",
+      "bytes": 197913,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/index.html",
+      "bytes": 29134,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/mobile.png",
+      "bytes": 199533,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/prompts.json",
+      "bytes": 19152,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/README.md",
+      "bytes": 3896,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/roadmap.cjs",
+      "bytes": 3033,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/server.cjs",
+      "bytes": 4377,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/start.ps1",
+      "bytes": 1219,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/template.html",
+      "bytes": 10064,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/verify-dashboard.cjs",
+      "bytes": 4000,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-21-prompt-launcher/verify.cjs",
+      "bytes": 2442,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/assets-manifest.json",
+      "bytes": 5807,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/build-customer-assets.cjs",
+      "bytes": 5849,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/customer-assets-preview.html",
+      "bytes": 4402,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/customer-assets-preview.png",
+      "bytes": 893374,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/customer-assets-prompts.md",
+      "bytes": 2019,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/customer-assets-verification.json",
+      "bytes": 8773,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/font-only-edit.md",
+      "bytes": 3337,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/four-tab-board-clean.png",
+      "bytes": 1628776,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/four-tab-board-font-only.png",
+      "bytes": 1745233,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/four-tab-board.png",
+      "bytes": 1857313,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/home-visual-baseline.png",
+      "bytes": 1707447,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/avatar-cat.png",
+      "bytes": 531313,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/banner-home.png",
+      "bytes": 1563938,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/brand-wordmark.png",
+      "bytes": 125688,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/cat-archive-folder.png",
+      "bytes": 1195847,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/cat-gold-lounging.png",
+      "bytes": 1182403,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/cat-home-pair.png",
+      "bytes": 935127,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/cat-silver-standing.png",
+      "bytes": 1135300,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/hero-home.png",
+      "bytes": 1710086,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/hero-shop.png",
+      "bytes": 1687407,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/post-cooling.png",
+      "bytes": 2165313,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/post-cream-desk.png",
+      "bytes": 1959439,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/post-dark-desk.png",
+      "bytes": 1863173,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/product-black-tower.png",
+      "bytes": 1512635,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/product-gpu.png",
+      "bytes": 1461761,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/product-monitor.png",
+      "bytes": 1491619,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/originals/customer-assets/product-white-tower.png",
+      "bytes": 1747097,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/README.md",
+      "bytes": 1067,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/chevron-active.svg",
+      "bytes": 186,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/chevron-muted.svg",
+      "bytes": 186,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuAfterSales-active.svg",
+      "bytes": 218,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuAfterSales-muted.svg",
+      "bytes": 218,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuAppointment-active.svg",
+      "bytes": 257,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuAppointment-muted.svg",
+      "bytes": 257,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuOrder-active.svg",
+      "bytes": 258,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuOrder-muted.svg",
+      "bytes": 258,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuQr-active.svg",
+      "bytes": 248,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuQr-muted.svg",
+      "bytes": 248,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuQuote-active.svg",
+      "bytes": 243,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuQuote-muted.svg",
+      "bytes": 243,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuSettings-active.svg",
+      "bytes": 416,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/menuSettings-muted.svg",
+      "bytes": 416,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceBuild-active.svg",
+      "bytes": 250,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceBuild-muted.svg",
+      "bytes": 250,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceLocation-active.svg",
+      "bytes": 251,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceLocation-muted.svg",
+      "bytes": 251,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceRecycle-active.svg",
+      "bytes": 243,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceRecycle-muted.svg",
+      "bytes": 243,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceRepair-active.svg",
+      "bytes": 249,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/serviceRepair-muted.svg",
+      "bytes": 249,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabCommunity-active.svg",
+      "bytes": 290,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabCommunity-muted.svg",
+      "bytes": 287,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabHome-active.svg",
+      "bytes": 206,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabHome-muted.svg",
+      "bytes": 203,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabMine-active.svg",
+      "bytes": 227,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabMine-muted.svg",
+      "bytes": 224,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabShop-active.svg",
+      "bytes": 215,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/svg/tabShop-muted.svg",
+      "bytes": 212,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-customer-ip/verify-customer-assets.cjs",
+      "bytes": 3145,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-miniprogram-reference/README.md",
+      "bytes": 3962,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-22-miniprogram-reference/小程序端代码结构对比.html",
+      "bytes": 14130,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-24-quote-templates/README.md",
+      "bytes": 6930,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-24-quote-templates/v1/app.js",
+      "bytes": 17620,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-24-quote-templates/v1/index.html",
+      "bytes": 4874,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-24-quote-templates/v1/serve.cjs",
+      "bytes": 1150,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-24-quote-templates/v1/styles.css",
+      "bytes": 11226,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-24-quote-templates/VERIFICATION.md",
+      "bytes": 2731,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-25-quote-print-a4/README.md",
+      "bytes": 2182,
+      "category": "design"
+    },
+    {
+      "path": "docs/design/2026-09-25-quote-print-a4/v1/index.html",
+      "bytes": 7773,
+      "category": "design"
+    },
+    {
+      "path": "docs/engineering/CODE-MAP.md",
+      "bytes": 3065,
+      "category": "support"
+    },
+    {
+      "path": "docs/engineering/PITFALLS.md",
+      "bytes": 15844,
+      "category": "support"
+    },
+    {
+      "path": "docs/engineering/README.md",
+      "bytes": 5413,
+      "category": "support"
+    },
+    {
+      "path": "docs/NEXT-SESSION-PROMPT.md",
+      "bytes": 11334,
+      "category": "support"
+    },
+    {
+      "path": "docs/OPEN-ITEMS.md",
+      "bytes": 10734,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/01-scope-and-architecture.md",
+      "bytes": 10354,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md",
+      "bytes": 18276,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md",
+      "bytes": 18967,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md",
+      "bytes": 23750,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/05-implementation-tasks.md",
+      "bytes": 19762,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md",
+      "bytes": 15875,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/README.md",
+      "bytes": 5431,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/references/desktop-reference.png",
+      "bytes": 162694,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-17-web-wechat-plan/references/wechat-flow-reference.png",
+      "bytes": 191197,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/00-requirements.md",
+      "bytes": 6703,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/01-product.md",
+      "bytes": 9616,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/02-ui-ux.md",
+      "bytes": 13696,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/03-reuse-and-cleanup.md",
+      "bytes": 6550,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/04-delivery.md",
+      "bytes": 9194,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/05-reference-analysis.md",
+      "bytes": 5082,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/01-foundation.md",
+      "bytes": 2666,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/02-shell.md",
+      "bytes": 2229,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/03-catalog-customer.md",
+      "bytes": 2196,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/04-quote.md",
+      "bytes": 2279,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/05-fulfillment.md",
+      "bytes": 2625,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/06-service.md",
+      "bytes": 2563,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/07-recovery.md",
+      "bytes": 2536,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/08-credit-ledger.md",
+      "bytes": 2478,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/ai-tasks/README.md",
+      "bytes": 4990,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-erp-first/README.md",
+      "bytes": 4003,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-19-quote-flow/README.md",
+      "bytes": 4885,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-B30-refurbishment/README.md",
+      "bytes": 8590,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-B39-B40-promotion/README.md",
+      "bytes": 20702,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/01-product-and-architecture.md",
+      "bytes": 8753,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/02-visual-contract.md",
+      "bytes": 7506,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/03-execution-and-acceptance.md",
+      "bytes": 7175,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/04-task-map.md",
+      "bytes": 7726,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/build.mjs",
+      "bytes": 12824,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/check-plan.mjs",
+      "bytes": 2873,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/index.html",
+      "bytes": 331177,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/README.md",
+      "bytes": 3811,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/task-data.mjs",
+      "bytes": 42230,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP00.md",
+      "bytes": 4231,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP01.md",
+      "bytes": 4399,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP02.md",
+      "bytes": 4255,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP03.md",
+      "bytes": 4260,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP04.md",
+      "bytes": 4413,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP05.md",
+      "bytes": 4325,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP06.md",
+      "bytes": 4136,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP07.md",
+      "bytes": 4048,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP08.md",
+      "bytes": 4020,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP09.md",
+      "bytes": 4055,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP10.md",
+      "bytes": 4052,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP11.md",
+      "bytes": 3959,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP12.md",
+      "bytes": 3976,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP13.md",
+      "bytes": 3979,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP14.md",
+      "bytes": 4017,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP15.md",
+      "bytes": 4239,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP16.md",
+      "bytes": 4245,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP17.md",
+      "bytes": 4363,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP18.md",
+      "bytes": 4390,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP19.md",
+      "bytes": 4228,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP20.md",
+      "bytes": 4341,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP21.md",
+      "bytes": 4417,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP22.md",
+      "bytes": 4020,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP23.md",
+      "bytes": 4060,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP24.md",
+      "bytes": 4012,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP25.md",
+      "bytes": 4155,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP26.md",
+      "bytes": 4204,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP27.md",
+      "bytes": 4063,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP28.md",
+      "bytes": 4232,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP29.md",
+      "bytes": 4389,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP30.md",
+      "bytes": 4369,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP31.md",
+      "bytes": 4051,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP32.md",
+      "bytes": 4053,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP33.md",
+      "bytes": 4147,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP34.md",
+      "bytes": 4119,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP35.md",
+      "bytes": 4084,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP36.md",
+      "bytes": 4332,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP37.md",
+      "bytes": 4272,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP38.md",
+      "bytes": 4024,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP39.md",
+      "bytes": 4122,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP40.md",
+      "bytes": 4376,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP41.md",
+      "bytes": 4340,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP42.md",
+      "bytes": 4019,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP43.md",
+      "bytes": 4286,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP44.md",
+      "bytes": 4360,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP45.md",
+      "bytes": 4006,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP46.md",
+      "bytes": 4184,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP47.md",
+      "bytes": 4058,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP48.md",
+      "bytes": 4061,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP49.md",
+      "bytes": 4092,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP50.md",
+      "bytes": 4260,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP51.md",
+      "bytes": 4073,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP52.md",
+      "bytes": 4122,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP53.md",
+      "bytes": 4307,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP54.md",
+      "bytes": 4186,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP55.md",
+      "bytes": 4265,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP56.md",
+      "bytes": 4432,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP57.md",
+      "bytes": 4341,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP58.md",
+      "bytes": 4181,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP59.md",
+      "bytes": 4292,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP60.md",
+      "bytes": 4433,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP61.md",
+      "bytes": 4160,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP62.md",
+      "bytes": 4298,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP63.md",
+      "bytes": 4144,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-customer-miniprogram-reset/tasks/MP64.md",
+      "bytes": 4223,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-erp-remaining-tasks/audit-action-coverage.mjs",
+      "bytes": 5494,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-erp-remaining-tasks/README.md",
+      "bytes": 30324,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-erp-rollout-master/README.md",
+      "bytes": 12687,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-F0-shared-baseline/README.md",
+      "bytes": 11511,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-go-live-prerequisites/00-research.md",
+      "bytes": 13287,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-22-go-live-prerequisites/README.md",
+      "bytes": 5986,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-23-owner-decisions/d07-warranty.md",
+      "bytes": 10477,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-23-owner-decisions/edge-cases.md",
+      "bytes": 8969,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-23-owner-decisions/README.md",
+      "bytes": 17754,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-23-payment-prerequisites/README.md",
+      "bytes": 16841,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-24-auto-serial/README.md",
+      "bytes": 9968,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-24-quote-templates-ab/PROMPTS.md",
+      "bytes": 3401,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-24-quote-templates-ab/QT01.md",
+      "bytes": 4728,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-24-quote-templates-ab/QT02.md",
+      "bytes": 4963,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-24-quote-templates-ab/QT03.md",
+      "bytes": 3234,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-24-quote-templates-ab/README.md",
+      "bytes": 7693,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-25-data-attachment-go-live/drill-20260925/README.md",
+      "bytes": 6545,
+      "category": "support"
+    },
+    {
+      "path": "docs/plans/2026-09-25-data-attachment-go-live/README.md",
+      "bytes": 10526,
+      "category": "support"
+    },
+    {
+      "path": "docs/README.md",
+      "bytes": 1863,
+      "category": "support"
+    },
+    {
+      "path": "docs/STATUS.md",
+      "bytes": 12529,
+      "category": "support"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T00/README.md",
+      "bytes": 12399,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T01-rev1/README.md",
+      "bytes": 11152,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T01a/README.md",
+      "bytes": 9783,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T01b/README.md",
+      "bytes": 15568,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T01c/README.md",
+      "bytes": 21505,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T02a/README.md",
+      "bytes": 17324,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T02b/README.md",
+      "bytes": 36351,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T02b/screenshots/today-01.png",
+      "bytes": 132121,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T02b-rev2/README.md",
+      "bytes": 12985,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-17-T04/README.md",
+      "bytes": 9838,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-T03a/README.md",
+      "bytes": 5207,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-T03b/README.md",
+      "bytes": 9683,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-T05a/README.md",
+      "bytes": 19390,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-T05b/README.md",
+      "bytes": 8801,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-T05c/README.md",
+      "bytes": 6493,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/README.md",
+      "bytes": 11433,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/after-1366x768-list.png",
+      "bytes": 165751,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/after-1440x1000-board.png",
+      "bytes": 230148,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/after-1440x1000-empty.png",
+      "bytes": 59097,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/after-1440x1000-list-fullpage.png",
+      "bytes": 267599,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/after-1440x1000-list.png",
+      "bytes": 216745,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/after-1440x1000-photo-failed.png",
+      "bytes": 134992,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/after-1920x1080-list.png",
+      "bytes": 233392,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/before-1366x768-list.png",
+      "bytes": 91069,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/before-1440x1000-board.png",
+      "bytes": 153499,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/before-1440x1000-empty.png",
+      "bytes": 61408,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/before-1440x1000-list-fullpage.png",
+      "bytes": 190213,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/before-1440x1000-list.png",
+      "bytes": 129738,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/before-1440x1000-photo-failed.png",
+      "bytes": 117957,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/screenshots/before-1920x1080-list.png",
+      "bytes": 144759,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-18-V01/verify-desktop-today.cjs",
+      "bytes": 16443,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-customers/README.md",
+      "bytes": 672,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E00/doc-links.txt",
+      "bytes": 154,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E00/README.md",
+      "bytes": 2629,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/README.md",
+      "bytes": 1363,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/current-core-1366.png",
+      "bytes": 151943,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/current-core-390.png",
+      "bytes": 116899,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/inventory-1440.png",
+      "bytes": 73966,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/order-1440.png",
+      "bytes": 83543,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/quote-1440.png",
+      "bytes": 93424,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/quote-large-1440.png",
+      "bytes": 95579,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/quote-save-failure.png",
+      "bytes": 90063,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01/screenshots/workbench-1440.png",
+      "bytes": 86273,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01b-recovery/README.md",
+      "bytes": 549,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01b-recovery/screenshots/current-recovery-1366.png",
+      "bytes": 55990,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01b-recovery/screenshots/current-recovery-390.png",
+      "bytes": 53171,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01b-service/README.md",
+      "bytes": 505,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01b-service/screenshots/current-service-1366.png",
+      "bytes": 66355,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E01b-service/screenshots/current-service-390.png",
+      "bytes": 63090,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/README.md",
+      "bytes": 8015,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1024x768-customers-list.png",
+      "bytes": 71462,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1280x800-customers-list.png",
+      "bytes": 82184,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1366x768-customers-list.png",
+      "bytes": 82786,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1440x1000-customers-detail.png",
+      "bytes": 117531,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1440x1000-customers-device-added.png",
+      "bytes": 105605,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1440x1000-customers-duplicate.png",
+      "bytes": 99974,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1440x1000-customers-empty.png",
+      "bytes": 68992,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1440x1000-customers-list.png",
+      "bytes": 85845,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/1920x1080-customers-list.png",
+      "bytes": 89311,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/screenshots/390x844-customers-list.png",
+      "bytes": 48884,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04-customers/verify-customers.cjs",
+      "bytes": 15569,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/README.md",
+      "bytes": 12369,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1024x768-inventory-list.png",
+      "bytes": 58242,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1280x800-inventory-list.png",
+      "bytes": 73922,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1366x768-inventory-list.png",
+      "bytes": 74079,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1440x1000-inventory-expanded-gpu.png",
+      "bytes": 89700,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1440x1000-inventory-item-detail.png",
+      "bytes": 97219,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1440x1000-inventory-list.png",
+      "bytes": 91611,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1440x1000-inventory-opening-form.png",
+      "bytes": 118862,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1440x1000-inventory-opening-rejected.png",
+      "bytes": 136380,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1440x1000-inventory-product-form.png",
+      "bytes": 105214,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/1920x1080-inventory-list.png",
+      "bytes": 96033,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/screenshots/390x844-inventory-list.png",
+      "bytes": 42567,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E04b-inventory/verify-inventory.cjs",
+      "bytes": 28057,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/README.md",
+      "bytes": 11995,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1280x800-quote-list.png",
+      "bytes": 45526,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-detail-draft.png",
+      "bytes": 58833,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-detail-expired.png",
+      "bytes": 52154,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-editor.png",
+      "bytes": 73076,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-issued.png",
+      "bytes": 74120,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-list-empty.png",
+      "bytes": 39306,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-list-expired.png",
+      "bytes": 47864,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-list-issued.png",
+      "bytes": 43568,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-list.png",
+      "bytes": 47947,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-renewed.png",
+      "bytes": 77989,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1440x1000-quote-revised.png",
+      "bytes": 87220,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/1920x1080-quote-list.png",
+      "bytes": 51678,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/390x844-quote-editor.png",
+      "bytes": 39958,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/screenshots/390x844-quote-list.png",
+      "bytes": 41650,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05-quote/verify-quote.cjs",
+      "bytes": 24055,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/README.md",
+      "bytes": 5393,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/screenshots/01-new-quote-editor.png",
+      "bytes": 56004,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/screenshots/02-issued-with-confirm.png",
+      "bytes": 67157,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/screenshots/03-confirmed-detail.png",
+      "bytes": 71920,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/screenshots/04-list-with-confirmed.png",
+      "bytes": 43912,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/screenshots/05-revise-after-confirm.png",
+      "bytes": 69185,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/verification.json",
+      "bytes": 1420,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-E05b-confirm/verify-confirm.cjs",
+      "bytes": 11520,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-M01/inventory.json",
+      "bytes": 6738,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-M01/README.md",
+      "bytes": 4491,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-Q01/README.md",
+      "bytes": 5122,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-Q01b/README.md",
+      "bytes": 10633,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/README.md",
+      "bytes": 10829,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1024x768-list.png",
+      "bytes": 47823,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1100x800-list.png",
+      "bytes": 53355,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1152x864-list.png",
+      "bytes": 53565,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1280x800-list.png",
+      "bytes": 54058,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1366x768-list.png",
+      "bytes": 55150,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-cost-hidden.png",
+      "bytes": 53710,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-empty.png",
+      "bytes": 39864,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-expanded-fullpage.png",
+      "bytes": 84519,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-expanded.png",
+      "bytes": 84244,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-filter-custody.png",
+      "bytes": 41863,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-list-fullpage.png",
+      "bytes": 57185,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-list.png",
+      "bytes": 57185,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1440x1000-quantity-mode.png",
+      "bytes": 71322,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/after-1920x1080-list.png",
+      "bytes": 60177,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1024x768-list.png",
+      "bytes": 47822,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1100x800-list.png",
+      "bytes": 53348,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1152x864-list.png",
+      "bytes": 53562,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1280x800-list.png",
+      "bytes": 54054,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1366x768-list.png",
+      "bytes": 55143,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-cost-hidden.png",
+      "bytes": 53713,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-empty.png",
+      "bytes": 39867,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-expanded-fullpage.png",
+      "bytes": 84522,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-expanded.png",
+      "bytes": 84247,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-filter-custody.png",
+      "bytes": 41862,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-list-fullpage.png",
+      "bytes": 57183,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-list.png",
+      "bytes": 57183,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1440x1000-quantity-mode.png",
+      "bytes": 71320,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/screenshots/before-1920x1080-list.png",
+      "bytes": 60177,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-19-V02/verify-desktop-inventory.cjs",
+      "bytes": 19144,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/README.md",
+      "bytes": 6977,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/01-login.png",
+      "bytes": 37897,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/02-workbench-regression.png",
+      "bytes": 143197,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/03-orders-list.png",
+      "bytes": 53483,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/04-order-detail.png",
+      "bytes": 66614,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/05-products.png",
+      "bytes": 77881,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/06-sn.png",
+      "bytes": 50530,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/07-settings.png",
+      "bytes": 54604,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/08-placeholder.png",
+      "bytes": 38763,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/09-quote-editor-regression.png",
+      "bytes": 203842,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/10-sn-mobile.png",
+      "bytes": 34246,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/11-settings-mobile.png",
+      "bytes": 30083,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/12-orders-mobile.png",
+      "bytes": 26971,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/screenshots/13-placeholder-mobile.png",
+      "bytes": 23834,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/verification.json",
+      "bytes": 1967,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E03/verify-e03.cjs",
+      "bytes": 13823,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/README.md",
+      "bytes": 9201,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/report.json",
+      "bytes": 4175,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/01-quote-can-convert.png",
+      "bytes": 76319,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/02-order-list.png",
+      "bytes": 62380,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/03-order-detail-no-payment.png",
+      "bytes": 148754,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/04-confirm-denied-before-payment.png",
+      "bytes": 155738,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/05-payment-registered.png",
+      "bytes": 154137,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/06-order-confirmed.png",
+      "bytes": 179549,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/07-purchase-list.png",
+      "bytes": 55202,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/08-purchase-detail.png",
+      "bytes": 125941,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/09-purchase-partial-receipt.png",
+      "bytes": 130695,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/screenshots/10-order-list-final.png",
+      "bytes": 63025,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06/verify-sales.cjs",
+      "bytes": 20084,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E06E07-gapfix/README.md",
+      "bytes": 11621,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/README.md",
+      "bytes": 8203,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/report.json",
+      "bytes": 2532,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/screenshots/01-purchase-empty.png",
+      "bytes": 55202,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/screenshots/02-purchase-created.png",
+      "bytes": 125116,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/screenshots/03-receipt-with-rejection.png",
+      "bytes": 129716,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/screenshots/04-supplier-return.png",
+      "bytes": 129073,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/screenshots/05-supplier-return-rejected.png",
+      "bytes": 132735,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/screenshots/06-purchase-list-final.png",
+      "bytes": 54161,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-E07/verify-purchase.cjs",
+      "bytes": 13564,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-21-receipts/README.md",
+      "bytes": 3560,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-B16-count/backend.log",
+      "bytes": 639,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-B16-count/README.md",
+      "bytes": 9698,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-B16-count/report.json",
+      "bytes": 2083,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-B16-count/verify-b16.cjs",
+      "bytes": 15214,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-B30-B36/README.md",
+      "bytes": 4855,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-BE03-R13/README.md",
+      "bytes": 3652,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-customer-4tab-plan/README.md",
+      "bytes": 2693,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F2-b19/backend.log",
+      "bytes": 639,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F2-b19/README.md",
+      "bytes": 10721,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F2-b19/report.json",
+      "bytes": 1780,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F2-b19/verify-b19.cjs",
+      "bytes": 16954,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F3-purchase-cancel-payment/backend.log",
+      "bytes": 639,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F3-purchase-cancel-payment/README.md",
+      "bytes": 11268,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F3-purchase-cancel-payment/report.json",
+      "bytes": 2673,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-F3-purchase-cancel-payment/verify-f3.cjs",
+      "bytes": 18113,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-R02-workbench/README.md",
+      "bytes": 10357,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-R02-workbench/report.json",
+      "bytes": 4220,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-R02-workbench/shift-index-lines.mjs",
+      "bytes": 1842,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-R02-workbench/verify-evidence-lines.mjs",
+      "bytes": 2420,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-R02-workbench/verify-r02.cjs",
+      "bytes": 22134,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-receipts/check-receipts.mjs",
+      "bytes": 2409,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-receipts/README.md",
+      "bytes": 7815,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-repository-maintenance/checks.json",
+      "bytes": 1937,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-repository-maintenance/cleanup.json",
+      "bytes": 2054,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-repository-maintenance/inventory.json",
+      "bytes": 5204,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-repository-maintenance/lint-summary.json",
+      "bytes": 8644,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-repository-maintenance/README.md",
+      "bytes": 4234,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-22-T11/README.md",
+      "bytes": 2295,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-23-P2-erp-integration/README.md",
+      "bytes": 2972,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-FE-A-C/README.md",
+      "bytes": 5609,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-FE-D-E/README.md",
+      "bytes": 5875,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-quote-templates-ab/QT01.md",
+      "bytes": 2396,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-quote-templates-ab/QT02.md",
+      "bytes": 2847,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-quote-templates-ab/qt03-detail-390.png",
+      "bytes": 36867,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-quote-templates-ab/qt03-detail-desktop.png",
+      "bytes": 69660,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-quote-templates-ab/QT03-followup.md",
+      "bytes": 3189,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-quote-templates-ab/qt03-list-ax.txt",
+      "bytes": 2516,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-24-quote-templates-ab/QT03.md",
+      "bytes": 4401,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-erp-entry-cleanup/README.md",
+      "bytes": 6256,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-exception-states/README.md",
+      "bytes": 3963,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-operating-rules/README.md",
+      "bytes": 6813,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-production-release-readiness/README.md",
+      "bytes": 10986,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-production-runtime-browser-followup/README.md",
+      "bytes": 9552,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-quote-list-work-revision/print-followup.md",
+      "bytes": 3196,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-quote-list-work-revision/README.md",
+      "bytes": 5646,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-release-candidate-acceptance/README.md",
+      "bytes": 7535,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-staff-permissions/README.md",
+      "bytes": 4070,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-web-browser-acceptance/README.md",
+      "bytes": 5898,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/2026-09-25-workbench-live-api/README.md",
+      "bytes": 3350,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/README.md",
+      "bytes": 6965,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/community-bottom-native.png",
+      "bytes": 118921,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/community-empty-native.png",
+      "bytes": 92826,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/community-native.png",
+      "bytes": 122989,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/home-320-native.png",
+      "bytes": 116831,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/home-430-native.png",
+      "bytes": 116782,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/home-bottom-native.png",
+      "bytes": 119422,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/home-native.png",
+      "bytes": 117462,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/mine-320-action-native.png",
+      "bytes": 96754,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/mine-320-native.png",
+      "bytes": 101294,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/mine-native.png",
+      "bytes": 101471,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/shop-320-bottom-native.png",
+      "bytes": 111267,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/shop-430-native.png",
+      "bytes": 114164,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-layout-rework/screenshots/shop-native.png",
+      "bytes": 115195,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/2026-09-23-navigation-visual/README.md",
+      "bytes": 3096,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/asset-batch/README.md",
+      "bytes": 2141,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP00/README.md",
+      "bytes": 1714,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP00/receipt.json",
+      "bytes": 915,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP00/visual-baseline.json",
+      "bytes": 6040,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP01/asset-baseline-review.json",
+      "bytes": 1112,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP01/README.md",
+      "bytes": 1455,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP01/receipt.json",
+      "bytes": 1007,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP02/README.md",
+      "bytes": 1793,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP02/receipt.json",
+      "bytes": 1129,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP03/README.md",
+      "bytes": 1831,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP03/receipt.json",
+      "bytes": 1375,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP04/README.md",
+      "bytes": 2929,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP04/receipt.json",
+      "bytes": 1992,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP05/README.md",
+      "bytes": 1834,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP05/receipt.json",
+      "bytes": 1287,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP06/README.md",
+      "bytes": 1877,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP06/receipt.json",
+      "bytes": 1412,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP07/README.md",
+      "bytes": 1694,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP07/receipt.json",
+      "bytes": 1330,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP08/README.md",
+      "bytes": 1296,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP08/receipt.json",
+      "bytes": 1331,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP09/README.md",
+      "bytes": 1300,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP09/receipt.json",
+      "bytes": 1315,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP10/README.md",
+      "bytes": 1430,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP10/receipt.json",
+      "bytes": 1375,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP11/README.md",
+      "bytes": 1555,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP11/receipt.json",
+      "bytes": 1520,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP12/README.md",
+      "bytes": 909,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP12/receipt.json",
+      "bytes": 1527,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP13/README.md",
+      "bytes": 1325,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP13/receipt.json",
+      "bytes": 1520,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP14/README.md",
+      "bytes": 915,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP14/receipt.json",
+      "bytes": 1461,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP15/README.md",
+      "bytes": 2775,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP15/receipt.json",
+      "bytes": 2051,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP16/README.md",
+      "bytes": 5216,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP16/receipt.json",
+      "bytes": 1946,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP17/README.md",
+      "bytes": 7167,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/customer-4tab/MP17/receipt.json",
+      "bytes": 3216,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/INTEGRATION.md",
+      "bytes": 6191,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/README.md",
+      "bytes": 4655,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/screenshots/01-fulfillment-list-empty.png",
+      "bytes": 44897,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/screenshots/02-fulfillment-list-with-order.png",
+      "bytes": 48230,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/screenshots/03-fulfillment-detail.png",
+      "bytes": 131295,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/verify-browser-report.json",
+      "bytes": 1363,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/verify-e08-browser.cjs",
+      "bytes": 11727,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/verify-e08.cjs",
+      "bytes": 15359,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E08-current/verify-report.json",
+      "bytes": 1386,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/README.md",
+      "bytes": 6441,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/screenshots/01-finance-page.png",
+      "bytes": 58251,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/screenshots/02-order-detail-delivered.png",
+      "bytes": 164612,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/screenshots/03-order-detail-after-return.png",
+      "bytes": 181256,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/screenshots/04-order-detail-confirmed.png",
+      "bytes": 135823,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/verify-browser-report.json",
+      "bytes": 1561,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/verify-e09-browser.cjs",
+      "bytes": 13284,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/verify-e09.cjs",
+      "bytes": 14528,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E09-current/verify-report.json",
+      "bytes": 1205,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/README.md",
+      "bytes": 10652,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/01-service-list-empty.png",
+      "bytes": 46208,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/02-service-intake-form.png",
+      "bytes": 66190,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/03-service-list-after-intake.png",
+      "bytes": 58190,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/04-service-detail-received.png",
+      "bytes": 58190,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/05-service-detail-retesting.png",
+      "bytes": 70074,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/06-service-payment-form.png",
+      "bytes": 84590,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/07-service-after-payment.png",
+      "bytes": 64607,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/screenshots/08-service-detail-returned.png",
+      "bytes": 59903,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/verify-browser-report.json",
+      "bytes": 2429,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/verify-e10-browser.cjs",
+      "bytes": 17184,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/verify-e10.cjs",
+      "bytes": 20614,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E10-current/verify-report.json",
+      "bytes": 1578,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/README.md",
+      "bytes": 4901,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/01-recovery-list.png",
+      "bytes": 43566,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/02-intake-form.png",
+      "bytes": 63617,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/03-detail-received.png",
+      "bytes": 52454,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/04-offer-form.png",
+      "bytes": 59922,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/05-detail-offered.png",
+      "bytes": 52835,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/06-acquire-form.png",
+      "bytes": 72443,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/07-detail-acquired.png",
+      "bytes": 53096,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/08-pay-form.png",
+      "bytes": 65303,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/09-after-payment.png",
+      "bytes": 53010,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/10-teardown-form.png",
+      "bytes": 76419,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/11-detail-disassembled.png",
+      "bytes": 52251,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/screenshots/12-list-filled.png",
+      "bytes": 52274,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/verify-browser-report.json",
+      "bytes": 3239,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/verify-e11-browser.cjs",
+      "bytes": 12039,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/verify-e11.cjs",
+      "bytes": 18260,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E11-current/verify-report.json",
+      "bytes": 2243,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E12-current/README.md",
+      "bytes": 5060,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E12-current/verify-e12.cjs",
+      "bytes": 13552,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/E12-current/verify-report.json",
+      "bytes": 1013,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/F1-current/README.md",
+      "bytes": 11415,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/F1-current/verify-f1.cjs",
+      "bytes": 19200,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/F1-current/verify-report.json",
+      "bytes": 1623,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/parallel-module-E08/README.md",
+      "bytes": 971,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/B16.json",
+      "bytes": 4900,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/E06.json",
+      "bytes": 2708,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/E07.json",
+      "bytes": 2151,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/E08.json",
+      "bytes": 2643,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/E10.json",
+      "bytes": 3072,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/E11.json",
+      "bytes": 2835,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/E12.json",
+      "bytes": 2298,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/F1.json",
+      "bytes": 4904,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/F2.json",
+      "bytes": 3709,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/F3.json",
+      "bytes": 5255,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/progress/R02.json",
+      "bytes": 4161,
+      "category": "evidence"
+    },
+    {
+      "path": "docs/verification/README.md",
+      "bytes": 5627,
+      "category": "evidence"
+    },
+    {
+      "path": "frontend/eslint.config.js",
+      "bytes": 639,
+      "category": "support"
+    },
+    {
+      "path": "frontend/functions/api/[[path]].ts",
+      "bytes": 603,
+      "category": "support"
+    },
+    {
+      "path": "frontend/index.html",
+      "bytes": 580,
+      "category": "support"
+    },
+    {
+      "path": "frontend/package-lock.json",
+      "bytes": 216691,
+      "category": "support"
+    },
+    {
+      "path": "frontend/package.json",
+      "bytes": 1111,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/assets/workbench/gpu.jpg",
+      "bytes": 55537,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/assets/workbench/laptop.jpg",
+      "bytes": 23965,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/assets/workbench/monitor.jpg",
+      "bytes": 17096,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/assets/workbench/tower.jpg",
+      "bytes": 64104,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/favicon.svg",
+      "bytes": 9522,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/pc/assets/chunk-CaILmz35.js",
+      "bytes": 567,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/pc/assets/index-CBrxxFbw.css",
+      "bytes": 53735,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/pc/assets/index-CZEfhc13.js",
+      "bytes": 1274785,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/_headers",
+      "bytes": 185,
+      "category": "support"
+    },
+    {
+      "path": "frontend/public/_redirects",
+      "bytes": 86,
+      "category": "support"
+    },
+    {
+      "path": "frontend/README.md",
+      "bytes": 1637,
+      "category": "support"
+    },
+    {
+      "path": "frontend/scripts/sync-contracts.mjs",
+      "bytes": 4747,
+      "category": "support"
+    },
+    {
+      "path": "frontend/src/api/client.ts",
+      "bytes": 3013,
+      "lines": 81,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/api/core.test.ts",
+      "bytes": 17425,
+      "lines": 394,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/api/core.ts",
+      "bytes": 20159,
+      "lines": 500,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/api/error-behavior.test.ts",
+      "bytes": 5326,
+      "lines": 127,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/api/error-behavior.ts",
+      "bytes": 9514,
+      "lines": 227,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/api/session.ts",
+      "bytes": 4696,
+      "lines": 134,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/app/AppShell.tsx",
+      "bytes": 8697,
+      "lines": 235,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/app/navigation.ts",
+      "bytes": 5527,
+      "lines": 172,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/app/WorkspaceLandingPage.tsx",
+      "bytes": 2886,
+      "lines": 94,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/app/workspaces.ts",
+      "bytes": 930,
+      "lines": 18,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/App.test.tsx",
+      "bytes": 5268,
+      "lines": 93,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/App.tsx",
+      "bytes": 7916,
+      "lines": 125,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/BaseInfoSection.tsx",
+      "bytes": 3499,
+      "lines": 83,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/BrandSection.tsx",
+      "bytes": 1472,
+      "lines": 47,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/ContactSection.tsx",
+      "bytes": 1734,
+      "lines": 53,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/CustomerInfoSection.tsx",
+      "bytes": 1433,
+      "lines": 45,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/CustomersPage.test.tsx",
+      "bytes": 11845,
+      "lines": 239,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/components/CustomersPage.tsx",
+      "bytes": 19236,
+      "lines": 394,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/HardwareLibrarySection.tsx",
+      "bytes": 21760,
+      "lines": 533,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/LoginPanel.tsx",
+      "bytes": 2514,
+      "lines": 53,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/ModulePlaceholderPage.tsx",
+      "bytes": 599,
+      "lines": 18,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/NotesSection.tsx",
+      "bytes": 1972,
+      "lines": 57,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/OrdersPages.tsx",
+      "bytes": 7155,
+      "lines": 24,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/ProductManagementPage.tsx",
+      "bytes": 13298,
+      "lines": 30,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/QuoteCustomerView.tsx",
+      "bytes": 5686,
+      "lines": 139,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/QuoteInfoSection.tsx",
+      "bytes": 1423,
+      "lines": 46,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/QuoteItemsSection.tsx",
+      "bytes": 13717,
+      "lines": 340,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/QuotePreview.tsx",
+      "bytes": 14407,
+      "lines": 330,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/QuoteToolbar.tsx",
+      "bytes": 8092,
+      "lines": 214,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/SerialNumberPage.tsx",
+      "bytes": 20889,
+      "lines": 63,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/components/SystemSettingsPage.tsx",
+      "bytes": 8359,
+      "lines": 69,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/contracts/generated/actions.ts",
+      "bytes": 18495,
+      "category": "generated"
+    },
+    {
+      "path": "frontend/src/contracts/generated/enums.ts",
+      "bytes": 29397,
+      "category": "generated"
+    },
+    {
+      "path": "frontend/src/contracts/generated/errors.ts",
+      "bytes": 6134,
+      "category": "generated"
+    },
+    {
+      "path": "frontend/src/contracts/generated/manifest.json",
+      "bytes": 2234,
+      "category": "generated"
+    },
+    {
+      "path": "frontend/src/contracts/generated/money.ts",
+      "bytes": 4942,
+      "category": "generated"
+    },
+    {
+      "path": "frontend/src/contracts/generated/objects.ts",
+      "bytes": 13703,
+      "category": "generated"
+    },
+    {
+      "path": "frontend/src/features/legacy-quote/LegacyQuotePage.tsx",
+      "bytes": 19026,
+      "lines": 472,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/legacy-quote/state.ts",
+      "bytes": 6682,
+      "lines": 181,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/attachment-api.test.ts",
+      "bytes": 3270,
+      "lines": 61,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/attachment-api.ts",
+      "bytes": 5060,
+      "lines": 107,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/AttachmentPanel.test.tsx",
+      "bytes": 2328,
+      "lines": 48,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/AttachmentPanel.tsx",
+      "bytes": 3130,
+      "lines": 56,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/demoData.test.ts",
+      "bytes": 6412,
+      "lines": 156,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/demoData.ts",
+      "bytes": 11436,
+      "lines": 342,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/demoInventory.test.ts",
+      "bytes": 4119,
+      "lines": 102,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/demoInventory.ts",
+      "bytes": 9037,
+      "lines": 354,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/finance-api.ts",
+      "bytes": 2498,
+      "lines": 75,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/fulfillment-api.ts",
+      "bytes": 5770,
+      "lines": 189,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/fulfillment-view.test.ts",
+      "bytes": 4635,
+      "lines": 121,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/fulfillment-view.ts",
+      "bytes": 6955,
+      "lines": 182,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/fulfillment.css",
+      "bytes": 1605,
+      "lines": 70,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/inventory-api.ts",
+      "bytes": 9476,
+      "lines": 267,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/inventory-view.test.ts",
+      "bytes": 5455,
+      "lines": 131,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/inventory-view.ts",
+      "bytes": 10346,
+      "lines": 301,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/purchase-api.ts",
+      "bytes": 7195,
+      "lines": 229,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/quote-api.ts",
+      "bytes": 11391,
+      "lines": 313,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/quote-editor-lines.test.ts",
+      "bytes": 4185,
+      "lines": 68,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/quote-editor-lines.ts",
+      "bytes": 4604,
+      "lines": 92,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/quote-presets.css",
+      "bytes": 498,
+      "lines": 6,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/quote-presets.test.ts",
+      "bytes": 3915,
+      "lines": 76,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/quote-presets.ts",
+      "bytes": 3805,
+      "lines": 73,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/QuotePresetToolbar.tsx",
+      "bytes": 1710,
+      "lines": 34,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/recovery-api.ts",
+      "bytes": 9162,
+      "lines": 261,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/recovery-view.ts",
+      "bytes": 856,
+      "lines": 22,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/sales-api.ts",
+      "bytes": 9759,
+      "lines": 293,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/service-api.ts",
+      "bytes": 9643,
+      "lines": 266,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/StateGraphic.tsx",
+      "bytes": 910,
+      "lines": 22,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/tradein-api.ts",
+      "bytes": 2145,
+      "lines": 45,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/TradeInPanel.test.tsx",
+      "bytes": 3688,
+      "lines": 65,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/TradeInPanel.tsx",
+      "bytes": 13071,
+      "lines": 200,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/workbench-api.ts",
+      "bytes": 2357,
+      "lines": 40,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchFinancePage.test.tsx",
+      "bytes": 5158,
+      "lines": 140,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchFinancePage.tsx",
+      "bytes": 11983,
+      "lines": 309,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchFulfillmentPage.test.tsx",
+      "bytes": 9564,
+      "lines": 202,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchFulfillmentPage.tsx",
+      "bytes": 27537,
+      "lines": 614,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchInventoryPage.test.tsx",
+      "bytes": 22791,
+      "lines": 440,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchInventoryPage.tsx",
+      "bytes": 63312,
+      "lines": 1174,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchPurchasePage.test.tsx",
+      "bytes": 5896,
+      "lines": 107,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchPurchasePage.tsx",
+      "bytes": 43178,
+      "lines": 921,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchQuotePage.test.tsx",
+      "bytes": 27582,
+      "lines": 521,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchQuotePage.tsx",
+      "bytes": 70571,
+      "lines": 1480,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchRecoveryPage.test.ts",
+      "bytes": 445,
+      "lines": 14,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchRecoveryPage.test.tsx",
+      "bytes": 3479,
+      "lines": 79,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchRecoveryPage.tsx",
+      "bytes": 39893,
+      "lines": 857,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchSalesPage.tsx",
+      "bytes": 46731,
+      "lines": 1005,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchServicePage.test.tsx",
+      "bytes": 1874,
+      "lines": 50,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchServicePage.tsx",
+      "bytes": 38542,
+      "lines": 817,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchTodayPage.test.tsx",
+      "bytes": 14359,
+      "lines": 342,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchTodayPage.tsx",
+      "bytes": 24334,
+      "lines": 578,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/hooks/useHardwareLibrary.ts",
+      "bytes": 5341,
+      "lines": 178,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/hooks/useHtml2Canvas.ts",
+      "bytes": 5406,
+      "lines": 161,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/index.css",
+      "bytes": 63879,
+      "lines": 3,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/main.tsx",
+      "bytes": 309,
+      "lines": 13,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/styles/appShell.css",
+      "bytes": 7459,
+      "lines": 343,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/styles/customers.css",
+      "bytes": 5086,
+      "lines": 33,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/styles/erp-polish.css",
+      "bytes": 37106,
+      "lines": 382,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/styles/landing.css",
+      "bytes": 1394,
+      "lines": 68,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/styles/motion.css",
+      "bytes": 665,
+      "lines": 22,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/styles/theme.css",
+      "bytes": 2564,
+      "lines": 78,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/styles/workbench.css",
+      "bytes": 35357,
+      "lines": 1641,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/types/hardware-categories.ts",
+      "bytes": 193,
+      "lines": 6,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/types/quote.test.ts",
+      "bytes": 749,
+      "lines": 15,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/types/quote.ts",
+      "bytes": 2805,
+      "lines": 112,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/types/warranty.ts",
+      "bytes": 1792,
+      "lines": 17,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/utils/api.test.ts",
+      "bytes": 5397,
+      "lines": 83,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/utils/api.ts",
+      "bytes": 20871,
+      "lines": 160,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/utils/date.test.ts",
+      "bytes": 376,
+      "lines": 13,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/utils/date.ts",
+      "bytes": 608,
+      "lines": 25,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/utils/exportHtml.ts",
+      "bytes": 7367,
+      "lines": 134,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/utils/hardwareLibraryExcel.test.ts",
+      "bytes": 1497,
+      "lines": 48,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/utils/hardwareLibraryExcel.ts",
+      "bytes": 2473,
+      "lines": 84,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/utils/money.test.ts",
+      "bytes": 590,
+      "lines": 23,
+      "category": "tests"
+    },
+    {
+      "path": "frontend/src/utils/money.ts",
+      "bytes": 619,
+      "lines": 21,
+      "category": "production"
+    },
+    {
+      "path": "frontend/src/utils/storage.ts",
+      "bytes": 349,
+      "lines": 13,
+      "category": "production"
+    },
+    {
+      "path": "frontend/tsconfig.app.json",
+      "bytes": 768,
+      "category": "support"
+    },
+    {
+      "path": "frontend/tsconfig.json",
+      "bytes": 126,
+      "category": "support"
+    },
+    {
+      "path": "frontend/tsconfig.node.json",
+      "bytes": 679,
+      "category": "support"
+    },
+    {
+      "path": "frontend/vite.config.ts",
+      "bytes": 1578,
+      "category": "support"
+    },
+    {
+      "path": "frontend/vitest.config.ts",
+      "bytes": 183,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/app.json",
+      "bytes": 1688,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/app.ts",
+      "bytes": 2282,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/app.wxss",
+      "bytes": 5856,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/avatar-cat.png",
+      "bytes": 55832,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/banner-home.jpg",
+      "bytes": 30690,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/brand-wordmark.png",
+      "bytes": 36630,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/cat-archive-folder.png",
+      "bytes": 79109,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/cat-gold-lounging.png",
+      "bytes": 81927,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/cat-home-pair.png",
+      "bytes": 49659,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/cat-silver-standing.png",
+      "bytes": 51793,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/chevron-active.png",
+      "bytes": 692,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/chevron-muted.png",
+      "bytes": 703,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/hero-home.jpg",
+      "bytes": 83962,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/hero-shop.jpg",
+      "bytes": 41728,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuAfterSales-active.png",
+      "bytes": 2916,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuAfterSales-muted.png",
+      "bytes": 3040,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuAppointment-active.png",
+      "bytes": 1517,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuAppointment-muted.png",
+      "bytes": 1564,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuOrder-active.png",
+      "bytes": 1496,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuOrder-muted.png",
+      "bytes": 1530,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuQr-active.png",
+      "bytes": 1144,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuQr-muted.png",
+      "bytes": 1172,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuQuote-active.png",
+      "bytes": 1263,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuQuote-muted.png",
+      "bytes": 1320,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuSettings-active.png",
+      "bytes": 2633,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/menuSettings-muted.png",
+      "bytes": 2623,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/post-cooling.jpg",
+      "bytes": 55614,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/post-cream-desk.jpg",
+      "bytes": 84104,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/post-dark-desk.jpg",
+      "bytes": 68835,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/product-black-tower.jpg",
+      "bytes": 42594,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/product-gpu.jpg",
+      "bytes": 37065,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/product-monitor.jpg",
+      "bytes": 33915,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/product-white-tower.jpg",
+      "bytes": 41096,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/README.md",
+      "bytes": 617,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceBuild-active.png",
+      "bytes": 1595,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceBuild-muted.png",
+      "bytes": 1626,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceLocation-active.png",
+      "bytes": 2553,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceLocation-muted.png",
+      "bytes": 2627,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceRecycle-active.png",
+      "bytes": 1554,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceRecycle-muted.png",
+      "bytes": 1561,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceRepair-active.png",
+      "bytes": 1388,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/serviceRepair-muted.png",
+      "bytes": 1433,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabCommunity-active.png",
+      "bytes": 646,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabCommunity-muted.png",
+      "bytes": 1322,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabHome-active.png",
+      "bytes": 975,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabHome-muted.png",
+      "bytes": 1252,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabMine-active.png",
+      "bytes": 1542,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabMine-muted.png",
+      "bytes": 2325,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabShop-active.png",
+      "bytes": 959,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/customer/tabShop-muted.png",
+      "bytes": 1347,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/brand-avatar.jpg",
+      "bytes": 14675,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/build-default.png",
+      "bytes": 2430,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/build-muted.png",
+      "bytes": 2437,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/build-white.png",
+      "bytes": 2294,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/cat-default.png",
+      "bytes": 1218,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/cat-muted.png",
+      "bytes": 1188,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/cat-white.png",
+      "bytes": 1155,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/empty-cats.png",
+      "bytes": 124010,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/inventory-default.png",
+      "bytes": 1776,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/inventory-muted.png",
+      "bytes": 1767,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/inventory-white.png",
+      "bytes": 1767,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/ledger-default.png",
+      "bytes": 1598,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/ledger-muted.png",
+      "bytes": 1564,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/ledger-white.png",
+      "bytes": 1583,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/more-default.png",
+      "bytes": 1708,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/more-muted.png",
+      "bytes": 1750,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/more-white.png",
+      "bytes": 1704,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/plus-default.png",
+      "bytes": 725,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/plus-muted.png",
+      "bytes": 705,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/plus-white.png",
+      "bytes": 694,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/recycle-default.png",
+      "bytes": 1773,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/recycle-muted.png",
+      "bytes": 1726,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/recycle-white.png",
+      "bytes": 1777,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/repair-default.png",
+      "bytes": 1774,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/repair-muted.png",
+      "bytes": 1705,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/repair-white.png",
+      "bytes": 1735,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/retail-default.png",
+      "bytes": 1432,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/retail-muted.png",
+      "bytes": 1387,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/retail-white.png",
+      "bytes": 1394,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/sales-default.png",
+      "bytes": 940,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/sales-muted.png",
+      "bytes": 916,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/sales-white.png",
+      "bytes": 906,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/scan-default.png",
+      "bytes": 1229,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/scan-muted.png",
+      "bytes": 1217,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/scan-white.png",
+      "bytes": 1194,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/search-default.png",
+      "bytes": 2456,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/search-muted.png",
+      "bytes": 2437,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/search-white.png",
+      "bytes": 2322,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/settings-default.png",
+      "bytes": 2045,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/settings-muted.png",
+      "bytes": 2071,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/settings-white.png",
+      "bytes": 1960,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/today-default.png",
+      "bytes": 1638,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/today-muted.png",
+      "bytes": 1643,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/ui/today-white.png",
+      "bytes": 1616,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/workbench/gpu.jpg",
+      "bytes": 20568,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/workbench/laptop.jpg",
+      "bytes": 9217,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/workbench/monitor.jpg",
+      "bytes": 7289,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/assets/workbench/tower.jpg",
+      "bytes": 21338,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/components/customer-image/index.json",
+      "bytes": 24,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-image/index.ts",
+      "bytes": 1912,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-image/index.wxml",
+      "bytes": 776,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-image/index.wxss",
+      "bytes": 1196,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-image/view.ts",
+      "bytes": 1536,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-nav/index.json",
+      "bytes": 60,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-nav/index.ts",
+      "bytes": 2166,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-nav/index.wxml",
+      "bytes": 1659,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-nav/index.wxss",
+      "bytes": 1494,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-state/index.json",
+      "bytes": 24,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-state/index.ts",
+      "bytes": 1134,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-state/index.wxml",
+      "bytes": 534,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-state/index.wxss",
+      "bytes": 1086,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/components/customer-state/view.ts",
+      "bytes": 1210,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/contracts/generated/actions.ts",
+      "bytes": 18495,
+      "category": "generated"
+    },
+    {
+      "path": "miniprogram/contracts/generated/enums.ts",
+      "bytes": 29397,
+      "category": "generated"
+    },
+    {
+      "path": "miniprogram/contracts/generated/errors.ts",
+      "bytes": 6134,
+      "category": "generated"
+    },
+    {
+      "path": "miniprogram/contracts/generated/manifest.json",
+      "bytes": 2234,
+      "category": "generated"
+    },
+    {
+      "path": "miniprogram/contracts/generated/money.ts",
+      "bytes": 4942,
+      "category": "generated"
+    },
+    {
+      "path": "miniprogram/contracts/generated/objects.ts",
+      "bytes": 13703,
+      "category": "generated"
+    },
+    {
+      "path": "miniprogram/custom-tab-bar/index.json",
+      "bytes": 24,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/custom-tab-bar/index.ts",
+      "bytes": 1012,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/custom-tab-bar/index.wxml",
+      "bytes": 551,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/custom-tab-bar/index.wxss",
+      "bytes": 799,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/amount-view.ts",
+      "bytes": 8431,
+      "lines": 194,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/api-client.ts",
+      "bytes": 4295,
+      "lines": 107,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/api-core.ts",
+      "bytes": 19752,
+      "lines": 490,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/customer/environment.ts",
+      "bytes": 9030,
+      "lines": 197,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/customer/fixtures.ts",
+      "bytes": 3714,
+      "lines": 76,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/customer/layout.ts",
+      "bytes": 3037,
+      "lines": 85,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/customer/routes.ts",
+      "bytes": 2571,
+      "lines": 53,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/demo-customer.ts",
+      "bytes": 9604,
+      "lines": 261,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/demo-data.ts",
+      "bytes": 11374,
+      "lines": 334,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/demo-inventory.ts",
+      "bytes": 9036,
+      "lines": 354,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/demo-visuals.ts",
+      "bytes": 747,
+      "lines": 18,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/display-text.ts",
+      "bytes": 1045,
+      "lines": 24,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/error-behavior.ts",
+      "bytes": 9519,
+      "lines": 227,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/inventory-view.ts",
+      "bytes": 10583,
+      "lines": 304,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/features/session.ts",
+      "bytes": 4157,
+      "lines": 126,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/package-lock.json",
+      "bytes": 12907,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/package.json",
+      "bytes": 661,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/packages/inventory/item-detail/index.json",
+      "bytes": 72,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/packages/inventory/item-detail/index.ts",
+      "bytes": 6754,
+      "lines": 198,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/packages/inventory/item-detail/index.wxml",
+      "bytes": 5103,
+      "lines": 108,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/packages/inventory/item-detail/index.wxss",
+      "bytes": 4552,
+      "lines": 268,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/packages/sales/order-detail/index.json",
+      "bytes": 72,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/packages/sales/order-detail/index.ts",
+      "bytes": 5695,
+      "lines": 148,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/packages/sales/order-detail/index.wxml",
+      "bytes": 3974,
+      "lines": 101,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/packages/sales/order-detail/index.wxss",
+      "bytes": 5340,
+      "lines": 268,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/community/index.json",
+      "bytes": 269,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/community/index.ts",
+      "bytes": 2455,
+      "lines": 54,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/community/index.wxml",
+      "bytes": 1758,
+      "lines": 29,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/community/index.wxss",
+      "bytes": 2496,
+      "lines": 28,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/home/index.json",
+      "bytes": 217,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/home/index.ts",
+      "bytes": 2499,
+      "lines": 65,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/home/index.wxml",
+      "bytes": 1819,
+      "lines": 34,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/home/index.wxss",
+      "bytes": 2633,
+      "lines": 161,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/inventory/index.json",
+      "bytes": 66,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/inventory/index.ts",
+      "bytes": 5373,
+      "lines": 155,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/inventory/index.wxml",
+      "bytes": 2709,
+      "lines": 75,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/inventory/index.wxss",
+      "bytes": 3406,
+      "lines": 196,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/mine/index.json",
+      "bytes": 147,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/mine/index.ts",
+      "bytes": 3762,
+      "lines": 79,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/mine/index.wxml",
+      "bytes": 2504,
+      "lines": 35,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/mine/index.wxss",
+      "bytes": 2841,
+      "lines": 32,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/more/index.json",
+      "bytes": 66,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/more/index.ts",
+      "bytes": 1897,
+      "lines": 49,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/more/index.wxml",
+      "bytes": 89,
+      "lines": 3,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/sales/index.json",
+      "bytes": 66,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/sales/index.ts",
+      "bytes": 1750,
+      "lines": 47,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/sales/index.wxml",
+      "bytes": 89,
+      "lines": 3,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/shop/index.json",
+      "bytes": 269,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/shop/index.ts",
+      "bytes": 4182,
+      "lines": 128,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/shop/index.wxml",
+      "bytes": 2827,
+      "lines": 49,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/shop/index.wxss",
+      "bytes": 4446,
+      "lines": 252,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/today/index.json",
+      "bytes": 66,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/today/index.ts",
+      "bytes": 8910,
+      "lines": 239,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/today/index.wxml",
+      "bytes": 4281,
+      "lines": 112,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/pages/today/index.wxss",
+      "bytes": 9257,
+      "lines": 435,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/project.config.json",
+      "bytes": 1359,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/README.md",
+      "bytes": 2951,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/scripts/check-classes.mjs",
+      "bytes": 3740,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/scripts/check-pages.mjs",
+      "bytes": 7179,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/scripts/sync-contracts.mjs",
+      "bytes": 5472,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/services/customer/client.ts",
+      "bytes": 2851,
+      "category": "production"
+    },
+    {
+      "path": "miniprogram/sitemap.json",
+      "bytes": 165,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/styles/customer-tokens.wxss",
+      "bytes": 2710,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/templates/landing.wxml",
+      "bytes": 864,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/tests/amount-view.test.mjs",
+      "bytes": 4593,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/api-core.test.mjs",
+      "bytes": 11956,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/customer-community-mine.test.mjs",
+      "bytes": 3790,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/customer-components.test.mjs",
+      "bytes": 1961,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/customer-environment.test.mjs",
+      "bytes": 5835,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/customer-fixtures.test.mjs",
+      "bytes": 1531,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/customer-home-shop.test.mjs",
+      "bytes": 2593,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/customer-layout.test.mjs",
+      "bytes": 1841,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/customer-routes.test.mjs",
+      "bytes": 2196,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/demo-consistency.test.mjs",
+      "bytes": 6596,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/demo-inventory.test.mjs",
+      "bytes": 5359,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/display-text.test.mjs",
+      "bytes": 1965,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/error-behavior.test.mjs",
+      "bytes": 4529,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/inventory-view.test.mjs",
+      "bytes": 6987,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tests/metric-value-width.test.mjs",
+      "bytes": 7082,
+      "category": "tests"
+    },
+    {
+      "path": "miniprogram/tsconfig.json",
+      "bytes": 753,
+      "category": "support"
+    },
+    {
+      "path": "miniprogram/typings/customer-view.ts",
+      "bytes": 1911,
+      "category": "support"
+    },
+    {
+      "path": "package-lock.json",
+      "bytes": 11864,
+      "category": "support"
+    },
+    {
+      "path": "package.json",
+      "bytes": 58,
+      "category": "support"
+    },
+    {
+      "path": "project.config.json",
+      "bytes": 1405,
+      "category": "support"
+    },
+    {
+      "path": "README.md",
+      "bytes": 1681,
+      "category": "support"
+    },
+    {
+      "path": "scripts/audit-repository.mjs",
+      "bytes": 3660,
+      "category": "support"
+    },
+    {
+      "path": "scripts/check-doc-links.mjs",
+      "bytes": 2216,
+      "category": "support"
+    },
+    {
+      "path": "scripts/check-web-release.mjs",
+      "bytes": 1434,
+      "category": "support"
+    },
+    {
+      "path": "scripts/README.md",
+      "bytes": 1249,
+      "category": "support"
+    },
+    {
+      "path": "电脑配置单项目管理快捷指令.html",
+      "bytes": 25563,
+      "category": "support"
+    },
+    {
+      "path": "装机店经营工作台-重做规划-2026-09-17.md",
+      "bytes": 32606,
+      "category": "support"
+    }
+  ],
+  "backupCandidates": [
+    "contracts/v1/actions.json.bak-r02"
+  ],
+  "largeSources": [
+    {
+      "path": "backend/src/domains/sale.ts",
+      "bytes": 113312,
+      "lines": 2702
+    },
+    {
+      "path": "backend/src/domains/inventory.ts",
+      "bytes": 101595,
+      "lines": 2453
+    },
+    {
+      "path": "backend/src/domains/assembly.ts",
+      "bytes": 70725,
+      "lines": 1805
+    },
+    {
+      "path": "backend/src/index.ts",
+      "bytes": 120862,
+      "lines": 1781
+    },
+    {
+      "path": "frontend/src/styles/workbench.css",
+      "bytes": 35357,
+      "lines": 1641
+    },
+    {
+      "path": "backend/src/domains/purchase.ts",
+      "bytes": 64863,
+      "lines": 1636
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchQuotePage.tsx",
+      "bytes": 70571,
+      "lines": 1480
+    },
+    {
+      "path": "backend/src/domains/quote.ts",
+      "bytes": 60002,
+      "lines": 1447
+    },
+    {
+      "path": "backend/src/domains/service.ts",
+      "bytes": 57680,
+      "lines": 1349
+    },
+    {
+      "path": "backend/src/domains/recovery.ts",
+      "bytes": 54009,
+      "lines": 1263
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchInventoryPage.tsx",
+      "bytes": 63312,
+      "lines": 1174
+    },
+    {
+      "path": "backend/src/routes/sales-v2.ts",
+      "bytes": 44328,
+      "lines": 1037
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchSalesPage.tsx",
+      "bytes": 46731,
+      "lines": 1005
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchPurchasePage.tsx",
+      "bytes": 43178,
+      "lines": 921
+    },
+    {
+      "path": "backend/src/routes/inventory-v2.ts",
+      "bytes": 41876,
+      "lines": 881
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchRecoveryPage.tsx",
+      "bytes": 39893,
+      "lines": 857
+    },
+    {
+      "path": "backend/src/domains/attachment.ts",
+      "bytes": 33756,
+      "lines": 837
+    },
+    {
+      "path": "backend/src/domains/tradein.ts",
+      "bytes": 33229,
+      "lines": 831
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchServicePage.tsx",
+      "bytes": 38542,
+      "lines": 817
+    },
+    {
+      "path": "backend/src/domains/workbench.ts",
+      "bytes": 30486,
+      "lines": 743
+    },
+    {
+      "path": "backend/src/domains/finance.ts",
+      "bytes": 26067,
+      "lines": 638
+    },
+    {
+      "path": "frontend/src/features/workbench/WorkbenchFulfillmentPage.tsx",
+      "bytes": 27537,
+      "lines": 614
+    }
+  ],
+  "skipped": [
+    ".git",
+    ".learnings",
+    ".sync_temp_dir",
+    ".validation-customer-layout",
+    ".validation-e03",
+    ".validation-maintenance",
+    ".validation-maintenance-20260925",
+    ".validation-miniprogram-visual-tests.log",
+    ".validation-prod-ops",
+    ".validation-q01",
+    ".validation-qt03",
+    ".workbuddy",
+    ".wrangler",
+    "backend/.dev.vars",
+    "backend/.validation-all.log",
+    "backend/.validation-d1",
+    "backend/.validation-d1-apply",
+    "backend/.validation-d1-final",
+    "backend/.validation-d1-runner",
+    "backend/.validation-d1-runner-final",
+    "backend/.validation-data-attachment-drill-20260925",
+    "backend/.validation-stage1b.sqlite",
+    "backend/.validation-t03a.log",
+    "backend/.validation-t04",
+    "backend/.wrangler",
+    "backend/node_modules",
+    "backups",
+    "docs/verification/2026-09-17-T00/logs",
+    "docs/verification/2026-09-17-T04/logs",
+    "docs/verification/2026-09-18-T05a/logs",
+    "docs/verification/2026-09-18-V01/logs",
+    "docs/verification/2026-09-19-E04-customers/logs",
+    "docs/verification/2026-09-19-E04b-inventory/logs",
+    "docs/verification/2026-09-19-E05-quote/logs",
+    "docs/verification/2026-09-19-E05b-confirm/logs",
+    "docs/verification/2026-09-19-V02/logs",
+    "docs/verification/2026-09-21-E03/logs",
+    "docs/verification/2026-09-21-E06/logs",
+    "docs/verification/2026-09-21-E07/logs",
+    "docs/verification/2026-09-22-repository-maintenance/logs",
+    "docs/verification/E08-current/logs",
+    "docs/verification/E09-current/logs",
+    "docs/verification/E10-current/logs",
+    "docs/verification/E11-current/logs",
+    "frontend/.validation-assets",
+    "frontend/.validation-inventory",
+    "frontend/.validation-visual",
+    "frontend/.wrangler",
+    "frontend/dist",
+    "frontend/node_modules",
+    "logs",
+    "miniprogram/node_modules",
+    "node_modules"
+  ],
+  "note": "行数仅用于定位维护热点，不代表无用代码；未执行删除，未扫描凭据和业务数据。"
+}

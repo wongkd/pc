@@ -1,0 +1,466 @@
+{
+  "tag": "before",
+  "scope": "本地隔离演示页（本地组件 + 本地图片 + 演示样本）；不是微信/真机验收，不是生产登录结果",
+  "viewports": {
+    "1366x768": {
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "documentScrollHeight": 1871,
+      "pageHead": {
+        "width": 1302,
+        "height": 55,
+        "top": 86,
+        "bottom": 141,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "metrics": {
+        "width": 1302,
+        "height": 220,
+        "top": 161,
+        "bottom": 381,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "metricCells": [
+        {
+          "text": "待交机2点击查看来源",
+          "width": 320,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "缺货订单2点击查看来源",
+          "width": 320,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "维修待办2点击查看来源",
+          "width": 320,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "回收待验机1点击查看来源",
+          "width": 320,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "待收款¥12,800.00仅计确定应收（不含初估）",
+          "width": 1302,
+          "height": 106,
+          "overflowX": 0
+        }
+      ],
+      "metricAmount": {
+        "width": 1268,
+        "height": 31,
+        "top": 312,
+        "bottom": 342,
+        "fontSize": "28px",
+        "lineHeight": "30.8px",
+        "overflowX": 0
+      },
+      "listPane": {
+        "width": 288,
+        "height": 1434,
+        "top": 405,
+        "bottom": 1839,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "taskRowFirst": {
+        "height": 145,
+        "thumbnail": null
+      },
+      "detail": {
+        "width": 990,
+        "height": 528,
+        "top": 405,
+        "bottom": 933,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailPhoto": {
+        "width": 88,
+        "height": 106,
+        "top": 644,
+        "bottom": 750,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailPhotoFrame": {
+        "width": 88,
+        "height": 88,
+        "top": 644,
+        "bottom": 732,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailColumns": {
+        "width": 948,
+        "height": 221,
+        "top": 529,
+        "bottom": 750,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailAmount": {
+        "width": 244,
+        "height": 33,
+        "top": 858,
+        "bottom": 891,
+        "fontSize": "30px",
+        "lineHeight": "33px",
+        "overflowX": 0
+      },
+      "primaryAction": {
+        "width": 151,
+        "height": 48,
+        "top": 787,
+        "bottom": 835,
+        "fontSize": "13px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "overflowers": [
+        "wb-visually-hidden:90>1"
+      ]
+    },
+    "1440x1000": {
+      "viewport": {
+        "width": 1440,
+        "height": 1000
+      },
+      "documentScrollHeight": 1767,
+      "pageHead": {
+        "width": 1376,
+        "height": 55,
+        "top": 96,
+        "bottom": 151,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "metrics": {
+        "width": 1376,
+        "height": 106,
+        "top": 171,
+        "bottom": 277,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "metricCells": [
+        {
+          "text": "待交机2点击查看来源",
+          "width": 269,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "缺货订单2点击查看来源",
+          "width": 269,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "维修待办2点击查看来源",
+          "width": 269,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "回收待验机1点击查看来源",
+          "width": 269,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "待收款¥12,800.00仅计确定应收（不含初估）",
+          "width": 269,
+          "height": 106,
+          "overflowX": 0
+        }
+      ],
+      "metricAmount": {
+        "width": 235,
+        "height": 31,
+        "top": 208,
+        "bottom": 238,
+        "fontSize": "28px",
+        "lineHeight": "30.8px",
+        "overflowX": 0
+      },
+      "listPane": {
+        "width": 288,
+        "height": 1434,
+        "top": 301,
+        "bottom": 1735,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "taskRowFirst": {
+        "height": 145,
+        "thumbnail": null
+      },
+      "detail": {
+        "width": 1064,
+        "height": 528,
+        "top": 301,
+        "bottom": 829,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailPhoto": {
+        "width": 88,
+        "height": 106,
+        "top": 539,
+        "bottom": 645,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailPhotoFrame": {
+        "width": 88,
+        "height": 88,
+        "top": 539,
+        "bottom": 627,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailColumns": {
+        "width": 1022,
+        "height": 221,
+        "top": 424,
+        "bottom": 645,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailAmount": {
+        "width": 244,
+        "height": 33,
+        "top": 753,
+        "bottom": 786,
+        "fontSize": "30px",
+        "lineHeight": "33px",
+        "overflowX": 0
+      },
+      "primaryAction": {
+        "width": 151,
+        "height": 48,
+        "top": 682,
+        "bottom": 730,
+        "fontSize": "13px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "overflowers": [
+        "wb-visually-hidden:90>1"
+      ]
+    },
+    "1920x1080": {
+      "viewport": {
+        "width": 1920,
+        "height": 1080
+      },
+      "documentScrollHeight": 1702,
+      "pageHead": {
+        "width": 1600,
+        "height": 55,
+        "top": 100,
+        "bottom": 155,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "metrics": {
+        "width": 1600,
+        "height": 106,
+        "top": 175,
+        "bottom": 281,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "metricCells": [
+        {
+          "text": "待交机2点击查看来源",
+          "width": 310,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "缺货订单2点击查看来源",
+          "width": 310,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "维修待办2点击查看来源",
+          "width": 310,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "回收待验机1点击查看来源",
+          "width": 310,
+          "height": 106,
+          "overflowX": 0
+        },
+        {
+          "text": "待收款¥12,800.00仅计确定应收（不含初估）",
+          "width": 310,
+          "height": 106,
+          "overflowX": 0
+        }
+      ],
+      "metricAmount": {
+        "width": 276,
+        "height": 31,
+        "top": 212,
+        "bottom": 242,
+        "fontSize": "28px",
+        "lineHeight": "30.8px",
+        "overflowX": 0
+      },
+      "listPane": {
+        "width": 302,
+        "height": 1357,
+        "top": 305,
+        "bottom": 1662,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "taskRowFirst": {
+        "height": 145,
+        "thumbnail": null
+      },
+      "detail": {
+        "width": 1274,
+        "height": 528,
+        "top": 305,
+        "bottom": 833,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailPhoto": {
+        "width": 88,
+        "height": 106,
+        "top": 543,
+        "bottom": 649,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailPhotoFrame": {
+        "width": 88,
+        "height": 88,
+        "top": 543,
+        "bottom": 631,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailColumns": {
+        "width": 1232,
+        "height": 221,
+        "top": 428,
+        "bottom": 649,
+        "fontSize": "15px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "detailAmount": {
+        "width": 244,
+        "height": 33,
+        "top": 757,
+        "bottom": 790,
+        "fontSize": "30px",
+        "lineHeight": "33px",
+        "overflowX": 0
+      },
+      "primaryAction": {
+        "width": 151,
+        "height": 48,
+        "top": 686,
+        "bottom": 734,
+        "fontSize": "13px",
+        "lineHeight": "normal",
+        "overflowX": 0
+      },
+      "overflowers": [
+        "wb-visually-hidden:90>1"
+      ]
+    }
+  },
+  "checks": [
+    "1366x768：无横向溢出",
+    "1366x768：统计 5 格（含回收待验机与待收款）",
+    "1366x768：统计格内容不裁切",
+    "1366x768：待收款金额完整渲染（不省略分位）",
+    "1366x768：主动作在首屏内可见",
+    "1366x768：详情设备图本地加载成功",
+    "1366x768：待办行文本不横向溢出",
+    "1440x1000：无横向溢出",
+    "1440x1000：统计 5 格（含回收待验机与待收款）",
+    "1440x1000：统计格内容不裁切",
+    "1440x1000：待收款金额完整渲染（不省略分位）",
+    "1440x1000：主动作在首屏内可见",
+    "1440x1000：详情设备图本地加载成功",
+    "1440x1000：待办行文本不横向溢出",
+    "1920x1080：无横向溢出",
+    "1920x1080：统计 5 格（含回收待验机与待收款）",
+    "1920x1080：统计格内容不裁切",
+    "1920x1080：待收款金额完整渲染（不省略分位）",
+    "1920x1080：主动作在首屏内可见",
+    "1920x1080：详情设备图本地加载成功",
+    "1920x1080：待办行文本不横向溢出",
+    "看板模式：7 张卡（与列表同一结果集）",
+    "看板模式：7 张缩略图全部本地加载",
+    "图片失败：详情显示降级占位",
+    "图片失败：仍标明「AI 示意 · 非实拍」",
+    "图片失败：设备名仍在（不因无图丢字段）",
+    "搜索无结果：显示空状态图形",
+    "搜索无结果：清空详情",
+    "键盘：统计格可获得焦点",
+    "点击统计格：仍按类别筛选（2 项）",
+    "禁用主动作：仍显示阻断原因（视觉调整未放开交付）",
+    "详情仍显示卡点原文，不因改版丢字段",
+    "无页面 JS 错误"
+  ],
+  "failed": [
+    "1366x768：主动作在首屏内可见",
+    "点击统计格：仍按类别筛选（2 项）"
+  ],
+  "errors": [],
+  "checklist": {
+    "02 §65 照片高度落在 220–244px": false,
+    "02 §65 1366×768 主动作首屏可见": false,
+    "02 §9 统计不是「多张独立卡片」": false,
+    "统计条金额格宽度预算（G-15，记录值）": 235,
+    "详情设备图实测尺寸": "88×88",
+    "待办首行高度": 145
+  },
+  "boardImages": {
+    "total": 7,
+    "loaded": 7
+  }
+}

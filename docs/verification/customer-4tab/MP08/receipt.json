@@ -1,0 +1,25 @@
+{
+  "id": "MP08",
+  "status": "review",
+  "updatedAt": "2026-09-23T20:52:05+08:00",
+  "summary": "首页四服务入口与推荐横幅已实现；缺少微信工具完整页面截图、320 溢出和底栏避让复核。",
+  "evidence": [
+    "miniprogram/pages/home/index.ts",
+    "miniprogram/pages/home/index.wxml",
+    "miniprogram/pages/home/index.wxss",
+    "miniprogram/pages/home/index.json",
+    "miniprogram/tests/customer-home-shop.test.mjs",
+    "docs/verification/customer-4tab/MP08/README.md"
+  ],
+  "checks": [
+    { "command": "npm --prefix miniprogram test", "result": "not_run: npm unavailable in PowerShell" },
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass: 109/109" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p miniprogram/tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass" }
+  ],
+  "visual": "not_run",
+  "blockedBy": ["微信开发者工具服务端口关闭，完整首页和 320/375/390 截图未取得。"],
+  "next": "在微信开发者工具检查 320/375/390 页面、四入口触控与底栏留白。"
+}

@@ -46,7 +46,7 @@ export interface MiniProgramApiClientOptions {
   readonly session?: SessionStore
   readonly transport?: Transport
   /**
-   * 当前页面路径（小程序路由，如 `/packages/sales/order-detail/index?orderId=...`），
+   * 当前页面路径（小程序路由，如 `/pages/shop/index?category=used`），
    * 供登录失效时记录目标页。默认取 getCurrentPages 的栈顶。
    */
   readonly currentTarget?: () => string | null

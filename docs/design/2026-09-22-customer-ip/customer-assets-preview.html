@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>顾客端独立图像资源预览</title>
+<style>
+  *{box-sizing:border-box}body{margin:0;background:#f3f3f1;color:#111;font:14px/1.5 system-ui,"Microsoft YaHei",sans-serif}
+  main{max-width:1280px;margin:auto;padding:32px}h1{font-size:28px;font-weight:500;margin:0 0 8px}p{color:#666;margin:0 0 24px}
+  h2{font-size:18px;font-weight:500;margin:32px 0 12px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  figure{margin:0;background:#fff;border:1px solid #dededb;padding:10px}.wide{grid-column:span 2}.hero{grid-column:span 2}
+  figure img{width:100%;height:180px;object-fit:cover;display:block}.square img{object-fit:contain;background:#fafafa}.alpha img{object-fit:contain;background-color:#fff;background-image:linear-gradient(45deg,#eee 25%,transparent 25%),linear-gradient(-45deg,#eee 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eee 75%),linear-gradient(-45deg,transparent 75%,#eee 75%);background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0}
+  figcaption{padding-top:8px;color:#555}.icons{display:grid;grid-template-columns:repeat(10,1fr);gap:8px}.icon{background:#fff;border:1px solid #dededb;text-align:center;padding:10px 4px}.icon img{width:36px;height:36px;display:block;margin:auto}.icon small{font-size:10px;color:#777}
+  @media(max-width:800px){main{padding:18px}.grid{grid-template-columns:repeat(2,1fr)}.icons{grid-template-columns:repeat(5,1fr)}}
+</style>
+<main>
+  <h1>顾客端独立图像资源</h1><p>清爽版构图与猫 IP · 包内压缩文件预览 · 2026-09-22</p>
+  <section class="grid">
+    <figure class="hero"><img src="../../../miniprogram/assets/customer/hero-home.jpg"><figcaption>HERO-H · 首页主视觉</figcaption></figure>
+    <figure class="hero"><img src="../../../miniprogram/assets/customer/hero-shop.jpg"><figcaption>HERO-S · 商城主推</figcaption></figure>
+    <figure class="wide"><img src="../../../miniprogram/assets/customer/banner-home.jpg"><figcaption>BANNER · 首页横幅</figcaption></figure>
+    <figure><img src="../../../miniprogram/assets/customer/post-cream-desk.jpg"><figcaption>POST-01</figcaption></figure>
+    <figure><img src="../../../miniprogram/assets/customer/post-dark-desk.jpg"><figcaption>POST-02</figcaption></figure>
+    <figure><img src="../../../miniprogram/assets/customer/post-cooling.jpg"><figcaption>POST-03</figcaption></figure>
+    <figure class="square"><img src="../../../miniprogram/assets/customer/product-black-tower.jpg"><figcaption>PRODUCT-01</figcaption></figure>
+    <figure class="square"><img src="../../../miniprogram/assets/customer/product-white-tower.jpg"><figcaption>PRODUCT-02</figcaption></figure>
+    <figure class="square"><img src="../../../miniprogram/assets/customer/product-gpu.jpg"><figcaption>PRODUCT-03</figcaption></figure>
+    <figure class="square"><img src="../../../miniprogram/assets/customer/product-monitor.jpg"><figcaption>PRODUCT-04</figcaption></figure>
+    <figure class="alpha"><img src="../../../miniprogram/assets/customer/brand-wordmark.png"><figcaption>BRAND</figcaption></figure>
+    <figure class="alpha"><img src="../../../miniprogram/assets/customer/cat-home-pair.png"><figcaption>CAT-H</figcaption></figure>
+    <figure class="alpha"><img src="../../../miniprogram/assets/customer/cat-silver-standing.png"><figcaption>CAT-S</figcaption></figure>
+    <figure class="alpha"><img src="../../../miniprogram/assets/customer/cat-gold-lounging.png"><figcaption>CAT-C</figcaption></figure>
+    <figure class="alpha"><img src="../../../miniprogram/assets/customer/cat-archive-folder.png"><figcaption>CAT-U</figcaption></figure>
+    <figure class="alpha"><img src="../../../miniprogram/assets/customer/avatar-cat.png"><figcaption>AVATAR</figcaption></figure>
+  </section>
+  <h2>黑灰线性图标</h2><section class="icons" id="icons"></section>
+</main>
+<script>
+const bases=['serviceBuild','serviceRecycle','serviceRepair','serviceLocation','tabHome','tabShop','tabCommunity','tabMine','menuQuote','menuOrder','menuAppointment','menuAfterSales','menuQr','menuSettings','chevron'];
+document.getElementById('icons').innerHTML=bases.map(name=>`<div class="icon"><img src="../../../miniprogram/assets/customer/${name}-active.png"><small>${name}</small></div>`).join('');
+</script>
+</html>

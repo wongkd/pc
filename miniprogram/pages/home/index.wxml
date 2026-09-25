@@ -1,0 +1,33 @@
+<view class="customer-page home-page">
+  <customer-nav store-line="{{store.name}}" />
+  <scroll-view class="customer-scroll home-scroll" scroll-y>
+    <view class="home-brand">
+      <view class="home-wordmark-frame"><image class="home-wordmark" src="/assets/customer/brand-wordmark.png" mode="scaleToFill" aria-label="装一下机" /></view>
+      <text class="home-slogan">{{slogan}}</text>
+    </view>
+
+    <view class="home-hero">
+      <customer-image src="{{heroImage}}" alt-text="白色主机与显示器桌面示意图" aspect-ratio="0.98" focus-x="62" focus-y="54" />
+      <view class="home-cats-frame"><image class="home-cats" src="/assets/customer/cat-home-pair.png" mode="scaleToFill" aria-label="银猫和金猫" /></view>
+    </view>
+
+    <view class="home-services">
+      <view wx:for="{{entries}}" wx:key="key" class="home-service customer-tap" data-key="{{item.key}}" bindtap="onEntryTap" aria-label="{{item.title}}">
+        <image class="home-service-icon" src="{{item.icon}}" mode="aspectFit" />
+        <text class="home-service-label">{{item.title}}</text>
+      </view>
+    </view>
+
+    <view class="customer-hairline home-divider"></view>
+
+    <view class="home-recommendation customer-tap" bindtap="onRecommendationTap" aria-label="查看热门推荐">
+      <customer-image src="{{bannerImage}}" alt-text="白色主机桌面推荐横幅" aspect-ratio="3" focus-x="65" focus-y="50" />
+      <view class="home-banner-copy">
+        <text class="home-banner-title">{{featuredTitle}}</text>
+        <text class="home-banner-description">{{featuredDescription}}</text>
+      </view>
+      <image class="home-banner-arrow" src="/assets/customer/chevron-active.png" mode="aspectFit" aria-hidden="true" />
+    </view>
+    <text class="home-demo-note">{{runtimeNote}}</text>
+  </scroll-view>
+</view>

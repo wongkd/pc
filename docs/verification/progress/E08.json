@@ -1,0 +1,25 @@
+{
+  "id": "E08",
+  "status": "verified",
+  "summary": "装机、检测与交付（B04 零售建单 / B06 备料装机 / B07 装机检测 / B10 确认交付）后端领域与路由、0016 迁移、契约表声明与重新生成、前端「装机与交付」页面与接口装配、后端 16 用例与前端 13 用例、端到端 HTTP 验收 25 项均已落地；故障件隔离实现逐件隔离（B07 失败项带 stockItemId → 隔离进 quarantine，来源 inspection_quarantine）。总集成收尾（2026-09-21）：/sales/fulfillment 路由已接线（App.tsx import + Route 各一行），补跑浏览器验收 15 项 0 失败（空/列表/详情三态渲染 + 页面内真实 HTTP 铺单走完 B04→B05→B07→B10，截图已实际查看无破版）；迁移编号 0016 复核未被并行模块占用；全量串行门禁复跑通过（后端 224 / 前端 165 / 契约 3322 / lint 新增 0）。剩余四项缺口独立成卡未实现：B09 欠款交付（E09）、隔离件出 quarantine 的 B19 待检件判定（库存域）、CustomerDevice（E10）、检测附件（B35）。【2026-09-22 02:29 复核·栋哥指派重跑门禁】契约六件套全绿（validate-contracts 3423 通过 0 失败等）；后端除回收卡 e11 外 245 用例 0 失败（E06/E08/E10 专项 50 例全过）；前端 170 用例 + build 通过 + lint 新增 0；HTTP 验收 25/0 + 浏览器 15/0、截图已实看无破版。注意：e11-recovery-http.test.mjs 12 例全失败（recovery.ts validateTeardownInput 报 TypeError），属回收卡自身 bug，与本卡无关。",
+  "next": "四项缺口各自独立成卡等栋哥点下一刀：B09 欠款交付归 E09 取消退款账本；B19 隔离件出 quarantine 属库存域独立小卡；CustomerDevice 归 E10 售后维修；检测附件归 B35 附件卡。",
+  "updatedAt": "2026-09-22T02:29:00+08:00",
+  "evidence": [
+    "backend/src/domains/assembly.ts",
+    "backend/src/routes/sales-v2.ts",
+    "backend/src/domains/inventory.ts",
+    "backend/migrations/0007_inventory_core.sql",
+    "backend/migrations/0016_sale_fulfillment.sql",
+    "backend/tests/e08-fulfillment-http.test.mjs",
+    "contracts/v1/enums.json",
+    "frontend/src/App.tsx",
+    "frontend/src/features/workbench/WorkbenchFulfillmentPage.tsx",
+    "frontend/src/features/workbench/fulfillment-view.ts",
+    "frontend/src/features/workbench/inventory-view.ts",
+    "miniprogram/features/inventory-view.ts",
+    "docs/verification/E08-current/README.md",
+    "docs/verification/E08-current/INTEGRATION.md",
+    "docs/verification/E08-current/verify-e08.cjs",
+    "docs/verification/E08-current/verify-e08-browser.cjs"
+  ]
+}

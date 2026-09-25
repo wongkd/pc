@@ -1,124 +1,45 @@
-# 微信小程序端（miniprogram）
+# 微信小程序 · 顾客端「装一下机」
 
-装机店经营工作台的小程序端。**独立项目**，不参与 `frontend/` 与 `backend/` 的构建。
+更新：2026-09-23。状态：顾客 4Tab 已实现，本地演示数据，未接真实交易；修复后待微信真机复验。
+目标：顾客看专属报价、付款、查订单与预约/售后；内部 ERP 留在网页。
 
-- 日期：2026-09-17
-- 状态：**骨架卡 T02b —— 只建壳**。未连接门店服务、未写任何业务数据、未部署。
-- 任务卡：[05-implementation-tasks.md · T02b](../docs/plans/2026-09-17-web-wechat-plan/05-implementation-tasks.md)
-- 验证记录：[docs/verification/2026-09-17-T02b](../docs/verification/2026-09-17-T02b/README.md)
+## 当前入口与职责
 
----
-
-## 1. 这个项目是什么 / 不是什么
-
-| 是 | 不是 |
+| 路径 | 职责 |
 |---|---|
-| 原生小程序（WXML / WXSS / TypeScript），四个 tabBar 页面 + 一个分包详情页 | 不是 web-view 包网页，也没有手机 H5（05 §T02b「不做」） |
-| 契约生成物的消费者（`contracts/generated` 的单向落地） | 不是第二份契约，端内生成物**禁止手改** |
-| 演示样本的宿主（`DEMO-` 前缀，固定日期 2026-09-17） | 不是可用版本：**不得发布、不得当作业务已完成** |
+| app.json / app.ts / app.wxss | 页面注册、全局状态与样式 |
+| pages/home | 首页四个服务入口 |
+| pages/shop | 当前仍是公开商品演示；下一步以我的报价单为主 |
+| pages/community | 商家案例展示，顾客只读 |
+| pages/mine | 顾客个人入口 |
+| features/demo-customer.ts | 顾客演示视图样本，不是已冻结业务契约 |
+| features | 请求、错误行为、金额及视图逻辑 |
+| contracts/generated | 跨端生成物，禁止手改 |
+| assets | 品牌、图标与示意素材；`assets/customer` 为新顾客 4Tab 独立资源 |
+| scripts / tests | 页面、样式、类型、契约与逻辑检查 |
 
-## 2. 目录与文件职责
+旧店员页 `today/sales/inventory/more` 与销售、库存详情分包已从 `app.json`、源码及旧演示夹具中移除。
+小程序只保留顾客四 Tab；门店经营 ERP 继续使用网页端。
 
-```
-miniprogram/
-├── project.config.json     小程序项目配置（AppID wx1b14bf01ef71718d、miniprogramRoot = 项目根、TS 编译插件）
-├── app.json                页面注册、原生 tabBar 四项、分包 packages/sales
-├── app.ts                  入口，globalData（演示门店 / 演示模式）
-├── app.wxss                设计变量（--mp-*）与全局基础类、域落地页排版
-├── sitemap.json            全部 disallow（内部经营工具，不允许被微信索引）
-├── tsconfig.json           类型检查用；strict + noUnusedLocals
-├── package.json            仅承载脚本与类型依赖，不参与小程序构建
-├── pages/
-│   ├── today/              今天：四项统计、筛选项、竖向任务列表 → 跳详情
-│   ├── sales/              开单域落地页
-│   ├── inventory/          库存域落地页
-│   └── more/               更多域落地页（账本 / 售后 / 回收置换 / 设置）
-├── packages/
-│   └── sales/order-detail/ 事项详情（分包），底部固定金额与动作条
-├── features/
-│   ├── demo-data.ts        V1 演示样本与指标、演示排序、逾期判断
-│   ├── amount-view.ts      金额格式化与呈现口径（待收 / 应付 / 已结清 / 预计 / 待确认）+ 统计数值宽度档位
-│   └── display-text.ts     文案切分的纯函数（详情页主标题的设备简称）
-├── templates/
-│   └── landing.wxml        三个域落地页共用的排版模板
-├── contracts/generated/    契约生成物（6 个，禁止手改）
-├── scripts/
-│   ├── sync-contracts.mjs  生成物落地 + 三方防漂移
-│   ├── check-pages.mjs     结构自检：注册页面 ↔ 磁盘文件
-│   └── check-classes.mjs   结构自检：wxml 引用的类名都有样式定义
-└── tests/                  node --test，零依赖
-```
+## 运行与检查（仓库根）
 
-## 3. 运行方式
+    npm --prefix miniprogram test
+    npm --prefix miniprogram run check-pages
+    npm --prefix miniprogram run check-classes
+    npm --prefix miniprogram run typecheck
+    npm --prefix miniprogram run check-contracts
 
-```bash
-cd miniprogram
-npm install            # 仅类型依赖：typescript、miniprogram-api-typings
+微信开发者工具导入本目录这一层，不能选仓库根。
+AppID 及开发成员按当前实际配置核实；切换正式主体另行办理。
+改 tabBar 必须同步 check-pages 的期望值；非 tabBar 页不能用 switchTab。
+CLI preview 只证明编译/预览码生成，不能充当截图或真机验收。
 
-npm test               # 样本 ↔ 契约一致性、金额口径、设备简称切分、统计数值宽度预算（39 用例）
-npm run typecheck      # tsc --noEmit，strict
-npm run check-contracts # 端内生成物未被手改
-npm run check-pages    # app.json 注册与磁盘文件一致
-npm run check-classes  # wxml 引用的类名都有样式定义
-```
+## 已实现、未实现、下一步
 
-生成物更新（改契约后必须执行）：
-
-```bash
-node contracts/tools/generate-dto.mjs        # 在仓库根
-node miniprogram/scripts/sync-contracts.mjs
-```
-
-**微信开发者工具**：导入本目录（路径必须选到 `…\pc-quote\miniprogram` 这一层，只选到 `pc-quote` 会报「未找到 app.json」）。
-项目已配置真实 AppID `wx1b14bf01ef71718d`，因此**打开项目需要登录**，且微信号须是该小程序的开发者 / 管理员 ——
-免登录的 `touristappid` 预览模式已不再可用。
-
-CLI 驱动（需先在 **设置 → 安全设置** 打开服务端口）：
-
-```bash
-cd "D:\Software\微信web开发者工具"
-node.exe cli.js islogin     # 应输出 {"login":true}
-node.exe cli.js preview --project "C:\Users\wuerl\Documents\工作同步\pc-quote\miniprogram" \
-  --qr-format image --qr-output "<gitignore 内的路径>\preview-qr.png"
-```
-
-`preview` 会真编译并产出预览码（约 25 分钟失效），是当前拿到真机观感的唯一通道（本机安全策略封死了系统截屏）。
-
-## 4. 已实现 / 未实现
-
-**已实现（骨架层）**
-
-- 原生 tabBar 四项（今天 / 开单 / 库存 / 更多），选中森林绿 `#334B42`，用系统导航栏；
-- 今天页：四项统计（金额格比计数格宽 + 数值按字符类别分档，保证大额放得下又不缩到不可读；
-  窄屏 ≤360px 两行两列），事项筛选、竖向任务列表，
-  每行含缩略图降级、客户与设备、卡点、时间与动作、金额方向、禁用原因；
-- 列表 → 详情为**真实页面跳转**（分包页），只传 `taskId`，详情重新取数；
-- 详情页：单号 / 类别 / 交期 → 客户与事项 → 设备摘要 → 当前处理 → 下一步 → 底部固定金额与动作；
-- 金额口径：待收 / 应付客户 / 已结清 / 预计 / 待确认五种形态，未定价不用 ¥0 冒充；
-- 返回恢复：`onShow` 刻意不重置筛选与列表，滚动位置由框架保留。
-
-**未实现（有意为之，归后续任务卡）**
-
-| 项 | 归属 |
-|---|---|
-| 身份、登录、绑定码、权限 | T03 |
-| 真实服务请求层、错误码映射 | T03 |
-| 库存、采购、盘点 | T05 / T06 |
-| 报价与开单（小程序分步表单） | T07 |
-| 成交、预留、缺件 | T08 |
-| 资金与账本 | T09 / T15 |
-| 售后、回收置换 | T12 / T13 / T14 |
-| 阶段序列与事件记录（详情页当前留空并如实说明） | T08 / T12 / T18 |
-| 组件提取（TaskRow / DeviceSummary / ProgressSteps / AmountActionBar / Feedback） | T02c |
-| 售后 / 回收使用独立详情页（当前三类事项共用一个详情页） | T12 / T14 |
-
-## 5. 硬性约束
-
-1. **生成物禁止手改**：`contracts/generated/` 由 `sync-contracts.mjs` 写入，
-   手工改动会被 `npm run check-contracts` 检出。
-2. **演示数据不得进生产**：接通真实服务（T18）时必须删除 `features/demo-data.ts`，
-   并禁止生产模式回退到样本。契约 `dtoGeneration.notGenerated` 明文要求。
-3. **不连接生产**：`project.config.json` 关闭了域名校验仅为本地调试；
-   在 T03 / T04 完成前，本端不得请求生产接口。
-4. **金额一律整数分**，显示层才换算；不使用 `toLocaleString`（小程序 JSCore 的 Intl 不完整）。
-5. **权限不能只靠前端隐藏**：真正的边界在后端（02 §7）。
+已实现：四个顾客页、基础请求与金额工具、新 4Tab 独立图片/猫 IP/黑灰双态图标已接入；排版重做、原生截图和下一步见[当前接续入口](../docs/verification/customer-4tab/2026-09-23-layout-rework/README.md)。
+未实现：我的报价单、顾客身份/归属授权、真实支付、真实订单查询。
+顾客新壳历史验证见 [变更记录](../docs/2026-09-19-小程序主体与上线方案.md)；
+旧底层证据见 [验证索引](../docs/verification/README.md)。
+当前规划入口：[4Tab 整体规划与 65 张小任务](../docs/plans/2026-09-22-customer-miniprogram-reset/README.md)。用户已确认清爽版布局/图片 + 微调版细字体；MP00 基线与四页实现已存在，下一步从当前接续入口完成 MP15 视觉复核，不从 MP00 重开。旧 Q01 仅供报价业务追溯。
+新资源清单见 [assets-manifest.json](../docs/design/2026-09-22-customer-ip/assets-manifest.json)；高清原件保留在设计交付目录，包内资源控制在内部 1.5 MiB 缓冲线以内。
+当前页面结构检查不等于微信工具与 iOS/Android 真机渲染通过。

@@ -1,0 +1,52 @@
+{
+  "scope": "本地隔离环境（真实 Worker + 内存 D1 + 真实 HTTP）；不是生产登录",
+  "backendUrl": "http://127.0.0.1:8817",
+  "devUrl": "http://127.0.0.1:5205",
+  "checks": [
+    "商品建档成功（200）",
+    "建档响应给出商品引用（entityId）",
+    "契约路径 /inventory/purchases 打开缺件处理页",
+    "新建采购单进度为「尚未到货」",
+    "收 3 拒 1 后进度为「到货完成」（拒收也计入已处置，不留虚在途）",
+    "到货记录标出拒收 1 件",
+    "订购量显示 4（实际 4）",
+    "实到显示 3（实际 3）",
+    "拒收显示 1（实际 1）",
+    "在途显示 0（实际 0）",
+    "可用量 = 3（拒收不进可用，实际 3）",
+    "退供登记有回执",
+    "退供后可用量 = 2（退 1 件离店，实际 2）",
+    "超量退供被服务端拒绝并给出人话原因"
+  ],
+  "failed": [],
+  "errors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 409 (Conflict) @ http://127.0.0.1:5205/api/v2/inventory/supplier-returns"
+  ],
+  "apiFailures": [
+    {
+      "status": 409,
+      "url": "http://127.0.0.1:5205/api/v2/inventory/supplier-returns",
+      "body": "{\"error\":{\"code\":\"STOCK_CONFLICT\",\"message\":\"本店该商品自有在库只有 2 件，不足以退供 9 件\",\"retryable\":false},\"meta\":{\"requestId\":\"req_muapclo9_0047uqul\",\"serverTime\":\"2026-09-21T03:45:20.325Z\",\"contractVersion\":\"v1\"}}"
+    }
+  ],
+  "screenshots": [
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E07\\screenshots\\01-purchase-empty.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E07\\screenshots\\02-purchase-created.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E07\\screenshots\\03-receipt-with-rejection.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E07\\screenshots\\04-supplier-return.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E07\\screenshots\\05-supplier-return-rejected.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E07\\screenshots\\06-purchase-list-final.png"
+  ],
+  "purchaseRow": [
+    "1",
+    "验收用批量风扇 · e07-verify-product::product",
+    "4",
+    "3",
+    "1",
+    "0",
+    "¥88.00"
+  ],
+  "availableAfterReceipt": 3,
+  "availableAfterReturn": 2
+}

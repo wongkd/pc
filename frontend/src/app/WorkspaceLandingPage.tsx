@@ -15,6 +15,7 @@ interface WorkspaceLandingPageProps {
   title: string
   intro: string
   entries: WorkspaceEntry[]
+  compatibilityEntries?: WorkspaceEntry[]
   /** 该域当前明确不做的事，避免把骨架当成业务完成。 */
   notYet: string[]
 }
@@ -30,6 +31,7 @@ export function WorkspaceLandingPage({
   title,
   intro,
   entries,
+  compatibilityEntries = [],
   notYet,
 }: WorkspaceLandingPageProps) {
   const navigate = useNavigate()
@@ -65,6 +67,19 @@ export function WorkspaceLandingPage({
         ))}
       </ul>
 
+      {compatibilityEntries.length > 0 && (
+        <details className="wb-landing-notes">
+          <summary>历史工具与订单</summary>
+          <ul>
+            {compatibilityEntries.map(entry => (
+              <li key={entry.label}>
+                <button type="button" className="wb-btn" onClick={() => entry.to && navigate(entry.to)}>{entry.label}</button>
+                <span className="wb-caption"> {entry.description}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
       <section className="wb-landing-notes" aria-labelledby="wb-landing-notes-title">
         <h2 id="wb-landing-notes-title">本阶段边界</h2>
         <ul>

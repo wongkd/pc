@@ -2,13 +2,13 @@
  * T02a · 今天工作台的演示样本（V1 读模型样本）。
  *
  * 数据来源：`contracts/v1/fixtures.json` 的 `datasets.V1`（06 §2 固定虚构样本）。
- * 契约规定 `fixtures.json` 不生成端内文件，故此处是端内副本；`demoData.test.ts`
+ * 契约规定 `fixtures.json` 不生成端内文件，故此处是测试专用副本；`demoData.test.ts`
  * 会逐字段与契约比对，任何一方漂移都会使测试失败 —— 不允许出现「两处手写、各自演化」。
  *
  * 演示约定（`fixtures.demoPolicy`）：
  *   - 标识由 ID 前缀 `DEMO-` 承载，不新增协议字段；
  *   - 固定演示日期 2026-09-17（Asia/Shanghai），不随运行当天变成过期样本；
- *   - 样本整体不可导入生产；接真实服务后必须删除本文件，禁止生产模式回退到样本。
+ *   - 样本只供契约回归测试使用；网页今天页不得导入本文件或回退到样本。
  *   - V1 只证明页面读模型，不构成任何业务前置条件已满足的证据。
  *
  * 金额单位一律为「分」（integer cents），展示时才除以 100。
@@ -315,4 +315,27 @@ export function formatCents(cents: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })
+}
+
+const MONTH_LABELS = [
+  '一月', '二月', '三月', '四月', '五月', '六月',
+  '七月', '八月', '九月', '十月', '十一月', '十二月',
+]
+const WEEKDAY_LABELS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
+
+/**
+ * 把固定演示日期拆成页头要用的三块文案（日 / 月 / 星期）。
+ *
+ * 页头按 v3 设计稿显示「17 ／ 九月 ／ 星期四」。**不从运行当天推导**：
+ * 演示日期是固定的 2026-09-17（`fixtures.demoPolicy`），随当天算会让样本在第二天
+ * 自己变成过期数据。用 `Date.UTC` 构造再取 UTC 分量，避免本地时区把日期挪到前一天。
+ */
+export function describeDemoDate(isoDate: string): { day: string; month: string; weekday: string } {
+  const [year, month, day] = isoDate.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return {
+    day: String(day),
+    month: MONTH_LABELS[month - 1],
+    weekday: WEEKDAY_LABELS[date.getUTCDay()],
+  }
 }

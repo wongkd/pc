@@ -1,0 +1,72 @@
+{
+  "scope": "本地隔离环境（真实 Worker + 内存 D1 + 真实 HTTP）；不是生产登录，不是微信真机",
+  "backendUrl": "http://127.0.0.1:8816",
+  "devUrl": "http://127.0.0.1:5204",
+  "checks": [
+    "登录后进入 ERP 外壳",
+    "商品建档成功（200）",
+    "建档响应给出商品引用（entityId）",
+    "数量件商品建档成功（200）",
+    "期初建账成功（200）",
+    "数量件期初建账成功（200）",
+    "能从库存读接口拿到刚建实物的编号",
+    "报价草稿创建成功（200）",
+    "报价发出成功（200）",
+    "报价列表出现验收报价",
+    "点开报价详情",
+    "报价详情出现「确认成交（转销售单）」按钮",
+    "转单后跳到订单处理页（当前 URL：http://127.0.0.1:5204/sales/orders）",
+    "订单列表出现刚生成的销售单",
+    "订单详情显示待收金额",
+    "订单详情显示定金门槛（未付款不预留的依据）",
+    "订单详情标出缺件（新品行没有实物）",
+    "未收款时「确认成交」按钮可点击（由服务端判定，不靠前端禁用）",
+    "未收款确认成交被拒，页面给出「未付款不预留」的原因",
+    "收款记录出现（备注可见）",
+    "收款记录标出对账状态",
+    "确认成交后状态变为「已确认」",
+    "二手实物显示为已占用",
+    "数量件锁不满的差额标为待补（缺口）",
+    "已锁 2 件，待补只剩 1 件（不是把行数量 3 全算成缺口）",
+    "数量件行的实物列显示已锁数量，不再把已锁货的行误报成「未指定实物（缺件）」",
+    "旧深链 /purchases 指向缺件处理页",
+    "采购详情显示在途",
+    "新采购单进度为「尚未到货」",
+    "5 件到 3 件后进度变「部分到货」",
+    "在途数量已更新（应为 2）",
+    "采购行在途 = 2（订购 5 − 实到 3）"
+  ],
+  "failed": [],
+  "errors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 400 (Bad Request) @ http://127.0.0.1:5204/api/v2/sales/orders/req_mubkrhe7_00106mt4%3A%3Asale/confirm"
+  ],
+  "apiFailures": [
+    {
+      "status": 400,
+      "url": "http://127.0.0.1:5204/api/v2/sales/orders/req_mubkrhe7_00106mt4%3A%3Asale/confirm",
+      "body": "{\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"成交没有通过校验。最常见的是还没收到定金 —— 未付款不预留；也可能是这单已被取消或关闭\",\"retryable\":false},\"meta\":{\"requestId\":\"req_mubkrk37_0023u5bx\",\"serverTime\":\"2026-09-21T18:24:46.215Z\",\"contractVersion\":\"v1\"}}"
+    }
+  ],
+  "screenshots": [
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\01-quote-can-convert.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\02-order-list.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\03-order-detail-no-payment.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\04-confirm-denied-before-payment.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\05-payment-registered.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\06-order-confirmed.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\07-purchase-list.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\08-purchase-detail.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\09-purchase-partial-receipt.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\2026-09-21-E06\\screenshots\\10-order-list-final.png"
+  ],
+  "purchaseRow": [
+    "1",
+    "验收用批量风扇 · e06-verify-product-bulk::product",
+    "5",
+    "3",
+    "0",
+    "2",
+    "¥120.00"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "passed": [
+    "登录 owner@local.test（本地隔离环境）",
+    "演示库存里有「金百达 DDR5 16GB」",
+    "B04：取消链路建单成功",
+    "B05：确认成交占用 1 件 RAM",
+    "B11：取消成功，状态 cancelled",
+    "B11：取消后余额转门店待退（store_due）",
+    "B11：取消释放占用、库存回可用桶",
+    "B09：欠款批准返回 creditApprovalId",
+    "B09→B10：挂欠款凭证交付成功",
+    "B10：交付 financial_disposition = credit_approved",
+    "B17：登记退货成功，creditState = pending",
+    "R04：详情带 returns 列表（E09 前端最小入口依赖）",
+    "R04：详情带 order.returnCreditCents 字段",
+    "B17：pending 未计入应退（returnCreditCents = 0）",
+    "B43：批准贷项 → approved",
+    "B43：批准后 returnCreditCents = 27900",
+    "B18：退款成功，余额归零",
+    "B18：退款后 cash_net 归零、余额归零",
+    "R12：账本汇总返回 cash / receivable / payable",
+    "R12：资金流水按 in 过滤",
+    "B34：反冲收款成功，返回反向分录",
+    "B34：同一原笔不能重复反冲（400）"
+  ],
+  "failed": [],
+  "at": "2026-09-21T13:39:36.597Z"
+}

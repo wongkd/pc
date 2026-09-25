@@ -1,25 +1,21 @@
-/**
- * T02a · 双端共享视觉变量（网页侧）。
- *
- * 值来源：docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md §1「设计变量」。
- *
- * ⚠️ 变量名统一加 `wb-` 前缀，不用规格表里的裸名（paper / ink / muted / line）。
- * 原因：frontend/src/index.css 的 `:root` 已经占用了 `--line`、`--muted`、`--ink`、
- * `--page-bg` 等裸名，且 AppShell 会同时包住报价编辑器。若在壳里重定义裸名，
- * 报价页的分隔线与次要文字会跟着变色 —— 属于「顺手改坏已确认功能」。
- *
- * 本文件不写任何业务规则的样式判定（金额、库存、权限只决定文案与能否点击）。
- */
+/* 顾客端同源黑白 ERP，历史变量名保留以兼容已有组件。 */
 
 .app-shell {
   /* 底色与正文 */
-  --wb-paper: #f8f6ef;
-  --wb-ink: #334b42;
-  --wb-muted: #687365;
-  --wb-line: #d9ddd0;
-  --wb-sage: #e8edde;
-  --wb-photo: #ece9de;
-  --wb-surface: #fffef9;
+  --wb-paper: #ffffff;
+  --wb-ink: #111111;
+  --wb-muted: #666666;
+  --wb-line: #e5e5e5;
+  --wb-sage: #f8f0dc;
+  --wb-photo: #f5f5f5;
+  --wb-surface: #ffffff;
+
+  /* 下沉面（表头、行悬停）：比卡片再暗一档，用于区分「同一张卡片里的两层面」 */
+  --wb-surface-sunken: var(--wb-paper);
+  /* 焦点色：直接取正文色。E04b 实测发现它此前从未被定义，
+     workbench.css 里 3 处 outline: 2px solid var(--wb-accent) 全部被浏览器丢弃 —— 键盘焦点不可见。
+     现在补上，取值仍来自本文件既有的色板，不新增颜色。 */
+  --wb-accent: #111111;
 
   /* 语义色：缺货 / 延误 / 待核实；失败 / 不可逆 */
   --wb-warning: #826021;
@@ -27,6 +23,7 @@
   --wb-danger: #9b3c32;
   --wb-danger-bg: #f5e6e2;
 
+  --wb-s: 16px;
   /* 节奏：4–48px 共同节拍 */
   --wb-s1: 4px;
   --wb-s2: 8px;
@@ -38,25 +35,30 @@
   --wb-s10: 40px;
   --wb-s12: 48px;
 
-  /* 低圆角：对话框最多 8px，避免所有内容卡片化 */
+  /* 与顾客端相同的小圆角 */
   --wb-radius: 4px;
-  --wb-radius-dialog: 8px;
+  --wb-radius-dialog: 4px;
+  /* 按钮与卡片的圆角别名。E04b 实测发现 workbench.css 引用了这两个名字却从未定义，
+     于是 var() 无回退值 → 整个 border-radius 声明失效，表头/卡片的圆角一直是 0。
+     这里用别名指向既有数值，不引入新的圆角档位。 */
+  --wb-radius-btn: var(--wb-radius);
+  --wb-radius-card: var(--wb-radius-dialog);
 
   /* 触控：最小 44×44，主动作 48 高 */
   --wb-touch: 44px;
   --wb-touch-primary: 48px;
 
-  /* 字体分工：衬线只用于页标题、设备名与少量大金额 */
-  --wb-font-sans: system-ui, "Segoe UI", "PingFang SC", "Microsoft YaHei", "Hiragino Sans GB",
+  /* 中文后台统一无衬线，serif 别名保留兼容 */
+  --wb-font-sans: "Microsoft YaHei", "PingFang SC", system-ui, "Segoe UI", "Hiragino Sans GB",
     sans-serif;
-  --wb-font-serif: Georgia, "Songti SC", "SimSun", "Noto Serif SC", serif;
+  --wb-font-serif: var(--wb-font-sans);
 
   /* 字号：桌面正文 14–16、次要 12–13、页标题与金额 28–32 */
   --wb-fs-body: 15px;
   --wb-fs-secondary: 13px;
   --wb-fs-small: 12px;
   --wb-fs-label: 13px;
-  --wb-fs-title: 30px;
+  --wb-fs-title: 26px;
   --wb-fs-amount: 30px;
   --wb-fs-device: 19px;
 }
@@ -65,7 +67,7 @@
    仅挂在 .app-shell 存在期间，组件卸载会移除该类。 */
 body.wb-shell-body {
   padding: 0;
-  background: var(--wb-paper, #f8f6ef);
+  background: var(--wb-paper, #f5f6f8);
 }
 
 /* 金额与编号尽量等宽数字；小数位不为了「好看」被吞掉 */

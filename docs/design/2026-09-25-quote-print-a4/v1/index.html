@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>电脑配置报价单 · A4 预览样稿</title>
+<style>
+  :root { color-scheme: light; --ink:#182433; --muted:#637083; --line:#d9e0e8; --blue:#1d5f9e; --pale:#f2f7fb; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#e9edf2; color:var(--ink); font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif; }
+  .toolbar { position:sticky; top:0; z-index:2; display:flex; justify-content:center; gap:14px; padding:12px; background:#172333; color:white; font-size:13px; }
+  .toolbar span { opacity:.83; }
+  .sheet { width:210mm; min-height:297mm; margin:24px auto; padding:17mm 17mm 15mm; background:#fff; box-shadow:0 8px 32px #13263b24; display:flex; flex-direction:column; }
+  header { display:flex; align-items:flex-start; justify-content:space-between; border-bottom:2px solid var(--blue); padding-bottom:13px; }
+  .brand { color:var(--blue); font-weight:800; font-size:13px; letter-spacing:2px; }
+  h1 { margin:10px 0 0; font-size:25px; letter-spacing:2px; }
+  .tag { border:1px solid #e7a943; color:#9b650d; background:#fff8e8; padding:5px 9px; border-radius:4px; font-size:11px; }
+  .sub { display:flex; justify-content:space-between; margin:11px 0 18px; color:var(--muted); font-size:11px; }
+  .customer { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; padding:10px 12px; margin-bottom:16px; background:var(--pale); border-radius:4px; font-size:12px; }
+  .customer b { color:#35465b; font-weight:600; margin-right:6px; }
+  table { border-collapse:collapse; width:100%; table-layout:fixed; font-size:11.5px; }
+  th { background:#edf3f8; color:#34465a; font-weight:700; }
+  th,td { border:1px solid var(--line); padding:9px 7px; text-align:left; vertical-align:middle; }
+  td.center, th.center { text-align:center; }
+  td.money, th.money { text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+  .muted { display:block; color:var(--muted); font-size:10px; margin-top:3px; }
+  .totals { width:280px; margin:13px 0 0 auto; font-size:12px; }
+  .total-row { display:flex; justify-content:space-between; padding:4px 2px; color:#46566a; }
+  .total-row strong { color:var(--ink); }
+  .total-row.payable { border-top:1px solid var(--line); margin-top:4px; padding-top:9px; color:var(--blue); font-size:15px; font-weight:700; }
+  .total-row.payable strong { color:var(--blue); font-size:19px; }
+  .section { margin-top:18px; }
+  .section h2 { display:flex; align-items:center; gap:8px; margin:0 0 8px; font-size:13px; }
+  .section h2:before { content:""; display:block; width:3px; height:14px; border-radius:2px; background:var(--blue); }
+  .terms { border:1px solid var(--line); border-radius:4px; padding:10px 12px; font-size:10.5px; line-height:1.7; color:#455467; }
+  .terms p { margin:2px 0; }
+  .terms b { color:#25364a; }
+  .note { margin-top:8px; padding:7px 10px; background:#f8fafc; border-radius:3px; font-size:10.5px; color:#526174; }
+  .signatures { display:grid; grid-template-columns:1fr 1fr; gap:30px; margin-top:auto; padding-top:20px; font-size:11px; color:#58677a; }
+  .sign { border-top:1px solid #aeb9c5; padding-top:7px; }
+  footer { display:flex; justify-content:space-between; margin-top:14px; padding-top:8px; border-top:1px solid #e5eaf0; color:#8a95a3; font-size:9px; }
+  @page { size:A4 portrait; margin:0; }
+  @media print { body { background:white; } .toolbar { display:none; } .sheet { margin:0; box-shadow:none; } }
+  @media screen and (max-width:850px) { .sheet { transform-origin:top left; } }
+</style>
+</head>
+<body>
+<div class="toolbar"><strong>A4 单页预览</strong><span>虚构示例数据 · 页面样稿 · 未发送、未打印</span></div>
+<main class="sheet">
+  <header>
+    <div><div class="brand">装一下机 · 电脑配置服务</div><h1>电脑配置报价单</h1></div>
+    <div class="tag">草稿预览 · 价格仅供确认</div>
+  </header>
+  <div class="sub"><span>报价单号：QT03-示例</span><span>报价日期：2026年9月25日 10:30</span><span>有效期至：2026年9月26日 10:30</span></div>
+  <section class="customer">
+    <div><b>客户</b>散客（示例）</div><div><b>联系电话</b>未填写</div><div><b>报价版本</b>第 1 版</div>
+  </section>
+  <table aria-label="配置明细">
+    <colgroup><col style="width:5%"><col style="width:12%"><col style="width:19%"><col style="width:10%"><col style="width:7%"><col style="width:13%"><col style="width:13%"><col style="width:21%"></colgroup>
+    <thead><tr><th class="center">#</th><th>配件</th><th>型号</th><th>来源</th><th class="center">数量</th><th class="money">单价</th><th class="money">小计</th><th>备注</th></tr></thead>
+    <tbody><tr><td class="center">1</td><td>CPU</td><td>Intel Core i5-12400F</td><td>二手</td><td class="center">1</td><td class="money">¥320.00</td><td class="money">¥320.00</td><td>成色九成新</td></tr></tbody>
+  </table>
+  <div class="totals">
+    <div class="total-row"><span>商品小计</span><strong>¥320.00</strong></div>
+    <div class="total-row"><span>优惠</span><strong>− ¥0.00</strong></div>
+    <div class="total-row payable"><span>应付金额</span><strong>¥320.00</strong></div>
+    <div class="total-row"><span>预付款参考（示例 15%）</span><strong>¥48.00</strong></div>
+  </div>
+  <section class="section">
+    <h2>质保说明</h2>
+    <div class="terms">
+      <p><b>全新配件整机：</b>在本店购买并全部使用全新配件组装的电脑，本店提供1年基础保修服务。</p>
+      <p><b>新旧混合整机：</b>本店售出的全新配件提供1年、二手配件提供1个月基础保修服务；各配件按订单标明的来源分别计算。</p>
+      <p><b>全二手配件整机：</b>在本店购买并全部使用二手配件组装的电脑，本店提供1个月基础保修服务。</p>
+      <p><b>二手整机延保：</b>全二手配件整机可自愿另行选购。总保障期3个月（含基础1个月，延长2个月），费用为纳保二手硬件净成交金额的5%，最低99元；或总保障期6个月（含基础1个月，延长5个月），费用为8%，最低159元。具体范围、费用与期限以订单确认的延保明细为准。</p>
+      <p><b>顾客自带配件：</b>本店提供90天安装工艺保修，处理因本店安装工艺造成的问题；本店造成损坏的责任依法承担。</p>
+      <p><b>期限与权益：</b>基础店保自交付验收之日起计算，月份按日历月计算。法定三包及其他权利不受上述期限限制；适用厂家保障或本店更优承诺按更有利内容履行。依法依约应免费的保障，不因未购买延保而取消或另行收费。</p>
+    </div>
+  </section>
+  <section class="section">
+    <h2>交易与交付</h2>
+    <div class="terms">
+      <p><b>预付款：</b>按本报价标明比例及双方确认金额支付；达到已核实的预付款门槛后按订单约定处理库存预留，退款按订单条款及适用规定办理。</p>
+      <p><b>交付方式：</b>门店自取（示例，最终以双方确认内容为准）。</p>
+      <p><b>报价确认：</b>商品型号、来源、数量、价格及备注请在确认前核对；如有调整，以双方确认的最新报价为准。</p>
+    </div>
+  </section>
+  <div class="note"><b>顾客备注：</b>暂无</div>
+  <div class="signatures"><div class="sign">客户确认：________________　日期：__________</div><div class="sign">门店经办：________________　日期：__________</div></div>
+  <footer><span>本单为虚构版式样稿，示例条目及金额不构成真实报价。</span><span>第 1 页 / 共 1 页</span></footer>
+</main>
+</body>
+</html>
+

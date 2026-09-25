@@ -134,6 +134,8 @@ export interface RequestCore {
   queryOperation(requestId: string): Promise<QueryOperationResult>
   /** 清空全部待确认动作（登出 / 撤权后调用）。 */
   clearPendingActions(): void
+  /** 服务器已明确给出该请求的终态后，只清除对应的待确认动作。 */
+  resolvePendingAction(requestId: string): void
   /** 只读：当前待确认动作数量，供诊断与测试。 */
   pendingActionCount(): number
   /** 只读：某个动作当前绑定的 requestId（测试与诊断用）。 */
@@ -475,6 +477,14 @@ export function createRequestCore(options: RequestCoreOptions): RequestCore {
 
     clearPendingActions() {
       clearPending()
+    },
+
+    resolvePendingAction(requestId: string) {
+      const map = readPendingMap()
+      const key = Object.keys(map).find((candidate) => map[candidate]?.requestId === requestId)
+      if (!key) return
+      delete map[key]
+      writePendingMap(map)
     },
 
     pendingActionCount() {

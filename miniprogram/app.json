@@ -1,44 +1,47 @@
 {
   "pages": [
-    "pages/today/index",
-    "pages/sales/index",
-    "pages/inventory/index",
-    "pages/more/index"
-  ],
-  "subPackages": [
-    {
-      "root": "packages",
-      "pages": ["sales/order-detail/index"]
-    }
+    "pages/home/index",
+    "pages/shop/index",
+    "pages/community/index",
+    "pages/mine/index"
   ],
   "window": {
     "navigationBarBackgroundColor": "#F8F6EF",
-    "navigationBarTitleText": "工作台",
+    "navigationBarTitleText": "装一下机",
     "navigationBarTextStyle": "black",
     "backgroundColor": "#F8F6EF",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
-    "color": "#687365",
-    "selectedColor": "#334B42",
+    "custom": true,
+    "color": "#808080",
+    "selectedColor": "#111111",
     "backgroundColor": "#FFFEF9",
     "borderStyle": "black",
     "list": [
       {
-        "pagePath": "pages/today/index",
-        "text": "今天"
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "assets/customer/tabHome-muted.png",
+        "selectedIconPath": "assets/customer/tabHome-active.png"
       },
       {
-        "pagePath": "pages/sales/index",
-        "text": "开单"
+        "pagePath": "pages/shop/index",
+        "text": "商城",
+        "iconPath": "assets/customer/tabShop-muted.png",
+        "selectedIconPath": "assets/customer/tabShop-active.png"
       },
       {
-        "pagePath": "pages/inventory/index",
-        "text": "库存"
+        "pagePath": "pages/community/index",
+        "text": "社区",
+        "iconPath": "assets/customer/tabCommunity-muted.png",
+        "selectedIconPath": "assets/customer/tabCommunity-active.png"
       },
       {
-        "pagePath": "pages/more/index",
-        "text": "更多"
+        "pagePath": "pages/mine/index",
+        "text": "我的",
+        "iconPath": "assets/customer/tabMine-muted.png",
+        "selectedIconPath": "assets/customer/tabMine-active.png"
       }
     ]
   },

@@ -1,0 +1,31 @@
+.customers-page{max-width:1400px;margin:0 auto}.customers-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:22px}.customers-head h2{margin:4px 0 8px;font-size:30px}.customers-head p:not(.orders-kicker){margin:0;color:#69727d}.customers-toolbar{display:flex;align-items:center;gap:16px;margin-bottom:14px;color:#69727d;font-size:13px}.customers-toolbar input{width:min(420px,100%);padding:11px 14px;border:1px solid #d9dee5;border-radius:10px;background:#fff;font:inherit}.customers-table-wrap{overflow:auto;border:1px solid #e2e6eb;border-radius:14px;background:#fff}.customers-table{width:100%;border-collapse:collapse;min-width:680px}.customers-table th,.customers-table td{padding:14px 16px;border-bottom:1px solid #edf0f3;text-align:left}.customers-table th{font-size:12px;color:#78818d;font-weight:600;background:#fafbfc}.customers-table tbody tr{cursor:pointer}.customers-table tbody tr:hover,.customers-table tbody tr.is-selected{background:#f3f7f2}.customers-table td small{display:block;color:#87909a;margin-top:4px}.customers-layout{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:18px;align-items:start}.customer-detail{border:1px solid #e2e6eb;border-radius:14px;background:#fff;padding:20px;position:sticky;top:18px}.customer-detail-head{display:flex;justify-content:space-between;gap:12px}.customer-detail h3{margin:4px 0 4px;font-size:22px}.customer-detail-head span{color:#69727d;font-size:13px}.customer-total{display:flex;flex-direction:column;gap:5px;padding:16px 0;border-bottom:1px solid #edf0f3;margin-bottom:16px}.customer-total span,.customer-total small{color:#78818d}.customer-total strong{font-size:25px}.customer-detail h4{margin:0 0 10px}.customer-orders{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}.customer-orders li{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-bottom:1px solid #edf0f3}.customer-orders a{display:flex;flex-direction:column;gap:4px;color:inherit;text-decoration:none}.customer-orders a span,.customer-orders small{color:#78818d;font-size:12px}.customer-orders li>div{display:flex;flex-direction:column;align-items:flex-end;gap:4px}.customers-state{display:flex;flex-direction:column;gap:8px;align-items:flex-start;padding:46px 24px;border:1px dashed #d9dee5;border-radius:14px;color:#69727d;background:#fff}.customers-state strong{color:#29313a;font-size:16px}.customers-error{color:#b42318;gap:14px}@media(max-width:900px){.customers-layout{grid-template-columns:1fr}.customer-detail{position:static}.customers-head{flex-direction:column}.customers-toolbar{align-items:stretch;flex-direction:column}.customers-toolbar input{width:auto}}
+
+/* ── E02/E04：客户台账接真实数据后新增的块 ──
+   沿用本页已有的中性灰白语言，不引入新配色：
+   全站换肤属于 E03「壳与公共组件」，要等 E01 原型评审通过后统一做，
+   在这里单独造一套色只会让下一轮多一处要拆的东西。 */
+.customers-head-actions{display:flex;gap:8px;flex-shrink:0}
+.customers-notice{margin:0 0 12px;padding:10px 13px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#1d4ed8;font-size:13px}
+.customers-main{min-width:0}
+.customers-muted{color:#94a3b8}
+.customers-error-text{margin:0;padding:9px 11px;border:1px solid #fecaca;border-radius:8px;background:#fef2f2;color:#b91c1c;font-size:12px}
+.customers-table{min-width:820px}
+.customer-detail-actions{display:flex;gap:6px;flex-shrink:0}
+.customer-section-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:18px 0 10px}
+.customer-section-head h4{margin:0}
+.customer-fields{margin:0;display:grid}
+.customer-fields>div{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #edf0f3}
+.customer-fields dt{flex:0 0 58px;color:#78818d;font-size:12px}
+.customer-fields dd{margin:0;flex:1;min-width:0;overflow-wrap:anywhere;font-size:13px}
+.customer-form{display:grid;gap:11px;margin-top:14px;padding-top:14px;border-top:1px solid #edf0f3}
+.customer-form label{display:grid;gap:6px;color:#556476;font-size:12px;font-weight:600}
+.customer-form input,.customer-form textarea,.customer-form select{min-height:0;padding:9px 10px;font-size:13px}
+.customer-device-form{margin-top:12px;padding:12px;border:1px dashed #d9dee5;border-radius:10px;background:#fafbfc}
+.customer-devices{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.customer-devices li{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;padding:10px;border:1px solid #edf0f3;border-radius:10px;background:#fff}
+.customer-devices li>div:first-child{display:grid;gap:4px;min-width:0}
+.customer-devices strong{font-size:13px;overflow-wrap:anywhere}
+.customer-devices span{color:#78818d;font-size:12px;overflow-wrap:anywhere}
+.customer-device-actions{display:flex;gap:6px;flex-shrink:0}
+.customers-detail-hint h3{margin:6px 0 8px}
+@media(max-width:900px){.customers-head-actions{width:100%}.customers-head-actions .btn{width:100%}.customer-devices li{flex-direction:column}.customer-device-actions{width:100%}}

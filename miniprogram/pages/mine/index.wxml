@@ -1,0 +1,34 @@
+<view class="customer-page mine-page">
+  <customer-nav title="我的" mine-actions="{{true}}" bind:action="onNavAction" />
+  <scroll-view class="customer-scroll mine-scroll" scroll-y>
+    <view class="mine-head" bindtap="onLoginTap">
+      <image wx:if="{{!avatarFailed}}" class="mine-avatar" src="{{avatar}}" mode="aspectFit" data-key="avatar" binderror="onImageError" />
+      <view wx:else class="mine-avatar mine-avatar-fallback">?</view>
+      <view class="mine-head-text"><text class="mine-head-name">{{signedIn ? '装一下机用户' : '登录后查看档案'}}</text><text class="mine-head-hint">装机生活更有趣</text></view>
+      <text class="mine-head-arrow">›</text>
+    </view>
+
+    <view class="mine-archive mp-tap" bindtap="onArchiveTap">
+      <view class="mine-archive-copy"><text class="mine-archive-title">我的装机档案</text><text class="mine-archive-subtitle">记录你的每一次装机旅程</text></view>
+      <text class="mine-archive-link">去查看　›</text>
+      <image wx:if="{{!archiveCatFailed}}" class="mine-archive-cat" src="{{archiveCat}}" mode="aspectFit" data-key="archiveCat" binderror="onImageError" />
+    </view>
+
+    <view class="mine-stats">
+      <view wx:for="{{stats}}" wx:key="key" class="mine-stat mp-tap" data-label="{{item.label}}" bindtap="onStatTap">
+        <text class="mine-stat-value mp-tabular">{{item.value}}</text><text class="mine-stat-label">{{item.label}}</text>
+      </view>
+    </view>
+
+    <view class="mine-menu">
+      <view wx:for="{{menuRows}}" wx:key="key" class="mine-menu-row mp-tap" data-key="{{item.key}}" bindtap="onMenuTap">
+        <image class="mine-menu-icon" src="{{item.icon}}" mode="aspectFit" /><text class="mine-menu-title">{{item.title}}</text><image class="mine-menu-arrow" src="/assets/customer/chevron-muted.png" mode="aspectFit" />
+      </view>
+    </view>
+
+    <view class="mine-store mp-tap" bindtap="onStoreTap"><image class="mine-store-icon" src="/assets/customer/serviceLocation-active.png" mode="aspectFit" /><text class="mine-store-name">联系门店</text><image class="mine-menu-arrow" src="/assets/customer/chevron-muted.png" mode="aspectFit" /></view>
+    <view class="mine-footer"><text class="mine-footer-copy">好好装机
+好好生活！</text><image wx:if="{{!footerCatFailed}}" class="mine-footer-cat" src="{{footerCat}}" mode="aspectFit" data-key="footerCat" binderror="onImageError" /></view>
+    <view class="mine-runtime-note">{{runtimeNote}}</view>
+  </scroll-view>
+</view>

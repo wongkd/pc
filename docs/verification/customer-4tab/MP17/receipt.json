@@ -1,0 +1,39 @@
+{
+  "id": "MP17",
+  "status": "review",
+  "updatedAt": "2026-09-23T22:39:01+08:00",
+  "summary": "顾客身份与归属契约落地：新增 CustomerIdentity（表 customer_wechat_identities，不含 memberId）与 CustomerSession（无表）、CustomerClaimStatus/CustomerClaimMethod（认领刻意不含自填手机号）、3 个顾客错误码、A05–A07 顾客认证动作、0026 迁移。单店绑定（唯一键 appid+openid）、认领走微信验证手机号或店员确认、会话 30 天滑动续期。C 档门禁全绿，迁移已在本地隔离库从空库应用（后端 360 用例）。",
+  "evidence": [
+    "contracts/v1/objects.json",
+    "contracts/v1/enums.json",
+    "contracts/v1/errors.json",
+    "contracts/v1/actions.json",
+    "contracts/v1/legacy-mapping.json",
+    "backend/migrations/0026_customer_wechat_identity.sql",
+    "miniprogram/features/error-behavior.ts",
+    "frontend/src/api/error-behavior.ts",
+    "docs/verification/customer-4tab/MP17/README.md"
+  ],
+  "checks": [
+    { "command": "node contracts/tools/validate-contracts.mjs", "result": "pass: exit=0，全部检查通过" },
+    { "command": "node contracts/tools/generate-dto.mjs --check", "result": "pass: 6 个文件" },
+    { "command": "node frontend/scripts/sync-contracts.mjs --check", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass" },
+    { "command": "node contracts/tools/check-client-parity.mjs", "result": "pass" },
+    { "command": "node backend/scripts/sync-error-codes.mjs --check", "result": "pass: 21 个错误码" },
+    { "command": "node backend/scripts/check-migration-sequence.mjs", "result": "pass: 27 文件 0000-0026 连续，下一个 0027" },
+    { "command": "cd backend && node --test --test-concurrency=1 \"tests/*.test.mjs\"", "result": "pass: 360/360 (fail 0)，迁移从空库全量重放" },
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass: 123/123" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p tsconfig.json --noEmit", "result": "pass" },
+    { "command": "cd frontend && node node_modules/typescript/bin/tsc -b", "result": "pass" },
+    { "command": "cd frontend && node node_modules/vitest/vitest.mjs run src/api/error-behavior.test.ts", "result": "pass: 16/16" },
+    { "command": "node scripts/check-doc-links.mjs", "result": "pass: 213 文件 521 链接 0 断链" }
+  ],
+  "visual": "not_applicable",
+  "blockedBy": [
+    "无可用 HTTPS API 域名：pc.huangqidong.cn 未做国内接入备案，本地 Worker 为 http://127.0.0.1:8787（非 HTTPS），故环境地址表的 test/prod 仍为空。",
+    "0026_customer_wechat_identity.sql 尚未应用到任何远端环境；项目规则不授权本卡 apply（本地隔离库已验证可从空库应用）。",
+    "契约目前无业务代码消费：顾客登录实现在 MP18，故「登录交换真能跑通」未验证。"
+  ],
+  "next": "执行 MP18 顾客登录服务端（backend/src/domains/customer-identity.ts、routes/customer-auth.ts、index.ts 接线、backend/tests/customer-identity*.mjs）；动接线前先复核 contracts/v1、backend/src/index.ts、backend/migrations 的时间戳与 diff。"
+}

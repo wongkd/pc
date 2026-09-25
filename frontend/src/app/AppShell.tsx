@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import type { Profile, Store } from '../utils/api'
-import { ACCOUNT_MENU_ITEMS, APP_NAV_ITEMS, findNavItemByPath } from './navigation'
+import { ACCOUNT_MENU_ITEMS, APP_NAV_ITEMS, APP_QUICK_LINKS, findNavItemByPath } from './navigation'
 import '../styles/theme.css'
 import '../styles/appShell.css'
 
@@ -92,7 +92,7 @@ export function AppShell({
     const keyword = searchRef.current?.value.trim() ?? ''
     if (!keyword) return
     // T18 之前没有全局搜索服务：如实说明，不返回假结果。
-    setNotice(`全局搜索尚未接通（T18 实现）；本次关键词「${keyword}」未提交到任何服务。`)
+    setNotice(`全局搜索尚未接通；本次关键词「${keyword}」未提交到任何服务。`)
   }
 
   return (
@@ -108,25 +108,34 @@ export function AppShell({
             PC
           </span>
           <span className="wb-brand-copy">
-            <strong>装机店经营工作台</strong>
+            <strong>装一下机</strong>
             <small>{currentStore?.name ?? '未选择门店'}</small>
           </span>
         </div>
 
         <nav className="wb-nav" aria-label="主导航">
-          {APP_NAV_ITEMS.map((item) => (
+          <span className="wb-nav-heading">门店工作空间</span>
+          {APP_NAV_ITEMS.map((item, index) => (
             <NavLink
               key={item.path}
               to={item.path}
               className={() =>
-                `wb-nav-link${activeNav?.path === item.path ? ' is-active' : ''}`
+                `wb-nav-link${activeNav?.path === item.path && !location.pathname.startsWith("/sales/quotes") ? ' is-active' : ''}`
               }
             >
+              <svg className="wb-nav-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d={['M3 10 12 3l9 7v10H3Z M9 20v-7h6v7', 'M5 3h14v18H5Z M8 8h8 M8 12h8 M8 16h5', 'M3 7 12 3l9 4v12l-9 3-9-3Z M3 7l9 4 9-4 M12 11v11', 'M14 4a6 6 0 0 0-7 8L3 18l3 3 6-5a6 6 0 0 0 8-7l-4 4-5-5Z', 'M4 9a8 8 0 0 1 14-4l3 4 M21 3v6h-6 M20 15A8 8 0 0 1 6 19l-3-4 M3 21v-6h6', 'M4 4h16v17H4Z M8 8h8 M8 12h8 M8 16h3'][index]} /></svg>
+              {item.label}
+            </NavLink>
+          ))}
+          <span className="wb-nav-heading wb-nav-heading--secondary">常用页面</span>
+          {APP_QUICK_LINKS.map((item) => (
+            <NavLink key={item.path} to={item.path} className={({ isActive }) => `wb-nav-link${isActive ? ' is-active' : ''}`}>
               {item.label}
             </NavLink>
           ))}
         </nav>
 
+        <span className="wb-location-label">门店 ERP <span>/</span> {location.pathname.startsWith("/customers") ? "客户台账" : location.pathname.startsWith("/sales/quotes") ? "装机报价" : activeNav?.label ?? "工作空间"}</span>
         <div className="wb-topbar-side">
           <div className="wb-search">
             <input

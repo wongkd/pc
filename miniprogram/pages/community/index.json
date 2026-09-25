@@ -1,0 +1,9 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "社区",
+  "usingComponents": {
+    "customer-nav": "/components/customer-nav/index",
+    "customer-image": "/components/customer-image/index",
+    "customer-state": "/components/customer-state/index"
+  }
+}

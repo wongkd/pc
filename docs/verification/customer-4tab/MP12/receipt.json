@@ -1,0 +1,29 @@
+{
+  "id": "MP12",
+  "status": "review",
+  "updatedAt": "2026-09-23T21:14:10+08:00",
+  "summary": "实现较矮案例图与左图右文知识行，并接入 MP06 公共空态/图像组件；详情未接入时如实提示。",
+  "evidence": [
+    "miniprogram/pages/community/index.ts",
+    "miniprogram/pages/community/index.wxml",
+    "miniprogram/pages/community/index.json",
+    "miniprogram/tests/customer-community-mine.test.mjs",
+    "miniprogram/pages/community/index.wxss",
+    "miniprogram/tests/customer-community-mine.test.mjs",
+    "docs/verification/customer-4tab/MP12/README.md"
+  ],
+  "checks": [
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass (111/111)" },
+    { "command": "node --test miniprogram/tests/customer-community-mine.test.mjs", "result": "pass (2/2)" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "node miniprogram/node_modules/typescript/bin/tsc -p miniprogram/tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass" }
+  ],
+  "visual": "not_run",
+  "blockedBy": [
+    "前置 MP03–06 回执存在但视觉仍为 review；本卡尚缺微信工具截图。",
+    "当前桌面控制接口没有可绑定的微信开发者工具窗口。"
+  ],
+  "next": "在微信工具截图中核对三种图文节奏、长摘要/日期和分类返回位置。"
+}

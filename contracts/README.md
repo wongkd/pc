@@ -16,7 +16,9 @@
 | `v1/legacy-mapping.json` | 旧表 → 新模型映射、保留的数据库机制、单位换算、未决问题 | T01a |
 | `v1/actions.json` | B01–B36 动作目录、多路径操作的分别权限、49 个新权限码、11 个旧权限码映射、状态机缺口登记（含 `specBasis` 依据） | T01b（T01-rev1 修订） |
 | `v1/fixtures.json` | 06 §2 的 V1–V4 虚构样本、边界输入、预期结果、可机械重算的金额算例、DTO 生成配置 | T01c |
+| `v2/inventory-opening.json` | D10 期初成本分类和正式窗口的增量契约；继承 v1，不改写冻结文件 | 正式期初 |
 | `generated/` | 由 `tools/generate-dto.mjs` 从 v1 单向生成的端内枚举与类型。**生成物禁止手工编辑** | T01c |
+| `generated-v2/` 与端内 `v2/generated/` | 由 `tools/generate-d10-contract.mjs` 从 v2 增量契约生成的网页端与后端类型 | 正式期初 |
 | `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b + T01-rev1 + T01c |
 | `tools/generate-dto.mjs` | 端内 DTO 生成器（单向生成，带 `--check`） | T01c（T02a 修复未使用类型导入） |
 | `frontend/scripts/sync-contracts.mjs` | 把生成物落到网页端内目录，并做「契约 → 中立生成物 → 端内」三方防漂移校验（不在本目录，属端内脚本） | T02a |
@@ -59,6 +61,8 @@ node contracts/tools/validate-contracts.mjs
 node contracts/tools/generate-dto.mjs            # 重生成中立产物
 node frontend/scripts/sync-contracts.mjs         # 落网页端内目录
 node frontend/scripts/sync-contracts.mjs --check # 三方防漂移复验
+node contracts/tools/generate-d10-contract.mjs   # 生成 D10 v2 契约及两端类型
+node contracts/tools/generate-d10-contract.mjs --check
 ```
 
 `sync-contracts.mjs` 会自检「契约声明的 web 目标路径」与「脚本实际写入路径」是否一致（改路径必须先改契约），并做三方比对：**契约源文件 → 中立生成物 → 端内副本**。任何一方被手工改动都会报错。T02a 已用三种注入（手改端内生成物、改端内样本、改契约样本）验证闸门有效。

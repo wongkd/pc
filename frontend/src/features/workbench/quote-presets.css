@@ -1,0 +1,5 @@
+.wb-quote-presets { display: grid; gap: 10px; margin: 0 0 14px; }
+.wb-quote-presets__scenarios, .wb-quote-presets__quick { display: flex; flex-wrap: wrap; gap: 8px; }
+.wb-quote-presets__retained { margin: 0; color: var(--wb-warning, #9a5b00); }
+.wb-quote-line-category { align-self: center; color: var(--wb-muted, #687386); font-size: 12px; font-weight: 650; white-space: nowrap; }
+.wb-quote-retained { align-self: center; color: var(--wb-warning, #9a5b00); font-size: 12px; white-space: nowrap; }

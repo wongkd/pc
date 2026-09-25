@@ -1,0 +1,8 @@
+<view class="customer-tabbar" style="padding-bottom: {{safeBottom}}px;">
+  <view class="customer-tabbar__items">
+    <view wx:for="{{list}}" wx:key="id" class="customer-tabbar__item" data-id="{{item.id}}" bindtap="onTabTap" aria-label="{{item.title}}">
+      <image class="customer-tabbar__icon" src="/assets/customer/{{item.icon}}-{{item.selected ? 'active' : 'muted'}}.png" mode="aspectFit" />
+      <text class="customer-tabbar__label {{item.selected ? 'customer-tabbar__label--selected' : ''}}">{{item.title}}</text>
+    </view>
+  </view>
+</view>

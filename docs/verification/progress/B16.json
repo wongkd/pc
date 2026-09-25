@@ -1,0 +1,18 @@
+{
+  "id": "B16",
+  "status": "verified",
+  "summary": "盘点录入与差异批准（B16）后端、契约登记、迁移与验收全部完成。范围：POST /api/v2/inventory/counts（权限 inventory/count，契约 legacySource=library/edit，grantPolicy=default）录入人工实盘结果并**锁存当时账面**（book_qty），**保存实盘不直接改库存**（02 §5）—— 录入的 plan 里一条 inventory_movements 都不拼，余额自然分毫不动，这是可被测试证伪的结构事实而非注释承诺；POST /api/v2/inventory/counts/:id/approve（权限 inventory/count-approve，契约 legacySource=null、grantPolicy=owner_only，旧宽权限 library/edit 不得自动获得）逐行按 diff = counted_qty − book_qty 写 source='count_adjustment' 的库存流水，由 0007 的 inventory_movements_apply_balance 触发器结算 stock_balances，盘盈入 available、盘亏出 available，qty 恒为正。0024_inventory_counts.sql 新建 inventory_counts（表头：status draft/approved、as_of 截止时点、scope_note、批准理由/批准人/批准时间、version、两个 requestId；CHECK 用单向蕴含：approved ⇒ 理由/批准人/批准时间齐备，不写 (A)=(B) 双向等价）与 inventory_count_lines（book_qty 锁存账面 + counted_qty 实盘 + adjustment_movement_id 回填；UNIQUE(count_id, product_id) 保证同一商品一次盘点只一行）。口径三定：①这两张表按 **InventoryMovement 的支撑事件表**登记（与 purchase_cancellations 挂 Purchase 同一处理），因为契约 B16 的 effects 只有 InventoryMovement / StockBalance / AuditEvent、**没有独立盘点单对象**（legacy-mapping 的 objectsWithoutLegacyTable 一直挂着「盘点单（T06c 定义，枚举待补）」），故**不新增契约对象、不改 contractVersion**；②差异用**录入时锁存的账面**算，批准时逐行守卫核对「当前 available_qty 是否仍等于锁存值」，已变则 409 VERSION_CONFLICT 要求重盘 —— 刻意不重算，因为重算会把截止点之后发生的正常出入库一起吞进调整额（03 §7 的截止序号对齐）；③状态闸门与账面对齐守卫都写在 plan 的守卫里而非入口 JS，因为批准成功后 status 由 draft 变 approved，若在入口用 JS 判断，合法的「同 ID 重放」会被误判成「重复批准」（B19 实测踩过同类坑）。审计（契约 AuditEvent）写两条 audit_logs：录入 action=inventory_count_record（details 含 stockTouched:false）、批准 action=inventory_count_approve（details 含 reason 与逐行 adjustments）。路由落在既有 routes/inventory-v2.ts（B16 两条路径都在 /api/v2/inventory 前缀下，由该模块认领），**因此本轮没有改 backend/src/index.ts，也就不涉及 actions.json 的证据行号平移**。实测：后端全套 334 用例 / 334 通过 / 0 失败（原 311，本卡新增 backend/tests/b16-count-http.test.mjs 23 项）；契约 validate-contracts 3476 通过 / 0 失败（原 3464，+12）；三处生成物（contracts/generated、frontend/src/contracts/generated、miniprogram/contracts/generated）与 backend/src/generated/error-codes.ts 全部与契约一致；check-client-parity 通过；check:migrations 0000–0024 连续无缺号（25 文件），下一个 0025；check-doc-links 212 链接 0 断链；端到端 HTTP 验收 docs/verification/2026-09-22-B16-count/verify-b16.cjs 37 项 / 0 失败。",
+  "next": "①无前端页面：库存页还没有盘点入口与批准按钮（按既有做法可由栋哥用 ChatGPT 实现），本卡只做后端与契约登记；②只做数量口径：CountLine 按 productRef + countedQty 盘 available_qty，**逐件实物（tracking_mode='item'）的明细盘点未做**，且只盘 available 桶（reserved / quarantine 未盘）；③不做「盘点期间冻结」，账面已变时报 409 让操作人重盘；④B39 报损仍是 supplementaryActions 的 reserved，本卡刻意未越界（任务清单 P-04 的盘差与报损语义关系未涉及）；⑤0024 的远端应用状态未核实，本轮未部署、未应用远端迁移、未提交；⑥生产 permissions 表对 inventory/count 与 inventory/count-approve 没有种子迁移，店员与老板角色要能用需另行授权；⑦未跑前端测试与浏览器验收（本卡无前端改动、无新页面），未跑微信真机。",
+  "updatedAt": "2026-09-22T15:50:00+08:00",
+  "evidence": [
+    "backend/src/domains/inventory.ts",
+    "backend/src/routes/inventory-v2.ts",
+    "backend/migrations/0024_inventory_counts.sql",
+    "backend/tests/b16-count-http.test.mjs",
+    "backend/tests/lib/inventory.mjs",
+    "contracts/v1/legacy-mapping.json",
+    "docs/verification/2026-09-22-B16-count/README.md",
+    "docs/verification/2026-09-22-B16-count/verify-b16.cjs",
+    "docs/verification/2026-09-22-B16-count/report.json"
+  ]
+}

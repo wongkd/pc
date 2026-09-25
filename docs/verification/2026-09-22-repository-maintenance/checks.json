@@ -1,0 +1,61 @@
+{
+  "date": "2026-09-22",
+  "reading": {
+    "beforeCharacters": 34744,
+    "afterCharacters": 5935,
+    "reductionPercent": 82.92,
+    "note": "字符量，不是精确 Token 数"
+  },
+  "checks": [
+    {
+      "command": "node scripts/check-doc-links.mjs ",
+      "exitCode": 0,
+      "output": "Current Markdown: 185 files, 460 local links, 0 broken\nScope: inline relative file links; excludes external URLs, anchors, bare paths and code blocks."
+    },
+    {
+      "command": "node scripts/check-doc-links.mjs --all",
+      "exitCode": 0,
+      "output": "All Markdown: 218 files, 662 local links, 0 broken\nScope: inline relative file links; excludes external URLs, anchors, bare paths and code blocks."
+    },
+    {
+      "command": "cd frontend; node node_modules/vitest/vitest.mjs run --config vitest.config.ts",
+      "exitCode": 0,
+      "passed": 172,
+      "failed": 0
+    },
+    {
+      "command": "cd frontend; node node_modules/typescript/bin/tsc -b; node node_modules/vite/bin/vite.js build",
+      "exitCode": 0,
+      "warning": "chunk > 500 kB"
+    },
+    {
+      "command": "cd miniprogram; node --test tests/*.test.mjs",
+      "exitCode": 0,
+      "passed": 92,
+      "failed": 0
+    },
+    {
+      "command": "cd miniprogram; node node_modules/typescript/bin/tsc --noEmit",
+      "exitCode": 0
+    },
+    {
+      "command": "node contracts/tools/check-client-parity.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "cd frontend; node node_modules/eslint/bin/eslint.js .",
+      "exitCode": 1,
+      "errors": 35,
+      "warnings": 4
+    },
+    {
+      "command": "eslint 本轮修改的网页 TS 和测试",
+      "exitCode": 0
+    },
+    {
+      "command": "node --check scripts/audit-repository.mjs + check-doc-links.mjs",
+      "exitCode": 0
+    }
+  ],
+  "scope": "本地代码和文档；未做浏览器截图、微信真机、生产部署、远端迁移；未运行后端全套（未修改后端）"
+}

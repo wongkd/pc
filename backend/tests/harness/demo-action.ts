@@ -11,6 +11,8 @@ import {
   bumpVersionStatement,
   guardStatement,
   hashPayload,
+  readableDiagnostic,
+  appendReadableDiagnostic,
   queryOperation,
   runIdempotent,
   type OperationContext,
@@ -26,6 +28,8 @@ export {
   bumpVersionStatement,
   guardStatement,
   assertRowVersionStatement,
+  readableDiagnostic,
+  appendReadableDiagnostic,
 }
 export type { OperationContext, OperationPlan, OperationQueryResult, OperationsDb }
 

@@ -1,0 +1,101 @@
+{
+  "scope": "本地隔离环境（真实 Worker + 内存 D1 + 真实 HTTP）；不是生产登录，不是微信真机",
+  "backendUrl": "http://127.0.0.1:8811",
+  "devUrl": "http://127.0.0.1:5199",
+  "checks": [
+    "用本地演示账号通过真实登录表单进入系统",
+    "客户台账列出 5 位演示客户（实际 5）",
+    "未留电话的散客在列表里明确标注",
+    "散客只留姓也能建档并列出",
+    "无手机号散客的订单数为 0（不吞别人的无电话订单）",
+    "无手机号散客累计金额与已收均为 ¥0.00",
+    "有手机号客户按手机号聚合出累计金额",
+    "详情显示登记的设备",
+    "详情显示第二台设备",
+    "详情显示该客户的订单记录",
+    "详情累计订单额与订单数来自服务端口径",
+    "详情显示已收金额",
+    "详情不出现 NaN（累计字段缺失时的典型表现）",
+    "同店重复手机号被服务端拒绝并给出可照做的提示",
+    "保存失败后已填内容仍在（没有被清空）",
+    "新增客户成功并给出回执",
+    "新建后列表变为 6 位客户（实际 6）",
+    "登记设备后出现在该客户名下",
+    "删除设备后从客户名下移除",
+    "搜索走服务端并收敛到 1 行",
+    "搜索无结果时给出空态而不是空白表格",
+    "1920x1080：页面无横向溢出",
+    "1920x1080：表格在独立容器内滚动",
+    "1440x1000：页面无横向溢出",
+    "1440x1000：表格在独立容器内滚动",
+    "1366x768：页面无横向溢出",
+    "1366x768：表格在独立容器内滚动",
+    "1280x800：页面无横向溢出",
+    "1280x800：表格在独立容器内滚动",
+    "1024x768：页面无横向溢出",
+    "1024x768：表格在独立容器内滚动",
+    "390x844：页面无横向溢出",
+    "390x844：表格在独立容器内滚动",
+    "全程没有任何请求发往生产域名 huangqidong.cn",
+    "无页面 JS 错误（实际 0）"
+  ],
+  "failed": [],
+  "errors": [],
+  "consoleErrors": [
+    "Failed to load resource: the server responded with a status of 409 (Conflict)"
+  ],
+  "requestHosts": [
+    "127.0.0.1:5199",
+    ""
+  ],
+  "measured": {
+    "1920x1080": {
+      "documentScrollWidth": 1920,
+      "innerWidth": 1920,
+      "tableWrapOverflowX": 0,
+      "tableWrapWidth": 1014,
+      "detailWidth": 360,
+      "rowHeight": 68
+    },
+    "1440x1000": {
+      "documentScrollWidth": 1440,
+      "innerWidth": 1440,
+      "tableWrapOverflowX": 0,
+      "tableWrapWidth": 998,
+      "detailWidth": 360,
+      "rowHeight": 68
+    },
+    "1366x768": {
+      "documentScrollWidth": 1366,
+      "innerWidth": 1366,
+      "tableWrapOverflowX": 0,
+      "tableWrapWidth": 924,
+      "detailWidth": 360,
+      "rowHeight": 68
+    },
+    "1280x800": {
+      "documentScrollWidth": 1280,
+      "innerWidth": 1280,
+      "tableWrapOverflowX": 0,
+      "tableWrapWidth": 854,
+      "detailWidth": 360,
+      "rowHeight": 68
+    },
+    "1024x768": {
+      "documentScrollWidth": 1024,
+      "innerWidth": 1024,
+      "tableWrapOverflowX": 208,
+      "tableWrapWidth": 614,
+      "detailWidth": 360,
+      "rowHeight": 68
+    },
+    "390x844": {
+      "documentScrollWidth": 390,
+      "innerWidth": 390,
+      "tableWrapOverflowX": 464,
+      "tableWrapWidth": 358,
+      "detailWidth": 358,
+      "rowHeight": 68
+    }
+  }
+}

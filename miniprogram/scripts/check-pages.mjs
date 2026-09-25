@@ -6,7 +6,7 @@
  *
  * 校验三件事：
  *   1. app.json 声明的每个页面，磁盘上都有对应的 .ts 与 .wxml；
- *   2. tabBar 符合 02 §4「今天、开单、库存、更多」四项，且页面都在主包；
+ *   2. custom tabBar 符合顾客端四项「首页、商城、社区、我的」，且页面都在主包；
  *   3. 磁盘上不存在「已建但未被 app.json 引用」的页面目录（漏注册同样是缺陷）。
  *
  * 这不是「能在微信里跑起来」的证明 —— 那是开发者工具与真机的事（见验证记录）。
@@ -19,8 +19,27 @@ import { dirname, join, resolve } from 'node:path'
 const here = dirname(fileURLToPath(import.meta.url))
 const projectRoot = resolve(here, '..')
 
-/** 02 §4「原生 tabBar 使用今天、开单、库存、更多」——顺序也是规格的一部分。 */
-const EXPECTED_TABBAR = ['今天', '开单', '库存', '更多']
+/**
+ * 顾客端 tabBar：首页 / 商城 / 社区 / 我的（栋哥 2026-09-19 确认）——顺序也是定案的一部分。
+ *
+ * 小程序已收拢为顾客端；内部 ERP 只留在网页。
+ * 旧店员页与销售/库存详情分包已从 app.json 和源码移除。
+ */
+const EXPECTED_TABBAR = ['首页', '商城', '社区', '我的']
+const EXPECTED_TAB_PATHS = [
+  'pages/home/index',
+  'pages/shop/index',
+  'pages/community/index',
+  'pages/mine/index',
+]
+const REMOVED_STAFF_PAGES = [
+  'pages/today/index',
+  'pages/sales/index',
+  'pages/inventory/index',
+  'pages/more/index',
+  'packages/sales/order-detail/index',
+  'packages/inventory/item-detail/index',
+]
 
 /** 页面必须存在的文件后缀。页面级 json / wxss 可省略，故不强制。 */
 const REQUIRED_EXTS = ['ts', 'wxml']
@@ -47,6 +66,10 @@ if (JSON.stringify(tabTexts) !== JSON.stringify(EXPECTED_TABBAR)) {
     `tabBar 文案与 02 §4 不符：期望 ${EXPECTED_TABBAR.join('、')}，实际 ${tabTexts.join('、')}`
   )
 }
+const tabPaths = tabList.map((tab) => tab.pagePath)
+if (JSON.stringify(tabPaths) !== JSON.stringify(EXPECTED_TAB_PATHS)) {
+  failures.push(`tabBar 页面顺序错误：期望 ${EXPECTED_TAB_PATHS.join('、')}，实际 ${tabPaths.join('、')}`)
+}
 for (const item of tabList) {
   if (!item.pagePath) {
     failures.push('存在缺少 pagePath 的 tabBar 项')
@@ -56,8 +79,27 @@ for (const item of tabList) {
     failures.push(`tabBar 页面必须在主包 pages 中：${item.pagePath}`)
   }
 }
-if (appJson.tabBar && appJson.tabBar.selectedColor !== '#334B42') {
-  failures.push(`tabBar 选中色应为 02 §1 的 ink #334B42，实际 ${appJson.tabBar.selectedColor}`)
+if (appJson.tabBar?.custom !== true) {
+  failures.push('顾客 tabBar 必须启用 custom:true')
+}
+if (appJson.tabBar && appJson.tabBar.selectedColor !== '#111111') {
+  failures.push(`tabBar 选中色应为顾客主文字 #111111，实际 ${appJson.tabBar.selectedColor}`)
+}
+if (appJson.tabBar && appJson.tabBar.color !== '#808080') {
+  failures.push(`tabBar 未选中色应为顾客辅助文字 #808080，实际 ${appJson.tabBar.color}`)
+}
+const customTabBarFiles = ['index.ts', 'index.wxml', 'index.wxss', 'index.json']
+for (const name of customTabBarFiles) {
+  if (!existsSync(join(projectRoot, 'custom-tab-bar', name))) {
+    failures.push(`自定义底栏文件缺失：custom-tab-bar/${name}`)
+  }
+}
+for (const item of tabList) {
+  for (const key of ['iconPath', 'selectedIconPath']) {
+    if (item[key] && !existsSync(join(projectRoot, ...item[key].split('/')))) {
+      failures.push(`tabBar 图标文件缺失：${item[key]}`)
+    }
+  }
 }
 
 // ── 3. 分包页面 ─────────────────────────────────────────────────────────
@@ -75,6 +117,12 @@ for (const sub of appJson.subPackages ?? []) {
 }
 
 const declaredPages = [...mainPages, ...subPages]
+for (const page of REMOVED_STAFF_PAGES) {
+  const pageFile = join(projectRoot, ...`${page}.wxml`.split('/'))
+  if (declaredPages.includes(page) || existsSync(pageFile)) {
+    failures.push(`旧店员页仍存在：${page}`)
+  }
+}
 if (new Set(declaredPages).size !== declaredPages.length) {
   failures.push('app.json 中存在重复声明的页面路径')
 }
@@ -117,4 +165,4 @@ if (failures.length) {
   for (const f of failures) console.error('  ✗ ' + f)
   process.exit(1)
 }
-console.log('\n✓ 结构自检通过：app.json 注册与磁盘文件一致，tabBar 四项与 02 §4 一致。')
+console.log('\n✓ 结构自检通过：app.json 注册与磁盘文件一致，顾客 custom tabBar 四项与顺序一致。')

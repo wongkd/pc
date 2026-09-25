@@ -33,9 +33,15 @@ export async function rows(db, sql, ...params) {
 }
 
 const CLEAN_ORDER = [
+  // B16 盘点（0024）：先删行再删表头，两张都引用 inventory_movements / hardware。
+  'inventory_count_lines',
+  'inventory_counts',
   'stock_reservations',
   'inventory_opening_lines',
   'inventory_openings',
+  // 0027 批次表引用 hardware / stores / users，必须在 hardware 之前清，
+  // 否则清库会在删 hardware 时撞外键（AS02 加表后首次全量实测到的失败）。
+  'stock_batches',
   'inventory_movements',
   'stock_balances',
   'stock_items',

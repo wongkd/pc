@@ -39,7 +39,7 @@
 | `verify.cjs`、`verification.json` | 隔离网页组件与资源页的浏览器验证、结果 |
 | [网页资源](../../../frontend/public/assets/workbench/) | Vite 本地静态资源 |
 | [小程序资源](../../../miniprogram/assets/workbench/) | 原生小程序包内 JPEG |
-| [网页映射](../../../frontend/src/features/workbench/demoVisuals.ts)、[小程序映射](../../../miniprogram/features/demo-visuals.ts) | 只精确匹配七条演示 URI；真实附件不补生成图 |
+| 小程序演示映射 | `demo-visuals.ts` 曾给旧店员演示页匹配七条 URI；旧页面下线后该映射已删除。真实接口不补生成图，见[工作台真实接口回执](../../verification/2026-09-25-workbench-live-api/README.md) |
 | [状态图形](../../../frontend/src/features/workbench/StateGraphic.tsx) | 无结果、图片失败两个 SVG 图形 |
 | [动效样式](../../../frontend/src/styles/motion.css) | 按压反馈、键盘与减少动态效果规则 |
 

@@ -1,0 +1,19 @@
+{
+  "id": "MP00",
+  "status": "review",
+  "updatedAt": "2026-09-23T12:00:00+08:00",
+  "summary": "已锁定两张已确认四屏参考图的哈希、概念稿面板坐标、归一化比例、起始令牌和现有顾客端源码基线；未改生产代码。",
+  "evidence": [
+    "docs/verification/customer-4tab/MP00/visual-baseline.json",
+    "docs/verification/customer-4tab/MP00/README.md"
+  ],
+  "checks": [
+    { "command": "node docs/plans/2026-09-22-customer-miniprogram-reset/check-plan.mjs", "result": "pass" },
+    { "command": "node scripts/check-doc-links.mjs", "result": "pass" }
+  ],
+  "visual": "review",
+  "blockedBy": [
+    "未在微信开发者工具、iOS 或 Android 上取得实际四 Tab 截图；系统安全区与胶囊避让仍待 MP04。"
+  ],
+  "next": "执行 MP01 的前置复核：确认已交付的 assets-manifest 与 MP00 基线匹配，然后进入 MP02 顾客视觉令牌。"
+}

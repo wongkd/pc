@@ -295,6 +295,98 @@ check('场景 A（未知→重试）两端可观察输出一致', deepEqual(webR
 check('场景 B（撤权）两端可观察输出一致', deepEqual(webRun.scenarioRevoked, mpRun.scenarioRevoked, 'scenarioRevoked') === null)
 check('场景 C（网关）两端可观察输出一致', deepEqual(webRun.scenarioGateway, mpRun.scenarioGateway, 'scenarioGateway') === null)
 
+// ───────────────────────── 库存显示口径（T05b）─────────────────────────
+//
+// 与金额口径（T-10）同源的问题：库存的桶 / 成色 / 所有权标签与数量口径若两端各写一份，
+// 漂移不会报错，只会让人看错账。故两端 `inventory-view` 逐项比对，并用**契约 V5 样本**
+// 作为同一组输入实跑，输出必须逐项一致。
+console.log('\n[库存显示口径] 两端 inventory-view 逐项比对（输入取自契约 V5）')
+
+const WEB_INV = await loadTs('frontend/src/features/workbench/inventory-view.ts')
+const MP_INV = await loadTs('miniprogram/features/inventory-view.ts')
+
+for (const name of [
+  'BUCKET_LABELS',
+  'CONDITION_LABELS',
+  'OWNERSHIP_LABELS',
+  'LOCATION_LABELS',
+  'TRACKING_LABELS',
+  'STATUS_LABELS',
+  'MOVEMENT_SOURCE_LABELS',
+  'OWN_ON_HAND_BUCKETS',
+]) {
+  const diff = deepEqual(WEB_INV[name], MP_INV[name], name)
+  check(`库存标签表 ${name} 两端一致`, diff === null, diff ?? '')
+}
+
+const MONEY_INPUTS = [0, 100, 88000, 128000050, -10000]
+const COST_INPUTS = [
+  [null, false],
+  [0, false],
+  [null, true],
+  [88000, true],
+]
+const PERM_INPUTS = [
+  [null, false, false],
+  [0, false, true],
+  [88000, true, true],
+  [88000, true, false],
+]
+
+for (const [fnName, inputs] of [
+  ['formatCents', MONEY_INPUTS.map((v) => [v])],
+  ['formatYuan', MONEY_INPUTS.map((v) => [v])],
+  ['costText', COST_INPUTS],
+  ['costCellText', PERM_INPUTS],
+]) {
+  const webOut = inputs.map((args) => WEB_INV[fnName](...args))
+  const mpOut = inputs.map((args) => MP_INV[fnName](...args))
+  const diff = deepEqual(webOut, mpOut, fnName)
+  check(`库存口径 ${fnName} 同输入同输出（${inputs.length} 组）`, diff === null, diff ?? '')
+}
+
+const v5Path = resolve(repoRoot, 'contracts/v1/fixtures.json')
+const v5 = JSON.parse(readFileSync(v5Path, 'utf8')).datasets?.V5
+if (!v5) {
+  check('契约存在 V5 库存样本', false, 'fixtures.json 缺少 datasets.V5，无法实跑库存口径')
+} else {
+  const balances = v5.balances
+  const items = v5.stockItems
+  const webRows = WEB_INV.buildInventoryRows(v5.products, balances, items)
+  const mpRows = MP_INV.buildInventoryRows(v5.products, balances, items)
+  check(
+    'buildInventoryRows 用契约 V5 实跑两端一致',
+    deepEqual(webRows, mpRows, 'buildInventoryRows') === null,
+    deepEqual(webRows, mpRows, 'buildInventoryRows') ?? '',
+  )
+
+  const ownWeb = balances.map((b) => WEB_INV.ownOnHandQty(b))
+  const ownMp = balances.map((b) => MP_INV.ownOnHandQty(b))
+  check('ownOnHandQty 用契约 V5 实跑两端一致', deepEqual(ownWeb, ownMp, 'ownOnHandQty') === null)
+
+  const groupsWeb = balances.map((b) => WEB_INV.bucketGroups(b))
+  const groupsMp = balances.map((b) => MP_INV.bucketGroups(b))
+  check('bucketGroups 用契约 V5 实跑两端一致', deepEqual(groupsWeb, groupsMp, 'bucketGroups') === null)
+
+  const itemCostWeb = items.map((i) => WEB_INV.itemCostCents(i))
+  const itemCostMp = items.map((i) => MP_INV.itemCostCents(i))
+  check('itemCostCents 用契约 V5 实跑两端一致', deepEqual(itemCostWeb, itemCostMp, 'itemCostCents') === null)
+
+  // 三桶口径的语义断言（不是两端互比，是两端都必须满足）
+  for (const [label, mod] of [['网页端', WEB_INV], ['小程序端', MP_INV]]) {
+    const gpu = balances.find((b) => b.productRef === 'DEMO-PRODUCT-GPU')
+    const side = items.filter((i) => i.availability === 'in_transit' || i.availability === 'customer_custody')
+    check(
+      `${label} · 在途与客户保管不计入自有在库量`,
+      mod.ownOnHandQty(gpu) === 2 && side.every((i) => !mod.isOwnOnHand(i.availability)),
+      `自有在库 ${mod.ownOnHandQty(gpu)}，另列件 ${side.length} 件`,
+    )
+    const mb = balances.find((b) => b.productRef === 'DEMO-PRODUCT-MB')
+    check(`${label} · 未知成本不显示为 0`, mod.costText(mb.totalCostCents, mb.costKnown) === '成本未知')
+    check(`${label} · 无成本权限时成本单元格为 null`, mod.costCellText(88000, true, false) === null)
+  }
+}
+
 // ───────────────────────── 结论 ─────────────────────────
 
 if (failures.length) {

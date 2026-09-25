@@ -1,0 +1,40 @@
+{
+  "scope": "本地隔离环境（真实 Worker + 内存 D1 + 真实 HTTP + 真实浏览器）；不是生产登录，不是微信真机",
+  "backendUrl": "http://127.0.0.1:8822",
+  "devUrl": "http://127.0.0.1:5210",
+  "checks": [
+    "演示库存里有可领用的自有备件（用于换件）",
+    "售后维修页路由可达：标题「维修工单」出现",
+    "售后维修页 kicker「售后维修」出现",
+    "「接修登记」按钮出现",
+    "点「接修登记」展开接修表单",
+    "接修表单可提交",
+    "接修后列表出现新工单（客户称呼可见）",
+    "详情页状态显示「已接修」",
+    "received 状态出现「录入诊断」动作按钮",
+    "能取到浏览器验收工单的 id",
+    "diagnosing 状态出现「录入方案」",
+    "awaiting_approval 状态出现「方案确认」+「外送 / 返厂」",
+    "repairing 状态出现「换件」",
+    "retesting 状态出现「复测通过」+「登记收款」",
+    "点「登记收款」展开收款表单（含「剩余待收」）",
+    "收款表单可提交",
+    "收款提交后出现成功提示「收款已登记」",
+    "ready_return 状态出现「归还客户」",
+    "returned 状态显示「已归还」"
+  ],
+  "failed": [],
+  "errors": [],
+  "consoleErrors": [],
+  "apiFailures": [],
+  "screenshots": [
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\01-service-list-empty.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\02-service-intake-form.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\03-service-list-after-intake.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\04-service-detail-received.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\05-service-detail-retesting.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\06-service-payment-form.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\07-service-after-payment.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E10-current\\screenshots\\08-service-detail-returned.png"
+  ]
+}

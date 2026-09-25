@@ -57,7 +57,23 @@ function collectWxml(dir, out) {
   return out
 }
 
-const appClasses = parseCssClasses(fs.readFileSync(appWxssPath, 'utf8'))
+function parseCssWithImports(css, cssPath, visited = new Set()) {
+  const resolvedPath = path.resolve(cssPath)
+  if (visited.has(resolvedPath)) return new Set()
+  visited.add(resolvedPath)
+  const classes = parseCssClasses(css)
+  const importPattern = /@import\s+["']([^"']+)["']\s*;?/g
+  let match
+  while ((match = importPattern.exec(css))) {
+    const importedPath = path.resolve(path.dirname(resolvedPath), match[1])
+    if (!fs.existsSync(importedPath)) continue
+    const importedClasses = parseCssWithImports(fs.readFileSync(importedPath, 'utf8'), importedPath, visited)
+    for (const name of importedClasses) classes.add(name)
+  }
+  return classes
+}
+
+const appClasses = parseCssWithImports(fs.readFileSync(appWxssPath, 'utf8'), appWxssPath)
 const files = collectWxml(root, [])
 let problems = 0
 
@@ -65,7 +81,7 @@ for (const file of files) {
   const used = wxmlClasses(fs.readFileSync(file, 'utf8'))
   const pageWxss = file.replace(/\.wxml$/, '.wxss')
   const pageClasses = fs.existsSync(pageWxss)
-    ? parseCssClasses(fs.readFileSync(pageWxss, 'utf8'))
+    ? parseCssWithImports(fs.readFileSync(pageWxss, 'utf8'), pageWxss)
     : new Set()
 
   const missing = [...used].filter((c) => !appClasses.has(c) && !pageClasses.has(c))

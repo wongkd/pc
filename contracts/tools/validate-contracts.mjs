@@ -709,6 +709,95 @@ if (fixturesDoc) {  check('fixtures.json 声明 contractVersion', fixturesDoc.co
     check(`V4 引用的边界输入 ${id} 存在`, boundaryIds.has(id), 'boundaryInputs 中未定义')
   }
 
+  // 12.4b V5 库存样本逐项重算（T05c）
+  //
+  // fixtures.rules 第 5 条要求「逐项核算由本脚本机械重算，禁止只在文档里声称已核对」。
+  // 数量守恒定的是 T05a 的实现口径：to_bucket 桶 +qty、from_bucket 桶 −qty（OPEN-ITEMS G-17）。
+  const v5 = fixturesDoc.datasets?.V5
+  if (v5) {
+    const products5 = v5.products ?? []
+    const items5 = v5.stockItems ?? []
+    const balances5 = v5.balances ?? []
+    const moves5 = v5.movements ?? []
+    const ownBuckets = new Set(['available', 'reserved', 'quarantine'])
+
+    const productRefs = new Set(products5.map((p) => p.productRef))
+    check('V5 商品引用唯一', productRefs.size === products5.length, `声明 ${products5.length} 个 / 唯一引用 ${productRefs.size} 个`)
+
+    const assetCodes = items5.map((i) => i.assetCode)
+    check('V5 实物内部编号唯一', new Set(assetCodes).size === assetCodes.length, `编号 ${assetCodes.length} 个 / 唯一 ${new Set(assetCodes).size} 个`)
+    check('V5 实物均指向已声明商品', items5.every((i) => productRefs.has(i.productRef)), '存在指向未声明商品的实物')
+    check(
+      'V5 二手实物必有内部编号（无 SN 也要有）',
+      items5.filter((i) => i.condition === 'used').every((i) => typeof i.assetCode === 'string' && i.assetCode.length > 0),
+      '04 §2 L21：二手必有内部编号',
+    )
+
+    const recomputed = new Map()
+    for (const m of moves5) {
+      const cur = recomputed.get(m.productRef) ?? { available: 0, reserved: 0, quarantine: 0 }
+      if (m.toBucket) cur[m.toBucket] += m.qty
+      if (m.fromBucket) cur[m.fromBucket] -= m.qty
+      recomputed.set(m.productRef, cur)
+    }
+    for (const b of balances5) {
+      const c = recomputed.get(b.productRef) ?? { available: 0, reserved: 0, quarantine: 0 }
+      check(`V5 数量守恒 ${b.productRef} 可卖`, c.available === b.availableQty, `流水重算 ${c.available} ≠ 余额 ${b.availableQty}`)
+      check(`V5 数量守恒 ${b.productRef} 已订`, c.reserved === b.reservedQty, `流水重算 ${c.reserved} ≠ 余额 ${b.reservedQty}`)
+      check(`V5 数量守恒 ${b.productRef} 待处理`, c.quarantine === b.quarantineQty, `流水重算 ${c.quarantine} ≠ 余额 ${b.quarantineQty}`)
+      check(
+        `V5 三桶非负 ${b.productRef}`,
+        b.availableQty >= 0 && b.reservedQty >= 0 && b.quarantineQty >= 0,
+        `可卖 ${b.availableQty} / 已订 ${b.reservedQty} / 待处理 ${b.quarantineQty}`,
+      )
+      check(
+        `V5 未知成本不得估成 0 ${b.productRef}`,
+        b.costKnown ? b.totalCostCents !== null : b.totalCostCents === null,
+        `costKnown=${b.costKnown} 而 totalCostCents=${JSON.stringify(b.totalCostCents)}（03 §1 R01：未知成本为 null，不是 0）`,
+      )
+    }
+
+    for (const ref of products5.filter((p) => p.trackingMode === 'item').map((p) => p.productRef)) {
+      const itemCount = items5.filter((i) => i.productRef === ref && ownBuckets.has(i.availability) && i.ownership === 'store').length
+      const b = balances5.find((x) => x.productRef === ref)
+      const qty = (b?.availableQty ?? 0) + (b?.reservedQty ?? 0) + (b?.quarantineQty ?? 0)
+      check(`V5 逐件商品 ${ref} 自有在库量 = 实物件数`, itemCount === qty, `实物 ${itemCount} 件 ≠ 余额合计 ${qty}`)
+    }
+
+    check(
+      'V5 客户保管件所有权为客户',
+      items5.filter((i) => i.availability === 'customer_custody').every((i) => i.ownership === 'customer'),
+      '03 §1 R03：客户暂存不属于可卖库存，所有权必须是 customer',
+    )
+    check(
+      'V5 在途件不落在余额三桶内',
+      items5.filter((i) => i.availability === 'in_transit').every((i) => !ownBuckets.has(i.availability)),
+      '03 §4 L84：在途不算在库',
+    )
+    const storeSn = items5.filter((i) => i.ownership === 'store' && i.snNormalized).map((i) => i.snNormalized)
+    check('V5 店有实物的 SN 不重复', new Set(storeSn).size === storeSn.length, `店有 SN ${storeSn.length} 个 / 唯一 ${new Set(storeSn).size} 个（03 §4 L86：重复 SN 不自动合并）`)
+
+    const caseIds5 = v5.caseIds ?? []
+    const caseIdSet5 = new Set((v5.cases ?? []).map((c) => c.id))
+    for (const id of caseIds5) {
+      check(`V5 引用样本用例 ${id} 存在`, caseIdSet5.has(id), 'cases 中未定义')
+    }
+    for (const c of v5.cases ?? []) {
+      check(`V5 样本用例 ${c.id} 附规格依据`, Array.isArray(c.specBasis) && c.specBasis.length > 0, '登记必须钉规格原文行号（P-11）')
+      basisVerified += (c.specBasis ?? []).length
+      verifyBasis(`V5 用例 ${c.id}`, c.specBasis ?? [])
+    }
+    const iv06 = (v5.cases ?? []).find((c) => c.id === 'IV-06')
+    for (const row of iv06?.expect?.byProduct ?? []) {
+      const b = balances5.find((x) => x.productRef === row.productRef)
+      check(
+        `V5 用例 IV-06 声明的 ${row.productRef} 与余额一致`,
+        Boolean(b) && b.availableQty === row.availableQty && b.reservedQty === row.reservedQty && b.quarantineQty === row.quarantineQty,
+        b ? `余额 ${b.availableQty}/${b.reservedQty}/${b.quarantineQty} ≠ 用例 ${row.availableQty}/${row.reservedQty}/${row.quarantineQty}` : '余额中不存在该商品',
+      )
+    }
+  }
+
   // 12.5 金额算例逐项重算
   const moneyTerms = new Set(fixturesDoc.moneyFormulaContract?.terms ?? [])
   const moneyComputed = new Set(fixturesDoc.moneyFormulaContract?.computed ?? [])

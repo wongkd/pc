@@ -1,0 +1,102 @@
+{
+  "contractVersion": "v2",
+  "inherits": "v1",
+  "scope": "D10 formal opening inventory and its inventory read metadata",
+  "moduleEnvelopeVersion": "v2; inventory operations not otherwise listed inherit the v1 payload shape",
+  "routes": [
+    "GET /api/v2/inventory",
+    "GET /api/v2/inventory/items/:id",
+    "POST /api/v2/inventory/products",
+    "POST /api/v2/inventory/openings",
+    "POST /api/v2/inventory/items/:id/refurbishments",
+    "POST /api/v2/inventory/items/:id/make-available",
+    "POST /api/v2/inventory/items/:id/inspection",
+    "POST /api/v2/inventory/counts",
+    "POST /api/v2/inventory/counts/:id/approve",
+    "GET /api/v2/operations/:requestId"
+  ],
+  "openingWindow": {
+    "ownerPermission": "inventory/opening",
+    "activation": { "command": "open_window", "durationDays": { "min": 1, "max": 7 } },
+    "closeRules": ["first_business_movement", "deadline"],
+    "reopen": false,
+    "previewStartsWindow": false
+  },
+  "costRules": {
+    "known_actual": "Positive integer cents and actual-cost evidence are required.",
+    "assessed_estimate": "Positive integer cents, owner-approved basis, and an assessment date are required. Preserve as estimate; do not add it to actual-cost totals.",
+    "unknown": "Amount and assessment date must be null; never coerce to zero.",
+    "zero_cost": "Exactly zero cents and owner-approved evidence are required; keep distinct from unknown."
+  },
+  "types": [
+    { "name": "OpeningCostBasis", "constant": "OPENING_COST_BASES", "values": ["known_actual", "assessed_estimate", "unknown", "zero_cost"] },
+    { "name": "OpeningWindowMode", "constant": "OPENING_WINDOW_MODES", "values": ["disabled", "preview", "formal"] },
+    { "name": "OpeningWindowState", "constant": "OPENING_WINDOW_STATES", "values": ["disabled", "preview", "not_started", "open", "expired", "closed"] },
+    { "name": "OpeningWindowCloseReason", "constant": "OPENING_WINDOW_CLOSE_REASONS", "values": ["first_business_movement"] }
+  ],
+  "interfaces": [
+    {
+      "name": "InventoryItemCostMetadata",
+      "fields": [
+        { "name": "acquisitionCostCents", "type": "number | null", "optional": true },
+        { "name": "assessedEstimateCents", "type": "number | null", "optional": true },
+        { "name": "acquisitionCostBasis", "type": "OpeningCostBasis | null", "optional": true },
+        { "name": "costEvidenceRef", "type": "string | null", "optional": true },
+        { "name": "costAssessedAt", "type": "string | null", "optional": true }
+      ]
+    },
+    {
+      "name": "InventoryBatchCostMetadata",
+      "fields": [
+        { "name": "unitCostCents", "type": "number | null", "optional": true },
+        { "name": "estimatedUnitCostCents", "type": "number | null", "optional": true },
+        { "name": "costBasis", "type": "OpeningCostBasis | null", "optional": true },
+        { "name": "costEvidenceRef", "type": "string | null", "optional": true },
+        { "name": "costAssessedAt", "type": "string | null", "optional": true }
+      ]
+    },
+    {
+      "name": "OpeningWindowStatus",
+      "fields": [
+        { "name": "mode", "type": "OpeningWindowMode" },
+        { "name": "status", "type": "OpeningWindowState" },
+        { "name": "openedAt", "type": "string | null" },
+        { "name": "closesAt", "type": "string | null" },
+        { "name": "closedAt", "type": "string | null" },
+        { "name": "closeReason", "type": "OpeningWindowCloseReason | null" }
+      ]
+    },
+    {
+      "name": "FormalOpeningLineInput",
+      "fields": [
+        { "name": "approvedCountLineRef", "type": "string" },
+        { "name": "productRef", "type": "string" },
+        { "name": "qty", "type": "number" },
+        { "name": "condition", "type": "'new' | 'used'", "optional": true },
+        { "name": "assetCode", "type": "string", "optional": true },
+        { "name": "snRaw", "type": "string", "optional": true },
+        { "name": "remark", "type": "string | null", "optional": true },
+        { "name": "unitCostCents", "type": "number | null", "optional": true },
+        { "name": "costBasis", "type": "OpeningCostBasis" },
+        { "name": "costEvidenceRef", "type": "string | null", "optional": true },
+        { "name": "costAssessedAt", "type": "string | null", "optional": true }
+      ]
+    },
+    {
+      "name": "FormalOpeningInput",
+      "fields": [
+        { "name": "approvedCountRef", "type": "string" },
+        { "name": "note", "type": "string | null", "optional": true },
+        { "name": "occurredAt", "type": "string | null", "optional": true },
+        { "name": "lines", "type": "FormalOpeningLineInput[]" }
+      ]
+    },
+    {
+      "name": "OpenFormalOpeningWindowCommand",
+      "fields": [
+        { "name": "command", "type": "'open_window'" },
+        { "name": "durationDays", "type": "number" }
+      ]
+    }
+  ]
+}

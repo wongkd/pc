@@ -1,0 +1,8 @@
+<view class="customer-image-frame" style="padding-top: {{ratioPadding}};" aria-label="{{altText}}">
+  <image wx:if="{{src && !failed}}" class="customer-image-frame__image" src="{{src}}" mode="{{fitMode === 'aspectFit' ? 'aspectFit' : 'scaleToFill'}}" style="{{fitMode === 'aspectFit' ? '' : cropStyle}}" aria-label="{{altText}}" bindload="onImageLoad" binderror="onImageError" />
+  <view wx:if="{{loading && src && !failed}}" class="customer-image-frame__placeholder" aria-hidden="true"></view>
+  <view wx:if="{{failed || !src}}" class="customer-image-frame__fallback" aria-label="{{altText}}">
+    <text class="customer-image-frame__fallback-text">图片暂不可用</text>
+    <text wx:if="{{altText}}" class="customer-image-frame__alt">{{altText}}</text>
+  </view>
+</view>

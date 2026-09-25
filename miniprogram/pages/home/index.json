@@ -1,0 +1,8 @@
+{
+  "navigationStyle": "custom",
+  "navigationBarTitleText": "装一下机",
+  "usingComponents": {
+    "customer-nav": "/components/customer-nav/index",
+    "customer-image": "/components/customer-image/index"
+  }
+}

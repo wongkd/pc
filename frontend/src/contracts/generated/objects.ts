@@ -2,7 +2,7 @@
 // 生成命令：node contracts/tools/generate-dto.mjs
 // 来源：contracts/v1/objects.json；字段与 nullable 以契约为准。
 import type {
-  ContractId, Cents, Instant, CalendarDate, JsonValue, JsonObject, ActiveStatus, TrackingMode, StockCondition, OwnershipType, LocationKind, StockBucket, QuoteStatus, SaleTradeState, SaleFulfillmentState, SaleKind, LineSource, ReservationStatus, BalanceDirection, RecoveryState, ServiceState, WarrantyDecision, InspectionDisposition, ChecklistResult, CashDirection, CashMethod, CashVerificationState, OffsetState, FinancialDisposition, PaymentPurpose, AttachmentPurpose, AttachmentUploadState, AttachmentVisibility, OperationStatus, EntityType, TaskCategory, InventoryMovementSource, CounterpartyKind, ActionCode,
+  ContractId, Cents, Instant, CalendarDate, JsonValue, JsonObject, ActiveStatus, TrackingMode, StockCondition, ConditionGrade, OwnershipType, LocationKind, StockBucket, QuoteStatus, SaleTradeState, SaleFulfillmentState, SaleKind, LineSource, ReservationStatus, BalanceDirection, RecoveryState, ServiceState, WarrantyDecision, WarrantyTerm, InspectionDisposition, ChecklistResult, CashDirection, CashMethod, CashVerificationState, OffsetState, FinancialDisposition, CreditState, PaymentPurpose, AttachmentPurpose, AttachmentUploadState, AttachmentVisibility, OperationStatus, EntityType, TaskCategory, InventoryMovementSource, CounterpartyKind, ActionCode, CustomerClaimStatus, CustomerClaimMethod, CustomerSourceChannel,
 } from './enums'
 
 // 持久对象默认另含 CommonFields；正式事件类对象另含 EventFields 的相关子集。
@@ -66,6 +66,11 @@ export interface StockItem {
   costKnown: boolean
   inspectionRef: ContractId | null
   warrantySnapshot: JsonObject | null
+  conditionGrade: ConditionGrade | null // 逐件成色等级（B30 上架门槛之一）。整备上架前必须补齐
+  salePriceCents: Cents | null // 单位：分；逐件标价（B30 上架门槛之一）。二手件一机一价，故落在件上而非商品上；商品级挂牌价见 Product.defaultSalePriceCents
+  disclosureNote: string | null // 已知缺陷披露的自由文本（B30 上架门槛之一）。会写进顾客报价单，不含成本与卖方信息
+  dataDisposed: boolean | null // 存储设备客户数据已处置确认（B30 上架门槛之一）。法规要求，必须显式确认，不得默认通过
+  warrantyTerm: WarrantyTerm | null // 本店质保月数（B30 上架门槛之一）
 }
 
 /** 客户 / 卖方 */
@@ -74,6 +79,7 @@ export interface Customer {
   phone: string | null
   contactNote: string | null
   remarkInternal: string | null
+  sourceChannel: CustomerSourceChannel | null
 }
 
 /** 客户设备 */
@@ -99,10 +105,12 @@ export interface QuoteVersion {
   revision: number
   status: QuoteStatus
   validUntil: CalendarDate | null
-  lines: JsonValue[]
+  lines: JsonValue[] // 报价行数组，元素为报价行（quote_lines）：position / source / nameSnapshot / specSnapshot / qty / unitPriceCents / lineTotalCents / productRef / stockItemId / customerDeviceRef / warrantySnapshot。productRef 是商品引用（hardware.entity_id），草稿中的临时行可为空；new / used 行**成交（转销售单）前必须能映射到商品**（new 靠 productRef 或已指定实物，used 必须指定实物），否则不得成交 —— 见 rules 第 1 条。
   discountCents: Cents // 单位：分
   termsSnapshot: JsonObject
   issuedAt: Instant | null
+  confirmedAt: Instant | null
+  confirmedSource: string | null
 }
 
 /** 销售单 */
@@ -235,6 +243,15 @@ export interface RefurbishmentCost {
   evidenceRef: ContractId | null
 }
 
+/** 拆件入库（B44）：回收整机拆成零件，源件退役、产出件新建待检、损耗单列报废 */
+export interface RecoveryTeardown {
+  recoveryOrderId: ContractId
+  sourceStockItemId: ContractId // 被拆解的整机实物
+  outputs: JsonValue[] // 拆出零件：商品引用 + 成色 + 内部编号 + 逐件成本分摊
+  scrapLines: JsonValue[] | null // 损耗件：说明 + 金额，单列报废不摊进产出件
+  occurredAt: Instant
+}
+
 /** 维修工单 */
 export interface ServiceOrder {
   customerId: ContractId | null
@@ -275,6 +292,7 @@ export interface ReturnRecord {
   reason: string
   acceptedQty: number
   creditCents: Cents // 单位：分
+  creditState: CreditState
   refundEntryRef: ContractId | null
 }
 
@@ -314,7 +332,7 @@ export interface Offset {
   reversalOf: ContractId | null
 }
 
-/** 附件（照片 / 文件） */
+/** 附件（照片 / 文件 / 生成单据） */
 export interface Attachment {
   ownerEntityRef: JsonObject
   purpose: AttachmentPurpose
@@ -369,6 +387,30 @@ export interface Session {
   sessionVersion: number
   issuedAt: Instant
   expiresAt: Instant
+  revokedAt: Instant | null
+}
+
+/** 顾客微信身份（与内部成员的 WechatIdentity 是两条独立链路） */
+export interface CustomerIdentity {
+  appId: string
+  openid: string
+  storeId: ContractId
+  customerId: ContractId | null // 认领成功后指向 customers.id；未认领为 null
+  claimStatus: CustomerClaimStatus
+  claimMethod: CustomerClaimMethod | null
+  sessionVersion: number // 递增即让该顾客的全部旧会话失效
+  boundAt: Instant
+  revokedAt: Instant | null
+  lastSeenAt: Instant | null
+}
+
+/** 顾客登录会话（与员工 Session 分离） */
+export interface CustomerSession {
+  customerId: ContractId
+  identityId: ContractId // 指向 CustomerIdentity；身份解绑即会话失效
+  sessionVersion: number
+  issuedAt: Instant
+  expiresAt: Instant // 默认 30 天，活动即续期
   revokedAt: Instant | null
 }
 

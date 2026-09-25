@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "date": "2026-09-22",
+  "visualSource": "four-tab-board-clean.png",
+  "typographySource": "four-tab-board-font-only.png",
+  "status": "ready_for_layout_integration",
+  "authorization": "Project-local assets generated for this mini-program from its approved visual reference; no third-party stock files or trademarks are included.",
+  "assets": [
+    { "id": "BRAND", "path": "miniprogram/assets/customer/brand-wordmark.png", "size": "900x300", "purpose": "首页手写字标", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "HERO-H", "path": "miniprogram/assets/customer/hero-home.jpg", "size": "900x675", "purpose": "首页白色主机桌面主视觉", "focus": "right 62%, center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "BANNER", "path": "miniprogram/assets/customer/banner-home.jpg", "size": "900x300", "purpose": "首页横向推荐", "focus": "right 66%, center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "HERO-S", "path": "miniprogram/assets/customer/hero-shop.jpg", "size": "900x506", "purpose": "商城主推图", "focus": "right 70%, center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "PRODUCT-01", "path": "miniprogram/assets/customer/product-black-tower.jpg", "size": "600x600", "purpose": "黑色整机商品图", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "PRODUCT-02", "path": "miniprogram/assets/customer/product-white-tower.jpg", "size": "600x600", "purpose": "白色整机商品图", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "PRODUCT-03", "path": "miniprogram/assets/customer/product-gpu.jpg", "size": "600x600", "purpose": "显卡商品图", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "PRODUCT-04", "path": "miniprogram/assets/customer/product-monitor.jpg", "size": "600x600", "purpose": "显示器商品图", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "POST-01", "path": "miniprogram/assets/customer/post-cream-desk.jpg", "size": "900x506", "purpose": "社区奶油桌面案例", "focus": "center-right", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "POST-02", "path": "miniprogram/assets/customer/post-dark-desk.jpg", "size": "900x506", "purpose": "社区黑色桌面案例", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "POST-03", "path": "miniprogram/assets/customer/post-cooling.jpg", "size": "600x450", "purpose": "社区散热知识缩略图", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "CAT-H", "path": "miniprogram/assets/customer/cat-home-pair.png", "size": "420x280", "purpose": "首页银猫与金猫贴纸", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "CAT-S", "path": "miniprogram/assets/customer/cat-silver-standing.png", "size": "260x390", "purpose": "商城银猫贴纸", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "CAT-C", "path": "miniprogram/assets/customer/cat-gold-lounging.png", "size": "420x280", "purpose": "社区与页脚金猫贴纸", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "CAT-U", "path": "miniprogram/assets/customer/cat-archive-folder.png", "size": "420x320", "purpose": "我的装机档案卡", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "AVATAR", "path": "miniprogram/assets/customer/avatar-cat.png", "size": "320x320", "purpose": "顾客默认头像", "focus": "center", "source": "built-in imagegen, approved board reference", "authorization": "project-generated", "status": "ready" },
+    { "id": "SERVICE-ICONS", "paths": ["serviceBuild", "serviceRecycle", "serviceRepair", "serviceLocation"], "variants": ["active", "muted"], "size": "81x81", "purpose": "首页四服务入口", "source": "project SVG geometry", "authorization": "project-generated", "status": "ready" },
+    { "id": "TAB-ICONS", "paths": ["tabHome", "tabShop", "tabCommunity", "tabMine"], "variants": ["active", "muted"], "size": "81x81", "purpose": "四 Tab 双态图标", "source": "project SVG geometry", "authorization": "project-generated", "status": "ready" },
+    { "id": "MENU-ICONS", "paths": ["menuQuote", "menuOrder", "menuAppointment", "menuAfterSales", "menuQr", "menuSettings", "chevron"], "variants": ["active", "muted"], "size": "81x81", "purpose": "我的页菜单、二维码、设置与箭头", "source": "project SVG geometry", "authorization": "project-generated", "status": "ready" }
+  ],
+  "originals": "docs/design/2026-09-22-customer-ip/originals/customer-assets",
+  "rebuild": "node docs/design/2026-09-22-customer-ip/build-customer-assets.cjs"
+}

@@ -431,6 +431,131 @@
         "V4-01", "V4-02", "V4-03", "V4-04", "V4-05", "V4-06", "V4-07", "V4-08", "V4-09",
         "V4-10", "V4-11", "V4-12", "V4-13", "V4-14", "V4-15", "V4-16", "V4-17"
       ]
+    },
+
+    "V5": {
+      "id": "V5",
+      "title": "商品、实物与期初库存",
+      "purpose": "T05c：把 T05a 已测通的库存约束落成读模型样本 —— 同型号不同实物、无 SN 二手、客户寄存、未知成本、重复 SN、数量守恒；另附在途不落地与停用商品两种边界",
+      "source": "T05 卡面六项样本；03 §1 R01/R03、03 §4 L84/L86；04 §2 L19-L21、04 §3 L57、04 §5 L98/L99",
+      "order": "unspecified",
+      "orderNote": "与 V1 同：列表排序由读模型实现（conventions.pagination.ordering），本卡不冻结顺序。",
+      "readModelOnly": "V5 只证明库存页面读模型与数量 / 成本口径，不构成任何业务前置条件已满足的证据；写入测试必须另建完整商品、流水与权限实体，不能拿 V5 当业务已发生。",
+      "costVisibilityNote": "04 §3 L57：权限决定 cost 字段是否存在。无成本权限时响应根本不返回成本字段，不是置空为 0；本样本中的成本值只在有成本权限的视图里出现。",
+      "balanceShapeNote": "stock_balances 只有 available / reserved / quarantine 三列，在途与客户保管在结构上无处安放，因此不可能被混算进自有在库量。",
+      "products": [
+        { "productRef": "DEMO-PRODUCT-GPU", "sku": "DEMO-SKU-GPU-4060TI", "name": "影驰 RTX 4060 Ti 金属大师", "category": "显卡", "brand": "影驰", "specs": "8GB GDDR6", "trackingMode": "item", "requiresSn": true, "status": "active", "defaultSalePriceCents": 249900 },
+        { "productRef": "DEMO-PRODUCT-MB", "sku": "DEMO-SKU-MB-B760M", "name": "华硕 TUF B760M-PLUS", "category": "主板", "brand": "华硕", "specs": "DDR5 / LGA1700", "trackingMode": "item", "requiresSn": true, "status": "active", "defaultSalePriceCents": 119900 },
+        { "productRef": "DEMO-PRODUCT-SSD", "sku": "DEMO-SKU-SSD-NV2", "name": "金士顿 NV2 1TB", "category": "存储", "brand": "金士顿", "specs": "NVMe PCIe 4.0", "trackingMode": "quantity", "requiresSn": false, "status": "active", "defaultSalePriceCents": 39900 },
+        { "productRef": "DEMO-PRODUCT-MEM", "sku": "DEMO-SKU-MEM-DDR5", "name": "金百达 DDR5 16GB 6000", "category": "内存", "brand": "金百达", "specs": "16GB / 6000MHz", "trackingMode": "quantity", "requiresSn": false, "status": "disabled", "defaultSalePriceCents": 29900 }
+      ],
+      "stockItems": [
+        { "stockItemId": "DEMO-ITEM-U017", "assetCode": "U-017", "productRef": "DEMO-PRODUCT-GPU", "condition": "used", "snRaw": "SN-GPU-8842-A", "snNormalized": "sngpu8842a", "ownership": "store", "availability": "available", "location": "store", "acquisitionRef": "DEMO-RC-001", "acquisitionCostCents": 80000, "refurbishmentCostCents": 8000, "costKnown": true },
+        { "stockItemId": "DEMO-ITEM-N201", "assetCode": "N-201", "productRef": "DEMO-PRODUCT-GPU", "condition": "new", "snRaw": "SN-GPU-9001-B", "snNormalized": "sngpu9001b", "ownership": "store", "availability": "available", "location": "store", "acquisitionRef": "DEMO-PO-002", "acquisitionCostCents": 198000, "refurbishmentCostCents": null, "costKnown": true },
+        { "stockItemId": "DEMO-ITEM-U032", "assetCode": "U-032", "productRef": "DEMO-PRODUCT-MB", "condition": "used", "snRaw": null, "snNormalized": null, "ownership": "store", "availability": "available", "location": "store", "acquisitionRef": "DEMO-RC-002", "acquisitionCostCents": null, "refurbishmentCostCents": null, "costKnown": false },
+        { "stockItemId": "DEMO-ITEM-N118", "assetCode": "N-118", "productRef": "DEMO-PRODUCT-MB", "condition": "new", "snRaw": "SN-MB-5510-C", "snNormalized": "snmb5510c", "ownership": "store", "availability": "quarantine", "location": "store", "acquisitionRef": "DEMO-PO-002", "acquisitionCostCents": 78000, "refurbishmentCostCents": null, "costKnown": true },
+        { "stockItemId": "DEMO-ITEM-C901", "assetCode": "C-901", "productRef": "DEMO-PRODUCT-GPU", "condition": "used", "snRaw": "SN-GPU-8842-A", "snNormalized": "sngpu8842a", "ownership": "customer", "availability": "customer_custody", "location": "customer", "acquisitionRef": null, "acquisitionCostCents": null, "refurbishmentCostCents": null, "costKnown": false },
+        { "stockItemId": "DEMO-ITEM-T501", "assetCode": "T-501", "productRef": "DEMO-PRODUCT-GPU", "condition": "new", "snRaw": "SN-GPU-9100-E", "snNormalized": "sngpu9100e", "ownership": "store", "availability": "in_transit", "location": "supplier", "acquisitionRef": "DEMO-PO-003", "acquisitionCostCents": 196000, "refurbishmentCostCents": null, "costKnown": true }
+      ],
+      "balances": [
+        { "productRef": "DEMO-PRODUCT-GPU", "locationId": "DEMO-LOC-STORE", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0, "totalCostCents": 286000, "costKnown": true },
+        { "productRef": "DEMO-PRODUCT-MB", "locationId": "DEMO-LOC-STORE", "availableQty": 1, "reservedQty": 0, "quarantineQty": 1, "totalCostCents": null, "costKnown": false },
+        { "productRef": "DEMO-PRODUCT-SSD", "locationId": "DEMO-LOC-STORE", "availableQty": 12, "reservedQty": 3, "quarantineQty": 1, "totalCostCents": 424000, "costKnown": true },
+        { "productRef": "DEMO-PRODUCT-MEM", "locationId": "DEMO-LOC-STORE", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0, "totalCostCents": 43000, "costKnown": true }
+      ],
+      "movements": [
+        { "movementId": "DEMO-MV-001", "productRef": "DEMO-PRODUCT-GPU", "stockItemId": "DEMO-ITEM-U017", "qty": 1, "fromBucket": null, "toBucket": "available", "costCents": 88000, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-002", "productRef": "DEMO-PRODUCT-GPU", "stockItemId": "DEMO-ITEM-N201", "qty": 1, "fromBucket": null, "toBucket": "available", "costCents": 198000, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-003", "productRef": "DEMO-PRODUCT-MB", "stockItemId": "DEMO-ITEM-U032", "qty": 1, "fromBucket": null, "toBucket": "available", "costCents": null, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-004", "productRef": "DEMO-PRODUCT-MB", "stockItemId": "DEMO-ITEM-N118", "qty": 1, "fromBucket": null, "toBucket": "quarantine", "costCents": 78000, "source": "purchase_receipt" },
+        { "movementId": "DEMO-MV-005", "productRef": "DEMO-PRODUCT-SSD", "stockItemId": null, "qty": 15, "fromBucket": null, "toBucket": "available", "costCents": 397500, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-006", "productRef": "DEMO-PRODUCT-SSD", "stockItemId": null, "qty": 3, "fromBucket": "available", "toBucket": "reserved", "costCents": null, "source": "reservation" },
+        { "movementId": "DEMO-MV-007", "productRef": "DEMO-PRODUCT-SSD", "stockItemId": null, "qty": 1, "fromBucket": null, "toBucket": "quarantine", "costCents": 26500, "source": "purchase_receipt" },
+        { "movementId": "DEMO-MV-008", "productRef": "DEMO-PRODUCT-MEM", "stockItemId": null, "qty": 2, "fromBucket": null, "toBucket": "available", "costCents": 43000, "source": "opening_balance" }
+      ],
+      "inTransit": {
+        "purchaseRef": "DEMO-PO-003",
+        "productRef": "DEMO-PRODUCT-GPU",
+        "orderedQty": 1,
+        "receivedQty": 0,
+        "stockItemRef": "DEMO-ITEM-T501",
+        "note": "在途是采购单的派生量，不落 stock_balances；余额三列里没有它的位置。"
+      },
+      "caseIds": ["IV-01", "IV-02", "IV-03", "IV-04", "IV-05", "IV-06", "IV-07", "IV-08"],
+      "cases": [
+        {
+          "id": "IV-01",
+          "title": "同型号不同实物",
+          "claim": "DEMO-PRODUCT-GPU 有 U-017（二手、回收取得）与 N-201（新品、采购取得）两件，编号、SN、来源与成本各不相同；数量栏显示 2，但点开构成必须能分别定位到具体那件。",
+          "expect": { "productRef": "DEMO-PRODUCT-GPU", "itemAssetCodes": ["U-017", "N-201"], "balanceAvailableQty": 2, "distinctAcquisitionRefs": ["DEMO-RC-001", "DEMO-PO-002"], "costCentsByAssetCode": { "U-017": 88000, "N-201": 198000 } },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 86, "quote": "没有厂商 SN 的二手也有内部唯一 stockItemId / assetCode" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-02",
+          "title": "无 SN 二手",
+          "claim": "U-032 是二手主板，没有厂商 SN，但仍有内部唯一编号；snRaw / snNormalized 为 null，assetCode 非空。",
+          "expect": { "stockItemId": "DEMO-ITEM-U032", "assetCode": "U-032", "condition": "used", "snRaw": null, "snNormalized": null, "hasAssetCode": true },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 21, "quote": "二手必有内部编号" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-03",
+          "title": "客户寄存不计入在库",
+          "claim": "C-901 是客户送修暂存的同型号显卡，所有权为客户、可用性为客户保管、位置在客户处；它不计入自有在库量，也不进余额三列。",
+          "expect": { "stockItemId": "DEMO-ITEM-C901", "ownership": "customer", "availability": "customer_custody", "ownOnHandQty": 2, "customerCustodyQty": 1, "countedInOwnOnHand": false },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 13, "quote": "客户暂存、客供、送修均不属于可卖库存" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-04",
+          "title": "未知成本不得写成 0",
+          "claim": "DEMO-PRODUCT-MB 的余额因为 U-032 成本未知，totalCostCents 必须为 null 且 costKnown=false；界面不得渲染成 ¥0.00。",
+          "expect": { "productRef": "DEMO-PRODUCT-MB", "totalCostCents": null, "costKnown": false, "mustNotRenderAsZero": true },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 11, "quote": "未知成本为 null，不是 0" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-05",
+          "title": "重复 SN 不自动合并",
+          "claim": "U-017（店有）与 C-901（客户）的 snNormalized 相同，属两条独立所有权记录，不自动合并；同一所有权下重复 SN 由部分唯一索引拒绝。",
+          "expect": { "duplicateSnNormalized": "sngpu8842a", "storeOwnership": "store", "customerOwnership": "customer", "autoMerged": false, "storeDuplicateRejected": true },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 86, "quote": "重复 SN 进入人工核对，不自动合并所有权记录" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-06",
+          "title": "数量守恒",
+          "claim": "每个 product × bucket 的余额必须等于流水净和（sum(to) − sum(from)）。T05a 口径：to_bucket 桶 +qty、from_bucket 桶 −qty。",
+          "expect": {
+            "recomputedMatchesBalance": true,
+            "byProduct": [
+              { "productRef": "DEMO-PRODUCT-GPU", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0 },
+              { "productRef": "DEMO-PRODUCT-MB", "availableQty": 1, "reservedQty": 0, "quarantineQty": 1 },
+              { "productRef": "DEMO-PRODUCT-SSD", "availableQty": 12, "reservedQty": 3, "quarantineQty": 1 },
+              { "productRef": "DEMO-PRODUCT-MEM", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0 }
+            ]
+          },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 20, "quote": "汇总可重算" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-07",
+          "title": "在途不落地",
+          "claim": "DEMO-PO-003 采购的 T-501 尚未实到，可用性为 in_transit；它在余额三列里没有位置，因此不可能被算进自有在库量。",
+          "expect": { "stockItemId": "DEMO-ITEM-T501", "availability": "in_transit", "ownOnHandQty": 2, "inTransitQty": 1, "inTransitInBalance": false },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 84, "quote": "在途不算在库" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-08",
+          "title": "停用商品保留既有库存",
+          "claim": "DEMO-PRODUCT-MEM 已停用（G-07 语义）：不得再产生新的库存与占用，但既有 2 件库存照常显示、不自动清零。",
+          "expect": { "productRef": "DEMO-PRODUCT-MEM", "status": "disabled", "availableQty": 2, "newStockBlocked": true, "existingStockCleared": false },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 98, "quote": "关键属性已发生业务后修改需专门规则" }],
+          "owner": "T05c"
+        }
+      ]
     }
   },
 
@@ -1276,6 +1401,15 @@
       "contractVersion": "v1（不变）",
       "versionNote": "未变更任何字段名、类型、枚举取值、动作编号、错误码、金额公式或样本数值；两个 rootPath 与规划值一致，未改动。端内生成物路径不变，故按 conventions.compatibility.versioning 的意图不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定（与 OPEN-ITEMS D-B 同一治理问题）。",
       "verification": "node contracts/tools/validate-contracts.mjs；node contracts/tools/generate-dto.mjs --check；node frontend/scripts/sync-contracts.mjs --check；node miniprogram/scripts/sync-contracts.mjs --check"
+    },
+    {
+      "rev": "T05c",
+      "date": "2026-09-18",
+      "summary": "datasets 末尾新增 V5「商品、实物与期初库存」数据集：4 个商品、6 件实物、4 条余额、8 条流水、1 笔在途，以及 IV-01 ~ IV-08 八项样本用例（同型号不同实物、无 SN 二手、客户寄存、未知成本、重复 SN、数量守恒、在途不落地、停用商品保留既有库存）。纯追加，未修改 V1–V4 任何字段、数值与用例编号。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "与 T02b-rev1 同一治理问题（OPEN-ITEMS D-B）：本次只追加非规范性样本数据，未改变任何字段名、类型、枚举取值、动作编号、错误码或金额公式，故不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定。",
+      "mechanicalCheck": "validate-contracts.mjs 第 12 节新增 V5 专项：数量守恒（余额 = 流水净和，按 to_bucket +qty / from_bucket −qty 口径）、桶内数量非负、自有在库量不含在途与客户保管、costKnown=false 时 totalCostCents 必须为 null、客户保管件不得计入自有在库。",
+      "verification": "node contracts/tools/validate-contracts.mjs；node contracts/tools/generate-dto.mjs；node frontend/scripts/sync-contracts.mjs；node miniprogram/scripts/sync-contracts.mjs"
     }
   ]
 }

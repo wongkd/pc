@@ -1,0 +1,42 @@
+{
+  "date": "2026-09-18",
+  "environment": "Windows / headless Edge; gallery only, not WeChat",
+  "results": [
+    {
+      "width": 320,
+      "images": true,
+      "noHorizontalOverflow": true,
+      "buttonFeedback": true
+    },
+    {
+      "width": 375,
+      "images": true,
+      "noHorizontalOverflow": true,
+      "buttonFeedback": true
+    },
+    {
+      "width": 390,
+      "images": true,
+      "noHorizontalOverflow": true,
+      "buttonFeedback": true
+    },
+    {
+      "width": 430,
+      "images": true,
+      "noHorizontalOverflow": true,
+      "buttonFeedback": true
+    },
+    {
+      "width": 1440,
+      "images": true,
+      "noHorizontalOverflow": true,
+      "buttonFeedback": true
+    },
+    {
+      "keyboard": true
+    }
+  ],
+  "tabIcons": 8,
+  "assetCount": 44,
+  "totalBytes": 206041
+}

@@ -29,13 +29,14 @@ export function LoginPanel({ onLogin }: Props) {
   return (
     <div className="login-overlay">
       <div className="login-card">
-        <h2>电脑报价方案</h2>
-        <p className="login-sub">{joiningByInvite ? '使用管理员提供的邀请码加入门店' : '登录以同步云端硬件库'}</p>
+        <span className="login-brand-mark" aria-hidden="true">PC</span>
+        <h2>装一下机 · 门店 ERP</h2>
+        <p className="login-sub">{joiningByInvite ? '使用管理员提供的邀请码加入门店' : '登录门店，继续处理报价、库存与客户'}</p>
         <form onSubmit={handleSubmit}>
           {joiningByInvite ? <input className="login-inp" placeholder="邀请码" value={inviteToken}
-            onChange={(e) => setInviteToken(e.target.value)} required /> : <input className="login-inp" type="email" placeholder="邮箱" value={email}
+            onChange={(e) => setInviteToken(e.target.value)} required /> : <input className="login-inp" aria-label="账号或邮箱" autoComplete="username" type="text" placeholder="账号 / 邮箱" value={email}
             onChange={(e) => setEmail(e.target.value)} required />}
-          <input className="login-inp" type="password" placeholder={joiningByInvite ? '初始密码' : '密码'} value={password}
+          <input className="login-inp" aria-label="密码" autoComplete={joiningByInvite ? "new-password" : "current-password"} type="password" placeholder={joiningByInvite ? '初始密码' : '密码'} value={password}
             onChange={(e) => setPassword(e.target.value)} required minLength={6} />
           {error && <p className="login-err">{error}</p>}
           <button className="login-btn" type="submit" disabled={loading}>

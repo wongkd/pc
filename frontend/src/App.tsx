@@ -1,790 +1,135 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { AppShell } from './app/AppShell'
 import { WorkspaceLandingPage } from './app/WorkspaceLandingPage'
-import type { WorkspaceEntry } from './app/WorkspaceLandingPage'
-import { WorkbenchTodayPage } from './features/workbench/WorkbenchTodayPage'
-import { BaseInfoSection } from './components/BaseInfoSection'
-import { HardwareLibrarySection } from './components/HardwareLibrarySection'
+import { SALES_WORKSPACE } from './app/workspaces'
 import { LoginPanel } from './components/LoginPanel'
 import { ModulePlaceholderPage } from './components/ModulePlaceholderPage'
-import { OrderDetailPage, OrdersPage } from './components/OrdersPages'
+import { CustomersPage } from './components/CustomersPage'
 import { ProductManagementPage } from './components/ProductManagementPage'
 import { SerialNumberPage } from './components/SerialNumberPage'
 import { SystemSettingsPage } from './components/SystemSettingsPage'
-import { NotesSection } from './components/NotesSection'
-import { QuoteCustomerView } from './components/QuoteCustomerView'
-import { ALL_CATEGORIES, QuoteItemsSection } from './components/QuoteItemsSection'
-import { QuotePreview } from './components/QuotePreview'
-import { QuoteToolbar } from './components/QuoteToolbar'
-import { useHardwareLibrary } from './hooks/useHardwareLibrary'
-import { useHtml2Canvas } from './hooks/useHtml2Canvas'
-import { clearToken, fetchLibrary, fetchQuote, fetchTemplates, addLibraryItems, saveQuote, saveTemplateToCloud, deleteTemplateFromCloud, isLoggedIn, changePassword as apiChangePassword, fetchCurrentStore, fetchProfile, selectStore, createOrder } from './utils/api'
-import type { OrderCreateInput, Profile, Store } from './utils/api'
-import type {
-  AppStorageData,
-  BrandInfo,
-  HardwareLibraryItem,
-  MerchantTemplate,
-  Orientation,
-  QuoteDocument,
-  QuoteItem,
-  QuoteMeta,
-  ViewSettings,
-} from './types/quote'
-import { DEFAULT_QUOTE_NOTES, migrateNotes } from './types/quote'
-import { getTodayInputValue } from './utils/date'
-import { buildQuoteHtml } from './utils/exportHtml'
-import { loadFromStorage, saveToStorage } from './utils/storage'
-import { ERP_NAV_ITEMS } from './erpNavigation'
+import { clearToken, isLoggedIn, changePassword, fetchCurrentStore, fetchProfile, selectStore } from './utils/api'
+import type { Profile, Store } from './utils/api'
+import { WorkbenchTodayPage } from './features/workbench/WorkbenchTodayPage'
+import { WorkbenchInventoryPage } from './features/workbench/WorkbenchInventoryPage'
+import WorkbenchQuotePage from './features/workbench/WorkbenchQuotePage'
+import { WorkbenchSalesPage } from './features/workbench/WorkbenchSalesPage'
+import { WorkbenchPurchasePage } from './features/workbench/WorkbenchPurchasePage'
+import { WorkbenchFulfillmentPage } from './features/workbench/WorkbenchFulfillmentPage'
+import { WorkbenchFinancePage } from './features/workbench/WorkbenchFinancePage'
+import { WorkbenchServicePage } from './features/workbench/WorkbenchServicePage'
+import { WorkbenchRecoveryPage } from './features/workbench/WorkbenchRecoveryPage'
 import './index.css'
+import './styles/erp-polish.css'
 
-const STORAGE_KEY = 'pc-quote-app'
-const MERCHANT_TEMPLATE_STORAGE_KEY = 'pc-quote-app:merchant-templates'
-const DEFAULT_QUOTE_NO_PREFIX = 'PC'
-const DEFAULT_QUOTE_NO_SUFFIX = '001'
-const STANDARD_QUOTE_NO_PATTERN = /^(.+)-(\d{8})-([A-Za-z0-9]+)$/
+const RETIRED_QUOTE_STORAGE_KEYS = ['pc-quote-app', 'pc-quote-app:merchant-templates']
 
-const DEFAULT_QUOTE_ITEM_CATEGORIES = [
-  'CPU',
-  '主板',
-  '内存',
-  '显卡',
-  '硬盘',
-  '电源',
-  '散热器',
-  '机箱',
-  '风扇',
-  '显示器',
-] as const
-
-function formatDateSegment(input: string) {
-  return input.replaceAll('-', '').trim()
-}
-
-function buildDefaultQuoteNo(date: string) {
-  return `${DEFAULT_QUOTE_NO_PREFIX}-${formatDateSegment(date)}-${DEFAULT_QUOTE_NO_SUFFIX}`
-}
-
-function isStandardQuoteNo(value: string) {
-  return STANDARD_QUOTE_NO_PATTERN.test(value.trim())
-}
-
-function syncQuoteNoWithDate(quoteNo: string, quoteDate: string) {
-  const normalizedQuoteNo = quoteNo.trim()
-  const dateSegment = formatDateSegment(quoteDate)
-
-  if (!dateSegment) {
-    return normalizedQuoteNo || quoteNo
-  }
-
-  if (!normalizedQuoteNo) {
-    return buildDefaultQuoteNo(quoteDate)
-  }
-
-  const match = normalizedQuoteNo.match(STANDARD_QUOTE_NO_PATTERN)
-  if (!match) {
-    return normalizedQuoteNo
-  }
-
-  const [, prefix, , suffix] = match
-  return `${prefix}-${dateSegment}-${suffix}`
-}
-
-const defaultBrand: BrandInfo = {
-  companyName: '',
-  slogan: '',
-  logoDataUrl: '',
-  contactPerson: '',
-  contactPhone: '',
-  contactWechat: '',
-  contactAddress: '',
-}
-
-const defaultQuoteDate = getTodayInputValue()
-
-const defaultMeta: QuoteMeta = {
-  quoteNo: buildDefaultQuoteNo(defaultQuoteDate),
-  quoteDate: defaultQuoteDate,
-  customerName: '广州智诚贸易有限公司',
-  contactName: '张经理',
-  contactPhone: '13800000000',
-  projectTitle: '高性能图形工作站配置方案',
-}
-
-const defaultViewSettings: ViewSettings = {
-  previewMode: 'document',
-  orientation: 'portrait',
-}
-
-const defaultLibrary: HardwareLibraryItem[] = [
-  { id: crypto.randomUUID(), category: 'CPU', description: 'Intel Core i7-14700K', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: 'CPU', description: 'Intel Core i5-14600KF', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: 'CPU', description: 'AMD Ryzen 9 7950X', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '显卡', description: 'NVIDIA RTX 4070 SUPER', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '显卡', description: 'NVIDIA RTX 4060 Ti', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '内存', description: 'Kingston Fury Beast DDR5 32GB', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '内存', description: 'Corsair Vengeance DDR5 32GB', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '硬盘', description: 'Samsung 990 EVO Plus 1TB', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '硬盘', description: 'WD Black SN850X 2TB', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '主板', description: 'MSI MAG Z790 TOMAHAWK WIFI', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '主板', description: 'ASUS ROG STRIX B760-A', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '电源', description: 'Corsair RM850e', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '散热器', description: 'DeepCool AK620', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '散热器', description: 'Noctua NH-D15', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '机箱', description: 'Lian Li Lancool 216', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '显示器', description: 'Dell U2724D', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '显示器', description: 'LG 27GP850-B', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '风扇', description: 'Arctic P12 PWM PST', price: 0, image: '' },
-  { id: crypto.randomUUID(), category: '风扇', description: 'Noctua NF-A12x25', price: 0, image: '' },
-]
-
-const createQuoteSkeletonItem = (category: string): QuoteItem => ({
-  id: crypto.randomUUID(),
-  category,
-  name: '',
-  details: '',
-  quantity: 1,
-  unitPrice: 0,
-  image: '',
-})
-
-const defaultQuoteItems: QuoteItem[] = DEFAULT_QUOTE_ITEM_CATEGORIES.map((category) =>
-  createQuoteSkeletonItem(category),
-)
-
-const defaultStorageData: AppStorageData = {
-  brand: defaultBrand,
-  meta: defaultMeta,
-  notes: { ...DEFAULT_QUOTE_NOTES },
-  hardwareLibrary: defaultLibrary,
-  quoteItems: defaultQuoteItems,
-  categoryOrder: [...ALL_CATEGORIES],
-  viewSettings: defaultViewSettings,
-}
-
-interface WorkspaceConfig {
-  kicker: string
-  title: string
-  intro: string
-  entries: WorkspaceEntry[]
-  notYet: string[]
-}
-
-/** T02a 域落地页配置：开单与回收置换当前只建立入口，不做业务写入。 */
-const SALES_WORKSPACE: WorkspaceConfig = {
-  kicker: '报价与销售工作区',
-  title: '开单',
-  intro: '草稿、报价与订单的查找和新建入口。报价编辑器与订单列表是既有功能，本卡只把它们收拢到同一导航下，未新增业务写入。',
-  entries: [
-    { label: '报价编辑器', description: '现有报价编辑与导出功能', to: '/quotes' },
-    { label: '订单列表', description: '查看订单、收款与履约状态', to: '/orders' },
-    { label: '新建装机报价', description: '单据列表、草稿与版本管理', to: null, owner: 'T07' },
-    { label: '新建零售', description: '散客扫码零售与结算', to: null, owner: 'T08a' },
-  ],
-  notYet: [
-    '未接入报价草稿与版本服务（T07）',
-    '未接入确认成交与预留（T08）',
-    '不写库存、不收款',
-  ],
-}
-
-const RECOVERY_WORKSPACE: WorkspaceConfig = {
-  kicker: '回收与置换',
-  title: '回收置换',
-  intro: '接收旧物、验机、定价、收购、整备与折抵。当前只有入口，没有可提交的收购或折抵。',
-  entries: [
-    { label: '接收与验机', description: '登记旧机、拍照、逐项验机', to: null, owner: 'T13' },
-    { label: '报价与收购确认', description: '最终价确认后所有权才转门店', to: null, owner: 'T13' },
-    { label: '置换与折抵', description: '双单对照与资金方向', to: null, owner: 'T14' },
-  ],
-  notYet: [
-    '未接入回收单状态机（T13）',
-    '未接入折抵与结算（T14）',
-    '不收旧件入库存、不产生收购成本',
-  ],
-}
-
-function normalizeStoredState(raw: unknown): AppStorageData {
-  const data = (raw ?? {}) as Partial<AppStorageData> & {
-    meta?: Partial<QuoteMeta> & { orientation?: Orientation }
-    previewMode?: ViewSettings['previewMode']
-  }
-
-  const nextMeta = { ...defaultMeta, ...data.meta }
-  if (!nextMeta.quoteNo?.trim()) {
-    nextMeta.quoteNo = buildDefaultQuoteNo(nextMeta.quoteDate || defaultQuoteDate)
-  }
-
-  return {
-    brand: { ...defaultBrand, ...data.brand },
-    meta: nextMeta,
-    notes: migrateNotes(data.notes ?? defaultStorageData.notes),
-    hardwareLibrary: Array.isArray(data.hardwareLibrary) ? data.hardwareLibrary : defaultLibrary,
-    quoteItems: Array.isArray(data.quoteItems) ? data.quoteItems : defaultQuoteItems,
-    categoryOrder: Array.isArray(data.categoryOrder) ? data.categoryOrder : [...ALL_CATEGORIES],
-    viewSettings: {
-      previewMode:
-        data.viewSettings?.previewMode ??
-        data.previewMode ??
-        defaultViewSettings.previewMode,
-      orientation:
-        data.viewSettings?.orientation ??
-        data.meta?.orientation ??
-        defaultViewSettings.orientation,
-    },
+function clearRetiredQuoteStorage() {
+  try {
+    for (const key of RETIRED_QUOTE_STORAGE_KEYS) window.localStorage.removeItem(key)
+  } catch {
+    // Storage can be unavailable in restricted browser modes; it must not block the ERP.
   }
 }
 
-function normalizeMerchantTemplates(raw: unknown): MerchantTemplate[] {
-  if (!Array.isArray(raw)) {
-    return []
-  }
-
-  return raw
-    .map((item) => {
-      const template = item as Partial<MerchantTemplate>
-      return {
-        id: template.id ?? crypto.randomUUID(),
-        name: template.name ?? '未命名模板',
-        brand: { ...defaultBrand, ...template.brand },
-        quoteItems: Array.isArray(template.quoteItems) ? template.quoteItems : [],
-        notes: migrateNotes(template.notes ?? defaultStorageData.notes),
-        updatedAt: template.updatedAt ?? new Date().toISOString(),
-      }
-    })
-    .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1))
-}
-
-function downloadText(filename: string, content: string, type = 'text/plain;charset=utf-8') {
-  const blob = new Blob([content], { type })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
-function App() {
+export default function App() {
   const navigate = useNavigate()
-  const initialState = useMemo(
-    () => normalizeStoredState(loadFromStorage<unknown>(STORAGE_KEY, defaultStorageData)),
-    [],
-  )
-
-  const initialTemplates = useMemo(
-    () =>
-      normalizeMerchantTemplates(
-        loadFromStorage<unknown>(MERCHANT_TEMPLATE_STORAGE_KEY, []),
-      ),
-    [],
-  )
-
-  const [brand, setBrand] = useState(initialState.brand)
-  const [meta, setMeta] = useState(initialState.meta)
-  const [notes, setNotes] = useState(initialState.notes)
-  const [hardwareLibrary, setHardwareLibrary] = useState(initialState.hardwareLibrary)
-  const [quoteItems, setQuoteItems] = useState(initialState.quoteItems)
-  const [viewSettings, setViewSettings] = useState(initialState.viewSettings)
-  const [categoryOrder, setCategoryOrder] = useState<string[]>(initialState.categoryOrder ?? [...ALL_CATEGORIES])
-  const [merchantTemplates, setMerchantTemplates] = useState(initialTemplates)
-  const [brandContactExpanded, setBrandContactExpanded] = useState(false)
-  const [hardwareLibraryExpanded, setHardwareLibraryExpanded] = useState(false)
-  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null)
-  const [loggedIn, setLoggedIn] = useState(isLoggedIn())
-  const [profile, setProfile] = useState<Profile | null>(null)
-  const [currentStore, setCurrentStore] = useState<Store | null>(null)
-  const [authLoading, setAuthLoading] = useState(isLoggedIn())
-  const [cloudLoading, setCloudLoading] = useState(false)
+  const [loggedIn, setLoggedIn] = useState(isLoggedIn)
+  const [session, setSession] = useState<{ profile: Profile; store: Store | null } | null>(null)
   const [showPwdModal, setShowPwdModal] = useState(false)
   const [pwdOld, setPwdOld] = useState('')
   const [pwdNew, setPwdNew] = useState('')
   const [pwdMsg, setPwdMsg] = useState('')
-  const [showOrderModal, setShowOrderModal] = useState(false)
-  const [creatingOrder, setCreatingOrder] = useState(false)
-  const [orderError, setOrderError] = useState('')
-  const previewRef = useRef<HTMLDivElement>(null)
-  const { exportPng, exportPdf } = useHtml2Canvas()
-
-  const loadProfile = async () => {
-    const nextProfile = await fetchProfile()
-    const store = await fetchCurrentStore()
-    setProfile(nextProfile)
-    setCurrentStore(store)
-  }
-
-  // 登录后从云端加载硬件库、模板和报价配置
-  useEffect(() => {
-    if (!loggedIn) { setProfile(null); setCurrentStore(null); setAuthLoading(false); return }
-    setAuthLoading(true)
-    loadProfile().catch(() => { clearToken(); setLoggedIn(false) }).finally(() => setAuthLoading(false))
-  }, [loggedIn])
 
   useEffect(() => {
-    if (!loggedIn || !profile) return
-    setCloudLoading(true)
-    Promise.all([
-      fetchLibrary(),
-      fetchTemplates(),
-      fetchQuote(),
-    ]).then(([libItems, tmplItems, cloudQuote]) => {
-      if (libItems.length > 0) {
-        const mapped = libItems.map((i: any) => ({
-          id: String(i.id), cloudId: i.id, category: i.category || '', description: i.name || i.description || '',
-          price: Number(i.price) || 0, image: i.image || '', lastRefreshed: i.refreshed_at || '', sourcePlatform: i.platform || '',
-        }))
-        setHardwareLibrary(mapped)
-      }
-      if (tmplItems.length > 0) {
-        const templates = normalizeMerchantTemplates(tmplItems.map((t: any) => {
-          let data = { brand: {}, meta: {}, quoteItems: [], notes: '' }
-          try { data = JSON.parse(t.data) } catch {}
-          return { id: String(t.id), name: t.name, brand: data.brand, quoteItems: data.quoteItems, notes: data.notes, updatedAt: t.updated_at || '' }
-        }))
-        setMerchantTemplates(templates)
-      }
-      if (cloudQuote) {
-        // Merge cloud quote into local state (cloud wins for core fields if newer)
-        const q = cloudQuote as any
-        if (q.brand) setBrand(q.brand)
-        if (q.meta) setMeta(q.meta)
-        if (typeof q.notes === 'string' || (q.notes && typeof q.notes === 'object')) setNotes(migrateNotes(q.notes))
-        if (Array.isArray(q.hardwareLibrary)) setHardwareLibrary(q.hardwareLibrary)
-        if (Array.isArray(q.quoteItems)) setQuoteItems(q.quoteItems)
-        if (Array.isArray(q.categoryOrder)) setCategoryOrder(q.categoryOrder)
-      }
-    }).catch(() => {}).finally(() => setCloudLoading(false))
-  }, [loggedIn, profile])
+    clearRetiredQuoteStorage()
+  }, [])
 
-  // 登录后自动保存报价到云端（防抖 3 秒）
   useEffect(() => {
     if (!loggedIn) return
-    const timer = setTimeout(() => {
-      saveQuote(meta.quoteNo || '未命名报价', { brand, meta, notes, hardwareLibrary, quoteItems, categoryOrder }).catch(() => {})
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [loggedIn, brand, meta, notes, hardwareLibrary, quoteItems])
+    let active = true
+    Promise.all([fetchProfile(), fetchCurrentStore()]).then(([profile, store]) => {
+      if (active) setSession({ profile, store })
+    }).catch(() => {
+      if (active) { clearToken(); setLoggedIn(false); setSession(null) }
+    })
+    return () => { active = false }
+  }, [loggedIn])
 
-  const handleLogout = () => { clearToken(); setLoggedIn(false); setHardwareLibrary([]) }
+  const handleLogout = () => { clearToken(); setLoggedIn(false); setSession(null) }
+  const handleStoreSelect = async (storeId: number) => {
+    setSession(null)
+    try {
+      await selectStore(storeId)
+      const [profile, store] = await Promise.all([fetchProfile(), fetchCurrentStore()])
+      setSession({ profile, store })
+    } catch { handleLogout() }
+  }
   const handleChangePwd = async () => {
     setPwdMsg('')
-    if (!pwdOld || !pwdNew || pwdNew.length < 6) { setPwdMsg('新密码至少6位'); return }
+    if (!pwdOld || pwdNew.length < 6) { setPwdMsg('新密码至少6位'); return }
     try {
-      await apiChangePassword(pwdOld, pwdNew)
-      clearToken(); setShowPwdModal(false); setPwdOld(''); setPwdNew(''); setLoggedIn(false)
+      await changePassword(pwdOld, pwdNew)
+      setShowPwdModal(false); setPwdOld(''); setPwdNew(''); handleLogout()
     } catch (error) { setPwdMsg(error instanceof Error ? error.message : '修改失败') }
   }
-  const handleStoreSelect = async (storeId: number) => {
-    try { await selectStore(storeId); await loadProfile() } catch { clearToken(); setLoggedIn(false) }
-  }
-  useEffect(() => {
-    saveToStorage<AppStorageData>(STORAGE_KEY, {
-      brand,
-      meta,
-      notes,
-      hardwareLibrary,
-      quoteItems,
-      categoryOrder,
-      viewSettings,
-    })
-  }, [brand, meta, notes, hardwareLibrary, quoteItems, categoryOrder, viewSettings])
-
-  useEffect(() => {
-    saveToStorage<MerchantTemplate[]>(MERCHANT_TEMPLATE_STORAGE_KEY, merchantTemplates)
-  }, [merchantTemplates])
-
-  useEffect(() => {
-    document.title = `${meta.projectTitle || '电脑配置报价单'} - ${brand.companyName || '未命名品牌'}`
-  }, [brand.companyName, meta.projectTitle])
-
-  useEffect(() => {
-    const styleId = 'print-orientation-style'
-    let style = document.getElementById(styleId)
-    if (!style) {
-      style = document.createElement('style')
-      style.id = styleId
-      document.head.appendChild(style)
-    }
-    style.textContent = `@page { size: A4 ${viewSettings.orientation}; margin: 10mm; }`
-  }, [viewSettings.orientation])
-
-  useEffect(() => {
-    if (!highlightedItemId) {
-      return
-    }
-
-    const timer = window.setTimeout(() => setHighlightedItemId(null), 2200)
-    return () => window.clearTimeout(timer)
-  }, [highlightedItemId])
-
-  const addQuoteItemFromLibrary = (item: HardwareLibraryItem) => {
-    const nextItem: QuoteItem = {
-      id: crypto.randomUUID(),
-      category: item.category,
-      name: item.description,
-      details: '',
-      quantity: 1,
-      unitPrice: item.price,
-      image: item.image ?? '',
-      libraryItemId: item.id,
-    }
-
-    setQuoteItems((current) => [...current, nextItem])
-    setHighlightedItemId(nextItem.id)
-  }
-
-  const library = useHardwareLibrary(
-    hardwareLibrary,
-    setHardwareLibrary,
-    addQuoteItemFromLibrary,
-  )
-
-  const handleBrandChange = (field: keyof BrandInfo, value: string) => {
-    setBrand((current) => ({ ...current, [field]: value }))
-  }
-
-  const handleMetaChange = (field: keyof QuoteMeta, value: string) => {
-    setMeta((current) => {
-      if (field !== 'quoteDate') {
-        return { ...current, [field]: value }
-      }
-
-      const nextQuoteDate = value
-      const nextQuoteNo =
-        !current.quoteNo.trim() || isStandardQuoteNo(current.quoteNo)
-          ? syncQuoteNoWithDate(current.quoteNo, nextQuoteDate)
-          : current.quoteNo
-
-      return {
-        ...current,
-        quoteDate: nextQuoteDate,
-        quoteNo: nextQuoteNo,
-      }
-    })
-  }
-
-  const handleViewSettingsChange = (patch: Partial<ViewSettings>) => {
-    setViewSettings((current) => ({ ...current, ...patch }))
-  }
-
-  const handleSaveMerchantTemplate = (name: string) => {
-    const localId = crypto.randomUUID()
-    const nextTemplate: MerchantTemplate = {
-      id: localId,
-      name,
-      brand: { ...brand },
-      quoteItems: quoteItems,
-      notes,
-      updatedAt: new Date().toISOString(),
-    }
-    setMerchantTemplates((current) => [nextTemplate, ...current])
-    if (loggedIn) {
-      saveTemplateToCloud(name, { brand, quoteItems, notes })
-        .then((res) => {
-          if (res.id) {
-            setMerchantTemplates((current) =>
-              current.map((t) => (t.id === localId ? { ...t, id: String(res.id) } : t))
-            )
-          }
-        })
-        .catch(() => {})
-    }
-  }
-
-  const handleApplyMerchantTemplate = (id: string) => {
-    const template = merchantTemplates.find((item) => item.id === id)
-    if (!template) {
-      return
-    }
-
-    setBrand({ ...defaultBrand, ...template.brand })
-    if (template.quoteItems && template.quoteItems.length > 0) {
-      setQuoteItems(template.quoteItems)
-    }
-    setNotes(template.notes)
-    setBrandContactExpanded(true)
-  }
-
-  const handleDeleteMerchantTemplate = (id: string) => {
-    setMerchantTemplates((current) => current.filter((item) => item.id !== id))
-    if (loggedIn) deleteTemplateFromCloud(Number(id)).catch(() => {})
-  }
-
-  const handleLogoUpload = (file: File | null) => {
-    if (!file) {
-      setBrand((current) => ({ ...current, logoDataUrl: '' }))
-      return
-    }
-
-    // Compress logo to avoid oversized base64 breaking cloud save
-    const reader = new FileReader()
-    reader.onload = () => {
-      const img = new Image()
-      img.onload = () => {
-        const MAX_W = 300
-        const scale = Math.min(1, MAX_W / img.width)
-        const w = Math.round(img.width * scale)
-        const h = Math.round(img.height * scale)
-        const canvas = document.createElement('canvas')
-        canvas.width = w
-        canvas.height = h
-        const ctx = canvas.getContext('2d')
-        if (ctx) {
-          ctx.drawImage(img, 0, 0, w, h)
-        }
-        setBrand((current) => ({
-          ...current,
-          logoDataUrl: canvas.toDataURL('image/jpeg', 0.7),
-        }))
-      }
-      img.src = typeof reader.result === 'string' ? reader.result : ''
-    }
-    reader.readAsDataURL(file)
-  }
-
-  const addQuoteItem = (category = '其他') => {
-    const nextItem = createQuoteSkeletonItem(category)
-    setQuoteItems((current) => [...current, nextItem])
-    setHighlightedItemId(nextItem.id)
-  }
-
-  const updateQuoteItem = (id: string, field: keyof QuoteItem, value: string | number) => {
-    setQuoteItems((current) =>
-      current.map((item) => (item.id === id ? { ...item, [field]: value } : item)),
-    )
-  }
-
-  const deleteQuoteItem = (id: string) => {
-    setQuoteItems((current) => current.filter((item) => item.id !== id))
-    setHighlightedItemId((current) => (current === id ? null : current))
-  }
-
-  const handleExportHtml = () => {
-    const document: QuoteDocument = { brand, meta, notes, hardwareLibrary, quoteItems }
-    downloadText('quote-preview.html', buildQuoteHtml(document), 'text/html;charset=utf-8')
-  }
-
-  const handleExportPng = async () => {
-    if (previewRef.current) {
-      await exportPng(previewRef.current, 'quote-preview.png', viewSettings.orientation)
-    }
-  }
-
-  const handleExportPdf = async () => {
-    if (previewRef.current) {
-      await exportPdf(previewRef.current, 'quote-preview.pdf', viewSettings.orientation)
-    }
-  }
-
-  const orderItems = quoteItems.filter((item) => item.name.trim())
-  const quoteTotalCents = orderItems.reduce((total, item) => total + Math.round(item.quantity * item.unitPrice * 100), 0)
-  const canConvertToOrder = Boolean(meta.customerName.trim()) && orderItems.length > 0
-  const handleCreateOrder = async () => {
-    if (!canConvertToOrder) return
-    const input: OrderCreateInput = {
-      meta: { customerName: meta.customerName.trim(), contactName: meta.contactName.trim(), contactPhone: meta.contactPhone.trim(), projectTitle: meta.projectTitle.trim() },
-      quoteItems: orderItems.map((item) => ({ category: item.category, name: item.name.trim(), details: item.details.trim(), quantity: item.quantity, unitPriceCents: Math.round(item.unitPrice * 100), ...(item.libraryItemId && Number.isInteger(Number(item.libraryItemId)) ? { cloudId: Number(item.libraryItemId) } : {}) })),
-      notes,
-      brand,
-    }
-    setCreatingOrder(true)
-    setOrderError('')
-    try {
-      const order = await createOrder(input)
-      setShowOrderModal(false)
-      navigate(`/orders/${order.id}`)
-    } catch (error) {
-      setOrderError(error instanceof Error ? error.message : '创建订单失败')
-    } finally {
-      setCreatingOrder(false)
-    }
-  }
-
-  // TODO: wire up import buttons
-  /*
-  const _handleImportJson = async (file: File) => {
-    try {
-      await library.importJson(file)
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'JSON 导入失败。')
-    }
-  }
-
-  const _handleImportExcel = async (file: File) => {
-    try {
-      await library.importExcel(file)
-    } catch (error) {
-      window.alert(error instanceof Error ? error.message : 'Excel 导入失败。')
-    }
-  }
-  */
+  if (!loggedIn) return <LoginPanel onLogin={() => { setLoggedIn(true); navigate('/dashboard', { replace: true }) }} />
+  if (!session) return <div className="settings-state">正在验证登录状态...</div>
+  const { profile, store: currentStore } = session
+  const setCurrentStore = (store: Store) => setSession(current => current ? { ...current, store } : null)
 
   return (
     <div className="shell">
-      {!loggedIn ? (
-        <LoginPanel onLogin={() => { setLoggedIn(true); navigate('/quotes', { replace: true }) }} />
-      ) : authLoading || !profile ? <div className="settings-state">正在验证登录状态...</div> : (
-      <AppShell
-        profile={profile}
-        currentStore={currentStore}
-        onStoreSelect={handleStoreSelect}
-        onChangePassword={() => setShowPwdModal(true)}
-        onLogout={handleLogout}
-      >
+      <AppShell profile={profile} currentStore={currentStore} onStoreSelect={handleStoreSelect}
+        onChangePassword={() => setShowPwdModal(true)} onLogout={handleLogout}>
         {showPwdModal && (
           <div className="pwd-overlay" onClick={() => setShowPwdModal(false)}>
-            <div className="pwd-card" onClick={(e) => e.stopPropagation()}>
+            <div className="pwd-card" onClick={event => event.stopPropagation()}>
               <h3>修改密码</h3>
-              <input type="password" placeholder="旧密码" value={pwdOld} onChange={(e) => setPwdOld(e.target.value)} />
-              <input type="password" placeholder="新密码（至少6位）" value={pwdNew} onChange={(e) => setPwdNew(e.target.value)} />
-              {pwdMsg && <p className="pwd-msg" style={{ color: pwdMsg.includes('成功') ? '#16a34a' : '#ef4444' }}>{pwdMsg}</p>}
+              <input type="password" placeholder="旧密码" value={pwdOld} onChange={event => setPwdOld(event.target.value)} />
+              <input type="password" placeholder="新密码（至少6位）" value={pwdNew} onChange={event => setPwdNew(event.target.value)} />
+              {pwdMsg && <p className="pwd-msg">{pwdMsg}</p>}
               <button onClick={handleChangePwd}>确认修改</button>
             </div>
           </div>
         )}
-        {showOrderModal && <div className="pwd-overlay" onClick={() => !creatingOrder && setShowOrderModal(false)}><div className="order-confirm-card" onClick={(event) => event.stopPropagation()}><p className="orders-kicker">确认转为订单</p><h3>将当前报价创建为订单？</h3><dl><div><dt>客户</dt><dd>{meta.customerName}</dd></div><div><dt>配置项目</dt><dd>{orderItems.length} 项</dd></div><div><dt>订单合计</dt><dd>¥{(quoteTotalCents / 100).toFixed(2)}</dd></div></dl>{orderError && <p className="orders-error">{orderError}</p>}<div className="order-confirm-actions"><button className="btn" disabled={creatingOrder} onClick={() => setShowOrderModal(false)}>取消</button><button className="btn primary" disabled={creatingOrder} onClick={() => void handleCreateOrder()}>{creatingOrder ? '正在创建...' : '确认创建'}</button></div></div></div>}
+        <Suspense fallback={<div className="settings-state">正在加载页面...</div>}>
         <Routes>
-          <Route path="/" element={<Navigate to="/quotes" replace />} />
-          <Route path="/quotes" element={(
-            <div className="layout">
-        <section className="panel editor-panel">
-          {cloudLoading && <div style={{ textAlign: 'center', padding: '4px 0', fontSize: 12, color: '#64748b', borderBottom: '1px solid rgba(59,130,246,0.15)' }}>正在同步云端数据...</div>}
-          <>
-          <QuoteItemsSection
-            title={meta.projectTitle}
-            items={quoteItems}
-            libraryItems={hardwareLibrary}
-            categoryOrder={categoryOrder}
-            highlightedItemId={highlightedItemId}
-            onTitleChange={(value) => handleMetaChange('projectTitle', value)}
-            onAddItem={addQuoteItem}
-            onDeleteItem={deleteQuoteItem}
-            onChangeItem={updateQuoteItem}
-            onCategoryOrderChange={setCategoryOrder}
-            onClearAll={() => setQuoteItems([])}
-          />
-
-          <BaseInfoSection
-            brand={brand}
-            meta={meta}
-            templates={merchantTemplates}
-            brandContactExpanded={brandContactExpanded}
-            onBrandContactExpandedChange={setBrandContactExpanded}
-            onBrandChange={handleBrandChange}
-            onMetaChange={handleMetaChange}
-            onLogoUpload={handleLogoUpload}
-            onSaveTemplate={handleSaveMerchantTemplate}
-            onApplyTemplate={handleApplyMerchantTemplate}
-            onDeleteTemplate={handleDeleteMerchantTemplate}
-          />
-
-          <NotesSection notes={notes} onChange={setNotes} />
-
-          <details
-            className="editor-library-shell"
-            open={hardwareLibraryExpanded}
-            onToggle={(event) =>
-              setHardwareLibraryExpanded((event.currentTarget as HTMLDetailsElement).open)
-            }
-          >
-            <summary>硬件库</summary>
-            <HardwareLibrarySection
-              items={library.filteredLibrary}
-              search={library.search}
-              categoryFilter={library.categoryFilter}
-              onSearchChange={library.setSearch}
-              onCategoryFilterChange={library.setCategoryFilter}
-              onAddItem={(cat, desc, price, image) => {
-                setHardwareLibrary((prev) => [
-                  ...prev,
-                  {
-                    id: crypto.randomUUID(),
-                    category: cat,
-                    description: desc,
-                    price,
-                    image: image || '',
-                  },
-                ])
-                if (loggedIn) {
-                  addLibraryItems([{ category: cat, name: desc, price, image: image || '' }]).catch(() => {})
-                }
-              }}
-              onUpdateItem={library.updateLibraryItem}
-              onDeleteItem={library.deleteLibraryItem}
-            />
-          </details>
-          </>
-        </section>
-
-        <section className="panel preview-workbench">
-          <div className="preview-workbench-head">
-            <div className="section-head-copy">
-              <h2>报价单预览</h2>
-            </div>
-          </div>
-
-          <QuoteToolbar
-            previewMode={viewSettings.previewMode}
-            orientation={viewSettings.orientation}
-            onPreviewModeChange={(previewMode) => handleViewSettingsChange({ previewMode })}
-            onOrientationChange={(orientation) => handleViewSettingsChange({ orientation })}
-            onPrint={() => window.print()}
-            onExportPng={handleExportPng}
-            onExportPdf={handleExportPdf}
-            onExportHtml={handleExportHtml}
-            onConvertToOrder={() => { setOrderError(''); setShowOrderModal(true) }}
-            canConvertToOrder={canConvertToOrder}
-          />
-
-          <div className="preview-workbench-body">
-            <div className="preview-stage" ref={previewRef} tabIndex={-1}>
-              {viewSettings.previewMode === 'document' ? (
-                <QuotePreview
-                  brand={brand}
-                  meta={meta}
-                  notes={notes}
-                  items={quoteItems}
-                  categoryOrder={categoryOrder}
-                  orientation={viewSettings.orientation}
-                />
-              ) : (
-                <QuoteCustomerView
-                  brand={brand}
-                  meta={meta}
-                  items={quoteItems}
-                  orientation={viewSettings.orientation}
-                />
-              )}
-            </div>
-          </div>
-        </section>
-            </div>
-          )} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/quotes" element={<Navigate to="/sales/quotes" replace />} />
           <Route path="/dashboard" element={<WorkbenchTodayPage />} />
           <Route path="/sales" element={<WorkspaceLandingPage {...SALES_WORKSPACE} />} />
-          <Route path="/recovery" element={<WorkspaceLandingPage {...RECOVERY_WORKSPACE} />} />
-          <Route path="/orders" element={<OrdersPage />} />
-          <Route path="/orders/:id" element={<OrderDetailPage />} />
+          {/* E05：报价单闭环（列表 / 草稿 / 版本 / 发出）。占位项「新建装机报价（T07）」由此落地。 */}
+          <Route path="/sales/quotes" element={<WorkbenchQuotePage permissions={profile.permissions} onConverted={() => navigate('/sales/orders')} />} />
+          {/* E06：销售单与收款（转单 / 收款 / 确认成交与占用 / 缺件）。 */}
+          <Route path="/sales/orders" element={<WorkbenchSalesPage permissions={profile.permissions} />} />
+          {/* E08：装机、检测与交付（B04 建单 / B06 备料 / B07 检测 / B10 交付）。 */}
+          <Route path="/sales/fulfillment" element={<WorkbenchFulfillmentPage permissions={profile.permissions} />} />
+          {/* E07：缺件采购与到货。契约 R08 的路径在 /inventory 下，旧深链 /purchases 指向同一页。 */}
+          <Route path="/inventory/purchases" element={<WorkbenchPurchasePage permissions={profile.permissions} />} />
+          <Route path="/purchases" element={<WorkbenchPurchasePage permissions={profile.permissions} />} />
+          {/* E09：账本（现金流 / 应收应付 / 反冲）。 */}
+          <Route path="/finance" element={<WorkbenchFinancePage permissions={profile.permissions} />} />
+          {/* E10：售后维修（接修 / 检测方案 / 换件 / 收款 / 归还）。 */}
+          <Route path="/after-sales" element={<WorkbenchServicePage permissions={profile.permissions} />} />
+          {/* E11：回收置换（登记 / 验机 / 估价 / 取得所有权 / 付款 / 拆件 / 归还）。 */}
+          <Route path="/recovery" element={<WorkbenchRecoveryPage permissions={profile.permissions} />} />
+          <Route path="/orders" element={<Navigate to="/sales/orders" replace />} />
+          <Route path="/orders/:id" element={<Navigate to="/sales/orders" replace />} />
+          <Route path="/customers" element={<CustomersPage />} />
           <Route path="/settings" element={<SystemSettingsPage permissions={profile.permissions} currentStore={currentStore} onStoreChanged={setCurrentStore} />} />
-          <Route path="/inventory" element={<ProductManagementPage permissions={profile.permissions} />} />
+          <Route path="/inventory" element={<WorkbenchInventoryPage permissions={profile.permissions} />} />
+          {/* 旧「商品与库存」页不删，改挂子路径：它是已确认功能，不能因为库存页重建而失去入口。 */}
+          <Route path="/inventory/products" element={<ProductManagementPage permissions={profile.permissions} />} />
           <Route path="/sn" element={<SerialNumberPage />} />
-          {ERP_NAV_ITEMS.filter((item) => item.path !== '/quotes' && item.path !== '/dashboard' && item.path !== '/orders' && item.path !== '/settings' && item.path !== '/inventory' && item.path !== '/sn').map((item) => (
-            <Route
-              key={item.path}
-              path={item.path}
-              element={<ModulePlaceholderPage title={item.label} description={item.description} />}
-            />
-          ))}
-          <Route
-            path="*"
-            element={<ModulePlaceholderPage title="页面不存在" description="当前地址未对应 ERP 页面。" />}
-          />
+
+          <Route path="/assembly" element={<Navigate to="/sales/fulfillment" replace />} />
+          <Route path="/suppliers" element={<ModulePlaceholderPage title="供应商管理" description="供应商独立管理页面尚未接通。" />} />
+          <Route path="*" element={<ModulePlaceholderPage title="页面不存在" description="当前地址未对应 ERP 页面。" />} />
         </Routes>
+        </Suspense>
       </AppShell>
-      )}
     </div>
   )
 }
-
-export default App

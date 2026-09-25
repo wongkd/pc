@@ -2,7 +2,7 @@
  * T03b · 错误行为表测试（网页端）。
  *
  * 这里断言的是**规格原文**，不是实现细节：
- *   · 契约 errors.json 的 16 个 code 必须不多不少全覆盖（契约新增码时这里要跟着改）
+ *   · 契约 errors.json 的 code 必须不多不少全覆盖（契约新增码时这里要跟着改）
  *   · 兜底文案与契约 meaning 逐字一致（避免两端各写一套说法）
  *   · retryable 与契约一致
  *   · 401 的两条分支必须区别对待（AUTH_REQUIRED 不清草稿，SESSION_REVOKED 清）
@@ -71,6 +71,15 @@ describe('错误行为表 · 401 的两条分支', () => {
 })
 
 describe('决定客户端行为', () => {
+  it.each(['PURCHASE_PAYMENT_CONFLICT', 'PURCHASE_CANCEL_EXCEEDED'])('%s 保留取消输入，刷新采购单且不自动重发', (code) => {
+    const actions = decideClientHandling(code, { isWrite: true })
+    expect(actions).toContain('keep-input')
+    expect(actions).toContain('reload-entity')
+    expect(actions).toContain('no-auto-retry')
+    expect(actions).not.toContain('query-operation')
+    expect(actions).not.toContain('wait-and-retry')
+  })
+
   it('未知 code 一律进「结果未知」：写动作去查 operation，读动作可以等待后重试', () => {
     expect(decideClientHandling(null, { isWrite: true })).toEqual(UNKNOWN_RESULT_ACTIONS)
     expect(decideClientHandling(undefined, { isWrite: false })).toEqual(UNKNOWN_RESULT_READ_ACTIONS)

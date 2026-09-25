@@ -1,3 +1,5 @@
+@import "styles/customer-tokens.wxss";
+
 /**
  * T02b · 小程序全局样式与设计变量。
  *
@@ -65,6 +67,39 @@ page {
 /* 单条主滚动轴：固定底部操作条的场景由页面自行预留等高占位 */
 .mp-scroll {
   height: 100%;
+}
+
+/* Shared local PNG assets; geometry and rebuild entry live in the icon delivery README. */
+.mp-ui-icon {
+  width: 36rpx;
+  height: 36rpx;
+  flex-shrink: 0;
+  margin-right: 10rpx;
+}
+.mp-brand-avatar {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.mp-entry-heading {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
+.mp-entry-icon {
+  width: 44rpx;
+  height: 44rpx;
+  padding: 12rpx;
+  border-radius: 12rpx;
+  background: var(--mp-sage);
+  flex-shrink: 0;
+}
+.mp-empty-art {
+  display: block;
+  width: 280rpx;
+  height: 280rpx;
+  margin: 0 auto 20rpx;
 }
 
 /* 页标题与区块标题 */

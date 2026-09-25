@@ -1,0 +1,419 @@
+/* 网页统一视觉：参照 miniprogram/styles/customer-tokens.wxss。白底、黑字、细线、小圆角；保留 ERP 响应式布局和语义状态色。 */
+.app-shell { --erp-shadow: 0 5px 20px #29344404; background: #ffffff; padding: 0; }
+.app-shell .wb-topbar { min-height: 72px; margin-left: 216px; padding: 0 30px; flex-wrap: nowrap; gap: 20px; background: #ffffff; border: 0; border-radius: 24px 24px 0 0; }
+.app-shell .wb-brand { position: fixed; z-index: 31; top: 0; left: 0; width: 216px; height: 94px; padding: 0 24px; box-sizing: border-box; background: #ffffff; border: 0; }
+.app-shell .wb-brand-mark { background: var(--wb-ink); color: #fff; border: 0; border-radius: 4px; font-weight: 500; }
+.app-shell .wb-brand-copy strong { font-size: 19px; letter-spacing: -.6px; }
+.app-shell .wb-brand-copy small { max-width: 124px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 10px; }
+.app-shell .wb-nav { position: fixed; z-index: 30; left: 0; top: 94px; bottom: 0; width: 216px; padding: 22px 14px; box-sizing: border-box; flex-direction: column; gap: 5px; border: 0; background: #ffffff; overflow-y: auto; }
+.wb-nav-heading { padding: 0 14px 12px; color: #666666; font-size: 11px; letter-spacing: .08em; }
+.wb-nav-heading--secondary { margin-top: 27px; padding-top: 23px; border-top: 1px solid var(--wb-line); }
+.app-shell .wb-nav-link { flex-shrink: 0; gap: 14px; min-height: 46px; border: 0; color: #666666; font-size: 14px; padding: 0 14px; }
+.app-shell .wb-nav-link.is-active { color: #111111; background: #fff; box-shadow: none; border-radius: 4px; }
+.wb-nav-icon { font-size: 10px; font-weight: 500; font-variant-numeric: tabular-nums; opacity: .65; }
+.wb-location-label { font-size: 13px; color: #666666; white-space: nowrap; }
+.wb-location-label > span { margin: 0 12px; color: #bcc3cc; }
+.app-shell .wb-topbar-side { width: auto; padding: 0; margin-left: auto; gap: 16px; }
+.app-shell .wb-search { position: relative; }
+.app-shell .wb-search input { width: 270px; background: #f5f5f5; border-color: transparent; padding-right: 64px; }
+.app-shell .wb-search kbd { position: absolute; right: 10px; background: #fff; display: block; }
+.app-shell .wb-account-trigger { border-color: transparent; background: #f5f5f5; max-width: 200px; }
+.app-shell .wb-content { min-width: 0; padding: 22px 30px 36px; margin-left: 216px; border-radius: 0 0 24px 24px; background: #ffffff; }
+.app-shell .wb-notice, .app-shell .wb-offline-bar { padding-left: 248px; }
+.app-shell :is(.wb-page, .wb-workbench, .customers-page) { max-width: 1480px; margin-inline: auto; }
+.app-shell :is(.wb-page-head, .customers-head) { margin-bottom: 26px; gap: 20px; align-items: center; }
+.app-shell :is(.wb-page-head h1, .customers-head h2) { font-size: 28px; font-weight: 500; letter-spacing: -.7px; line-height: 1.4; }
+.app-shell :is(.wb-kicker, .orders-kicker) { color: #666666; font-size: 11px; letter-spacing: .04em; margin-bottom: 5px; }
+.app-shell :is(.wb-caption, .customers-head p:not(.orders-kicker)) { font-size: 13px; line-height: 1.7; max-width: 760px; }
+.app-shell .wb-page-head-actions { flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.app-shell :is(.wb-btn, .customers-page .btn) { min-height: 42px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; color: var(--wb-ink); padding: 9px 16px; box-shadow: none; font-size: 13px; font-weight: 500; cursor: pointer; }
+.app-shell :is(.wb-btn--primary, .customers-page .btn.primary) { background: var(--wb-ink); border-color: var(--wb-ink); color: #fff; }
+.app-shell :is(.wb-btn--primary:hover:not(:disabled), .customers-page .btn-primary:hover:not(:disabled)) { background: #111111; }
+.app-shell :is(button, a, input, select, textarea):focus-visible { outline: 2px solid var(--wb-accent); outline-offset: 3px; }
+.app-shell :is(button:disabled, input:disabled, select:disabled) { cursor: not-allowed; opacity: .55; }
+.app-shell :is(.wb-inv-toolbar, .customers-toolbar) { display: flex; flex-wrap: wrap; padding: 14px; margin: 0 0 18px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; gap: 12px; }
+.app-shell .wb-filter-row { flex-wrap: wrap; gap: 5px; }
+.app-shell .wb-page > .wb-filter-row { margin-bottom: 12px; }
+.app-shell .wb-filter-row button { min-height: 38px; border-radius: 4px; border-color: transparent; background: transparent; }
+.app-shell .wb-filter-row button.is-active { border-color: #e5e5e5; background: #f8f0dc; color: #111111; }
+.app-shell .wb-filter-row .wb-btn { border-color: transparent; background: transparent; box-shadow: none; min-height: 38px; padding: 8px 13px; color: var(--wb-muted); }
+.app-shell .wb-filter-row .wb-btn--primary { background: var(--wb-sage); color: #111111; }
+.app-shell :is(.wb-inv-search, .customers-toolbar input) { min-height: 42px; border-radius: 4px; background: #f5f5f5; border: 1px solid var(--wb-line); padding: 10px 13px; font-size: 13px; }
+.app-shell :is(.wb-inv-totals, .wb-inv-foot) { color: var(--wb-muted); font-size: 12px; }
+.app-shell .wb-inv-totals b { font-size: 16px; color: var(--wb-ink); }
+.app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 12px; padding: 0; border: 0; background: transparent; margin-bottom: 24px; }
+.app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals > span { display: flex; flex-direction: column; align-items: flex-start; padding: 20px; border-radius: 4px; background: #f5f5f5; font-size: 11px; color: #666666; line-height: 1.6; }
+.app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals > span:nth-child(2) { background: #f5f5f5; }
+.app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals > span:nth-child(3) { background: #f5f5f5; }
+.app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals > span:nth-child(4) { background: #f5f5f5; }
+.app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals > span:nth-child(5) { background: #f5f5f5; }
+.app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals b { display: block; font-size: 32px; line-height: 1.4; }
+.app-shell :is(.wb-inv-table, .customers-table-wrap, .wb-quote-table-scroll) { border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; box-shadow: none; overflow: auto; }
+.app-shell .wb-quote-table-scroll { margin-bottom: 16px; }
+.app-shell .wb-quote-table { min-width: 730px; font-size: 13px; }
+.app-shell :is(.wb-quote-table th, .customers-table th, .wb-inv-head) { background: #f5f5f5; color: #666666; font-size: 12px; font-weight: 500; }
+.app-shell :is(.wb-quote-table th, .wb-quote-table td, .customers-table th, .customers-table td) { padding: 16px 18px; border-bottom: 1px solid #e5e5e5; vertical-align: middle; }
+.app-shell :is(.wb-quote-table, .customers-table) tbody tr:last-child td { border-bottom: 0; }
+.app-shell :is(.wb-quote-table, .customers-table) tbody tr:hover { background: #f5f5f5; }
+.app-shell .customers-table tbody tr.is-selected { background: #f8f0dc; }
+.app-shell .wb-quote-table td.wb-tabular { font-weight: 500; white-space: nowrap; }
+.app-shell .wb-inv-row { min-height: 76px; }
+.app-shell .wb-inv-row.is-open { background: #f5f5f5; }
+.app-shell :is(.customer-detail, .wb-inv-side, .wb-detail) { border-radius: 4px; box-shadow: none; padding: 24px; background: #fff; border-color: var(--wb-line); }
+.app-shell .customers-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 20px; }
+.app-shell .customer-total { padding: 20px; border: 0; border-radius: 4px; background: #f5f5f5; margin-top: 20px; }
+.app-shell .customers-detail-hint { background: #f8f0dc; border: 0; }
+.app-shell .customers-detail-hint :is(p, h3) { color: #111111; }
+.app-shell .customer-detail-head { padding: 0 0 18px; border-bottom: 1px solid #e5e5e5; }
+.app-shell .customer-total strong { font-size: 30px; letter-spacing: -.7px; font-variant-numeric: tabular-nums; }
+.app-shell .wb-quote-editor { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 24px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; }
+.app-shell .wb-quote-editor > :is(fieldset, .wb-form-actions, .wb-form-hint, .wb-quote-summary) { grid-column: 1 / -1; min-width: 0; }
+.app-shell .wb-quote-editor > .wb-quote-terms { grid-column: 1 / -1; }
+.app-shell .wb-field .wb-quote-num { flex: none; height: 42px; }
+.app-shell .wb-quote-editor fieldset { border: 1px solid var(--wb-line); border-radius: 4px; padding: 20px; margin: 0; }
+.app-shell .wb-quote-editor legend { font-size: 14px; font-weight: 500; padding: 0 8px; }
+.app-shell .wb-quote-line { display: grid; grid-template-columns: 100px minmax(150px, 1.5fr) minmax(130px, 1fr) 70px 100px auto; gap: 10px; padding: 14px; border: 1px solid var(--wb-line); border-radius: 4px; background: #f5f5f5; }
+.app-shell .wb-quote-line > :is(input, select) { width: 100%; min-height: 42px; padding: 9px 10px; font-size: 13px; border: 1px solid #e5e5e5; border-radius: 4px; background: #fff; color: var(--wb-ink); }
+.app-shell .wb-quote-line > :nth-child(n+7) { grid-column: auto / span 2; }
+.app-shell .wb-quote-summary { padding: 20px; border-radius: 4px; background: #f8f0dc; gap: 20px; }
+.app-shell .wb-quote-summary strong { font-size: 25px; }
+.app-shell .wb-quote-terms-view { padding: 24px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; margin: 20px 0; }
+.app-shell .wb-quote-terms-view h2 { font-size: 17px; margin: 0 0 14px; }
+.app-shell .wb-quote-terms-view li { line-height: 1.9; font-size: 13px; }
+.app-shell .wb-quote-stock--available { color: #246647; background: #e9f5ee; }
+.app-shell .wb-form-actions { padding-top: 18px; border-top: 1px solid var(--wb-line); gap: 10px; flex-wrap: wrap; }
+.app-shell :is(.wb-field input, .wb-field select, .customer-form input, .customer-form textarea) { border-radius: 4px; border: 1px solid #e5e5e5; min-height: 42px; font-size: 13px; }
+.app-shell .wb-modal-card { box-shadow: none; padding: 26px; }
+.app-shell .wb-modal-head { margin-bottom: 20px; }
+.app-shell .wb-modal-head h2 { font-size: 21px; }
+.app-shell .wb-date-block strong { font-size: 36px; }
+.app-shell .wb-metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)) 1.4fr; gap: 12px; padding: 0; border: 0; background: transparent; margin-bottom: 28px; }
+.app-shell .wb-metric { position: relative; display: flex; flex-wrap: wrap; align-content: flex-start; gap: 10px; padding: 20px; border: 2px solid transparent; border-radius: 4px; background: #f5f5f5; }
+.app-shell .wb-metric:nth-child(2) { background: #f5f5f5; }
+.app-shell .wb-metric:nth-child(3) { background: #f5f5f5; }
+.app-shell .wb-metric:nth-child(4) { background: #f5f5f5; }
+.app-shell .wb-metric:nth-child(5) { background: #f5f5f5; }
+.app-shell .wb-metric.is-active { border-color: #111111; }
+.app-shell .wb-metric-label { width: 100%; color: #666666; font-size: 12px; }
+.app-shell .wb-metric strong { font-size: 38px; letter-spacing: -1px; }
+.app-shell .wb-metric--money strong { font-size: 27px; }
+.app-shell .wb-metric-note { color: #666666; }
+.app-shell .wb-metric-arrow { align-self: center; }
+.app-shell .wb-task-row { border-radius: 4px; background: #fff; }
+.app-shell .wb-task-row.is-selected { background: #f8f0dc; border-color: #e5e5e5; }
+.app-shell .wb-device-visual { background: #f5f5f5; }
+@media (min-width: 901px) {
+  .app-shell .wb-workbench-body { grid-template-columns: minmax(0,1fr) 340px; gap: 24px; }
+  .app-shell .wb-detail-columns { grid-template-columns: 1fr; gap: 18px; }
+  .app-shell .wb-detail-head h2 { font-size: 21px; }
+  .app-shell .wb-device-column { display: grid; grid-template-columns: 72px minmax(0,1fr); gap: 12px; }
+  .app-shell .wb-device-photo--hero { width: 72px; }
+  .app-shell .wb-device-photo--hero img { height: 72px; min-height: 0; padding: 5px; }
+  .app-shell .wb-device-photo--hero figcaption { font-size: 9px; }
+  .app-shell .wb-device-caption h3 { font-size: 14px; }
+  .app-shell .wb-facts div { font-size: 11px; }
+  .app-shell .wb-task-row { padding: 16px; border-radius: 4px; }
+  .app-shell .wb-task-copy { gap: 5px; }
+  .app-shell .wb-task-title { font-size: 15px; }
+  .app-shell .wb-task-list { gap: 9px; }
+  .app-shell .wb-detail { padding: 22px; border-radius: 4px; }
+  .app-shell .wb-detail-blocker { background: #f1e5cf; border: 0; border-radius: 4px; padding: 14px; }
+  .app-shell .wb-settlement { background: #f8f0dc; border-radius: 4px; padding: 16px; }
+}
+.login-overlay { background: #f5f5f5; }
+.login-card { border: 1px solid #e5e5e5; border-radius: 4px; box-shadow: none; padding: 40px; }
+.login-brand-mark { display: grid; place-items: center; width: 46px; height: 46px; margin: 0 auto 24px; border-radius: 4px; background: #111111; color: #fff; font-weight: 500; }
+.login-card h2 { color: #111111; font-size: 23px; }
+.login-card .login-sub { color: #666666; font-size: 13px; }
+.login-card .login-btn { background: #111111; border-radius: 4px; }
+@media (max-width: 1200px) {
+  .app-shell .wb-metrics { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .app-shell .wb-location-label { display: none; }
+  .app-shell .customers-layout { grid-template-columns: minmax(0, 1fr); }
+  .app-shell .customer-detail { position: static; }
+  .app-shell .wb-quote-line { grid-template-columns: 100px minmax(120px, 1fr) minmax(120px, 1fr); }
+  .app-shell .wb-workbench-body { grid-template-columns: 270px minmax(0, 1fr); gap: 18px; }
+}
+@media (max-width: 900px) {
+  .app-shell { padding: 0; }
+  .app-shell .wb-topbar { margin-left: 0; border-radius: 0; padding: 16px; display: flex; flex-wrap: wrap; gap: 16px; background: #ffffff; }
+  .app-shell .wb-brand { position: static; width: auto; height: auto; padding: 0; border: 0; }
+  .app-shell .wb-brand-copy small { display: block; max-width: 170px; }
+  .app-shell .wb-topbar-side { width: auto; margin-left: auto; }
+  .app-shell .wb-search { display: none; }
+  .app-shell .wb-account-trigger { max-width: 155px; }
+  .app-shell .wb-nav { position: static; width: 100%; flex-direction: row; order: 3; padding: 0; border: 0; overflow-x: auto; }
+  .app-shell .wb-nav-link { min-height: 44px; padding: 0 13px; font-size: 13px; }
+  .app-shell :is(.wb-nav-heading, .wb-nav-icon) { display: none; }
+  .app-shell .wb-nav-link.is-active { box-shadow: inset 0 -2px #111111; }
+  .app-shell .wb-content { margin-left: 0; padding: 24px 16px 40px; }
+  .app-shell .wb-metrics { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .app-shell .wb-metric:last-child { grid-column: 1 / -1; }
+  .app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .app-shell .wb-page:not(.wb-quote-page) > .wb-inv-totals > span:last-child { grid-column: 1 / -1; }
+  .app-shell :is(.wb-notice, .wb-offline-bar) { padding: 12px 16px; }
+  .app-shell :is(.wb-page-head, .customers-head) { align-items: flex-start; flex-direction: column; gap: 14px; }
+  .app-shell .wb-today-head { flex-direction: row; flex-wrap: wrap; }
+  .app-shell .wb-page-head-actions { justify-content: flex-start; width: 100%; }
+  .app-shell .wb-page-head h1 { overflow-wrap: anywhere; }
+  .app-shell .wb-inv-search { width: 100%; min-width: 0; }
+  .app-shell .wb-quote-editor { grid-template-columns: 1fr; padding: 16px; }
+  .app-shell .wb-quote-editor fieldset { padding: 12px; }
+  .app-shell .wb-quote-line { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px; }
+  .app-shell .wb-quote-line > :nth-child(n+7) { grid-column: 1 / -1; }
+  .app-shell .wb-quote-terms { grid-template-columns: 1fr; }
+  .app-shell .wb-workbench-body { grid-template-columns: 1fr; }
+  .app-shell :is(.customer-detail, .wb-detail) { padding: 18px; }
+  .app-shell .wb-quote-summary strong { font-size: 23px; }
+  .app-shell .wb-form-actions .wb-btn { flex: 1 1 auto; }
+}
+/* ===== E03 收尾：订单 / 商品 / SN 台账 / 系统设置 / 模块占位页 =====
+   这五类页面此前各自沿用 index.css 的旧浅色规则，SN 台账与占位页更是一行样式都没有。
+   它们各有独立类前缀（orders- 、product- 、sn- 、settings- 、module-placeholder），
+   所以按页面作用域补齐到同一套顾客端视觉；不改全局 .btn —— 报价编辑器与顾客打印导出必须保持原样。 */
+
+/* ---- 通用页面头（与 wb-page-head 同尺度） ---- */
+.app-shell :is(.orders-page-head, .product-page-head, .sn-page-head, .settings-heading) { margin-bottom: 24px; gap: 20px; align-items: center; }
+.app-shell :is(.orders-page-head h2, .product-page-head h2, .sn-page-head h2, .settings-heading h2) { margin: 0; font-size: 28px; font-weight: 500; letter-spacing: -.7px; line-height: 1.4; }
+.app-shell :is(.orders-kicker, .sn-page-head p, .settings-heading p, .product-page-head p) { color: #666666; font-size: 12px; letter-spacing: .04em; margin: 6px 0 0; }
+
+/* ---- 这些页面内的按钮（限定作用域，不动全局 .btn） ---- */
+.app-shell :is(.orders-page, .product-page, .sn-page, .settings-page) .btn { min-height: 42px; padding: 9px 16px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; color: var(--wb-ink); font-size: 13px; font-weight: 500; box-shadow: none; white-space: nowrap; cursor: pointer; }
+.app-shell :is(.orders-page, .product-page, .sn-page, .settings-page) .btn.primary { background: var(--wb-ink); border-color: var(--wb-ink); color: #fff; }
+.app-shell :is(.orders-page, .product-page, .sn-page, .settings-page) .btn.primary:hover:not(:disabled) { background: #111111; }
+.app-shell :is(.orders-page, .product-page, .sn-page, .settings-page) .btn.small { min-height: 36px; padding: 7px 13px; font-size: 12px; }
+.app-shell :is(.orders-page, .product-page, .sn-page, .settings-page) .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+/* ---- 通用：白卡与数据表 ---- */
+.app-shell :is(.orders-table-wrap, .order-card, .product-table-wrap, .sn-table-wrap, .settings-table-wrap, .sn-check-card) { border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; box-shadow: none; overflow: auto; }
+.app-shell :is(.orders-table, .product-table, .sn-table, .settings-table) { width: 100%; border-collapse: collapse; font-size: 13px; }
+.app-shell :is(.orders-table, .product-table, .sn-table, .settings-table) th { background: #f5f5f5; color: #666666; font-size: 12px; font-weight: 500; text-align: left; }
+.app-shell :is(.orders-table, .product-table, .sn-table, .settings-table) th,
+.app-shell :is(.orders-table, .product-table, .sn-table, .settings-table) td { padding: 16px 18px; border-bottom: 1px solid #e5e5e5; vertical-align: middle; }
+.app-shell :is(.orders-table, .product-table, .sn-table, .settings-table) tbody tr:last-child td { border-bottom: 0; }
+.app-shell :is(.orders-table, .sn-table, .product-table) tbody tr:hover { background: #f5f5f5; }
+.app-shell :is(.orders-table, .settings-table) a { color: var(--wb-ink); font-weight: 500; }
+.app-shell :is(.orders-table, .settings-table) a:hover { color: #755ca4; }
+.app-shell :is(.orders-empty, .sn-empty) { padding: 28px; color: var(--wb-muted); text-align: center; }
+
+/* ---- 订单列表与详情 ---- */
+.app-shell .orders-page { gap: 20px; }
+.app-shell .orders-page-head > div > span { color: var(--wb-muted); font-size: 13px; }
+.app-shell .orders-table small { display: block; margin-top: 3px; color: var(--wb-muted); }
+.app-shell .orders-error { margin: 0; padding: 12px 16px; border: 0; border-radius: 4px; background: var(--wb-danger-bg); color: var(--wb-danger); font-size: 13px; }
+.app-shell .order-status { display: inline-flex; padding: 4px 10px; border-radius: 4px; background: #eceff3; color: #46536b; font-size: 11px; }
+.app-shell .order-status.status-delivered { background: #dceee2; color: #37664d; }
+.app-shell .order-status.status-pending_purchase { background: #fae9c9; color: #78581f; }
+.app-shell .order-status.status-preparing { background: #e1e9f7; color: #425d8c; }
+.app-shell .order-status.status-pending_delivery { background: #f8f0dc; color: #111111; }
+.app-shell .order-status.status-cancelled { background: #f4dce0; color: #914653; }
+.app-shell :is(.order-summary-grid, .todo-grid) { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; }
+.app-shell :is(.order-summary-grid > div, .todo-card) { padding: 20px; border: 0; border-radius: 4px; background: #f5f5f5; }
+.app-shell .order-summary-grid > div:nth-child(2) { background: #f5f5f5; }
+.app-shell .order-summary-grid > div:nth-child(3) { background: #f5f5f5; }
+.app-shell .order-summary-grid > div:nth-child(4) { background: #f5f5f5; }
+.app-shell .todo-card { min-height: 0; border-radius: 4px; background: #f5f5f5; }
+.app-shell .todo-card:nth-child(2) { background: #f5f5f5; }
+.app-shell .todo-card:nth-child(3) { background: #f5f5f5; }
+.app-shell .todo-card:nth-child(4) { background: #f5f5f5; }
+.app-shell :is(.order-summary-grid, .todo-card) span { display: block; color: #666666; font-size: 12px; }
+.app-shell .order-summary-grid strong { display: block; margin-top: 7px; font-size: 30px; letter-spacing: -.7px; color: var(--wb-ink); font-variant-numeric: tabular-nums; }
+.app-shell .todo-card strong { margin-top: 14px; font-size: 38px; letter-spacing: -1px; color: var(--wb-ink); }
+.app-shell .todo-card small { color: #666666; }
+.app-shell .order-detail-grid { grid-template-columns: minmax(0,1fr) 320px; gap: 20px; }
+.app-shell .order-card { padding: 24px; }
+.app-shell .order-card h3 { margin: 0 0 14px; font-size: 16px; }
+.app-shell .order-actions { background: #f5f5f5; }
+.app-shell .order-actions :is(select, input, textarea) { min-height: 42px; border-radius: 4px; border: 1px solid var(--wb-line); background: #fff; font-size: 13px; }
+.app-shell .order-sn-state strong { display: block; font-size: 13px; }
+.app-shell .order-sn-state small { display: block; margin-top: 3px; color: var(--wb-muted); }
+
+/* ---- 商品管理（旧页，本轮只统一视觉；职责边界仍由 G-20 另行裁定） ---- */
+.app-shell .product-page { display: grid; gap: 18px; }
+.app-shell .product-page-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.app-shell .product-filters { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; }
+.app-shell .product-filters :is(input, select) { min-height: 42px; border-radius: 4px; border: 1px solid var(--wb-line); background: #f5f5f5; font-size: 13px; }
+.app-shell .product-filters button { min-height: 42px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; font-size: 13px; cursor: pointer; }
+.app-shell .product-primary { min-height: 42px; padding: 9px 18px; border: 1px solid var(--wb-ink); border-radius: 4px; background: var(--wb-ink); color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; }
+.app-shell .product-status { border-radius: 4px; font-size: 11px; }
+.app-shell .product-alert { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border: 0; border-radius: 4px; background: #dceee2; color: #37664d; font-size: 13px; }
+.app-shell .product-alert.error { background: var(--wb-danger-bg); color: var(--wb-danger); }
+.app-shell .product-alert button { border: 0; background: transparent; color: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; }
+.app-shell .product-pagination { display: flex; align-items: center; justify-content: center; gap: 14px; color: var(--wb-muted); font-size: 13px; }
+.app-shell .product-dialog { width: min(720px, 100%); max-height: 86vh; overflow: auto; padding: 26px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; box-shadow: none; }
+.app-shell .product-dialog-head { margin-bottom: 18px; }
+.app-shell .product-form :is(input, select, textarea) { min-height: 42px; border-radius: 4px; border: 1px solid var(--wb-line); background: #f5f5f5; font-size: 13px; }
+.app-shell .product-form label { color: #4b5565; font-size: 12px; font-weight: 500; }
+.app-shell .product-check { display: flex; align-items: center; gap: 8px; font-weight: 400; }
+.app-shell .product-check input { width: auto; }
+.app-shell .product-meta-list { border: 1px solid var(--wb-line); border-radius: 4px; overflow: hidden; }
+.app-shell .product-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- SN 台账（此前无任何样式，本轮补齐基础版式并套彩色） ---- */
+.app-shell .sn-page { display: grid; gap: 18px; max-width: 1480px; margin-inline: auto; }
+.app-shell .sn-page-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.app-shell .sn-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-shell .sn-context { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px 20px; border-radius: 4px; background: #f5f5f5; color: #6b5327; font-size: 13px; }
+.app-shell .sn-context span { color: #7a6440; }
+.app-shell .sn-alert { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 4px; background: #eceff3; color: #46536b; font-size: 13px; }
+.app-shell .sn-alert.success { background: #dceee2; color: #37664d; }
+.app-shell .sn-alert.error { background: var(--wb-danger-bg); color: var(--wb-danger); }
+.app-shell .sn-alert button { border: 0; background: transparent; color: inherit; font-size: 12px; cursor: pointer; text-decoration: underline; }
+.app-shell .sn-check-bar { display: flex; gap: 10px; padding: 14px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; }
+.app-shell .sn-check-bar input { min-height: 42px; border-radius: 4px; border: 1px solid var(--wb-line); background: #f5f5f5; font-size: 13px; }
+.app-shell .sn-check-results { display: grid; gap: 10px; }
+.app-shell .sn-check-card { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 16px 20px; font-size: 13px; }
+.app-shell .sn-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; background: #eceff3; color: #46536b; font-size: 11px; }
+.app-shell .sn-badge.badge-green { background: #dceee2; color: #37664d; }
+.app-shell .sn-badge.badge-yellow { background: #fae9c9; color: #78581f; }
+.app-shell .sn-badge.badge-red { background: #f4dce0; color: #914653; }
+.app-shell .sn-badge.badge-gray { background: #eceff3; color: #5b6577; }
+.app-shell .sn-meta { color: var(--wb-muted); font-size: 12px; }
+.app-shell .sn-filters { display: flex; flex-wrap: wrap; gap: 12px; padding: 14px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; }
+.app-shell .sn-filters :is(input, select) { min-height: 42px; border-radius: 4px; border: 1px solid var(--wb-line); background: #f5f5f5; font-size: 13px; }
+.app-shell .sn-table td strong { font-variant-numeric: tabular-nums; }
+.app-shell .sn-row-clickable { cursor: pointer; }
+.app-shell .sn-pages { display: flex; align-items: center; justify-content: center; gap: 14px; color: var(--wb-muted); font-size: 13px; }
+.app-shell .sn-pages button { min-height: 38px; padding: 8px 14px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; font-size: 13px; cursor: pointer; }
+.app-shell .sn-pages button:disabled { opacity: .5; cursor: not-allowed; }
+.app-shell .sn-overlay, .app-shell .settings-overlay { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: #15223866; }
+.app-shell :is(.sn-modal, .sn-detail) { width: min(680px, 100%); max-height: 86vh; overflow: auto; padding: 26px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; box-shadow: none; }
+.app-shell .sn-detail { width: min(760px, 100%); }
+.app-shell :is(.sn-modal, .sn-detail) h3 { margin: 0 0 18px; font-size: 21px; }
+.app-shell .sn-modal label { display: grid; gap: 7px; margin-bottom: 14px; color: #4b5565; font-size: 12px; font-weight: 500; }
+.app-shell .sn-modal :is(input, select, textarea) { min-height: 42px; border-radius: 4px; border: 1px solid var(--wb-line); background: #f5f5f5; font-size: 13px; }
+.app-shell .sn-modal-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 18px; border-top: 1px solid var(--wb-line); }
+.app-shell .sn-precheck { display: grid; gap: 5px; padding: 14px 16px; margin-bottom: 14px; border-radius: 4px; background: #f5f5f5; color: #111111; font-size: 12px; }
+.app-shell .sn-available { padding: 6px 0 14px; }
+.app-shell .sn-available ul { list-style: none; display: grid; gap: 8px; margin: 10px 0 0; padding: 0; }
+.app-shell .sn-available label { display: flex; align-items: center; gap: 9px; margin: 0; font-weight: 400; }
+.app-shell .sn-available input[type="checkbox"] { width: auto; min-height: 0; }
+.app-shell .sn-bind-help { color: var(--wb-muted); font-size: 13px; line-height: 1.7; }
+.app-shell .sn-detail-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px 20px; margin: 0 0 20px; }
+.app-shell .sn-detail-grid div { padding-bottom: 10px; border-bottom: 1px solid #e5e5e5; }
+.app-shell .sn-detail-grid dt { color: var(--wb-muted); font-size: 11px; }
+.app-shell .sn-detail-grid dd { margin: 5px 0 0; font-size: 13px; color: var(--wb-ink); overflow-wrap: anywhere; }
+.app-shell .sn-timeline { display: grid; gap: 0; margin: 0 0 20px; }
+.app-shell .sn-timeline-item { display: grid; grid-template-columns: 12px minmax(0,1fr); gap: 4px 12px; padding-bottom: 16px; }
+.app-shell .sn-timeline-dot { width: 9px; height: 9px; margin-top: 5px; border-radius: 50%; background: #111111; }
+.app-shell .sn-timeline-item strong { font-size: 13px; }
+.app-shell .sn-timeline-item small { display: block; margin-top: 3px; color: var(--wb-muted); font-size: 11px; }
+.app-shell .sn-timeline-item p { grid-column: 2; margin: 4px 0 0; color: var(--wb-muted); font-size: 12px; }
+
+/* ---- 系统设置 ---- */
+.app-shell .settings-page { width: min(1180px, 100%); gap: 16px; }
+.app-shell .settings-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.app-shell .settings-notice { padding: 6px 12px; border-radius: 4px; background: #dceee2; color: #37664d; font-size: 12px; }
+.app-shell .settings-notice code { color: #2f5c46; font-size: 12px; }
+.app-shell :is(.settings-error, .settings-state, .settings-empty) { padding: 20px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; color: var(--wb-muted); font-size: 13px; }
+.app-shell .settings-error { border-color: #eccfc8; background: var(--wb-danger-bg); color: var(--wb-danger); }
+.app-shell .settings-section { padding: 24px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; box-shadow: none; }
+.app-shell .settings-section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.app-shell .settings-section h3 { font-size: 16px; margin: 0; }
+.app-shell .settings-section-head span { display: block; margin-top: 4px; color: var(--wb-muted); font-size: 12px; }
+.app-shell :is(.settings-form, .settings-invite) { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; align-items: end; }
+.app-shell .settings-invite { grid-template-columns: minmax(180px,1fr) minmax(140px,.7fr) auto; padding: 0 0 16px; margin-bottom: 16px; border-bottom: 1px solid var(--wb-line); }
+.app-shell :is(.settings-form, .settings-invite, .settings-dialog) label { color: #4b5565; font-size: 12px; font-weight: 500; }
+.app-shell :is(.settings-form, .settings-invite, .settings-dialog) :is(input, select) { min-height: 42px; border-radius: 4px; border: 1px solid var(--wb-line); background: #f5f5f5; font-size: 13px; }
+.app-shell .settings-table { min-width: 640px; }
+.app-shell .settings-table em { margin-left: 7px; color: var(--wb-ink); font-size: 10px; font-style: normal; }
+.app-shell .settings-status { display: inline-block; padding: 4px 9px; border-radius: 4px; font-size: 11px; }
+.app-shell .settings-status.active { background: #dceee2; color: #37664d; }
+.app-shell .settings-status.disabled { background: #f4dce0; color: #914653; }
+.app-shell .settings-link { margin-right: 10px; padding: 0; border: 0; background: transparent; color: var(--wb-ink); font-size: 12px; cursor: pointer; }
+.app-shell .settings-link.danger { color: var(--wb-danger); }
+.app-shell .role-list { display: grid; border-top: 1px solid var(--wb-line); }
+.app-shell .role-row { display: grid; grid-template-columns: 150px 160px minmax(0,1fr); gap: 10px; padding: 13px 0; border-bottom: 1px solid #e5e5e5; font-size: 12px; }
+.app-shell .role-row span, .app-shell .role-row small { color: var(--wb-muted); overflow-wrap: anywhere; }
+.app-shell .settings-dialog { width: min(520px, 100%); max-height: 86vh; overflow: auto; padding: 26px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; box-shadow: none; }
+.app-shell .settings-dialog h3 { margin: 0 0 18px; font-size: 20px; }
+.app-shell .settings-dialog fieldset { border: 1px solid var(--wb-line); border-radius: 4px; padding: 14px; margin: 14px 0 0; }
+.app-shell .settings-dialog legend { padding: 0 8px; font-size: 13px; font-weight: 500; }
+.app-shell .settings-dialog-actions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 18px; margin-top: 18px; border-top: 1px solid var(--wb-line); }
+.app-shell .settings-check { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-weight: 400; }
+.app-shell .settings-check input { width: auto; }
+
+/* ---- 模块占位页（此前无样式） ---- */
+.app-shell .module-placeholder { max-width: 880px; margin: 24px auto; padding: 48px 40px; border: 1px solid var(--wb-line); border-radius: 4px; background: #fff; box-shadow: none; text-align: center; }
+.app-shell .module-placeholder-index { display: inline-grid; place-items: center; min-width: 52px; height: 52px; padding: 0 14px; margin-bottom: 18px; border-radius: 4px; background: var(--wb-ink); color: #fff; font-size: 13px; font-weight: 500; letter-spacing: .06em; }
+.app-shell .module-placeholder > p { margin: 0 0 8px; color: #666666; font-size: 12px; letter-spacing: .06em; }
+.app-shell .module-placeholder h2 { margin: 0 0 12px; font-size: 28px; font-weight: 500; letter-spacing: -.7px; }
+.app-shell .module-placeholder > span { display: block; max-width: 560px; margin: 0 auto; color: var(--wb-muted); font-size: 13px; line-height: 1.8; }
+.app-shell .module-placeholder-rule { width: 56px; height: 3px; margin: 24px auto; border-radius: 4px; background: var(--wb-line); }
+.app-shell .module-placeholder > strong { color: #111111; font-size: 13px; font-weight: 500; }
+
+@media (max-width: 900px) {
+  .app-shell :is(.orders-page-head, .product-page-head, .sn-page-head, .settings-heading) { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .app-shell :is(.order-summary-grid, .todo-grid) { grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .app-shell .order-detail-grid { grid-template-columns: 1fr; }
+  .app-shell :is(.settings-form, .settings-invite) { grid-template-columns: 1fr; }
+  .app-shell .sn-detail-grid { grid-template-columns: 1fr; }
+  .app-shell .role-row { grid-template-columns: 1fr; gap: 4px; }
+  .app-shell .module-placeholder { padding: 32px 22px; }
+}
+
+/* ===== E06 订单处理 / E07 缺件采购 =====
+   这两页的表格列比报价单多（订单 9 列、采购 8 列），而且「实物 / 编号」单元格会放较长的
+   内部编号。报价表那套 min-width:730px 在这里会让长单元格挤掉邻居 —— 表头竖排成单字、
+   金额被截断（浏览器验收实测抓到）。所以给它们单独定列宽策略：
+   整表占满容器、表头不换行、单元格内容允许在任意位置折行、金额与数量列保持不折行。 */
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-quote-table { width: 100%; min-width: 920px; }
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-quote-table th { white-space: nowrap; }
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-quote-table td { overflow-wrap: anywhere; }
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-quote-table td.wb-tabular { white-space: nowrap; }
+/* 这两页的「客户与来源 / 采购信息」用 dl 铺开：两列，窄屏回落成一列 */
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-detail dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 20px;
+  margin: 0 0 4px;
+}
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-detail dl > div { padding-bottom: 10px; border-bottom: 1px solid #e5e5e5; }
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-detail dt { color: var(--wb-muted); font-size: 11px; }
+.app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-detail dd { margin: 5px 0 0; font-size: 13px; color: var(--wb-ink); overflow-wrap: anywhere; }
+@media (max-width: 900px) {
+  .app-shell :is(.wb-sales-page, .wb-purchase-page) .wb-detail dl { grid-template-columns: 1fr; }
+}
+
+@media print {
+  .app-shell :is(.wb-topbar, .wb-notice) { display: none; }
+  .app-shell .wb-content { margin: 0; padding: 0; }
+}
+
+/* 细线建立层级；米色仅用于选中、结算与档案摘要。 */
+.app-shell .wb-topbar { border-bottom: 1px solid var(--wb-line); }
+.app-shell :is(.wb-brand, .wb-nav) { border-right: 1px solid var(--wb-line); }
+.app-shell .wb-nav-link.is-active { background: var(--wb-ink); color: #fff; }
+.app-shell .wb-nav-link.is-active .wb-nav-icon { opacity: 1; }
+.app-shell :is(.wb-page-head h1, .customers-head h2, .orders-page-head h2, .product-page-head h2, .sn-page-head h2, .settings-heading h2) { font-size: 26px; font-weight: 400; letter-spacing: 0; }
+.app-shell :is(.wb-metric, .wb-page:not(.wb-quote-page) > .wb-inv-totals > span) { background: var(--wb-photo); border: 1px solid var(--wb-line); border-radius: 4px; }
+.app-shell .wb-metric.is-active { background: var(--wb-sage); border-color: var(--wb-ink); }
+.app-shell :is(.wb-metric strong, .wb-inv-totals b, .customer-total strong) { font-weight: 400; }
+.app-shell .wb-metric--money { background: var(--wb-sage); }
+.app-shell .wb-content { padding-top: 32px; }
+.app-shell :is(input, select, textarea) { accent-color: var(--wb-ink); box-shadow: none; }
+.app-shell :is(.wb-filter-row button.is-active, .wb-inv-tab.is-active) { border-color: var(--wb-ink); color: var(--wb-ink); }
+.app-shell :is(.wb-btn, .btn, .product-primary, .settings-link) { font-weight: 500; }
+.app-shell :is(.wb-btn--primary, .btn.primary, .product-primary) { background: var(--wb-ink); color: #fff; }
+.app-shell :is(.settings-link:not(.danger), .product-table button) { color: var(--wb-ink); }
+.login-overlay { background: #fff; }
+.login-card { border-radius: 4px; border-color: #e5e5e5; box-shadow: none; }
+.login-card h2 { font-weight: 400; }
+.login-card input { border-radius: 4px; }
+@media (max-width: 900px) {
+  .app-shell :is(.wb-brand, .wb-nav) { border-right: 0; }
+  .app-shell .wb-nav-link.is-active { box-shadow: none; }
+}
+
+@media screen {
+  body.wb-shell-body { background: #fff; }
+  body.wb-shell-body .shell { width: 100%; }
+}
+.app-shell .wb-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)) 1.25fr; }
+.app-shell .wb-metric.wb-metric--money { background: var(--wb-sage); }
+.app-shell :is(.wb-inv-row strong, .wb-section-head h2, .wb-task-title, .wb-detail h2) { font-weight: 500; }
+.app-shell .product-modal { width: auto; max-height: none; padding: 20px; background: #11111166; border: 0; border-radius: 0; }
+@media (max-width: 900px) {
+  .app-shell .wb-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-shell .wb-metric:last-child { grid-column: auto; }
+}

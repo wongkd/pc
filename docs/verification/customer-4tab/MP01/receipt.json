@@ -1,0 +1,20 @@
+{
+  "id": "MP01",
+  "status": "review",
+  "updatedAt": "2026-09-23T19:54:14+08:00",
+  "summary": "复核了 MP00 基线和独立素材：manifest 19 条均 ready，运行时 46 个资源共 922871 bytes；未改动或接入素材。",
+  "evidence": [
+    "docs/verification/customer-4tab/MP01/README.md",
+    "docs/verification/customer-4tab/MP01/asset-baseline-review.json",
+    "docs/verification/customer-4tab/MP00/visual-baseline.json",
+    "docs/design/2026-09-22-customer-ip/assets-manifest.json"
+  ],
+  "checks": [
+    { "command": "node docs/design/2026-09-22-customer-ip/verify-customer-assets.cjs", "result": "pass" },
+    { "command": "node docs/plans/2026-09-22-customer-miniprogram-reset/check-plan.mjs", "result": "pass" },
+    { "command": "node scripts/check-doc-links.mjs", "result": "pass" }
+  ],
+  "visual": "review",
+  "blockedBy": [],
+  "next": "MP03 顾客基础组件；接入页面时继续保留 manifest 的焦点与 ready 状态，并在 MP04 用微信开发者工具复测。"
+}

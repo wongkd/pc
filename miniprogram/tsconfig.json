@@ -20,6 +20,10 @@
     "pages/**/*.ts",
     "packages/**/*.ts",
     "features/**/*.ts",
+    "services/**/*.ts",
+    "components/**/*.ts",
+    "custom-tab-bar/**/*.ts",
+    "typings/**/*.ts",
     "utils/**/*.ts",
     "contracts/**/*.ts"
   ],

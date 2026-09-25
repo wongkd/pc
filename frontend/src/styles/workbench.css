@@ -40,6 +40,59 @@
   gap: var(--wb-s3);
 }
 
+/* ── 今天页页头：日期块 + 「今天 / 门店工作台」+ 开单 ────────
+   只挂 .wb-today-head。.wb-page-head 还被库存页与落地页共用，
+   它们的对齐方式保持不变，所以不改通用规则。 */
+.wb-today-head {
+  align-items: center;
+  gap: 0;
+}
+
+.wb-date-block {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-s3);
+  margin-right: var(--wb-s6);
+  padding-right: var(--wb-s6);
+  border-right: 1px solid var(--wb-line);
+}
+
+.wb-date-block strong {
+  font-family: var(--wb-font-serif);
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.wb-date-block > span:not(.wb-visually-hidden) {
+  display: flex;
+  flex-direction: column;
+  color: var(--wb-muted);
+  font-size: 11px;
+  line-height: 1.9;
+}
+
+.wb-page-title p {
+  margin: 0;
+  color: var(--wb-muted);
+  font-size: 11px;
+  letter-spacing: 0.2em;
+}
+
+.wb-page-title h1 {
+  margin: 0;
+  font-family: var(--wb-font-serif);
+  font-size: 29px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+
+.wb-today-head .wb-page-head-actions {
+  margin-left: auto;
+}
+
 .wb-menu-anchor {
   position: relative;
 }
@@ -94,6 +147,8 @@
   background: var(--wb-surface);
   color: var(--wb-ink);
   font-size: var(--wb-fs-label);
+  /* 窄屏下按钮文字不能被压成一行一个字（390 实测） */
+  white-space: nowrap;
   cursor: pointer;
 }
 
@@ -143,48 +198,85 @@
   font-size: var(--wb-fs-small);
 }
 
-/* ── 指标 ───────────────────────────────────────────────── */
+/* ── 指标：紧凑横栏（对齐 v3 设计稿 .daily-strip）─────────────
+   02 §9 明确不要「多彩统计卡」；§78 要求数值可点开来源，
+   设计稿用 ↗ 箭头承载这件事（不是靠一行「点击查看来源」文字）。
+   标签与数值同排；金额比计数长得多，所以金额格更宽、并在下方补一行口径说明。 */
 .wb-metrics {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--wb-s3);
-  margin-bottom: var(--wb-s6);
+  display: flex;
+  align-items: stretch;
+  margin: 0 0 var(--wb-s6);
+  padding: var(--wb-s3) 0;
+  border-block: 1px solid var(--wb-line);
 }
 
 .wb-metric {
   display: flex;
-  flex-direction: column;
-  gap: var(--wb-s1);
-  min-height: 104px;
-  padding: var(--wb-s4);
-  border: 1px solid var(--wb-line);
-  border-radius: var(--wb-radius);
-  background: var(--wb-surface);
+  align-items: baseline;
+  gap: var(--wb-s3);
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 38px;
+  padding: 0 var(--wb-s5);
+  border: 0;
+  border-right: 1px solid var(--wb-line);
+  background: transparent;
   color: var(--wb-ink);
   text-align: left;
   cursor: pointer;
 }
 
+.wb-metric:first-child {
+  padding-left: 0;
+}
+
 .wb-metric:hover {
-  border-color: var(--wb-ink);
+  background: rgb(233 237 223 / 45%);
 }
 
 .wb-metric.is-active {
   background: var(--wb-sage);
-  border-color: var(--wb-ink);
+}
+
+.wb-metric.is-active .wb-metric-label {
+  text-decoration: underline;
+  text-underline-offset: 5px;
 }
 
 .wb-metric-label {
   color: var(--wb-muted);
-  font-size: var(--wb-fs-secondary);
+  font-size: var(--wb-fs-small);
+  white-space: nowrap;
 }
 
 .wb-metric strong {
   font-family: var(--wb-font-serif);
-  font-size: 28px;
+  font-size: 27px;
   font-weight: 600;
-  line-height: 1.1;
-  overflow-wrap: anywhere;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.wb-metric-arrow {
+  margin-left: auto;
+  flex: none;
+  color: var(--wb-muted);
+}
+
+/* 金额格：标签与金额同排，口径说明另起一行；整体比计数格宽 */
+.wb-metric--money {
+  flex: 1.45 1 0;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: 2px;
+  padding-right: 0;
+  border-right: 0;
+}
+
+.wb-metric-note {
+  flex-basis: 100%;
+  color: var(--wb-muted);
+  font-size: 11px;
 }
 
 .wb-caption {
@@ -311,7 +403,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--wb-s2);
+  gap: 5px;
 }
 
 .wb-task-row,
@@ -320,7 +412,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--wb-s1);
-  padding: var(--wb-s3);
+  padding: 10px var(--wb-s2) 10px 10px;
   border: 1px solid var(--wb-line);
   border-left: 3px solid transparent;
   border-radius: var(--wb-radius);
@@ -328,6 +420,22 @@
   color: var(--wb-ink);
   text-align: left;
   cursor: pointer;
+}
+
+/* 列表行：左缩略图 + 右四行文案（对齐 v3 设计稿 .task-row 的 45px + 1fr）。
+   行高要压下来，但单号、卡点、期限、金额方向、阻断原因一个都不能少。 */
+.wb-task-row {
+  display: grid;
+  grid-template-columns: 45px minmax(0, 1fr);
+  gap: var(--wb-s3);
+  align-items: center;
+}
+
+.wb-task-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .wb-task-row:hover,
@@ -346,18 +454,22 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--wb-s2);
+  min-width: 0;
 }
 
 .wb-task-id {
+  flex: none;
   color: var(--wb-muted);
   font-size: var(--wb-fs-small);
   letter-spacing: 0.02em;
+  /* 单号不许换行：实测折行会把 DEMO-SO-003 拆成「DEMO-」+「SO-003」两行 */
+  white-space: nowrap;
 }
 
 .wb-task-title {
   font-family: var(--wb-font-serif);
-  font-size: var(--wb-fs-device);
-  line-height: 1.3;
+  font-size: 14px;
+  line-height: 1.35;
   /* 长设备名最多两行，电话与 SN 进详情 */
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -366,9 +478,13 @@
 }
 
 .wb-task-line {
-  font-size: var(--wb-fs-secondary);
+  font-size: var(--wb-fs-small);
   line-height: 1.45;
   overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .wb-task-line--muted {
@@ -378,9 +494,23 @@
 .wb-task-row-foot {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: var(--wb-s2);
-  font-size: var(--wb-fs-secondary);
+  font-size: var(--wb-fs-small);
+  min-width: 0;
+}
+
+/* 期限吃掉剩余宽度后省略；完整值由 title 与详情页提供，不靠截断藏信息 */
+.wb-task-deadline {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.wb-task-row-top .wb-amount {
+  white-space: nowrap;
 }
 
 /* ── 标签 ───────────────────────────────────────────────── */
@@ -453,22 +583,56 @@
   overflow-wrap: anywhere;
 }
 
-/* ── 照片 ───────────────────────────────────────────────── */
+/* ── 照片 ─────────────────────────────────────────────────
+   三个变体：row = 列表行缩略图（45×53）、card = 看板卡（88×88）、
+   hero = 详情设备图（对齐 02 §65：1366×768 高 220–244px）。 */
 .wb-device-photo {
   margin: 0;
   flex: none;
+}
+
+.wb-device-photo--row {
+  width: 45px;
+}
+
+.wb-device-photo--card {
   width: 88px;
+}
+
+.wb-device-photo--hero {
+  width: 100%;
 }
 
 .wb-device-photo img,
 .wb-photo-placeholder {
   display: block;
-  width: 88px;
-  height: 88px;
-  object-fit: cover;
   border: 1px solid var(--wb-line);
   border-radius: var(--wb-radius);
   background: var(--wb-photo);
+  box-sizing: border-box;
+}
+
+.wb-device-photo--row img,
+.wb-device-photo--row .wb-photo-placeholder {
+  width: 45px;
+  height: 53px;
+  object-fit: cover;
+}
+
+.wb-device-photo--card img,
+.wb-device-photo--card .wb-photo-placeholder {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+}
+
+/* 详情大图不裁切设备图（contain），与设计稿 .device-hero 同口径 */
+.wb-device-photo--hero img,
+.wb-device-photo--hero .wb-photo-placeholder {
+  width: 100%;
+  height: 293px;
+  object-fit: contain;
+  padding: 14px 24px;
 }
 
 .wb-photo-placeholder {
@@ -561,47 +725,67 @@
 
 .wb-detail-columns {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: var(--wb-s6);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: 26px;
+  align-items: start;
 }
 
-.wb-detail-block {
+/* 左列：设备大图 + 型号 + 客户 / 约定 */
+.wb-device-column {
   display: flex;
   flex-direction: column;
   gap: var(--wb-s3);
   min-width: 0;
 }
 
-.wb-detail-block h3 {
+.wb-device-caption h3 {
+  margin: 0;
+  font-family: var(--wb-font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.wb-facts {
+  margin: var(--wb-s2) 0 0;
+}
+
+.wb-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wb-s3);
+  padding: var(--wb-s2) 0;
+  border-bottom: 1px solid var(--wb-line);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-facts dt {
+  flex: none;
+  color: var(--wb-muted);
+}
+
+.wb-facts dd {
+  margin: 0;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+/* 右列：当前处理 + 金额与主动作 */
+.wb-process-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wb-s3);
+  min-width: 0;
+}
+
+.wb-process-panel h3 {
   margin: 0;
   padding-bottom: var(--wb-s2);
   border-bottom: 1px solid var(--wb-line);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.02em;
-}
-
-.wb-def-list {
-  display: grid;
-  gap: var(--wb-s2);
-  margin: 0;
-}
-
-.wb-def-list div {
-  display: grid;
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: var(--wb-s3);
-}
-
-.wb-def-list dt {
-  color: var(--wb-muted);
-  font-size: var(--wb-fs-secondary);
-}
-
-.wb-def-list dd {
-  margin: 0;
-  font-size: var(--wb-fs-label);
-  overflow-wrap: anywhere;
 }
 
 .wb-detail-blocker {
@@ -656,24 +840,28 @@
   color: var(--wb-muted);
 }
 
-.wb-detail-foot {
+/* 金额与主动作跟在处理区内，不再横跨整宽。
+   横跨时按钮会落到 1366×768 首屏之外（改前实测 bottom 835px，而 02 §65 要求首屏可见）。 */
+.wb-settlement {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: var(--wb-s5);
+  gap: var(--wb-s4);
+  margin-top: auto;
   padding-top: var(--wb-s4);
   border-top: 1px solid var(--wb-line);
   flex-wrap: wrap;
 }
 
-.wb-detail-foot > div:first-child {
+.wb-settlement-amount {
   display: flex;
   flex-direction: column;
   gap: var(--wb-s1);
+  min-width: 0;
 }
 
-.wb-detail-foot .wb-amount--due,
-.wb-detail-foot .wb-amount--pending {
+.wb-settlement .wb-amount--due,
+.wb-settlement .wb-amount--pending {
   font-family: var(--wb-font-serif);
   font-size: var(--wb-fs-amount);
   font-weight: 600;
@@ -707,7 +895,7 @@
   border: 0;
 }
 
-/* ── 响应式：1440 / 1366 / 1280 / 1024 / 1920 ───────────── */
+/* ── 响应式：1920 / 1440 / 1366 / 1280 / 1100 / 1024 ────── */
 @media (min-width: 1921px) {
   .wb-workbench {
     max-width: 1600px;
@@ -718,18 +906,35 @@
   .wb-workbench-body {
     grid-template-columns: 288px minmax(0, 1fr);
   }
-  .wb-metrics {
-    gap: var(--wb-s2);
+  .wb-metric {
+    padding: 0 var(--wb-s4);
   }
 }
 
 @media (max-width: 1366px) {
+  /* 1366×768 是主验收尺寸：统计条再收 8px，让主动作落回首屏（02 §65）。
+     改前实测主动作 bottom 835px，收紧后 763px。 */
   .wb-metrics {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: var(--wb-s2) 0;
   }
-  .wb-metrics .wb-metric:last-child {
-    grid-column: span 4;
-    min-height: auto;
+  .wb-metric {
+    gap: var(--wb-s2);
+    padding: 0 var(--wb-s3);
+  }
+  .wb-metric strong {
+    font-size: 24px;
+  }
+  .wb-metric--money {
+    flex: 1.6 1 0;
+  }
+}
+
+/* 矮屏（1366×768）：照片收到 244px，给主动作留出首屏空间（02 §65） */
+@media (min-width: 1101px) and (max-height: 820px) {
+  .wb-device-photo--hero img,
+  .wb-device-photo--hero .wb-photo-placeholder {
+    height: 244px;
+    padding: 12px 18px;
   }
 }
 
@@ -738,9 +943,19 @@
     grid-template-columns: 280px minmax(0, 1fr);
     gap: var(--wb-s5);
   }
+  .wb-metrics {
+    padding: var(--wb-s2) 0;
+  }
+}
+
+@media (max-width: 1100px) {
   .wb-detail-columns {
     grid-template-columns: minmax(0, 1fr);
     gap: var(--wb-s5);
+  }
+  .wb-device-photo--hero img,
+  .wb-device-photo--hero .wb-photo-placeholder {
+    height: 240px;
   }
 }
 
@@ -748,22 +963,33 @@
   .wb-workbench-body {
     grid-template-columns: 260px minmax(0, 1fr);
   }
+  /* 5 格横排在 1024 装不下金额：改两列网格，金额格占整行 */
   .wb-metrics {
+    display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: var(--wb-s3);
   }
-  .wb-metrics .wb-metric:last-child {
+  .wb-metric {
+    border-right: 0;
+    padding: 0;
+  }
+  .wb-metric--money {
     grid-column: span 2;
+    flex: none;
   }
-  .wb-device-photo,
-  .wb-device-photo img,
-  .wb-photo-placeholder {
+  .wb-metric-arrow {
+    display: none;
+  }
+  .wb-device-photo--card,
+  .wb-device-photo--card img,
+  .wb-device-photo--card .wb-photo-placeholder {
     width: 72px;
   }
-  .wb-device-photo img,
-  .wb-photo-placeholder {
+  .wb-device-photo--card img,
+  .wb-device-photo--card .wb-photo-placeholder {
     height: 72px;
   }
-  .wb-detail-foot {
+  .wb-settlement {
     flex-direction: column;
     align-items: stretch;
   }
@@ -774,4 +1000,641 @@
     max-width: none;
     text-align: left;
   }
+}
+
+/* ── 库存（T05b）─────────────────────────────────────────────
+   表格按 02 §5「库存」：型号、新旧、数量分组、位置；点数量查看构成。
+   三桶与另列区（在途 / 客户保管）用不同底色，避免读成一个数量。 */
+
+.wb-page {
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.wb-inv-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wb-s3);
+  margin-bottom: var(--wb-s4);
+}
+
+.wb-inv-search {
+  flex: 1 1 260px;
+  min-width: 220px;
+  padding: 10px 14px;
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-surface);
+  color: var(--wb-ink);
+  font-size: var(--wb-fs-body);
+  font-family: inherit;
+}
+
+.wb-inv-search:focus-visible {
+  outline: 2px solid var(--wb-accent);
+  outline-offset: 1px;
+}
+
+.wb-inv-table {
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-card);
+  background: var(--wb-surface);
+  overflow: hidden;
+}
+
+/**
+ * 表头与行各自成 grid、列定义保持一致。
+ * 不用 subgrid：它的浏览器支持面比本项目的目标环境窄，一旦不生效整表会塌成一列。
+ * gap 必须写在这条共用规则里：只给 .wb-inv-row 写 gap 会让表头第一列宽出 6×gap，
+ * 表头标签随列宽递减一路压到数据上（V02 实测 1440 下「管理」错位 40px）。
+ */
+.wb-inv-head,
+.wb-inv-row {
+  display: grid;
+  grid-template-columns: minmax(200px, 1.5fr) 104px minmax(140px, 0.9fr) 64px 64px 76px 104px 120px;
+  gap: var(--wb-s2);
+}
+
+.wb-inv-table.is-nocost .wb-inv-head,
+.wb-inv-table.is-nocost .wb-inv-row {
+  grid-template-columns: minmax(200px, 1.5fr) 104px minmax(140px, 0.9fr) 64px 64px 76px 104px;
+}
+
+.wb-inv-head {
+  padding: 10px var(--wb-s4);
+  border-bottom: 1px solid var(--wb-line);
+  background: var(--wb-surface-sunken);
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+  letter-spacing: 0.04em;
+}
+
+.wb-inv-group {
+  border-bottom: 1px solid var(--wb-line);
+}
+
+.wb-inv-group:last-child {
+  border-bottom: none;
+}
+
+.wb-inv-row {
+  align-items: center;
+  width: 100%;
+  padding: 12px var(--wb-s4);
+  border: none;
+  background: transparent;
+  color: var(--wb-ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms ease;
+}
+
+.wb-inv-row:hover {
+  background: var(--wb-surface-sunken);
+}
+
+.wb-inv-row.is-open {
+  background: var(--wb-surface-sunken);
+}
+
+.wb-inv-row:focus-visible {
+  outline: 2px solid var(--wb-accent);
+  outline-offset: -2px;
+}
+
+.wb-inv-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-weight: 600;
+}
+
+.wb-inv-meta {
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+  font-weight: 400;
+}
+
+.wb-inv-cell {
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-qty {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--wb-fs-body);
+}
+
+.wb-inv-cost {
+  font-variant-numeric: tabular-nums;
+  color: var(--wb-muted);
+  text-align: right;
+}
+
+.wb-inv-breakdown {
+  grid-column: 1 / -1;
+  padding: var(--wb-s3) var(--wb-s4) var(--wb-s4);
+  background: var(--wb-surface-sunken);
+  border-top: 1px dashed var(--wb-line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wb-s2);
+}
+
+.wb-inv-breakdown-head {
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+  letter-spacing: 0.04em;
+}
+
+.wb-inv-item-list,
+.wb-inv-move-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wb-inv-item {
+  display: grid;
+  grid-template-columns: 92px minmax(120px, 1fr) minmax(160px, 1.2fr) 120px 110px;
+  gap: var(--wb-s2);
+  padding: 8px 10px;
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-surface);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-item-code {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.wb-inv-item-sn,
+.wb-inv-item-source,
+.wb-inv-item-cost {
+  color: var(--wb-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-inv-item-cost {
+  text-align: right;
+}
+
+.wb-inv-side {
+  padding: 10px 12px;
+  border-left: 3px solid var(--wb-warning-border, var(--wb-line));
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-surface);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.wb-inv-side-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wb-s2);
+}
+
+.wb-inv-side-title {
+  font-weight: 600;
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-side-note {
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-move {
+  display: grid;
+  grid-template-columns: 72px minmax(160px, 1fr) 120px 110px;
+  gap: var(--wb-s2);
+  padding: 6px 10px;
+  background: var(--wb-surface);
+  border-radius: var(--wb-radius-btn);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-note,
+.wb-inv-foot {
+  margin: 0;
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-foot {
+  margin-top: var(--wb-s4);
+}
+
+@media (max-width: 1024px) {
+  .wb-inv-head,
+  .wb-inv-row,
+  .wb-inv-table.is-nocost .wb-inv-head,
+  .wb-inv-table.is-nocost .wb-inv-row {
+    grid-template-columns: minmax(170px, 1.4fr) 92px minmax(120px, 0.9fr) 56px 56px 68px;
+  }
+  .wb-inv-head span:nth-child(n + 7),
+  .wb-inv-row > span:nth-child(n + 7) {
+    display: none;
+  }
+  .wb-inv-item,
+  .wb-inv-move {
+    grid-template-columns: 84px minmax(110px, 1fr) minmax(120px, 1fr);
+  }
+}
+
+/* ── 库存页 · E04b 接真实接口后的新增件 ─────────────────────
+   只加「真实读写」需要的东西：合计条、加载/失败/空态、商品表单、期初行编辑。
+   配色与圆角全部沿用上面的变量，不引入新的视觉语言。 */
+
+.wb-inv-totals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wb-s4);
+  margin-bottom: var(--wb-s3);
+  padding: 10px var(--wb-s4);
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-card);
+  background: var(--wb-surface);
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-totals b {
+  color: var(--wb-ink);
+  font-size: var(--wb-fs-body);
+  font-weight: 600;
+}
+
+.wb-inv-notice {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-s3);
+  margin: 0 0 var(--wb-s3);
+  padding: 10px var(--wb-s3);
+  border: 1px solid var(--wb-line);
+  border-left: 3px solid var(--wb-ink);
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-sage);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-inv-notice--warn {
+  border-left-color: var(--wb-warning);
+  background: var(--wb-warning-bg);
+  color: var(--wb-warning);
+}
+
+.wb-inv-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wb-s2);
+  padding: var(--wb-s6) var(--wb-s4);
+  border: 1px dashed var(--wb-line);
+  border-radius: var(--wb-radius-card);
+  background: var(--wb-surface);
+  color: var(--wb-muted);
+}
+
+.wb-inv-state strong {
+  color: var(--wb-ink);
+  font-size: var(--wb-fs-device);
+}
+
+.wb-inv-state--error {
+  border-style: solid;
+  border-color: var(--wb-danger);
+  background: var(--wb-danger-bg);
+  color: var(--wb-danger);
+}
+
+.wb-inv-cell--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wb-inv-cell--stack small {
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-small);
+}
+
+/* 逐件实物行本身是按钮（点了看这一件的来源与流水），所以样式要盖掉按钮默认外观。 */
+.wb-inv-item--button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.wb-inv-item--button:hover,
+.wb-inv-item--button.is-open {
+  background: var(--wb-surface-sunken);
+}
+
+.wb-inv-item--button:focus-visible {
+  outline: 2px solid var(--wb-accent);
+  outline-offset: -2px;
+}
+
+.wb-inv-item-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 10px 12px;
+  padding-left: 10px;
+  border-left: 2px solid var(--wb-line);
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-small);
+}
+
+.wb-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: var(--wb-s6) var(--wb-s4);
+  background: rgba(51, 75, 66, 0.35);
+  overflow: auto;
+}
+
+.wb-modal-card {
+  width: 100%;
+  max-width: 620px;
+  padding: var(--wb-s5);
+  border-radius: var(--wb-radius-dialog);
+  background: var(--wb-surface);
+  box-shadow: 0 18px 48px rgba(51, 75, 66, 0.18);
+}
+
+.wb-modal-card--wide {
+  max-width: 1120px;
+}
+
+.wb-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wb-s3);
+  margin-bottom: var(--wb-s4);
+}
+
+.wb-modal-head h2 {
+  margin: 0;
+  font-size: var(--wb-fs-device);
+}
+
+.wb-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wb-s3);
+}
+
+.wb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--wb-fs-label);
+  color: var(--wb-muted);
+}
+
+.wb-field input,
+.wb-field select {
+  padding: 8px 10px;
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-surface);
+  color: var(--wb-ink);
+  font: inherit;
+  font-size: var(--wb-fs-body);
+}
+
+.wb-field input:focus-visible,
+.wb-field select:focus-visible {
+  outline: 2px solid var(--wb-accent);
+  outline-offset: 1px;
+}
+
+.wb-field input:disabled,
+.wb-field select:disabled {
+  background: var(--wb-surface-sunken);
+  color: var(--wb-muted);
+}
+
+.wb-check {
+  display: flex;
+  align-items: center;
+  gap: var(--wb-s2);
+  font-size: var(--wb-fs-secondary);
+  color: var(--wb-ink);
+}
+
+/* index.css 有全局 `input{width:100%}`，复选框会被拉成一整行并把文字推到最右（E04b 截图实测）。
+   旧页面各自写了一次同样的例外，这里跟上。 */
+.wb-check input {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.wb-form-hint {
+  margin: 0;
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-form-error {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--wb-danger);
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-danger-bg);
+  color: var(--wb-danger);
+  font-size: var(--wb-fs-secondary);
+}
+
+.wb-form-actions {
+  display: flex;
+  gap: var(--wb-s2);
+}
+
+.wb-opening-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wb-s3);
+}
+
+.wb-opening-line {
+  display: grid;
+  grid-template-columns: 24px minmax(200px, 1.4fr) 90px 150px 130px 110px 160px 96px;
+  gap: var(--wb-s2);
+  align-items: end;
+  padding: var(--wb-s3);
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-card);
+  background: var(--wb-surface-sunken);
+}
+
+.wb-opening-index {
+  padding-bottom: 10px;
+  color: var(--wb-muted);
+  font-size: var(--wb-fs-secondary);
+  text-align: right;
+}
+
+.wb-opening-warn {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-warning-bg);
+  color: var(--wb-warning);
+  font-size: var(--wb-fs-secondary);
+}
+
+@media (max-width: 1024px) {
+  .wb-opening-line {
+    grid-template-columns: 24px minmax(160px, 1fr) 80px minmax(120px, 1fr);
+  }
+}
+
+/* 窄屏：页头改成上下排，动作按钮换行而不是被压成竖排字。
+   只挂 .wb-page（库存页自己的根类），不影响工作台与落地页的页头。 */
+@media (max-width: 720px) {
+  .wb-page .wb-page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .wb-page .wb-page-head-actions {
+    flex-wrap: wrap;
+  }
+
+  .wb-page .wb-page-head-actions .wb-btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* ─────────────── E05 · 报价单页 ─────────────── */
+
+.wb-quote-lines {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wb-s);
+  margin-bottom: var(--wb-s);
+}
+
+.wb-quote-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wb-s);
+}
+
+.wb-quote-line > select,
+.wb-quote-line > input:not(.wb-quote-num) {
+  flex: 1 1 160px;
+  min-width: 0;
+}
+
+.wb-quote-num {
+  flex: 0 1 110px;
+  min-width: 0;
+}
+
+.wb-quote-line > .wb-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.wb-quote-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wb-s);
+  align-items: baseline;
+  padding: var(--wb-s) 0;
+  color: var(--wb-muted);
+}
+
+.wb-quote-summary strong {
+  color: var(--wb-ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-quote-budget-over {
+  color: var(--wb-warning);
+}
+
+.wb-quote-terms {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--wb-s);
+}
+
+.wb-quote-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wb-quote-table th,
+.wb-quote-table td {
+  border-bottom: 1px solid var(--wb-line);
+  padding: var(--wb-s) calc(var(--wb-s) / 2);
+  text-align: left;
+  vertical-align: top;
+}
+
+.wb-quote-table th {
+  color: var(--wb-muted);
+  font-weight: 600;
+}
+
+.wb-quote-spec {
+  color: var(--wb-muted);
+}
+
+.wb-quote-stock {
+  display: inline-block;
+  margin-left: calc(var(--wb-s) / 2);
+  padding: 0 calc(var(--wb-s) / 2);
+  border-radius: var(--wb-radius-btn);
+  font-size: var(--wb-fs-small);
+}
+
+.wb-quote-stock--available {
+  background: var(--wb-sage);
+  color: var(--wb-paper);
+}
+
+.wb-quote-stock--reserved,
+.wb-quote-stock--unavailable,
+.wb-quote-stock--missing {
+  background: var(--wb-warning-bg);
+  color: var(--wb-warning);
+}
+
+.wb-quote-terms-view h2 {
+  font-size: var(--wb-fs-title);
+  margin: var(--wb-s) 0 calc(var(--wb-s) / 2);
+}
+
+.wb-quote-terms-view ul {
+  margin: 0;
+  padding-left: 1.2em;
+  color: var(--wb-muted);
+}
+
+.wb-quote-terms-view code {
+  overflow-wrap: anywhere;
 }

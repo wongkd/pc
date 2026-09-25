@@ -1,70 +1,34 @@
-# PC 报价系统
+# 装一下机 · 门店 ERP 与顾客小程序
 
-电脑硬件智能报价系统 — AI 驱动的硬件 SKU 标准化 + 报价方案管理。
+网页供门店经营；微信小程序供顾客查看报价、订单和服务。React / TypeScript / Vite + Workers / D1 + 原生小程序。
 
-## 当前设计与协作入口（2026-09-17）
+## AI 接手：按需读取
 
-- [图片与动效资源补充（2026-09-18）](./docs/design/2026-09-18-assets/README.md)：四类本地 AI 设备示意图已接入网页和小程序演示；包含空状态图形、按钮反馈、可点击资源预览和本地验证记录。
+1. 遵守 [AGENTS.md](AGENTS.md)，读取 [当前状态](docs/STATUS.md)与[下一动作](docs/NEXT-SESSION-PROMPT.md)。
+2. 根据任务进入下面对应目录；只读相关源码、任务卡及证据。
+3. 需要查问题时搜索 [未决项](docs/OPEN-ITEMS.md)；需要找资料时查 [文档地图](docs/README.md)。不默认通读历史。
 
-- [AI 协作与工程约定](./AGENTS.md)：文件、文档、Git、代码和验收标准。
-- [电脑网页＋微信小程序双端实施方案](./docs/plans/2026-09-17-web-wechat-plan/README.md)：基于 A+B 效果图的页面、业务规则、数据接口、分步任务与验收；用于后续低端模型实施，本轮仅规划，不建设手机网页端。
-- [装机店经营工作台重做规划](./装机店经营工作台-重做规划-2026-09-17.md)：产品与业务规划。
-- [A+B 融合原型](./docs/design/2026-09-17-style-exploration/v3/README.md)：沿用 B 的视觉，加入 A 的订单处理；手机改为待办优先、详情处理、底部主操作。
-- [跨端契约](./contracts/README.md)：两端共用的枚举、对象字段、金额规则、错误码、动作目录与权限映射、旧表映射、虚构样本与 DTO 生成；v1 已冻结（T01a、T01b、T01-rev1、T01c 完成，T01 整卡本地通过）。校验命令 `node contracts/tools/validate-contracts.mjs`，生成命令 `node contracts/tools/generate-dto.mjs`。
-- [未决项与踩坑台账](./docs/OPEN-ITEMS.md)：**换人 / 换 AI 接手先读这份**。汇总需要负责人拍板的事项、规格缺口、已知技术债和已经踩过的坑。
-- [网页壳与工作台骨架（T02a）](./docs/verification/2026-09-17-T02a/README.md)：六导航、设计变量、今天工作台与列表 / 详情切换；验证记录、未运行清单与发现的问题。
-- [微信小程序端（T02b）](./miniprogram/README.md)：独立小程序项目、原生 tabBar 四项、列表与详情的真实页面跳转；排版层已对齐 v3 设计稿（AppID 已配置）。验证记录见 [T02b](./docs/verification/2026-09-17-T02b/README.md)。
-- [后端一致性与幂等基础（T04）](./docs/verification/2026-09-17-T04/README.md)：幂等执行器、断言守卫、版本日志与新迁移 `0006`；本地 D1 测试入口（`npm --prefix backend test`，21 用例）。核心机制：**约束即断言**。
-- [商品、实物与期初库存（T05a）](./docs/verification/2026-09-18-T05a/README.md)：Product 就地扩展 `hardware`、新建 `stock_items` / `stock_balances` / `inventory_movements` 与新迁移 `0007`；库存首次有真实账（余额只由流水触发器写入，三桶结构上不可能混算）。命令 `npm --prefix backend test`，58 用例。**HTTP 路由未接（等 T03 鉴权），0007 未应用到远端**。
-- [两端请求层（T03b）](./docs/verification/2026-09-18-T03b/README.md)：错误码 → 行为枚举、requestId 复用（结果未知重试不重复记账）、401/403 区别处理、撤权清会话、登录后恢复目标页；新增**跨端一致性门禁** `node contracts/tools/check-client-parity.mjs`（36 项）。**未被任何页面使用、未连真实后端**。
-- [前一轮独立 A / B / C 提案](./docs/design/2026-09-17-style-exploration/v2/README.md)：历史对照，保留原稿。
+| 任务 | 入口 |
+|---|---|
+| 网页 ERP | [frontend](frontend/README.md) |
+| 后端业务 / 库存资金 | [backend](backend/README.md) |
+| 顾客微信端 | [miniprogram](miniprogram/README.md) |
+| 跨端协议 | [contracts](contracts/README.md) |
+| 文件管理 / 检查命令 | [工程指南](docs/engineering/README.md)与[维护工具](scripts/README.md) |
 
-融合版目前是独立本地原型，尚未接入业务 API、部署或实现原生小程序 / App。预览命令与验证结果见对应说明。本目录已建立 Git 基线（`main` 分支，起始提交 `e5ca594`，见 T00 记录）。
+## 本地运行
 
-## 进度
+在仓库根分别启动后端和网页：
 
-| 阶段 | 卡 | 状态 |
-|---|---|---|
-| G0 基线 | T00 基线与条件登记 | 本地通过（微信平台条件待登记） |
-| G0 基线 | T01 契约与样本（a/b/c） | 本地通过（校验 3047 项） |
-| G0 基线 | T02a 网页壳与工作台骨架 | **本地通过**（浏览器视觉验收未运行） |
-| G0 基线 | T02b 小程序壳与契约目标回写 | **本地通过 + 模拟器实拍确认**（AppID 已配、排版层已对齐设计稿） |
-| G0 基线 | T02b-rev2 修统计条金额溢出 | **本地通过**（R-14 已修；修复后的形态尚未实拍） |
-| G0 基线 | T02c 组件提取 | **已裁定跳过**（2026-09-17 负责人选 D4：视觉细化并入 G2 收尾） |
-| G0 基线 | T04 一致性与幂等基础（a/b/c） | **本地通过**（21 用例，真实 workerd + D1；0006 未应用到远端） |
-| G1+ | T05a 商品、实物与期初库存（后端） | **本地通过**（58 用例含本卡 37；B12/B13/查询；0007 未应用到远端） |
-| G1+ | T03b 两端请求层与错误码映射 | **本地通过**（前端 91 / 小程序 67 用例含本卡新增；跨端门禁 36 项；未接页面、未连后端） |
-| G1+ | T03a/T03c、T05b–T22 | 未开始（T03a 阻塞在微信条件 T-05） |
+    npm --prefix backend run dev:local
+    npm --prefix frontend run dev
 
-**⚠️ 当前前端仍是演示数据源**：`dist` 产物里含 `DEMO-` 前缀样本，不得当作可用版本发布；详见 [OPEN-ITEMS](./docs/OPEN-ITEMS.md) 的 D-E 与 T-01。
+默认网页 /api 代理到本机 8787；后端为内存 D1 演示环境，退出即清空。
+其他目标由 VITE_API_TARGET 指定，使用前核实环境。微信工具导入 miniprogram 目录。
 
+    node scripts/audit-repository.mjs
+    node scripts/check-doc-links.mjs
 
-## 快速开始
+ERP 首页与登录落点为 /dashboard；旧 /quotes 编辑器及其本地草稿已移除，历史地址跳转到新版 /sales/quotes。店员小程序页面已清理，当前小程序只保留顾客端四个主页面。治理范围与上线记录见[回执](docs/verification/2026-09-25-production-reset-release/README.md)。
 
-### 前端
-```bash
-cd frontend
-npm install
-npm run dev        # 本地开发 → http://localhost:5173
-```
-
-### 后端
-```bash
-cd backend
-npx wrangler deploy   # 部署到 Cloudflare Workers
-```
-
-## 功能
-- 🔍 硬件库搜索与管理（支持 Excel 批量导入）
-- 🤖 DeepSeek AI 硬件标题标准化
-- 📋 报价方案创建 / 导出 HTML / 导出 PDF
-- 👤 用户登录注册
-- 📊 报价模板管理
-
-## 技术栈
-| 层 | 技术 |
-|----|------|
-| 前端 | React 19, Vite, TypeScript, html2canvas, jsPDF, xlsx |
-| 后端 | Cloudflare Workers, D1 Database |
-| AI  | DeepSeek Chat API |
-| 部署 | Cloudflare / EdgeOne |
+业务状态只维护在 STATUS；此文件不堆测试计数和历史回执。不自动提交、部署或迁移远端。

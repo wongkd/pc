@@ -1,0 +1,47 @@
+{
+  "removedRules": 39,
+  "removals": [
+    {
+      "path": "frontend/src/components/ErpShell.tsx",
+      "bytes": 1973,
+      "sha256": "ec7a4fddd5fd19a4b2b356f7ac4380db1dff3ad88c18cfb43a46e9884f85b3c4",
+      "reason": "运行时无调用，唯一类型引用已移至 erpNavigation.ts；当前外壳是 app/AppShell.tsx"
+    },
+    {
+      "path": ".validation-e01-core-1366.png",
+      "bytes": 151943,
+      "sha256": "c6bdb1a7255e2cc466ce97a97124f21e295a846fc7e69618a5b96b5457a17e3e",
+      "reason": "逐字节一致，保留 docs/verification/2026-09-19-E01/screenshots/current-core-1366.png"
+    },
+    {
+      "path": ".validation-e01-core-390.png",
+      "bytes": 116899,
+      "sha256": "3cebf8940b0b5a440a477c51e17f9d1f0b8b3291e833134487f06a70fc11930b",
+      "reason": "逐字节一致，保留 docs/verification/2026-09-19-E01/screenshots/current-core-390.png"
+    },
+    {
+      "path": ".validation-e01-service-1366.png",
+      "bytes": 66355,
+      "sha256": "33dcbf2161432de30de1ab5ea0558fbb6337d989d478709983f32f4ab55dbf74",
+      "reason": "逐字节一致，保留 docs/verification/2026-09-19-E01b-service/screenshots/current-service-1366.png"
+    },
+    {
+      "path": ".validation-e01-service-390.png",
+      "bytes": 63090,
+      "sha256": "b684af12543306691ad8e33e06f6c044d174626be537e9bf75ccf33c1302a762",
+      "reason": "逐字节一致，保留 docs/verification/2026-09-19-E01b-service/screenshots/current-service-390.png"
+    },
+    {
+      "path": ".validation-e01-recovery-1366.png",
+      "bytes": 55990,
+      "sha256": "0acf589772bec922894f25bd8ca53067df31dee7c27bf34a34a1e7dbe2bf7f55",
+      "reason": "逐字节一致，保留 docs/verification/2026-09-19-E01b-recovery/screenshots/current-recovery-1366.png"
+    },
+    {
+      "path": ".validation-e01-recovery-390.png",
+      "bytes": 53171,
+      "sha256": "12c4a9b6a39ef09b2f70599062dc116e74867fe7b6cb01f284f078e03b04b8bc",
+      "reason": "逐字节一致，保留 docs/verification/2026-09-19-E01b-recovery/screenshots/current-recovery-390.png"
+    }
+  ]
+}

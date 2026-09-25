@@ -1,0 +1,71 @@
+Browser tab: 1097924264, Title: "高性能图形工作站配置方案 - 未命名品牌", URL: "http://127.0.0.1:5173/sales/quotes".
+0 AXWebArea 高性能图形工作站配置方案 - 未命名品牌, URL: 127.0.0.1:5173/sales/quotes
+	1 container root
+		2 container
+			3 text 装一下机
+			4 text 本地预览门店（演示数据）
+			5 container 主导航
+				6 text 门店工作空间
+				7 link Description: 今天, Value: 127.0.0.1:5173/dashboard
+				8 link Description: 开单, Value: 127.0.0.1:5173/sales
+				9 link Description: 库存, Value: 127.0.0.1:5173/inventory
+				10 link Description: 售后, Value: 127.0.0.1:5173/after-sales
+				11 link Description: 回收置换, Value: 127.0.0.1:5173/recovery
+				12 link Description: 账本, Value: 127.0.0.1:5173/finance
+				13 text 常用页面
+				14 link Description: 装机报价, Value: 127.0.0.1:5173/sales/quotes
+				15 link Description: 客户台账, Value: 127.0.0.1:5173/customers
+			16 text 门店 ERP  / 装机报价
+			17 search text field (settable) 全局搜索
+			18 text Ctrl K
+			19 pop up button (collapsed) owner@local.test, Secondary Actions: Expand
+		20 container
+			21 text 报价与销售工作区
+			22 heading 装机报价, Value: 1
+				23 text 装机报价
+			24 container
+				25 text 草稿 → 发出 → 记录顾客确认（不锁库存）→ 确认成交转销售单 → 到「订单处理」收款后锁货。 有效期  24  小时，到期前  2  小时在这里标出。
+			26 button 新建装机报价
+			27 container 状态筛选
+				28 button 全部
+				29 button 草稿
+				30 button 已发出
+				31 button 已过期
+			32 text field (settable) 搜索报价单
+			33 text 草稿  1  · 在谈  0 （ ¥0.00 ） · 已确认  0  · 已过期  0
+			34 container 报价数据表
+				35 table
+					36 row
+						37 cell
+							38 text 标题
+						39 cell
+							40 text 客户
+						41 cell
+							42 text 状态
+						43 cell
+							44 text 版本
+						45 cell
+							46 text 应付
+						47 cell
+							48 text 有效期
+						49 cell
+							50 text 更新时间
+					51 row
+						52 cell
+							53 text QT03续验-虚构双行配置
+						54 cell
+							55 text 散客
+						56 cell
+							57 text 草稿
+						58 cell
+							59 text v 0
+						60 cell
+							61 text ¥0.00
+						62 cell
+							63 text —
+						64 cell
+							65 text 2026-09-23 22:36
+						66 cell
+							67 button 查看
+
+The focused UI element is 0 AXWebArea 高性能图形工作站配置方案 - 未命名品牌, URL: 127.0.0.1:5173/sales/quotes

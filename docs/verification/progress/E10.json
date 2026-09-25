@@ -1,0 +1,24 @@
+{
+  "id": "E10",
+  "status": "verified",
+  "summary": "售后维修与收款闭环（栋哥指令「维修和收款一起闭环」）全卡完成：契约 B41 售后收款提升为主 actions 正式动作 + ConfirmationMethod 枚举 + ServiceOrder/CustomerDevice/DeviceConfiguration/DeviceChange 四对象建表映射；0019 迁移建 4 表（customer_device_custody / service_orders / device_configurations / device_changes，收款复用 cash_entries）；后端 domains/service.ts（B20 接修 / B21 诊断方案 / B22 方案确认（拒绝→应收归 0）/ B23 换件扣自有备件 available→sold / B24 外送返回 / B25 复测归还（归还闸门=费用结清，balance>0 拒绝）/ B41 收款防超收 / R09 列表详情 allowedActions 服务端派生）+ routes/service-v2.ts + index.ts 接线 + finance.ts 维修待收并入账本；前端 /after-sales 真页面（一页两态 + 全动作表单，不伪造入口）+ 账本汇总卡拆销售待收/维修待收两行。三项拍板落地：严格收齐才归还、现买现入复用 E07 B14/B15、维修待收并入账本。验证：后端 245 用例（含 E10 专项 11 例）/ 前端 170 / build 通过 / lint 新增 0 / 端到端 HTTP 28 项 + 浏览器 19 项 0 失败 / 6 张截图已实际查看。契约门禁收尾时代修收敛了并行回收卡的全部遗留（legacyPermissionMap 证据行 +4 平移、specBasis 718→722、manifest 重新生成、小程序端 MOVEMENT_SOURCE_LABELS 补齐 16 key）：validate-contracts 3423 通过 0 失败、generate-dto --check / sync-contracts --check / check-client-parity 全绿。【2026-09-22 02:29 复核·栋哥指派重跑门禁】契约六件套全绿；后端除回收卡 e11 外 245 用例 0 失败（E06/E08/E10 专项 50 例全过）；前端 170 用例 + build 通过 + lint 新增 0；HTTP 28/0 + 浏览器 19/0、截图已实看无破版。e11-recovery-http.test.mjs 12 例失败属回收卡自身 bug，与本卡无关。",
+  "next": "E10 已收工。剩余候选等栋哥点：回收拆件+抵用额度（并行会话推进中，0020 迁移已出现）、Q-09 顾客侧分享页、B19 隔离件出 quarantine（并行会话动向待确认）。已知观感：结清后「登记收款」按钮仍显示（服务端 422 兜底），留给视觉卡。",
+  "updatedAt": "2026-09-22T02:29:00+08:00",
+  "evidence": [
+    "backend/src/domains/service.ts",
+    "backend/src/routes/service-v2.ts",
+    "backend/src/domains/finance.ts",
+    "backend/migrations/0019_service_core.sql",
+    "backend/tests/e10-service-http.test.mjs",
+    "contracts/v1/enums.json",
+    "frontend/src/App.tsx",
+    "frontend/src/features/workbench/service-api.ts",
+    "frontend/src/features/workbench/WorkbenchServicePage.tsx",
+    "frontend/src/features/workbench/finance-api.ts",
+    "frontend/src/features/workbench/WorkbenchFinancePage.tsx",
+    "frontend/src/features/workbench/inventory-view.ts",
+    "docs/verification/E10-current/README.md",
+    "docs/verification/E10-current/verify-e10.cjs",
+    "docs/verification/E10-current/verify-e10-browser.cjs"
+  ]
+}

@@ -71,6 +71,13 @@
     },
     {
       "httpStatus": 409,
+      "code": "PURCHASE_PAYMENT_CONFLICT",
+      "meaning": "采购已有净付款，不能直接取消未到数量",
+      "clientHandling": "先处理采购付款冲销，再刷新采购单后重试",
+      "retryable": false
+    },
+    {
+      "httpStatus": 409,
       "code": "IDEMPOTENCY_MISMATCH",
       "meaning": "同一 requestId 对应不同动作或不同载荷",
       "clientHandling": "中止，记录诊断；不能自动换 ID 重复扣款",
@@ -95,6 +102,13 @@
       "code": "BALANCE_EXCEEDED",
       "meaning": "超收、超退或超出可退现金上限",
       "clientHandling": "刷新余额并更正金额",
+      "retryable": false
+    },
+    {
+      "httpStatus": 422,
+      "code": "PURCHASE_CANCEL_EXCEEDED",
+      "meaning": "取消数量超过采购单尚未处置的数量",
+      "clientHandling": "刷新采购进度，只取消尚未到货、拒收或取消的数量",
       "retryable": false
     },
     {
@@ -131,6 +145,27 @@
       "meaning": "服务暂不可用",
       "clientHandling": "读可重试；写先查 operation 结果，再决定是否重发",
       "retryable": true
+    },
+    {
+      "httpStatus": 401,
+      "code": "CUSTOMER_CODE_INVALID",
+      "meaning": "顾客微信登录凭证无效：code 缺失、重复使用、已过期，或与当前 AppID 不匹配",
+      "clientHandling": "重新调用 wx.login 取新 code 后重试一次；仍失败则提示稍后再试，不循环重试",
+      "retryable": true
+    },
+    {
+      "httpStatus": 401,
+      "code": "CUSTOMER_IDENTITY_REVOKED",
+      "meaning": "顾客微信身份已解绑，或该顾客的会话版本已被递增",
+      "clientHandling": "清顾客身份缓存与本地草稿后重新登录；不得沿用旧会话继续请求私人数据",
+      "retryable": true
+    },
+    {
+      "httpStatus": 403,
+      "code": "CUSTOMER_CLAIM_REQUIRED",
+      "meaning": "微信身份有效，但尚未认领到门店客户档案，或认领被驳回",
+      "clientHandling": "引导完成安全认领（微信验证手机号，或等待店员确认）；不得凭顾客自填手机号直接开放档案访问",
+      "retryable": false
     }
   ]
 }

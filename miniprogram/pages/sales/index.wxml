@@ -1,2 +1,0 @@
-<import src="/templates/landing.wxml" />
-<template is="landing" data="{{...landing}}" />

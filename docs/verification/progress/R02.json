@@ -1,0 +1,21 @@
+{
+  "id": "R02",
+  "status": "review",
+  "summary": "工作台读模型（R02）后端、契约行号证据与验收全部完成。范围：GET /api/v2/workbench（**无权限门槛** —— 03 §8 权限表首行「待办老板与店员均可」），返回 metrics / tasks / filters / generatedAt（TaskReadModel 16 字段）。实现：domains/workbench.ts 用**一次批量 SQL**读齐销售单 / 工单 / 回收单（不按行回调 queryFulfillmentBoard，避免 N+1 拖垮工作台），派生四类待办（delivery / stock_shortage / service / recovery）与五项统计；缺件口径**复用 querySaleOrders 的同一算法**（行数量 − 该行有效数量占用），不另立第二套。口径三定：①metrics 基于**未筛选**的完整在办集合，tasks 才受 q / category / limit 影响（conventions.pagination.snapshot）——界面才能区分「没待办」与「筛掉了」；②receivable 只累加 countsTowardReceivable=true 的 balanceCents，未确认收购的回收单只落 estimateCents、不冒充确定应收；③主动作按**后端实际闸门**分档（还没备料的单给 B06 而不是 B10 —— 点了必然 400 的动作不能给），不照抄契约样本。响应里**根本没有成本 / 供应商 / 毛利字段**（服务端就没取，不是前端隐藏）。路由落在新建 routes/workbench-v2.ts，只认领 /api/v2/workbench **一条精确路径**、不对更宽前缀兜底 404（兜底会吃掉后续链路，E05 实测过）。backend/src/index.ts 顶部 +2 行（注释+import）、分发行在文件末尾 +5 行（**不影响任何证据行号**）；contracts/v1/actions.json 的 legacyPermissionMap 与 specBasis 绝对行号证据整体 **+2**（纯平移，无语义变更）。**本卡由上一会话创建后中断**，交接会话完成收尾：独立核实行号落点（新增 verify-evidence-lines.mjs，实测 26 处引用 —— 21 处落在 requirePermission 守卫行、5 处为成本可见性判定与 specBasis 的正常例外，确认无双重平移）→ 重跑全部门禁 → 补本卡 README 与回执。实测：后端全套 **351 用例 / 351 通过 / 0 失败**（B16 基线 334，本卡新增 r02-workbench.test.mjs 17 项）；契约 validate-contracts **3476 通过 / 0 失败**（与 B16 一致，反证无契约语义变更）；四处生成物（contracts/generated、frontend、miniprogram、error-codes）一致；check-client-parity 通过；check:migrations 0000–0024 连续（下个 0025）；端到端 verify-r02.cjs **59 项 0 失败**；check-doc-links 214 链接 0 断链。后端测试另覆盖 HTTP 验收跑不到的部分：跨店隔离（别家店的单不出现）、无权限店员照样能拿到工作台、ready_delivery 阶段的 B10 与三条交付卡点（检测 / SN / 尾款）、空门店不编数字。 本轮补齐今天页 R02 前端验收：工作台组件、采购/履约/售后/回收跳转与契约夹具 44/44，R02 Worker HTTP 18/18，TypeScript/build 通过；删除工作台 demoVisuals 运行时映射，演示图 URL 有前后端隔离断言。 加载/失败时指标显示待获取，不把未知状态呈现成 0。",
+  "next": "本地自动化已通过；下一步在同一隔离 Worker + 前端会话实看交付、缺货采购、维修、回收跳转/返回，并注入 /workbench 请求失败。未完成浏览器故障注入，因此保持 review；不部署、不提交。",
+  "updatedAt": "2026-09-25T08:51:08+08:00",
+  "evidence": [
+    "backend/src/domains/workbench.ts",
+    "backend/src/routes/workbench-v2.ts",
+    "backend/src/index.ts",
+    "backend/tests/r02-workbench.test.mjs",
+    "contracts/v1/actions.json",
+    "docs/verification/2026-09-22-R02-workbench/README.md",
+    "docs/verification/2026-09-22-R02-workbench/verify-r02.cjs",
+    "docs/verification/2026-09-22-R02-workbench/verify-evidence-lines.mjs",
+    "docs/verification/2026-09-22-R02-workbench/report.json",
+    "frontend/src/features/workbench/WorkbenchTodayPage.test.tsx",
+    "frontend/src/features/workbench/WorkbenchServicePage.test.tsx",
+    "docs/verification/2026-09-25-workbench-live-api/README.md"
+  ]
+}

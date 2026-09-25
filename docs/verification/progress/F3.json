@@ -1,0 +1,21 @@
+{
+  "id": "F3",
+  "status": "verified",
+  "summary": "采购取消（B37）与采购付款（B33）后端与契约落地，通过后端测试、契约门禁与端到端 HTTP 验收。范围：B37 POST /api/v2/inventory/purchases/:id/cancel（权限 inventory/purchase-cancel，旧码 library/edit 等价）只取消尚未到货的数量，0023 建 purchase_cancellations 逐行记录取消事件、绝不改写 purchase_lines.qty_ordered，采购恒等式 ordered = received + rejected + cancelled + pending 由到货明细与取消事件共同派生，因此历史永远可回溯；已到货/拒收数量不可再取消（422 PURCHASE_CANCEL_EXCEEDED），存在净付款时拒绝取消（409 PURCHASE_PAYMENT_CONFLICT，且不落台账）。B33 /api/v2/finance/payments 支持 purchase:<采购单号> 与 {kind:'purchase',id} 两种 sourceDocument，按已知成本求和算应付，部分付款可多笔、超付 422 BALANCE_EXCEEDED、幂等重放复用同一 operationId、跨店 404、权限为老板专属 finance/payment。契约面：B37 由 supplementaryActions 的 reserved 提升为 frozen 正式动作并在 enums.json ActionCode 补入 B37（pending 销项，只剩 B39/B40）；legacy-mapping.json 在 tables 末尾登记 purchase_cancellations（targetObjects 挂 Purchase，与 sale_credit_approvals 挂 SaleOrder 同一处理）、sources 补 0023、revisionNote 记录本次修订；errors.json 补 PURCHASE_CANCEL_EXCEEDED(422) 与 PURCHASE_PAYMENT_CONFLICT(409)。三处生成物全部重新生成（contracts/generated、frontend/src/contracts/generated、miniprogram/contracts/generated 各 6 件，backend/src/generated/error-codes.ts 18 码）。未提升 contractVersion（未改任何既有 action 取值、目标对象名与校验规则）。本轮另修两个真问题：①【实现级】domains/finance.ts 采购付款「成本未知」守卫的 guardStatement 极性写反——guardStatement 是「条件为真即中止」，原写成 NOT EXISTS 等于「没有成本未知的行就中止」，把成本齐全的正常采购单一律拦死；因为 payPurchase 在计划之前还有一道同义前置检查（unknown_cost_lines > 0 → 400），成本未知的用例在更早处就被带文案拦住、永远走不到守卫，现象是「成本未知的用例通过、正常付款用例失败」，方向恰好相反极易误判成测试写错；改为 EXISTS 并在代码写明极性要求。②【读模型缺口】R12 queryFinanceEntries 只返回 sale_order_id，丢了契约 objects.json CashEntry.allocation（订单/采购/回收/维修分摊），而采购/回收/维修付款的 sale_order_id 都是 NULL，账本里这几类资金流水全部断链、应付与回收对账无从下手；已给 FinanceEntryRow 与流水查询补上 allocationType/allocationId（纯读模型扩展，不改写动作、不改契约）。测试：新增 backend/tests/f3-purchase-cancel-http.test.mjs 4 项（恒等式与进度派生、不改写订购量、幂等重放与改载荷 409、已到货不可再取消、取消不动已入库可用量、取消收缩应付基数、净付款冲突、无权限 403 / 旧码放行 / 跨店 404 / 入参校验）；修正 f3-purchase-payment-http.test.mjs 的断言（BALANCE_EXCEEDED 契约状态码是 422 不是 400）。并行关系：本卡动单点区（contracts/v1 + 生成物 + migrations），开工前确认 14:25 之后无任何文件被改写；0023 迁移头原写「F4 · B37」，与 F2 回执和 OPEN-ITEMS 的口径（F3 = 采购取消 + 采购付款）不一致，已校正为 F3。",
+  "next": "①前端入口全未做：/inventory/purchases 缺件处理页没有「取消未到数量」按钮，/finance 账本页没有「登记采购付款」入口（按既有做法可由栋哥用 ChatGPT 实现），本卡只做后端与契约；②frontend/src/features/workbench/finance-api.ts 的类型未补 allocationType/allocationId（显示层当前没用这两个字段，账本页仍看不出付款挂哪张单）；③取消不退已付款——存在净付款时直接 409 拒绝，付款冲销（B34 反向分录）没有并入取消动作，契约 notes 已明写本首版不合并，要支持需先定语义；④采购付款没有独立对账/发票概念，cash_entries.verification_state 恒为 unverified；⑤B39（报损）、B40（价格调整）仍是 supplementaryActions 的 reserved；⑥0023 的远端应用状态未核实，本轮未部署、未应用远端迁移；未跑前端测试与浏览器验收（本卡无前端改动、无新页面）、未跑微信真机。",
+  "updatedAt": "2026-09-22T14:45:00+08:00",
+  "evidence": [
+    "backend/src/domains/purchase.ts",
+    "backend/src/domains/finance.ts",
+    "backend/src/routes/purchase-v2.ts",
+    "backend/src/domains/access.ts",
+    "backend/migrations/0023_purchase_cancellations.sql",
+    "backend/tests/f3-purchase-cancel-http.test.mjs",
+    "backend/tests/f3-purchase-payment-http.test.mjs",
+    "contracts/v1/enums.json",
+    "contracts/v1/legacy-mapping.json",
+    "docs/verification/2026-09-22-F3-purchase-cancel-payment/README.md",
+    "docs/verification/2026-09-22-F3-purchase-cancel-payment/verify-f3.cjs",
+    "docs/verification/2026-09-22-F3-purchase-cancel-payment/report.json"
+  ]
+}

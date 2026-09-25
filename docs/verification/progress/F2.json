@@ -1,0 +1,14 @@
+{
+  "id": "F2",
+  "status": "verified",
+  "summary": "隔离件判定（B19）后端落地并通过验收。范围：POST /api/v2/inventory/items/:id/inspection + 领域逻辑 + 权限映射（新码 inventory/inspection，契约 legacyPermissionMap 声明由旧码 library/edit 映射）+ 后端测试 18 项 + 端到端验收 37 项，均 0 失败。B19 是隔离件「出 quarantine」的唯一出口，契约把它钉死成两条去向：quarantine→available（验机通过放回可卖，enums inventoryBucketRules 明写「不再新增一次总库存」）、quarantine→retired（报废 / 退供离店）。余额守恒不靠本模块自觉——from=quarantine / to=<disp> 的流水经 0007 的余额触发器结算，available 只在 to=available 时 +1，报废那一路只减 quarantine，可卖库存分毫不动。两个关键决策（2026-09-22 栋哥拍板）：①检查记录复用 audit_logs —— 契约 B19 的 effects 只有 StockItem/StockBalance、没有 Inspection 实体，故检查事实（result/findings/evidence/disposition/操作人/版本）写 audit_logs（契约 AuditEvent），stock_items.inspection_ref 回填本次判定的逻辑 id `<requestId>::inspection`；不新建业务表、不改契约；②放行必须带有效附件 —— disposition=available 时 evidence 至少一条，且每条必须是服务端实测过的有效附件（存在 + 同店 + upload_state='attached' + owner 指向本实物，0022 的 CHECK 保证 attached 必有 owner），否则 422 INSPECTION_REQUIRED（不是 400：它拦的是「没验机就想上架」，不是填错字段）；retired 不强制附件，但一旦引用 evidence 就同样逐条核实。两处必踩的坑已写进代码注释：①幂等必须排在状态检查之前 —— 判定成功后实物已不在 quarantine，若先查状态，合法的「同 ID 重放」会被误判成重复判定而 422，违反契约 Operation.rules「同 ID 同载荷返回原结果」；②命名避歧义 —— B19 的桶去向常量叫 INSPECTION_RELEASE_BUCKETS（available/retired），不是 purchase.ts 里那个契约枚举 INSPECTION_DISPOSITIONS（5 值收货去向，含退供/退客）。顺带修了一处既有不一致：domains/inventory.ts 的 MOVEMENT_SOURCES 常量此前只有 14 值，而契约与 0018 迁移是 16 值，补上了 recovery_acquisition / inspection_release。本卡未改契约、未改生成物、未改 index.ts、未新建迁移（复用 0018 已补的 inspection_release），因此完全不碰单点区，可与并行会话安全共存。",
+  "next": "①前端入口未做：/inventory 页面的「判定放行 / 报废」按钮（按既有做法可由栋哥用 ChatGPT 实现）；②检查历史读取接口未做：inspection_ref 已回填、audit_logs 有记录、R07 详情能看到 inspection_release 流水，但没有「读取某件检测历史」的专门接口；③报废后是否生成独立单据（如报损单）未做，本卡只做桶转换 →retired，契约的 StockAdjustmentReason 仍是 pendingEnums；④retired 不可逆（契约无 retired→* 回头路），误报废只能靠盘点调整 count_adjustment。并发环境提示：收工时段本机有 F1（附件基础）与 F3（采购取消 + 采购付款）两个会话在动单点区文件，validate-contracts 的 1 项失败与全量套件的 2 项失败均归 F3 的中间状态，不是本卡。",
+  "updatedAt": "2026-09-22T13:59:47+08:00",
+  "evidence": [
+    "backend/src/domains/inventory.ts",
+    "backend/src/routes/inventory-v2.ts",
+    "backend/tests/f2-inspection.test.mjs",
+    "docs/verification/2026-09-22-F2-b19/README.md",
+    "docs/verification/2026-09-22-F2-b19/verify-b19.cjs"
+  ]
+}

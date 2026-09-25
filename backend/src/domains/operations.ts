@@ -65,6 +65,11 @@ export interface OperationPlan {
   constraintCodes?: Record<string, ErrorCode>
 }
 
+/** 仅供服务端拼 SQL 时标注守卫语义；不会进入客户端请求，也不会从用户输入构造。 */
+export interface GuardDiagnostic {
+  readonly diagnostic: string
+}
+
 export interface ClassifiedError {
   code: ErrorCode
   message: string
@@ -85,6 +90,11 @@ export interface RunSucceeded {
 export interface RunFailed extends ClassifiedError {
   ok: false
   requestId: string
+  /**
+   * 只保存数据库失败的脱敏诊断；路由层将它翻译成可读线索后再展示。
+   * 业务层的 VALIDATION_ERROR 仍按契约错误码处理，不把诊断当成程序分支。
+   */
+  diagnostic?: string
 }
 
 export type RunResult = RunSucceeded | RunFailed
@@ -112,11 +122,17 @@ export function guardStatement(
   db: OperationsDb,
   code: ErrorCode,
   conditionFails: string,
-  ...params: (string | number | null)[]
+  ...params: (string | number | null | GuardDiagnostic)[]
 ): D1PreparedStatement {
+  const values = [...params]
+  const last = values[values.length - 1]
+  const options = last && typeof last === 'object' && 'diagnostic' in last
+    ? values.pop() as GuardDiagnostic
+    : null
+  const raisedCode = options?.diagnostic ? `${code}|${options.diagnostic}` : code
   return db
     .prepare(`INSERT INTO assertion_guards (code) SELECT ? WHERE ${conditionFails}`)
-    .bind(code, ...params)
+    .bind(raisedCode, ...values)
 }
 
 /**
@@ -179,7 +195,13 @@ interface OperationRow {
   result_version: number | null
 }
 
-function failure(code: ErrorCode, requestId: string, message?: string, currentVersion?: number): RunFailed {
+function failure(
+  code: ErrorCode,
+  requestId: string,
+  message?: string,
+  currentVersion?: number,
+  diagnostic?: string,
+): RunFailed {
   const definition = findErrorDefinition(code)
   return {
     ok: false,
@@ -189,6 +211,7 @@ function failure(code: ErrorCode, requestId: string, message?: string, currentVe
     httpStatus: definition?.httpStatus ?? 500,
     retryable: definition?.retryable ?? false,
     ...(currentVersion === undefined ? {} : { currentVersion }),
+    ...(diagnostic ? { diagnostic: diagnostic.slice(0, 500) } : {}),
   }
 }
 
@@ -259,7 +282,7 @@ export function classifyDatabaseError(
   const text = error instanceof Error ? `${error.message}` : String(error)
 
   // 1. RAISE(ABORT, NEW.code) —— 消息形如 "D1_ERROR: VERSION_CONFLICT: SQLITE_CONSTRAINT ..."
-  const raised = text.match(/D1_ERROR:\s*([A-Z][A-Z0-9_]+):\s*SQLITE_CONSTRAINT/)
+  const raised = text.match(/D1_ERROR:\s*([A-Z][A-Z0-9_]*)(?:\|[A-Z][A-Z0-9_]*)?:\s*SQLITE_CONSTRAINT/)
   if (raised && isErrorCode(raised[1])) {
     const definition = findErrorDefinition(raised[1])!
     return {
@@ -303,6 +326,58 @@ export function classifyDatabaseError(
     retryable: definition.retryable,
     httpStatus: definition.httpStatus,
   }
+}
+
+/**
+ * 将 D1 的约束诊断翻译成不会泄露请求值、但能帮助店员定位的线索。
+ *
+ * 诊断只来自数据库错误文本，不参与 code 分支。未知格式不直接透出原文，
+ * 避免把 SQL / 运行时细节当成用户文案；已知的表列约束保留足够具体的原因。
+ */
+export function readableDiagnostic(diagnostic: string | null | undefined): string | null {
+  const text = diagnostic?.replace(/[\r\n]+/g, ' ').trim()
+  if (!text) return null
+
+  const guard = text.match(/D1_ERROR:\s*[A-Z][A-Z0-9_]*\|([A-Z][A-Z0-9_]*):\s*SQLITE_CONSTRAINT/i)?.[1]
+  if (guard === 'SKU_ALREADY_EXISTS') return '本店 SKU 已存在'
+  if (guard === 'OPENING_ALREADY_EXISTS') return '该型号已经有库存事实，期初只能建一次'
+  if (guard === 'OPENING_WINDOW_NOT_ACTIVE') return '正式期初窗口未开启、已到截止时间或已经关闭'
+  if (guard === 'OPENING_WINDOW_ALREADY_USED') return '正式期初窗口已经开启过，不能重新开启'
+  if (guard === 'OPENING_WINDOW_AFTER_BUSINESS_MOVEMENT') return '本店已发生正式库存流水，不能再开启期初窗口'
+  if (guard === 'OPENING_COUNT_LINE_ALREADY_IMPORTED') return '该盘点明细行已经导入，不能重复计入期初库存'
+
+  const unique = text.match(/UNIQUE constraint failed:\s*(.+)$/i)?.[1]?.trim()
+  if (unique) {
+    if (/sale_orders\.store_id,\s*sale_orders\.order_no/i.test(unique)) {
+      return '订单号已存在（订单号生成冲突）'
+    }
+    if (/hardware\.store_id,\s*hardware\.sku/i.test(unique)) {
+      return '本店 SKU 已存在'
+    }
+    return `唯一字段冲突（${unique.slice(0, 180)}）`
+  }
+
+  if (/FOREIGN KEY constraint failed/i.test(text)) {
+    return '关联对象不存在，或不属于当前门店'
+  }
+
+  const check = text.match(/CHECK constraint failed(?::\s*(.+))?$/i)?.[1]?.trim()
+  if (check) return `数据未满足系统约束（${check.slice(0, 180)}）`
+  if (/CHECK constraint failed/i.test(text)) return '数量、金额或状态未满足系统约束'
+
+  const raised = text.match(/D1_ERROR:\s*([A-Z][A-Z0-9_]+):\s*SQLITE_CONSTRAINT/i)?.[1]
+  // 主动守卫若没有语义标签，诊断本身只有契约错误码；继续显示原有业务提示，
+  // 不伪造一个看似具体、实际仍然无助于定位的「数据库约束被触发」。
+  if (raised) return null
+
+  return '数据库拒绝了这次写入，请保留请求编号交给管理员排查'
+}
+
+/** 在已有业务文案后附上数据库真因；没有诊断时保持原文不变。 */
+export function appendReadableDiagnostic(message: string, diagnostic?: string): string {
+  const reason = readableDiagnostic(diagnostic)
+  if (!reason || message.includes(reason)) return message
+  return `${message}（具体原因：${reason}）`
 }
 
 /** 落一条脱敏失败诊断。失败本身不影响主流程，也不代表动作失败之外的任何账务事实。 */
@@ -396,8 +471,9 @@ export async function runIdempotent(
       if (winner) return resumeExisting(winner, ctx)
     }
 
-    await recordFailure(db, ctx, classified.code, String(error instanceof Error ? error.message : error))
-    return failure(classified.code, ctx.requestId, classified.message, classified.currentVersion)
+    const diagnostic = String(error instanceof Error ? error.message : error)
+    await recordFailure(db, ctx, classified.code, diagnostic)
+    return failure(classified.code, ctx.requestId, classified.message, classified.currentVersion, diagnostic)
   }
 
   return { ok: true, reused: false, requestId: ctx.requestId, outcome }

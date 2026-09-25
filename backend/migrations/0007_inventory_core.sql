@@ -160,7 +160,7 @@ CREATE TABLE inventory_movements (
   source TEXT NOT NULL CHECK (source IN (
     'purchase_receipt', 'quick_purchase', 'opening_balance', 'reservation', 'unreservation',
     'assembly_pick', 'delivery', 'return_receipt', 'service_part_consumption', 'scrap',
-    'supplier_return', 'count_adjustment', 'conversion')),
+    'supplier_return', 'count_adjustment', 'conversion', 'inspection_quarantine')),
   reversal_of TEXT,
   occurred_at TEXT NOT NULL,
   recorded_at TEXT NOT NULL DEFAULT (datetime('now')),

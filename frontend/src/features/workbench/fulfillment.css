@@ -1,0 +1,69 @@
+/*
+ * E08 · 装机检测与交付页的局部样式。
+ *
+ * 只服务 `.wb-fulfillment-page`，不碰公共 `erp-polish.css` / `workbench.css`；
+ * 色板与面板尺度沿用 erp-core/v2 的彩色口径（#d4e9df / #f4dfc4 / 20px 圆角）。
+ * 动效只用 transform / opacity，并尊重 prefers-reduced-motion。
+ */
+
+.wb-fulfillment-page .wb-gate-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.wb-fulfillment-page .wb-gate-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(212, 233, 223, 0.35);
+}
+
+.wb-fulfillment-page .wb-gate-list li.is-blocked {
+  background: rgba(244, 223, 196, 0.45);
+}
+
+.wb-fulfillment-page .wb-gate-list li.is-blocked b {
+  color: #8a5a1c;
+}
+
+.wb-fulfillment-page .wb-gate-dot {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #2f6b52;
+  color: #fff;
+  font-size: 12px;
+  transform: translateY(3px);
+}
+
+.wb-fulfillment-page .wb-gate-list li.is-blocked .wb-gate-dot {
+  background: #a9742f;
+}
+
+.wb-fulfillment-page .wb-gate-list .wb-caption {
+  flex: 1;
+}
+
+.wb-fulfillment-page .wb-detail td select,
+.wb-fulfillment-page .wb-detail td input {
+  min-width: 140px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-fulfillment-page *,
+  .wb-fulfillment-page *::before,
+  .wb-fulfillment-page *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

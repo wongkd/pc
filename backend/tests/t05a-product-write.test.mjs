@@ -122,7 +122,6 @@ test('修改商品：推进版本并写版本日志', async () => {
     sku: 'GPU-EDIT',
     trackingMode: 'quantity',
     requiresSn: false,
-    defaultSalePriceCents: 199900,
   })
 
   assert.equal(updated.ok, true, JSON.stringify(updated))

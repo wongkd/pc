@@ -7,29 +7,10 @@
     <meta http-equiv="Expires" content="0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>电脑报价方案</title>
+    <title>装一下机 · 门店 ERP</title>
   </head>
   <body>
     <div id="root"></div>
-    <script>
-      window.__errors = [];
-      window.onerror = function(msg, src, line, col, err) {
-        window.__errors.push({ msg, src, line, col, stack: err ? err.stack : '' });
-        var el = document.getElementById('root');
-        if (el) {
-          el.innerHTML = '<div style="background:#fff3cd;border:2px solid #ffc107;margin:20px;padding:20px;border-radius:8px;font-family:monospace;font-size:13px;line-height:1.6">' +
-            '<h3 style="color:#dc3545;margin:0 0 12px">页面JS错误（B1调试信息）</h3>' +
-            '<pre style="white-space:pre-wrap;word-break:break-all;margin:0 0 8px;color:#333">' + String(msg).replace(/</g,'&lt;') + '</pre>' +
-            '<div style="color:#666;font-size:11px">来源: ' + (src||'?') + ':' + (line||'?') + ':' + (col||'?') + '</div>' +
-            '<div style="color:#999;font-size:10px;margin-top:4px">堆栈: ' + (err&&err.stack?String(err.stack).replace(/</g,'&lt;').replace(/\n/g,'<br>') : '无') + '</div>' +
-            '</div>';
-        }
-      };
-      window.addEventListener('unhandledrejection', function(e) {
-        var msg = e.reason ? (e.reason.message || String(e.reason)) : 'Promise rejected';
-        window.onerror(msg, '', 0, 0, e.reason);
-      });
-    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

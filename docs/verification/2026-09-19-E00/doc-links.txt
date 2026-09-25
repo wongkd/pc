@@ -1,0 +1,2 @@
+Active entrypoints: 25 files, 134 local links, 0 broken
+Scope: inline relative file links; excludes external URLs, anchors, bare paths and code blocks.

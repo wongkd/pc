@@ -1,0 +1,18 @@
+{
+  "id": "E06",
+  "status": "verified",
+  "summary": "收款与库存预留：已实现并通过后端与浏览器验收（卡内 2026-09-21）。B03 报价转销售单、B05 确认成交与补分配、B08 登记销售收款、R04 列表/详情全部走 /api/v2/sales/orders* 与 /sales/quotes/:id/convert，界面入口 /sales/orders。口径：未付款不预留（B03 一行库存都不写）；定金闸在 B05（默认 15%，未达比例直接拒）；逐件占用靠部分唯一索引 uq_stock_reservations_active_item 兜底；数量件自迁移 0015 起按可用量占用（锁不满的差额进缺口，不整单失败）；B08 防超收（BALANCE_EXCEEDED）。补洞卡已修报价行商品引用与数量件预留。本轮 2026-09-21 12:19 只读复核（未改业务代码）：后端 208 通过 / 0 失败；契约 validate-contracts 3309 通过 / 0 失败；generate-dto --check、frontend/scripts/sync-contracts --check、check-client-parity、check-error-codes、check-doc-links 全部退出码 0；前端 13 文件 152 通过。尚缺：卡内浏览器验收 32 项本轮未重跑；未部署、未跑微信开发者工具、未应用任何远端迁移（0004–0015 远端状态仍未核实）；跨实例并发未压测；前端 lint 39 项既有失败本轮新增 0。【2026-09-22 02:29 复核·栋哥指派重跑门禁】契约六件套全绿（validate-contracts 3423 通过 0 失败、generate-dto --check、sync-contracts --check、check-client-parity、sync-error-codes、check-doc-links 175 链接 0 断链）；后端除回收卡 e11 外 245 用例 0 失败（E06/E08/E10 专项 50 例全过）；前端 16 文件 170 用例 + build 通过 + lint 39 项既有失败新增 0；浏览器验收 32 项 0 失败、截图已实看无破版。上文 208/3309/152 为 09-21 卡内数字，最新实跑以本句为准。",
+  "next": "等栋哥拍板下一刀，本轮不自行开工。最顺的是 E08 装机、检测与交付（B04/B06/B07/B10）——其依赖 E06/E07 已满足，但 E08 至今无源码/路由/迁移，状态仍是未开工，故不写回执。备选：E09 取消退款与销售账本，或先单独收拾 guidanceFor 吞掉真因（OPEN-ITEMS T-11）。",
+  "updatedAt": "2026-09-22T02:29:00+08:00",
+  "evidence": [
+    "backend/src/domains/sale.ts",
+    "backend/src/routes/sales-v2.ts",
+    "backend/tests/e06-sales-http.test.mjs",
+    "backend/migrations/0013_sales_core.sql",
+    "frontend/src/features/workbench/WorkbenchSalesPage.tsx",
+    "frontend/src/features/workbench/sales-api.ts",
+    "docs/verification/2026-09-21-E06/README.md",
+    "docs/verification/2026-09-21-E06E07-gapfix/README.md",
+    "docs/verification/2026-09-21-receipts/README.md"
+  ]
+}

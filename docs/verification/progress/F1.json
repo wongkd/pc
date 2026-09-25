@@ -1,0 +1,22 @@
+{
+  "id": "F1",
+  "status": "verified",
+  "summary": "附件基础（B35）后端落地并通过验收。范围：attachments 数据结构 + 上传意图签发（POST /attachments/upload-intents）+ 文件字节写入（PUT /attachments/upload-intents/:id/blob）+ 完成关联（POST /attachments/upload-intents/:id/complete）+ 大小/MIME/sha256 校验 + 门店隔离与权限 + 幂等与重复完成保护 + 孤立上传保留策略 + 本地测试存储适配器。契约修订四处（这四处必须一起改，否则门禁红）：①enums.json 补 stateMachines.AttachmentUploadState 转换表（取值本来就有，缺的是转换 —— 这正是 actions.json stateMachineGaps 里早已登记、owner=T16a 的缺口）；②actions.json 的 B35.stateMachine 由 null 改为该状态机，operations 补入 PUT .../blob 作为文件字节通道（04 §5 原本只规定签发凭证与完成确认两个端点，字节通道是留白），stateMachineGaps 中 Attachment 那条销案并转入 notAGap 留痕；③objects.json 的 Attachment.tables 由 [] 改为 [\"attachments\"]；④legacy-mapping.json 登记 attachments 表 + sources 补入 0022 + 从 objectsWithoutLegacyTable 移出 Attachment。迁移 0022 建 attachments 表（门店隔离、object_key 唯一、upload_state CHECK、expires_at 保留期、upload_token_hash 只存摘要）。后端新增 domains/storage.ts（StorageAdapter 接口 + 内存实现＝测试替身／R2 实现＝生产，迁腾讯云时加 COS 实现即可，业务代码不动）、domains/attachment.ts、routes/attach-v2.ts、tests/f1-attachments.test.mjs；修改 domains/access.ts（attachment/upload 权限码 + 旧码 library/edit 等价，否则现有店员会立刻失去上传权）、index.ts 接线、wrangler.toml 加 R2 绑定。三个关键取舍：①文件字节走 Worker 中转而非预签名直传 —— 契约要求上传服务「校验类型、大小、归属」，直传则服务端只能相信客户端自报的 sha256，等于没校验；走中转后 sha256／魔数真实 mime／实际字节数三项全部服务端自算；②存储用 R2（2026-09-22 栋哥拍板）—— 后端此刻跑在 CF Workers 上，R2 是唯一有原生绑定的对象存储，免费额度 10GB+免出网费够 400 单以上；但 R2 图片域名备不了案，顾客端（小程序）将来不能从 R2 取图，故响应里 customerShareable 恒为 false，如实标注不假装可用；③两段式顺序固定为「先写对象存储、再更新 D1」—— 反方向会留下「记录说已上传、存储里却没有」的假成功，不可补救。迁移里两条 CHECK 用单向蕴含而非双向等价（写成 (A)=(B) 会让签发时的 pending 行与回收来的 orphaned 行被判非法，首版 19 个用例挂了 15 个才暴露）。入口加了 4 行，actions.json 的 15 条 evidence 行号与 1 条 specBasis 行号整体 +4 并逐条复验落点确实落在权限守卫行上。验证：后端 287 用例 0 失败（原 268 + F1 19）/ 契约六件套全绿（validate-contracts 3450 通过 0 失败、generate-dto --check、sync-contracts --check 前端与小程序、check-client-parity、sync-error-codes、check-doc-links 185 链接 0 断链）/ HTTP 端到端 28 项 0 失败（覆盖实物证据与回收证据两条 uiRefs 链路）。",
+  "next": "①附件读取接入：读模型 listAttachedForOwner 已实现（只返回 attached 行），但契约读接口表里没有 /attachments 读路径 —— 附件列表应由接修 / 回收的详情读模型带出（R09 / R10），属对应详情卡职责，本卡不新增契约外协议；②B19（隔离件出 quarantine）前置已就绪：F1 已提供往实物（ownerEntityType='stock_item'）挂检测证据的能力；③上线前置（不属本卡缺陷）：wrangler.toml 已声明 R2 绑定 pc-attachments 但远端桶尚未创建，未建时生产会回落到内存实现，须在部署前建桶并确认绑定生效。未验证范围如实列出：R2 真实读写未在真实桶上跑过（测试与验收跑的都是内存替身，验证的是协议与规则）、本卡无前端页面故无浏览器与视觉验收、孤立回收只做惰性清理（签发时顺带扫，每轮上限 50 条）未接 CF Cron、width/height 未做服务端实算（按客户端可选申报处理）。",
+  "updatedAt": "2026-09-22T13:43:00+08:00",
+  "evidence": [
+    "backend/migrations/0022_attachments.sql",
+    "backend/src/domains/storage.ts",
+    "backend/src/domains/attachment.ts",
+    "backend/src/routes/attach-v2.ts",
+    "backend/src/domains/access.ts",
+    "backend/src/index.ts",
+    "backend/tests/f1-attachments.test.mjs",
+    "contracts/v1/actions.json",
+    "contracts/v1/enums.json",
+    "contracts/v1/objects.json",
+    "contracts/v1/legacy-mapping.json",
+    "docs/verification/F1-current/README.md",
+    "docs/verification/F1-current/verify-f1.cjs"
+  ]
+}

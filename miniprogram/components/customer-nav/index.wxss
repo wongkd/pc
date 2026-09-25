@@ -1,0 +1,89 @@
+@import "../../styles/customer-tokens.wxss";
+
+.customer-nav {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 100%;
+  background: var(--customer-page);
+}
+
+.customer-nav__row {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  width: 100%;
+  gap: 8px;
+}
+
+.customer-nav__copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  overflow: hidden;
+}
+
+.customer-nav__location {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+}
+
+.customer-nav__chevron {
+  flex: none;
+  margin-left: 4px;
+  color: var(--customer-ink);
+  font-size: 16px;
+}
+
+.customer-nav__title,
+.customer-nav__store {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--customer-ink);
+  font-size: 42rpx;
+  font-weight: var(--customer-fw-regular);
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.customer-nav__store {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 25rpx;
+}
+
+.customer-nav__back,
+.customer-nav__action {
+  display: flex;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}
+
+.customer-nav__back-mark {
+  width: 10px;
+  height: 10px;
+  border-left: 1px solid var(--customer-ink);
+  border-bottom: 1px solid var(--customer-ink);
+  transform: rotate(45deg);
+}
+
+.customer-nav__mine-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  margin-left: 4px;
+}
+
+.customer-nav__icon {
+  width: 22px;
+  height: 22px;
+}

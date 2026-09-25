@@ -1,157 +1,61 @@
-# 未决项与踩坑台账（跨卡片）
+# 未决项
 
-更新：2026-09-18（最后由 T03b 维护）
-用途：**把「规格没写的」「需要你拍板的」「已经踩过的坑」集中在一处**，便于换一个 AI 继续做，也便于你逐条决定。
+更新：2026-09-26。只列尚未解决/待核实事项；当前完成度见[STATUS](STATUS.md)。[经营规则 D01–D10 已冻结](plans/2026-09-23-owner-decisions/README.md)，用户已授权采纳推荐；后续是实现/验收或明确暂缓，不再等待老板填写。
+本表保留旧编号用于追溯，详细旧背景见[整理前台账](archive/2026-09-22-before-maintenance/docs/OPEN-ITEMS.md)。
+历史表中的“待做”不覆盖后来的实现与证据。
 
-- 本文件只做索引与结论，**不复述业务规范**；业务规则以 `docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md` 与契约 `contracts/` 为准。
-- 状态只有四种：**待裁定**（要人决定）/ **待实现**（已定，等某张卡做）/ **未核实**（事实不明）/ **已解决**（留档）。
+## 业务与页面
 
-## 0 · 接手前先做这三件事
-
-```bash
-git log --oneline -8                       # 看做到哪张卡
-node contracts/tools/validate-contracts.mjs # 契约自洽（应 3047 项、退出码 0）
-node frontend/scripts/sync-contracts.mjs --check    # 网页端内生成物未漂移
-node miniprogram/scripts/sync-contracts.mjs --check # 小程序端内生成物未漂移
-npm --prefix frontend run test              # T03b 后应 8 文件 / 91 用例通过
-npm --prefix miniprogram test               # T03b 后应 6 文件 / 67 用例通过（需先 npm --prefix miniprogram install）
-npm --prefix backend test                   # T05a 后应 58 用例通过（真实 workerd + 真实 D1）
-node contracts/tools/check-client-parity.mjs        # 跨端一致性门禁（T03b 新增，36 项）
-node backend/scripts/sync-error-codes.mjs --check   # 后端错误码生成物未漂移（T04 新增）
-```
-
-然后读：根 `README.md` → 本文件 → `docs/verification/<最新卡号>/README.md` → 当前任务涉及的规格小节。
-**不要**递归扫 `node_modules/`、`backups/`、历史截图。
-
----
-
-## 1 · 需要你（负责人）拍板
-
-| 编号 | 事项 | 现状 | 为什么要你定 | 影响 |
-|---|---|---|---|---|
-| **D-A** | `amountSummary` / `primaryAction` 的结构是否升入 `objects.json` 成为规范性定义 | 契约把这两个字段声明为 `JsonObject`（结构未固定），实际结构定义在 `contracts/v1/fixtures.json` 的 `shapeDefinitions`（T01c 冻结）。T02a 的端内类型已与之一致 | 往已冻结的 `objects.json` 里加结构属于**新增规范性表面**，按契约规则必须提 `contractVersion` → 建 `contracts/v2/` | 不定则 F03 一直挂着；两端类型只能引用 `shapeDefinitions`，生成器不会输出这两个子结构 |
-| **D-B** | T01-rev1 与 T01c 的非规范性追加是否提 `contractVersion`（重建 v2） | 两次都只在原文件内留 `revisions` 记录，未提版 | 这是治理决策：严格按规则该提版，但会动全部文件的引用路径 | 影响后续所有契约变更的流程与两端生成物路径 |
-| **D-C** | 六导航是否按权限隐藏？用哪个权限码？ | 规格只写「网页六导航」，**没有说哪项对谁可见**。T02a 实现为六项全部可见 | 04 §9 有 49 个权限码，但没有任何一条能直接对应「今天/开单/库存/售后/回收置换/账本」的可见性 | 不确定就只能在 T03（身份与权限）时猜，属于把风险推给实现模型 |
-| **D-D** | 旧壳 `ErpShell.tsx`、旧 12 项导航清单、死代码 `DashboardPage` 何时收敛 | T02a 换了新壳，但三者都保留着：旧 12 项仍用于生成占位路由，删不掉 | 留着会造成「两份导航定义」，删了要确认没有别的引用 | 影响可维护性，不影响功能 |
-| **D-E** | 演示样本进了生产构建产物是否现在处理，还是等 T18 | 契约要求「生产包不得携带样本」，现实是 `dist/assets/*.js` 里有 `DEMO-SO-003` | 处理方式有三种（按环境动态导入 / 构建期排除 / 保留到 T18 统一做），代价不同 | **在此之前本卡产物不得当可用版本发布** |
-| **D-F** | 今天页统计条**不再四格等分**（金额格 260rpx、计数格 ≈153rpx） | T02b-rev2 修 R-14 时采用了「金额格加宽 + 字号分档」。设计稿 v3 是四格等分，但那与 02 §1「小数位不能为了好看掩盖分」冲突（设计稿写 `¥12,800`，真实渲染是 `¥12,800.00`） | 要维持严格等分只能改走方案 A（保住等分、金额压到 ≈30rpx，比同排计数小 25%），观感取舍需你定 | 三种方案与实测数见 `docs/verification/2026-09-17-T02b-rev2/README.md` §3 |
-| **D-G** | 详情页「阶段」两端做法**互相矛盾**，T02c 的 `ProgressSteps` 提取被它卡住 | 网页端（T02a）在 `WorkbenchTodayPage.tsx` 里**硬编码三步** `['已确认成交','备货 / 检测','收款与交付']`，并用「有没有卡点」**推测**当前进度（`index===1 && blockerSummary ? is-blocked : ...`）；小程序端（T02b D8）因为 V1 读模型没有阶段字段，**明确拒绝画推测进度**，只写承位说明。同一规格点（02 §107）两端相反 | 要定「阶段」的数据来源：① 照网页端做法（阶段=按事项类型手写模板 + 由卡点推测状态）② 等契约补详情读模型（阶段/检查项字段 + 样本）后再两端一起做 ③ 两端都退成承位说明。**Q-T02b-2 的升级版**；不定就无法提取 ProgressSteps | 阻塞 T02c；涉及是否新增契约对象与扩 V1 样本（T08 / T12 / T14） |
-| **D-H** | `operations.result_json` 的结构是否升入契约（成为规范性定义） | T04 把动作结果（summary / effects / entityType / entityId / version）存进 `operations.result_json`。结构目前由 `backend/src/domains/operations.ts` 的 `OperationOutcome` 定义，**契约未声明**（与 D-A 的 `amountSummary` 同类问题） | 与 D-A 合并考虑：若两者都升入 `objects.json`，属于新增规范性表面，须提 `contractVersion` → 建 `contracts/v2/`。若不升，两端只能按实现约定消费，客户端拿不到类型 | 影响「结果未知查询」的响应结构（GET /operations/:requestId 已在 T04 预留 `queryOperation`）。D4 已裁定跳 T02c，但本项与 D-A 应在 T07/T08 前定 |
-
-| **D-I** | `specs` 的类型：`actions.json` L305 写 B12 输入为 `specs:Spec[]`（数组），`objects.json` L43 写 `Product.specs` 为 `string` | 两处都是冻结文件。T05a 按**对象定义**（string）实现，B12 接受 `string \| null` | 这不是「规格留白」而是**契约内部相互矛盾** —— 两个文件都被称作唯一来源。改哪一边都会动规范性表面 | B12 的请求结构无法最终确定；两端由契约生成的类型会与后端实现不一致。T05a 已按 string 落地并记录在验证文档 §7 C-2 |
-| **D-J** | 错误码的**客户端行为枚举**是否升入契约（成为规范性定义） | T03b 把每个错误码的客户端行为固化为端内结构化表（`frontend/src/api/error-behavior.ts` 与 `miniprogram/features/error-behavior.ts`），由 `node contracts/tools/check-client-parity.mjs` 强制两端一致并与 `errors.json` 对齐。契约 `clientHandling` 是给人看的文本，程序不能靠它分支 | 与 D-A / D-H 合并考虑：升入契约须提 `contractVersion` → 建 `contracts/v2/`，届时应**删除两端行为表**改为消费生成物 | 不定则行为表持续作为端内实现存在（有门禁兜底，风险可控）；影响后续所有错误处理路径的单一来源归属 |
-
----
-
-## 2 · 规格缺口（规格没写，实现时不许自己编）
-
-| 编号 | 缺口 | 契约里的登记 | 归属 |
-|---|---|---|---|
-| G-01 ~ G-08 | 8 项状态机缺口：`Reservation` / `ReturnRecord` / `Offset` / `Attachment` / `Operation` / `CashEntry` / `Product` / `QuoteVersion` | `contracts/v1/actions.json` 的 `stateMachineGaps`，每条附 `specBasis` 依据与 `origin`（`spec-undefined` / `spec-partial`） | T08a / T11a / T14a / T16a / T04a / T09a / T05a / T07a |
-| G-09 | `closed` / `expired` 状态的**进入条件** | 校验脚本列为提示项 | 对应业务卡实现前补 |
-| G-10 | 「贷项」是否需要独立状态 | T01-rev1 已更正为「规格留白」而非转录遗漏 | T11a |
-| G-11 | 供应商（`/suppliers`）没有独立页面 ID | T02a 暂归库存导航、保留占位 | 待定 |
-| G-12 | SN 台账（`/sn`）是否单列导航 | 02 §2 无独立 SN 导航项，T02a 暂归库存 | T05 |
-| G-13 | 列表排序规则 | 契约 V1 明确 `order: "unspecified"` | T18 |
-| G-14 | 缺少「已逾期」样本 | V1 七条没有逾期项，02 §4 却要求「逾期明确写已逾期」 | 需要补样本，否则该体验项无法验 |
-| G-15 | 统计条金额的**宽度预算上限**没有规格依据 | 02 §103 只说「不缩成极小字号、不省略成无法核账的数」，没给金额量级上限或格宽预算。T02b-rev2 按 375px 设计宽度把预算定为 120px，覆盖到千万级；亿级以上落到下限档后可能溢出（`¥128,000,000.00` 估算 120.3px 刚好越界） | T02c 或 T15（账本）按实际资金规模定 |
-| G-16 | `OpeningLine` 与 `CostBasis` 的**结构**（04 §5 L99 只给了类型名，没给字段） | T05a 已实现为最小结构并记录在 [2026-09-18-T05a](verification/2026-09-18-T05a/README.md) §7 C-3：`OpeningLine = productRef / qty / condition? / assetCode? / snRaw? / unitCostCents?`，`costBasis.kind ∈ known \| unknown` | 定了才谈得上契约化；未定则两端只能按实现约定消费，T05c 的样本也没有依据可写 |
-| G-17 | `InventoryMovement` 的 `qty`（04 §2 L29「增量，可正可负」）与 `fromBucket` / `toBucket` 的**组合语义**未规定 | T05a 已定口径并记录（验证文档 §7 C-1）：`to_bucket` 桶 `+qty`、`from_bucket` 桶 `-qty`；两者可同时出现表示一笔桶间转移 | 桶间转移（可卖 → 已订）的流水形态由它决定；T08 / T10 写流水时必须遵守同一口径 |
-
----
-
-## 3 · 已定但还没做（后续卡片必须处理）
-
-| 编号 | 事项 | 卡在哪 | 归属 |
-|---|---|---|---|
-| T-03 | 后端三个生产 secret 未写入远端 | 本机无 Cloudflare 登录态 | **补做 `wrangler secret put` 前禁止 `wrangler deploy`** |
-| T-05 | 微信平台条件：**AppID 已提供（`wx1b14bf01ef71718d`，2026-09-17）**；小程序主体 / 成员、API 域名、对象存储、店内网络、真机仍未知 | 部分已提供，其余等用户 | 阻塞 T03 / T16 / T21 |
-| T-06 | 生产 D1 的 `0004` / `0005` 是否已应用 | 未核实 | T20 |
-| T-07 | `permissions` 表实际行内容 | 未核实（契约已改为按代码守卫映射，不依赖表行） | T20 |
-| T-08 | 后端仍是 `index.ts` 单文件 1551 行，未拆 `routes/domains/repositories` | 边做边拆 | 各业务卡 |
-| T-09 | 小程序只有一个详情页 `packages/sales/order-detail`，售后与回收事项暂也跳它 | 与 02 §2 页面地图有偏差（售后应为 `packages/service/detail`、回收应为 `packages/recovery/detail`） | T12 / T14 |
-| T-10 | **两端金额口径没有任何机器门禁**，且网页端缺 `store_due` 分支 | 小程序 `features/amount-view.ts` 与网页 `WorkbenchTodayPage.tsx` 内的 `describeAmount` 是**两份独立实现**，无跨端一致性检查。2026-09-17 用契约 V1 样本 + 边界用例并排实跑（结论见下），发现：**`store_due`（应付客户）在网页端被显示成「待收 ¥200.00」——方向反转**；`counts=true 且 bal=null`（契约规则 1 判为非法组合）网页端显示 `待收 ¥0.00`，小程序端写「待确认」；`settled` 且 `note=null` 时小程序端兜底补「仍须确认实物交出」，网页端退成总额。其余 7 条 V1 样本只是**措辞与排版差异**（网页把方向词并进主串），语义一致 | T02c（提取组件时一并统一口径 + 加跨端一致性门禁）。⚠️ 前两条**V1 样本未覆盖故当前不触发**，T11 / T14 引入退款与超额收款后才会撞上 |
-
----
-
-## 4 · 踩过的坑（下次别再踩）
-
-| 编号 | 坑 | 表现 | 正确做法 |
-|---|---|---|---|
-| P-01 | **同一文件的多处 `Edit` 并行提交会互相覆盖** | 已犯 3 次（T01b / T01-rev1 / T01c），每次白花一轮排查 | 同一文件的多处编辑必须串行；一条消息里只发一个针对该文件的 `Edit` |
-| P-02 | **禁止把契约 JSON 整体 `JSON.stringify(…, 2)` 重写** | 会摧毁手工紧凑排版，diff 从 145 行暴涨到 3079 行 | 用纯文本外科替换 |
-| P-03 | 生成物**不能手工编辑** | `validate-contracts.mjs` 第 12 节会重建后逐字节比对；`sync-contracts.mjs --check` 也会报 | 改契约源文件 → 重新生成 → 再同步端内 |
-| P-04 | **超长单行 JSX 会让 `tsc` 解析失败** | `App.tsx` 里 500+ 字符的 `<Route … element={<Comp 属性={[…嵌套对象…]} />} />` 报 `TS2657` + `TS1005`，逐字符检查无非法字符 | 嵌套数据先提为模块级常量，再 `{...props}` 展开 |
-| P-05 | **生成物没做依赖过滤时，前端 `noUnusedLocals` 直接编译失败** | `objects.ts` 全量导入 36 个枚举类型 → 6 处 `TS6196` | 已修生成器：按 `\b名字\b` 过滤实际引用的类型 |
-| P-06 | **CSS 变量名不要用裸名** | `index.css` 的 `:root` 已占用 `--line` / `--muted` / `--ink` / `--page-bg`，而 AppShell 会包住报价编辑器 | 新视觉变量统一加前缀（本项目为 `wb-`），作用域限定在壳内 |
-| P-07 | **`@testing-library/react` 在本项目不会自动清理 DOM** | vitest 未开 `globals`，多个用例 DOM 累积 → 14 个用例报「found multiple elements」的**假失败** | 测试文件内显式 `afterEach(cleanup)` |
-| P-08 | **jsdom 不加载资源，图片 `error` 不会自然触发** | 图片降级路径测不到 | `fireEvent.error(img)` 主动触发；浏览器里 `demo://` 本来就必然失败 |
-| P-09 | **改函数声明行时不要把行尾换行放进 `old_string`** | 会把两行粘成一行（T02a 犯过一次，已当场修复） | 只匹配行内容本身 |
-| P-10 | 负向测试的注入备份 | 曾散落在根目录 | 统一放 `.validation-*/`（已 gitignore），用完立即删 |
-| P-11 | 登记缺口 / 下结论**必须钉规格原文行号** | T01b 曾凭印象把 `Purchase` 登记为缺口，T01-rev1 更正 | 校验脚本第 11 节会验证「引文逐字出现在该行」 |
-| P-12 | 校验脚本自身也会写错 | 曾把「公式结果」当「输入项」判空 → 12 项连锁误报 | 依赖检查必须区分输入项与派生项 |
-| P-13 | **换壳 / 搬入口时会连同「可见性条件」一起丢掉** | 旧壳对「系统设置」有 `permissions` 判断，T02a 把它移进头像菜单时差点漏掉，那样任何店员都能看到设置入口 | 迁移入口时逐条对着旧实现核对**条件**，不只核对路径；并补测试 |
-| P-14 | **用设计稿对齐排版时，按稿上的示例字符数算宽度会漏掉真实渲染** | 设计稿统计条写 `¥12,800`（7 字符、不带分位），真实必须渲染 `¥12,800.00`（10 字符，02 §1 不许掩盖分）→ 等分格装不下，实测被裁（R-14） | 排版对齐时用**真实渲染文案**（含分位、含千分位、含前后缀）算宽度，不能用稿上的示例值；能算就写成约束测试 |
-| P-15 | **注释里出现「星号加斜杠」会提前闭合块注释** | T04 的 `tests/lib/build.mjs` 文件头写了 `.validation-*` + `/` 形式的路径通配，注释提前结束，后续整段被当代码，报出的却是下一行的 `SyntaxError: Unexpected identifier '$'`，差点往模板字符串上排查 | 注释里不要写出「星号紧跟斜杠」的组合；写目录通配时拆开或改措辞。**看语法错误先回看前文是否提前闭合** |
-| P-16 | **miniflare 的 `scriptPath` 不编译 TypeScript** | 用它托管 `worker.ts` 直接报 `Unable to parse ...: Unexpected token` —— 只有 wrangler 才走 esbuild 转译 | 测试要调 TS 代码时，先用 esbuild 打包成 `.mjs` 再 import（见 `backend/tests/lib/build.mjs`） |
-| P-17 | **D1 的 `exec()` 按换行切分语句** | 多行 `CREATE TABLE` 被切成半句，报 `incomplete input`；而触发器体内自带分号，按 `;` 裸拆同样会切坏 | 自己写拆分器：跳过注释与字符串字面量，并把 `CREATE TRIGGER ... BEGIN ... END` 整体当一条语句（见 `backend/tests/lib/sql.mjs`） |
-| P-18 | **`node --test` 不会因为测试跑完就退出** | 留下活动句柄（未 dispose 的 workerd）时会挂住；管道缓冲让外面看不到任何输出，表现为「跑了 4 分钟没动静」，极易误判为卡死 | 确保 `dispose()`；探测类脚本显式 `process.exit()`。日志**重定向到文件再读**，不要依赖管道 `tail` |
-| P-19 | **同一个 D1 批次内，后面的语句看得见前面语句的效果** | B13 一个请求带两行时，第二行的「该商品是否已有库存」守卫命中了第一行刚建的数据，整批被自己拦下；**单行请求却完全正常**，极易误判成「约束写错了」 | 「本批之前是否已存在」类的守卫，必须**排除本次 requestId 写入的行**（按 `request_id <> ?` / 期初单号排除）。T05a 的两处守卫已按此修正并有对应用例 |
-| P-20 | **UPSERT 的 INSERT 分支先校验 CHECK，再判定唯一冲突** | 把桶间转移的算术写进 `INSERT ... ON CONFLICT DO UPDATE` 的 INSERT 分支时，`available → reserved`（delta 为负）被 `available_qty >= 0` 拒绝，报错指向一个完全合法的余额 | 改为**先 `INSERT OR IGNORE` 建零行，再 `UPDATE` 累加**。此时「对不存在的余额做扣减」仍会因 CHECK 失败整批回滚（正确行为），合法转移则可通过 |
-| P-21 | **`db.prepare(...).bind(...)` 本身不会执行语句** | 测试夹具漏写 `.run()`，INSERT 静默不生效；后续断言全拿到 `null`，症状看起来像「外键或约束坏了」，实际是语句从没跑过 | 构造完必须 `.run()` / `.first()` / `.all()`；夹具里统一封装成「执行并返回错误消息」的助手，不要让裸 PreparedStatement 在测试代码里传递 |
-| P-22 | **Windows 下动态 `import()` 一个绝对路径（`c:/…`）报 `ERR_UNSUPPORTED_ESM_URL_SCHEME`** | ESM loader 只接受 file / data / node 三种 scheme；POSIX 习惯的裸绝对路径在 Windows 上全是非法 URL | 一律 `pathToFileURL(p).href`（或拼 `file://` + 正斜杠）再传给 import；T03b 的跨端门禁脚本 `check-client-parity.mjs` 有现成写法 |
-
----
-
-## 5 · 环境与凭据现状（不含密钥值）
-
-| 项 | 现状 |
+| 编号 | 剩余问题与下一处理 |
 |---|---|
-| Git | 仓库 `C:\Users\wuerl\Documents\工作同步\pc-quote`，分支 `main`，基线 `e5ca594`（151 文件），仓库级身份 `wongkd` / `563838884@qq.com` |
-| Worker | `pc-backend` —— **生产与测试共用，部署即同时影响 `pc.huangqidong.cn`** |
-| D1 | `pc-db`，id `2218dbef-fb7d-4248-8430-07dcd4fd0a17` |
-| Pages | 生产 `pc-quote` → `pc.huangqidong.cn`；测试 `erp-quote` → `erp.huangqidong.cn` |
-| 回滚锚点 | Worker `7aa5d48b…`；Pages `erp-quote` 首部署 `e54941c1…` |
-| 凭据 | `DEEPSEEK_KEY` / `JWT_SECRET` 已转 `wrangler secret`；`PDD_*` 三项在 `backend/.dev.vars`（**未轮换，且远端未写入**） |
-| DNS 写入 | 必须用全局密钥 `cfk_…` + `X-Auth-Email` / `X-Auth-Key`；`cfut_…` 只有 Zone 读权限 |
-| 本机坑 | 连 `api.cloudflare.com` 偶发 IPv6 超时，Node `fetch` 需 `dns.setDefaultResultOrder('ipv4first')` |
+| Q-01 / Q-09 | 顾客身份、报价归属及撤销/过期/版本守卫尚需闭环；quote.ts 已有分享签发，不重复实现。按 MP 身份/报价卡接入 |
+| Q-02 | 真实支付未接；需服务端回调、金额核验、幂等和主动查询 |
+| Q-03 | [D05 已定](plans/2026-09-23-owner-decisions/README.md#d05配送阶梯)：≤10/20/30km 为0/30/50元，超出/异常人工报价；自动距离计费暂缓。新报价拒绝条款中隐藏的正配送费；配送距离证据、费用快照与改址补退差尚未形成完整履约链。人工明确报价行不代表自动计费已接 |
+| Q-05 | D06维持15%预付款、无自动没收/固定扣款；后端按最终应付金额向上取整计算15%，已核实净收款与同客户同销售单有效折抵都计入门槛，达标并确认后才尝试预留。草稿可先建折抵，未达标确认会被拒且不占货；取消前须先撤销有效折抵。[D07 R1.2](plans/2026-09-23-owner-decisions/d07-warranty.md)基础店保及3/6个月延保价格已采纳；报价版本和销售订单保存基础质保快照，但顾客暂不能读取订单快照。延保选购、收费、订单履约和退费流程首发暂缓，历史更优承诺不得缩短 |
+| Q-07 | 顾客 4Tab 按[MP00–MP64](plans/2026-09-22-customer-miniprogram-reset/README.md)推进；独立素材、图标与微信工具/真机未验收 |
+| G-20 | [D08 已定](plans/2026-09-23-owner-decisions/README.md#d08旧商品页与新库存页的职责边界)：商品目录二级入口、库存管实物；导航和通用编辑防绕行待收敛，保留旧URL与历史数据 |
+| G-21 / D-D | 网页客户台账入口、本地异常态与重试覆盖已验；全量前端 188 通过、16 跳过，构建通过。隔离预览 D1 只读确认到 0028，但远端仍引用旧前端包；登录后异常分支待验，发布当前工作区需明确授权，见[本轮记录](verification/2026-09-25-exception-states/README.md) |
+| D-E / R02-UI | 今天页已接 `/api/v2/workbench`；本地真实 Worker HTTP、前端响应/失败重试/主动作跳转回归通过。`demoData.ts` 仅保留为契约测试夹具，工作台运行时图片映射已移除；设计归档使用的图片资源保留。仍欠浏览器故障注入、隔离预览与生产验收，见[回执](verification/2026-09-25-workbench-live-api/README.md) |
+| RC-UI-01 | 2026-09-25 发布候选整体验收仍**不可放行**。员工邀请/接受/单独登录与逐域 HTTP 权限见[员工权限复验](verification/2026-09-25-staff-permissions/README.md)。同一本地 Worker/D1 的浏览器续验已补销售到交付、售后完整链、回收验机到折抵、客户新增/编辑/刷新回读及实际单据失败恢复，见[续验记录](verification/2026-09-25-web-browser-acceptance/README.md)。员工浏览器页面权限显示/隐藏和[原验收矩阵](verification/2026-09-25-release-candidate-acceptance/README.md)其余缺项仍待验；远端/生产未验。 |
+| B16-UI / F3-UI | 本地浏览器主链已验；本轮本地 HTTP/页面回归补验盘点与采购权限、并发幂等、盘点原快照重试、采购未知操作的查询/终态恢复，以及多笔付款冲销后净额归零再取消。完整浏览器故障注入及远端/生产仍待验收。B19 见[FE-A–C](verification/2026-09-24-FE-A-C/README.md) |
+| B30-UI | 本地浏览器已验整备与上架主链；本轮补验付款流水/凭据录入与受权限保护的读回、无效付款引用拒绝、幂等与并发累计。这里只链接既有同店支出流水，不自动生成付款；完整浏览器故障注入及远端/生产仍待验，见[FE-A–C](verification/2026-09-24-FE-A-C/README.md) |
+| B36 | **首发范围：报价实体的 HTML 白名单快照**（本地 Attachment、版本追溯、同店权限下载已实现）。PDF/图片和其他实体模板暂缓；首发若要扩展，先逐实体冻结顾客字段白名单，再单独实现并验收。 |
+| B39 / B40 | **首发暂缓，动作保持 reserved。** [D01/D02 规则已定](plans/2026-09-23-owner-decisions/README.md#d01--d02b39-报损b40-改价)，无需重复拍板；后续按[专项方案](plans/2026-09-22-B39-B40-promotion/README.md)实现及验收。B16 向下盘点批准、v2 与旧版通用商品主数据改售价现已拒绝，不能借 B16/B30/通用编辑替代报损或改价 |
+| D03 实际采购退款 | B34 仅纠正误录，已有净付款归零后取消的测试不等于真实退款已接通；[D03](plans/2026-09-23-owner-decisions/README.md#d03已付款采购如何冲销后取消)要求独立真实退款与凭据。部分退款、供应商留存贷项及差额核销暂缓，不能反冲凑零 |
+| G-26 | 到货成本覆盖采购约定价时缺变更原因审计 |
+| G-27 | [D04 已定](plans/2026-09-23-owner-decisions/README.md#d04回收报价后能否重新议价)，老板撤回/双方取消后新版本；动作首发暂缓。“归还重开”仅用于实际交还并结清，不允许账面假归还 |
+| G-22 | 商品/SN/设置/占位四类页面无独立稿，现按 Core V2 推导；等新稿，不擅自重新设计 |
+| FE-A/B（F1-UI / B19） | 本地浏览器已验接修/回收上传与隔离件放行；本轮补附件权限、并发完成、未知响应重试，以及 B19 无附件退役的页面/API 回归。退役浏览器实操、网络故障注入和预览 R2 持久读写仍待验收，后者另见 T-13 |
 
----
+## 契约与工程
 
-## 6 · 未运行的验证（别当成通过）
-
-| 项 | 为什么没跑 |
+| 编号 | 剩余问题与处理时点 |
 |---|---|
-| 浏览器视觉验收（U01 尺寸 / U02 缩放 / U05 键盘 / U06 首屏主动作） | 本机无 Playwright 等浏览器自动化；本地登录会触达生产后端，T00 已声明避免接触生产 |
-| 颜色对比度实测（`danger` 是 02 §1 新增语义色） | 需要浏览器环境 |
-| 断网 / 写超时 / 登录过期 / 冲突 / 无权限等界面状态（02 §7） | 无服务端，骨架只实现了「筛选无结果」与「图片失败」两种 |
-| **微信开发者工具编译**（T02b 的「小程序必须编译出原生页面」） | ✅ **T02b-rev2 已跑通**：`cli.js preview` 实际编译通过、AppID 正确识别、无编译错误，并首次拿到体积（总 77.4KB / 主包 68.5KB / 分包 9.0KB）。**但 `preview` 不产出截图，渲染结论仍未验**；`preview` 会生成预览码（约 25 分钟失效），这是本机唯一能拿到真机观感的通道 |
-| 小程序真机 / iOS / Android | AppID 已配置（现由本项目单独使用）；**模拟器实拍已确认今天页渲染正常**（T02b §14）；**真机条件仍缺** —— 02 §188 要求的 iOS / Android 实机截图未提供 |
-| 小程序视觉验收（320 / 375 / 390 / 430、字体放大、返回恢复的滚动位置） | 需开发者工具或真机。今天页已在模拟器实拍过一次（T02b §14），**R-14 修复后的形态尚未实拍**（T02b-rev2 §7）；详情页仍从未在渲染环境里看过 |
-| ~~后端集成、并发、幂等~~ | ✅ **T04 已重建**：`npm --prefix backend test` = 真实 workerd + 真实 D1，覆盖中途失败回滚、0 行断言、幂等复用/冲突、并发争用、结果恢复。**T05a 后共 58 用例**（T04 原有 21 + 库存 37）。**但「并发」是同一实例内两条请求同时在途**，跨实例 / 跨机房竞争仍未测 |
-| 库存的浏览器 / 真机验收（库存列表、逐件视图、搜索） | **T05b 未开始**，界面尚未实现，无可验收对象 |
-| T05a 的存量回填路径（`hardware` 的 `tracking_mode` / `entity_id` 回填） | 本地测试库在 0007 执行时 `hardware` 为空，**没有可回填的行**，该路径只在真实存量库上生效，未被测试覆盖 |
-| 生产 D1 的迁移状态（含 0006） | 0004 / 0005 是否应用本就未核实；0006 **确认未应用**。在 T20 与明确授权前不得 apply |
+| D-A / D-B / D-H / D-J | 金额汇总、主动作、动作结果、错误行为与版本治理，在顾客契约卡评估 |
+| D-C | 客户/库存已有权限映射；剩余六导航与各域完整映射随导航收敛 |
+| D-G | 顾客订单详情的可信阶段读模型待核实，不从页面卡点推断进度 |
+| D-I | Product.specs 的数组/字符串协议冲突，当前实现 string；修协议时明确 |
+| G-01～G-10 | [D09 经营例外已定](plans/2026-09-23-owner-decisions/README.md#d09状态机契约口径)，逐域契约/守卫待收敛；未知结果不是回滚，已付款预留到期复核；Attachment 已由 F1 关闭 |
+| G-11 / G-13 / G-14 / G-15 | 供应商页归属、排序/逾期样本、金额宽度规格按对应页面处理 |
+| G-16 / G-17 / G-18 | [D10 已定](plans/2026-09-23-owner-decisions/README.md#d10期初成本与流水)，[生产发布回执](verification/2026-09-26-d10-production-release/README.md)：0029 客户来源与 0030 D10 已应用，Worker 已 100% 上线，正式模式已启用；生产期初窗口仍未开启，也没有录入真实库存。若要开始建账，先取得审核后的门店盘点表和店主选定的 1–7 天期限。未知成本销售例外、估值毛利单列报表、关窗后追加调整尚未实现，保持为独立事项；取得日未知则库龄未知 |
+| G-19 | 员工绑定入口限流，数据层计数不等于完整防护 |
+| G-Q01-CUSTOMER-DEVICE | 报价客户外键与选择已实现；quote_lines.customer_device_ref 的类型/外键和维修归属仍需核对 |
+| T-08 | 后端入口及大领域文件仍长；按[代码地图](engineering/CODE-MAP.md)在触及业务时逐步拆分，不能机械改入口行号 |
+| T-10 | 历史应付金额分支需要专门用例验证 |
+| T-12 | B03 effects 中 Reservation 表示意向，实际占用在 B05；如改契约语义先明确决定 |
+| LINT | 本轮实测从 40 errors / 5 warnings 降至 9 / 3；剩余 effect/依赖/导出问题见[入口治理](verification/2026-09-25-erp-entry-cleanup/README.md)。217 测试与 build 通过不等于 lint 全绿 |
 
----
+## 发布前核实
 
-## 7 · 已解决（留档，避免重复讨论）
+| 编号 | 未验证范围 |
+|---|---|
+| T-03 / T-05 / 平台条件 | 当前 Worker 保留 `JWT_SECRET`、`DEEPSEEK_KEY` 加密 secret；PDD 旧变量已从线上运行配置移除。此前 Dashboard 曾明文显示 PDD client secret，供应商侧旧密钥仍需管理员轮换。主体、AppID、商户和小程序接入条件仍按接入时事实核验，不记录密钥值 |
+| T-06 / T-07 | 生产 `pc-db` 已应用 0029 与 0030，`d1_migrations` 为 `0000–0030` 共 31 条且无待迁移；外键检查为空，见[D10 / E04 生产回执](verification/2026-09-26-d10-production-release/README.md)。迁移前完整导出已在隔离本地 D1 恢复核验；Cloudflare 生产恢复和 Worker 代码回退仍未演练，见 V-03 |
+| T-13 | 隔离环境的 Wrangler R2 读写、合成 D1+R2 恢复与 SHA 已完成；生产 Dashboard 已确认 `BUCKET → pc-attachments`、`DB → pc-db`。应用附件 API 的 `storageKind=r2` / `storagePersistent=true`、授权下载、应用层内容校验与跨实例读取仍未验；生产当前附件计数为 0，浏览器停在登录页，不能做真实上传 canary。隔离 Worker/S3 清单不一致仍需复核，见[隔离演练](plans/2026-09-25-data-attachment-go-live/drill-20260925/README.md)及[生产续验](verification/2026-09-25-production-runtime-browser-followup/README.md) |
+| V-01 | 全部异常态、键盘、缩放与对比度未完整验收 |
+| V-02 | 专用环境的迁移、合成 D1+R2 一致点恢复、SHA 和外键核对已通过；跨实例并发与完整隔离 R2 清单待 Workers.dev 可访问后实测。生产 D1 已迁移，生产存量回填未做；完整生产备份恢复未验 |
+| V-03 | [生产续验](verification/2026-09-25-production-runtime-browser-followup/README.md)记录清理后的基线；最新[D10 / E04 生产回执](verification/2026-09-26-d10-production-release/README.md)确认 Worker `a9b78a73-6b17-4de5-ba82-c1dbc4858187` 为 100% 流量，ERP 首页资源匹配，D1/R2 绑定正常，迁移 `0000–0030`、外键检查通过。生产登录后的客户来源/库存正式入口、员工页面权限、应用 R2 canary、Cloudflare 备份恢复与 Worker 代码回退仍未验；生产业务/RC 不放行 |
 
-| 编号 | 事项 | 结论 |
-|---|---|---|
-| R-01 | `Purchase` 是否需要存储状态 | **不需要**，在途 = 订购 − 到货 − 取消，是派生值（T01-rev1 更正 T01b 的误判） |
-| R-02 | `Receipt` 的 `receiptLines` / `unitCostCents` / `inspectionDisposition` 是否丢失 | **没丢**，在 `Receipt` 上；04 §2 把 `Purchase / Receipt` 写在一行，契约拆成两个对象 |
-| R-03 | 旧 `library` 表的作用 | 代码零 SQL 引用，实际读写 `hardware`；仅作权限码 / 路由名 |
-| R-04 | 旧 `quotes` 表 | `ORDER BY updated_at DESC LIMIT 1` 的**单行工作副本**，无版本序列 → T07 不能把旧行当 QuoteVersion |
-| R-05 | `cost/view` / `margin/view` 的语义 | **字段级权限**，只决定响应是否返回成本 / 毛利，不守卫动作 |
-| R-06 | 生成物能否共享成一个 TS 包 | 不能：网页 Vite 与小程序原生编译链不同；改为从 `contracts/v1` 单向生成到各端 |
-| R-07 | 优惠分摊的算法 | 必须整数运算：行分子 = `discountCents × grossCents`、分母 = `ΣgrossCents`、取整得商、取模得余数；浮点会在小数第 6 位才分出余数大小 |
-| R-08 | 演示标识怎么承载 | 由 ID 前缀 `DEMO-` 承载，不新增协议字段 |
-| R-09 | 生成物目标状态回写（原 T-01 / T-02） | **T02b 已回写**：两端 `targets.status` 均为 `done`，留 `revisions` 记录（T02b-rev1）。小程序 `miniprogramRoot` 取项目根，故 `miniprogram/contracts/generated` 与规划值一致，未改任何 `rootPath` |
-| R-10 | `manifest.json` 的 `targets` 是生成器内硬编码副本 | **T02b 已修**：改为从 `fixtures.json` 读取，保持单一来源 |
-| R-11 | 小程序端能否直接跑 TS 测试 | **可以**：Node 22 的类型擦除可直接加载 `.ts`，但**不解析无扩展名的相对导入**，故被测试引用的模块只能含 `import type`；`node --test <目录>` 在本机不工作，须写 `node --test "tests/*.test.mjs"` |
-| R-12 | 微信开发者工具的自动化与截屏 | **三条限制**（均与项目代码无关）：① `cli.js open` 对**已打开的项目**报 `TypeError: d.on is not a function`（`openOrCreateWindow` 缺陷），须先 `cli.js quit` 再 open；② 本版本 `cli.js auto` **没有 `--auto-port` 选项**，`miniprogram-automator` 的 `launch()` 因此连不上 → **自动化截图不可用**；③ 本机安全策略**封死** `Add-Type`、`[Reflection.Assembly]::LoadWithPartialName`、`New-Object -ComObject` 三种截屏途径。⇒ 要小程序截图，只能在工具界面手动截 |
-| R-13 | **小程序项目归属（已裁定）** | **`pc-quote/miniprogram` 是本项目唯一的小程序项目**（2026-09-17 用户选 A）。原同盘另一条线 `工作同步\装一下机小程序`（云开发 QuickStart 模板，58 文件 / 1.4MB，**内容已核实无任何业务代码**）按用户指示**已于 2026-09-17 23:15 移除**，完整保留在 `pc-quote/backups/装一下机小程序-已移除-20260917`（放该目录是因为 `backups/` 已被 gitignore）。**AppID `wx1b14bf01ef71718d` 现已归本项目单独使用**。另：在工具里「打开项目」必须选到 **`…\pc-quote\miniprogram` 这一层**；只选到 `…\pc-quote` 会报「在项目根目录未找到 app.json」 |
-| R-14 | **统计条金额溢出** | ✅ **T02b-rev2 已修**。根因不是字号选错，而是**格宽与内容不匹配**：四格等分时单格内容宽 ≈89.75px，而 `¥12,800.00` 是 10 字符 ≈117px（T02b §14 的记载写「`.metric-value` 用 `--mp-fs-amount` 48rpx」与代码不符 —— 排版修订已降到 40rpx，记载没跟上，rev2 已更正）。修法：金额格 `min-width: 260rpx`（02 §1 明文许可「金额位数超过样图时允许布局增长」）+ 数值按字符类别分档（40/36/32/28rpx，下限 28rpx、永不省略）。见 [2026-09-17-T02b-rev2](../verification/2026-09-17-T02b-rev2/README.md)。**修复后的渲染仍未实拍**（本机截不了屏），视觉确认待做；布局是否维持等分见 §1 的 D-F |
-| R-15 | **本地 D1 测试入口与一致性基础设施（原 T-04）** | ✅ **T04 已重建**（2026-09-17）。`backend/tests/` 用 miniflare 起**真实 workerd + 真实 D1**，按序应用全部迁移，被测 TS 经 esbuild 打包后直接调用；命令 `npm --prefix backend test`，**21 用例通过**。同时新增：`0006_consistency_core.sql`（operations / assertion_guards+触发器 / entity_version_log / operation_failures）、`backend/src/domains/operations.ts`（幂等执行器与断言守卫）、`backend/scripts/sync-error-codes.mjs`（契约错误码单向生成到后端，可 `--check`）。核心机制一句话：**约束即断言** —— 唯一约束管幂等与逐件预留、CHECK 管非负与不超额、守卫表管其余复合条件；**不依赖 `changes()`、不依赖 Worker 内存锁**。详见 [2026-09-17-T04](../verification/2026-09-17-T04/README.md) |
-| R-16 | **商品属性、逐件实物、数量余额、库存流水、期初与客户财产边界（T05a）** | ✅ **T05a 本地通过**（2026-09-18）。要点：①**Product 就地扩展 `hardware`**（`tracking_mode` / `requires_sn` / `specs` / `version` / `entity_id`），不建第二套主数据；`entity_id` 解决「batch 内取不到自增 ID」，`tracking_mode` 与旧列 `is_serialized` 双写防漂移。②**StockItem / StockBalance / InventoryMovement 新建表**：旧 `serial_numbers` 只有一个 status 轴、旧 `sn_events.sn_id` 是 NOT NULL，装不下契约字段（`legacy-mapping` 本就把前者标为 `split`）。③**余额只由 `inventory_movements` 的触发器写入**，且 `stock_balances` 只有三桶列 —— 在途与客户保管**结构上没有位置**，因此不可能被混算。④**期初必须带人工实盘凭据** `approvedCountRef`，且代码中不存在从旧 SN 表计数搬运的路径（卡面通过标准）。⑤客户财产边界写成两条 CHECK。命令 `npm --prefix backend test` 共 **58 用例**（含本卡 37）。详见 [2026-09-18-T05a](../verification/2026-09-18-T05a/README.md)。**注意：HTTP 路由未接（等 T03 鉴权），0007 未应用到任何远端。** |
+已关闭不再列待办：Q-04/Q-08/C-01/G-23/G-24/G-25（后端）/G-28（后端）/E03-视觉/错误诊断 T-11。
+依据分别见[验证索引](verification/README.md)及[报价与数量预留补洞](verification/2026-09-21-E06E07-gapfix/README.md)。
+旧“平台条件 T-11”与“错误诊断 T-11”重号，今后前者统一写“平台条件”，避免误判已关闭。

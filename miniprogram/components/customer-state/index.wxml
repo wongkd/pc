@@ -1,0 +1,6 @@
+<view class="customer-state" role="status" aria-live="polite">
+  <view wx:if="{{status === 'loading'}}" class="customer-state__spinner" aria-hidden="true"></view>
+  <text class="customer-state__title">{{view.title}}</text>
+  <text wx:if="{{view.description}}" class="customer-state__description">{{view.description}}</text>
+  <button wx:if="{{showRetry && view.retryable}}" class="customer-state__retry" disabled="{{retrying}}" loading="{{retrying}}" bindtap="onRetryTap">{{retrying ? '正在重试…' : retryText}}</button>
+</view>

@@ -23,6 +23,10 @@
       "values": ["new", "used"],
       "desc": "成色。used 必须有内部唯一编号；无厂商 SN 的二手同样有内部编号"
     },
+    "ConditionGrade": {
+      "values": ["brand_new", "like_new", "excellent", "good", "fair"],
+      "desc": "逐件成色等级（B30 上架门槛七项之一，B30 契约修订补入）：全新 / 95新 / 9成新 / 8成新 / 7成新及以下。与 StockCondition（new/used 粗分）并存 —— 后者是入库分类，本枚举是会写进顾客报价单的细分成色，两者不是同一件事"
+    },
     "OwnershipType": {
       "values": ["store", "customer", "vendor"],
       "desc": "所有权。客户暂存、客供、送修均不属于可卖库存；外送自有维修件仍为 store，位置为 external"
@@ -36,8 +40,8 @@
       "desc": "自有在库量 = available + reserved + quarantine，三类互斥；in_transit 不算在库；customer_custody 为他人财产另列；retired 含报废与退供后离店"
     },
     "QuoteStatus": {
-      "values": ["draft", "issued", "converted", "expired", "closed"],
-      "desc": "报价状态。发出后修改形成新版本，不覆盖原客户版本"
+      "values": ["draft", "issued", "confirmed", "converted", "expired", "closed"],
+      "desc": "报价状态。发出后修改形成新版本，不覆盖原客户版本。confirmed 表示顾客已确认该版本：确认 ≠ 付款、确认不锁库存（R12）；确认后本版本不可再改，要改必须出新版本重新发出并重新确认（R10）"
     },
     "SaleTradeState": {
       "values": ["draft", "confirmed", "cancelled", "closed"],
@@ -70,12 +74,13 @@
         "inspecting",
         "offered",
         "acquired",
+        "disassembled",
         "refurbishing",
         "ready_for_sale",
         "return_pending",
         "returned"
       ],
-      "desc": "回收单主状态。所有权仅在 acquired 且接收确认完成时转为门店，不能由「已付款」推断"
+      "desc": "回收单主状态。所有权仅在 acquired 且接收确认完成时转为门店，不能由「已付款」推断；disassembled 为拆件完成态（B44），拆出零件各走待检判定"
     },
     "ServiceState": {
       "values": [
@@ -94,6 +99,14 @@
     "WarrantyDecision": {
       "values": ["in_warranty", "out_of_warranty", "undetermined"],
       "desc": "维修质保判定的人工结论，不由系统自动判定；日期只提供线索"
+    },
+    "WarrantyTerm": {
+      "values": ["3", "6", "12", "24"],
+      "desc": "本店对整备上架件承诺的质保月数（B30 上架门槛七项之一，B30 契约修订补入）。值是月数的字符串形式，便于与「质保至 YYYY-MM-DD」互算；不由系统自动判定，与 WarrantyDecision（维修时的质保判定）不是同一件事"
+    },
+    "ConfirmationMethod": {
+      "values": ["phone", "wechat", "in_person", "other"],
+      "desc": "客户确认维修方案的方式。记录的是真实联系渠道，不由系统判定（E10 契约修订补入，B22 引用）"
     },
     "InspectionResult": {
       "values": ["pass", "fail"],
@@ -131,13 +144,17 @@
       "values": ["settled_in_full", "credit_approved"],
       "desc": "交付时的资金处置：结清，或老板明确批准欠款交付。缺陷单不能用第三个值绕过"
     },
+    "CreditState": {
+      "values": ["pending", "approved"],
+      "desc": "退货贷项的审批状态。退货登记后为 pending（待老板审批），经 B43 批准转为 approved 才计入应退；B18 现金退款只能对 approved 贷项执行"
+    },
     "PaymentPurpose": {
       "values": ["sale_order", "service_order", "purchase", "recovery"],
       "desc": "付款 / 收款项对应的业务来源类型"
     },
     "AttachmentPurpose": {
-      "values": ["product_reference", "service_intake", "recovery_evidence", "delivery_evidence"],
-      "desc": "照片用途：型号示意、接修证据、回收证据、交付证据"
+      "values": ["product_reference", "service_intake", "recovery_evidence", "delivery_evidence", "document_export"],
+      "desc": "附件用途：型号示意、接修证据、回收证据、交付证据、生成的单据文件"
     },
     "AttachmentUploadState": {
       "values": ["pending", "uploaded", "attached", "failed", "orphaned"],
@@ -184,6 +201,7 @@
         "purchase_receipt",
         "quick_purchase",
         "opening_balance",
+        "recovery_acquisition",
         "reservation",
         "unreservation",
         "assembly_pick",
@@ -193,9 +211,11 @@
         "scrap",
         "supplier_return",
         "count_adjustment",
-        "conversion"
+        "conversion",
+        "inspection_quarantine",
+        "inspection_release"
       ],
-      "desc": "每个库存副作用的唯一来源标识。conversion 对应整机拆件，首版默认关闭；未列出的来源必须先补契约再实现"
+      "desc": "每个库存副作用的唯一来源标识。conversion 对应整机拆件（B44，2026-09-21 E10 起启用）；inspection_release 对应待检件判定通过放回可卖（B19）；未列出的来源必须先补契约再实现"
     },
     "ServicePartDisposition": {
       "values": ["return_to_customer", "supplier_return", "scrapped", "acquired"],
@@ -212,10 +232,23 @@
         "B13", "B14", "B15", "B16", "B17", "B18",
         "B19", "B20", "B21", "B22", "B23", "B24",
         "B25", "B26", "B27", "B28", "B29", "B30",
-        "B31", "B32", "B33", "B34", "B35", "B36"
+        "B31", "B32", "B33", "B34", "B35", "B36",
+        "B37", "B38", "B41", "B42", "B43", "B44"
       ],
-      "desc": "动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现",
-      "pending": ["B37+ 补充动作编号"]
+      "desc": "动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B39（报损）、B40（价格调整）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit",
+      "pending": ["B39 / B40 补充动作编号"]
+    },
+    "CustomerClaimStatus": {
+      "values": ["unclaimed", "claimed", "rejected"],
+      "desc": "顾客微信身份的认领状态：unclaimed=已建立微信身份但未关联门店客户档案；claimed=已关联；rejected=认领被驳回（验证手机号不匹配或店员否决）。"
+    },
+    "CustomerClaimMethod": {
+      "values": ["wechat-phone", "clerk-confirm"],
+      "desc": "旧客户档案的认领方式。wechat-phone=以微信 getPhoneNumber 返回的已验证手机号匹配；clerk-confirm=店员在 ERP 人工确认关联。刻意不含「顾客自填手机号」—— 自填号码可冒领他人档案。"
+    },
+    "CustomerSourceChannel": {
+      "values": ["walk_in", "phone", "wechat", "referral", "mini_program", "other"],
+      "desc": "员工记录客户首次来源渠道；为空表示未记录，不影响建档、报价或交易。"
     }
   },
 
@@ -225,7 +258,9 @@
       "transitions": [
         { "from": "draft", "to": "issued", "action": "B02", "guard": "完整配置与条款" },
         { "from": "issued", "to": "issued", "action": "B02", "guard": "发出后修改形成新版本，不覆盖原客户版本" },
+        { "from": "issued", "to": "confirmed", "action": "B42", "guard": "顾客确认当前已发出且未过期的版本；确认后本版本不可再改，要改必须出新版本重新发出并重新确认" },
         { "from": "issued", "to": "converted", "action": "B03", "guard": "成交时固化 quoteVersion 到销售单" },
+        { "from": "confirmed", "to": "converted", "action": "B03", "guard": "已确认版本成交同样固化 quoteVersion 到销售单（2026-09-21 E06 补：E05b 新增 confirmed 态时未同步这条出口，而「顾客确认后成交」是主路径）" },
         { "from": "issued", "to": "expired", "action": null, "guard": "超过 validUntil" },
         { "from": "draft", "to": "closed", "action": null, "guard": "未在本方案中明确，实现前须补" },
         { "from": "issued", "to": "closed", "action": null, "guard": "未在本方案中明确，实现前须补" }
@@ -261,7 +296,8 @@
         { "from": "inspecting", "to": "return_pending", "action": "B29", "guard": "谈不成，准备归还" },
         { "from": "offered", "to": "acquired", "action": "B28", "guard": "最终价、验机结论、双方确认与接收事实齐备；原子取得所有权" },
         { "from": "offered", "to": "return_pending", "action": "B29", "guard": "客户放弃出售" },
-        { "from": "acquired", "to": "refurbishing", "action": "B30", "guard": "需要整备" },
+        { "from": "acquired", "to": "disassembled", "action": "B44", "guard": "整机拆件入库：源件退役、产出件新建待检、损耗单列报废（不整机转卖）" },
+        { "from": "acquired", "to": "refurbishing", "action": "B30", "guard": "需要整备（仅对拆出的单件）" },
         { "from": "acquired", "to": "ready_for_sale", "action": "B30", "guard": "无需整备时直接补齐上架门槛" },
         { "from": "refurbishing", "to": "ready_for_sale", "action": "B30", "guard": "逐件编号、成色、检测、成本、披露、标价、质保齐备" },
         { "from": "return_pending", "to": "returned", "action": "B29", "guard": "归还附件与实物确认，不产生采购成本与可卖库存" }
@@ -281,6 +317,16 @@
         { "from": "ready_return", "to": "returned", "action": "B25", "guard": "记录实际归还人与时间" },
         { "from": "returned", "to": "closed", "action": null, "guard": "未在本方案中明确，实现前须补" }
       ]
+    },
+    "AttachmentUploadState": {
+      "initial": "pending",
+      "transitions": [
+        { "from": "pending", "to": "uploaded", "action": "B35", "guard": "字节已写入存储，服务端实算 sha256 与真实 mime 校验通过" },
+        { "from": "pending", "to": "failed", "action": "B35", "guard": "上传中断或校验不通过（声明与实际不符）；保留失败原因，不占有效存储" },
+        { "from": "uploaded", "to": "attached", "action": "B35", "guard": "完成确认时归属实体校验通过且属于同店，业务记录才可引用" },
+        { "from": "pending", "to": "orphaned", "action": null, "guard": "超过保留期仍未完成上传，等待清理" },
+        { "from": "uploaded", "to": "orphaned", "action": null, "guard": "超过保留期仍未关联任何业务实体，等待清理" }
+      ]
     }
   },
 
@@ -297,7 +343,8 @@
       { "from": "reserved", "to": "available", "reason": "未交付取消（B11）；不增加在库总量" },
       { "from": "reserved", "to": "quarantine", "reason": "待检预留件故障：撤销占用后转待处理，原订单重新形成缺口；不得既在已订又在待处理" },
       { "from": "reserved", "to": "sold", "reason": "交付销售出库（B10）；已订与在库同时减少" },
-      { "from": "customer_custody", "to": "available", "reason": "客户放弃取回且完成合法收购（B28）；必须先取得所有权" }
+      { "from": "available", "to": "sold", "reason": "售后耗用自有备件（B23 换件）；独立于销售交付，记维修成本，来源 service_part_consumption" },
+      { "from": "customer_custody", "to": "quarantine", "reason": "客户放弃取回且完成合法收购（B28）；先取得所有权，进待检不自动可卖，后续拆件（B44）或待检判定（B19）处置" }
     ]
   },
 
@@ -326,6 +373,24 @@
       "name": "TradeInState",
       "forObject": "置换单",
       "reason": "04 §2 未列出置换单对象，仅列出 Offset；B31 实现前须补对象与状态"
+    }
+  ],
+  "revisions": [
+    {
+      "rev": "BE02-rev1",
+      "date": "2026-09-25",
+      "summary": "AttachmentPurpose 新增 document_export，用于可追溯的服务端生成单据附件。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "只新增附件用途，不改变既有枚举取值。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    },
+    {
+      "rev": "MP17-rev1",
+      "date": "2026-09-23",
+      "summary": "新增 CustomerClaimStatus（unclaimed/claimed/rejected）与 CustomerClaimMethod（wechat-phone/clerk-confirm）：后者刻意不含「顾客自填手机号」，因为自填号码可冒领他人的客户档案。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "只新增两个枚举，不动任何既有枚举取值。按 conventions.compatibility.versioning 的意图不提升版本；是否提版由项目负责人裁定（原方案未定义顾客主体，本文件首次给出其取值）。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
     }
   ]
 }

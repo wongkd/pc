@@ -1,0 +1,18 @@
+{
+  "id": "E07",
+  "status": "verified",
+  "summary": "采购与到货：已实现并通过后端与浏览器验收（卡内 2026-09-21）。B14 缺件采购、B15 分批到货、B38 退供（本轮由 supplementary 提升为正式动作，enums 补 ActionCode）、R08 列表/详情走 /api/v2/inventory/purchases|receipts|supplier-returns，界面入口 /inventory/purchases（旧深链 /purchases 同页）；迁移 0014 建 5 张表。口径：订购 5 件到货 3 件则在途剩 2；拒收计入已处置、不进可用；逐件到货必须给编号；到货行未填成本则继承采购行约定成本；供应商只存名称快照 + 可空 supplier_ref，不建 suppliers 表（契约无 Supplier 对象）。本轮 2026-09-21 12:19 只读复核（未改业务代码）：后端 208 通过 / 0 失败；契约 validate-contracts 3309 通过 / 0 失败；generate-dto --check、sync-contracts --check、check-client-parity、check-error-codes、check-doc-links 全部退出码 0；前端 13 文件 152 通过。尚缺：卡内浏览器验收 14 项本轮未重跑；B37 取消采购未实现；B33 应付账未接（属账本卡）；未部署、未应用任何远端迁移；分批到货的跨实例并发未压测；前端 lint 39 项既有失败本轮新增 0。",
+  "next": "等栋哥拍板下一刀，本轮不自行开工。E08 装机、检测与交付（B04/B06/B07/B10）依赖 E06+E07 已满足，E07 到货建出的 stock_items 已带 acquisition_ref 与成本，正好是交付要用的输入；但 E08 至今无源码/路由/迁移，仍按未开工处理。备选：E09 取消退款与销售账本。",
+  "updatedAt": "2026-09-21T12:20:29+08:00",
+  "evidence": [
+    "backend/src/domains/purchase.ts",
+    "backend/src/routes/purchase-v2.ts",
+    "backend/tests/e07-purchase-http.test.mjs",
+    "backend/migrations/0014_purchase_core.sql",
+    "frontend/src/features/workbench/WorkbenchPurchasePage.tsx",
+    "frontend/src/features/workbench/purchase-api.ts",
+    "docs/verification/2026-09-21-E07/README.md",
+    "docs/verification/2026-09-21-E06E07-gapfix/README.md",
+    "docs/verification/2026-09-21-receipts/README.md"
+  ]
+}

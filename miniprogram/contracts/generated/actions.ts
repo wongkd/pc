@@ -29,6 +29,7 @@ export const ACTION_OPERATIONS: Record<ActionCode, readonly ActionOperation[]> =
   "B16": [{ method: "POST", path: "/inventory/counts", permission: "inventory/count" }, { method: "POST", path: "/inventory/counts/:id/approve", permission: "inventory/count-approve" }],
   "B17": [{ method: "POST", path: "/sales/returns", permission: "sales/return-create" }],
   "B18": [{ method: "POST", path: "/sales/orders/:id/refunds", permission: "sales/refund" }],
+  "B43": [{ method: "POST", path: "/sales/returns/:id/approve-credit", permission: "sales/refund" }],
   "B19": [{ method: "POST", path: "/inventory/items/:id/inspection", permission: "inventory/inspection" }],
   "B20": [{ method: "POST", path: "/service/orders", permission: "service/edit" }],
   "B21": [{ method: "POST", path: "/service/orders/:id/diagnosis", permission: "service/edit" }, { method: "POST", path: "/service/orders/:id/proposal", permission: "service/edit" }],
@@ -41,12 +42,17 @@ export const ACTION_OPERATIONS: Record<ActionCode, readonly ActionOperation[]> =
   "B28": [{ method: "POST", path: "/recovery/orders/:id/acquire", permission: "recovery/acquire" }],
   "B29": [{ method: "POST", path: "/recovery/orders/:id/return", permission: "recovery/edit" }],
   "B30": [{ method: "POST", path: "/inventory/items/:id/refurbishments", permission: "inventory/refurbish" }, { method: "POST", path: "/inventory/items/:id/make-available", permission: "inventory/refurbish" }],
+  "B44": [{ method: "POST", path: "/recovery/orders/:id/teardown", permission: "recovery/edit" }],
   "B31": [{ method: "POST", path: "/trade-ins", permission: "tradein/create" }, { method: "POST", path: "/trade-ins/:id/apply-offset", permission: "tradein/offset" }],
   "B32": [{ method: "POST", path: "/trade-ins/:id/reverse-offset", permission: "tradein/reverse" }],
   "B33": [{ method: "POST", path: "/finance/payments", permission: "finance/payment" }],
   "B34": [{ method: "POST", path: "/finance/entries/:id/reverse", permission: "finance/reverse" }],
-  "B35": [{ method: "POST", path: "/attachments/upload-intents", permission: "attachment/upload" }, { method: "POST", path: "/attachments/upload-intents/:id/complete", permission: "attachment/upload" }],
-  "B36": [{ method: "POST", path: "/documents", permission: "document/export" }],
+  "B35": [{ method: "POST", path: "/attachments/upload-intents", permission: "attachment/upload" }, { method: "PUT", path: "/attachments/upload-intents/:id/blob", permission: "attachment/upload" }, { method: "POST", path: "/attachments/upload-intents/:id/complete", permission: "attachment/upload" }],
+  "B36": [{ method: "POST", path: "/documents", permission: "document/export" }, { method: "GET", path: "/documents/:attachmentId", permission: "document/export" }],
+  "B42": [{ method: "POST", path: "/sales/quotes/:id/confirm", permission: "sales/quote-edit" }],
+  "B37": [{ method: "POST", path: "/inventory/purchases/:id/cancel", permission: "inventory/purchase-cancel" }],
+  "B38": [{ method: "POST", path: "/inventory/supplier-returns", permission: "inventory/supplier-return" }],
+  "B41": [{ method: "POST", path: "/service/orders/:id/payments", permission: "service/charge" }],
 }
 
 export const ACTION_NAMES: Record<ActionCode, string> = {
@@ -68,6 +74,7 @@ export const ACTION_NAMES: Record<ActionCode, string> = {
   "B16": "盘点录入与差异批准",
   "B17": "登记退货",
   "B18": "登记现金退款",
+  "B43": "批准退货贷项",
   "B19": "待检件判定",
   "B20": "接修登记",
   "B21": "录入检测与维修方案",
@@ -80,33 +87,38 @@ export const ACTION_NAMES: Record<ActionCode, string> = {
   "B28": "取得所有权",
   "B29": "归还客户",
   "B30": "整备与上架",
+  "B44": "拆件入库",
   "B31": "建立置换关联与应用折抵",
   "B32": "撤销折抵",
   "B33": "登记对外付款",
   "B34": "反冲账务分录",
   "B35": "附件上传",
   "B36": "生成单据文件",
+  "B42": "记录顾客确认",
+  "B37": "取消采购",
+  "B38": "退供",
+  "B41": "售后收款",
 }
 
 // ── 页面 → 该页可发起的动作（02 §5；每页至少一个，由契约校验脚本强制）──
 export const PAGE_ACTIONS: Record<string, readonly ActionCode[]> = {
   "入库": ["B15"],
   "办理交付": ["B08","B09","B10"],
-  "回收": ["B26","B27","B28","B29","B35"],
-  "库存": ["B12","B13","B19","B30"],
+  "回收": ["B26","B27","B28","B29","B44","B35"],
+  "库存": ["B12","B13","B19","B30","B38"],
   "换件 / 返厂": ["B23","B24"],
   "接修": ["B20","B35"],
   "整备 / 上架": ["B30"],
-  "新建装机报价": ["B01","B02"],
+  "新建装机报价": ["B01","B02","B42"],
   "新建零售": ["B04"],
   "盘点": ["B16"],
   "确认成交": ["B03","B05","B11"],
-  "维修方案": ["B21","B22","B25"],
-  "缺件处理": ["B05","B14","B15"],
+  "维修方案": ["B21","B22","B25","B41"],
+  "缺件处理": ["B05","B14","B15","B37","B38"],
   "置换": ["B31","B32"],
   "装机检测": ["B06","B07"],
-  "账本": ["B08","B33","B34","B36"],
-  "退货 / 退款": ["B17","B18"],
+  "账本": ["B08","B33","B34","B36","B41"],
+  "退货 / 退款": ["B17","B18","B43"],
   "选件": ["B01","B02"],
 }
 
@@ -237,12 +249,9 @@ export interface SupplementaryAction {
   owner: string | null
 }
 export const SUPPLEMENTARY_ACTIONS: readonly SupplementaryAction[] = [
-  { code: "B37", name: "取消采购", status: "reserved", path: null, permission: "inventory/purchase-cancel", owner: "T06a" },
-  { code: "B38", name: "退供", status: "reserved", path: null, permission: "inventory/supplier-return", owner: "T06a" },
   { code: "B39", name: "报损", status: "reserved", path: null, permission: "inventory/damage", owner: "T06c" },
   { code: "B40", name: "普通价格调整", status: "reserved", path: null, permission: null, owner: null },
-  { code: "B41", name: "售后收款", status: "specified", path: "/service/orders/:id/payments", permission: "service/charge", owner: "T12c" },
 ]
 
 // ── 动作编号全集（含补充动作）──
-export const ALL_ACTION_CODES: readonly string[] = ["B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B19","B20","B21","B22","B23","B24","B25","B26","B27","B28","B29","B30","B31","B32","B33","B34","B35","B36","B37","B38","B39","B40","B41"]
+export const ALL_ACTION_CODES: readonly string[] = ["B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B43","B19","B20","B21","B22","B23","B24","B25","B26","B27","B28","B29","B30","B44","B31","B32","B33","B34","B35","B36","B42","B37","B38","B41","B39","B40"]

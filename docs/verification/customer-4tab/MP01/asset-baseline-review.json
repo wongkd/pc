@@ -1,0 +1,28 @@
+{
+  "id": "MP01",
+  "reviewedAt": "2026-09-23T19:54:14+08:00",
+  "reference": {
+    "layout": "docs/design/2026-09-22-customer-ip/four-tab-board-clean.png",
+    "layoutSha256": "ca40531ab05b063569731af21bc38717bfd8df821a74d508992dc48fc50ae81c",
+    "typography": "docs/design/2026-09-22-customer-ip/four-tab-board-font-only.png",
+    "typographySha256": "11b1e8946f481b23a09b3e881d7c800b0f9a72c60de55f94793f24a5634d6fa3"
+  },
+  "manifest": {
+    "path": "docs/design/2026-09-22-customer-ip/assets-manifest.json",
+    "assetEntries": 19,
+    "ready": 19,
+    "missing": 0,
+    "previewOnly": 0,
+    "runtimeAssetCount": 46,
+    "runtimeAssetBytes": 922871
+  },
+  "visualReview": {
+    "viewed": [
+      "four-tab-board-clean.png",
+      "four-tab-board-font-only.png",
+      "customer-assets-preview.png"
+    ],
+    "result": "照片、字标、猫 IP、头像和黑灰双态图标与清爽版布局/细字体基线一致；透明素材在预览中可见透明边缘。"
+  },
+  "boundary": "资源尚未接入页面；没有微信开发者工具或 iOS/Android 真机截图，不能视为四屏视觉验收。"
+}

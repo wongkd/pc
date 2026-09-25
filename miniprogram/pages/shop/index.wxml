@@ -1,0 +1,48 @@
+<view class="customer-page shop-page">
+  <customer-nav title="商城" />
+  <scroll-view class="customer-scroll shop-scroll" scroll-y>
+    <view class="shop-categories">
+      <view wx:for="{{categories}}" wx:key="key" class="shop-category {{activeCategory === item.key ? 'shop-category--active' : ''}}" data-key="{{item.key}}" bindtap="onCategoryTap">
+        <text>{{item.label}}</text>
+        <view wx:if="{{activeCategory === item.key}}" class="shop-category__line"></view>
+      </view>
+    </view>
+
+    <view class="shop-feature">
+      <customer-image src="{{heroImage}}" alt-text="白色主机商城主推图" aspect-ratio="1.144" focus-x="69" focus-y="50" />
+      <view class="shop-feature-copy">
+        <text class="shop-feature-kicker">新品主推</text>
+        <text class="shop-feature-title">{{featuredTitle}}</text>
+        <text class="shop-feature-subtitle">高颜值 · 强散热 · 更安静</text>
+        <button class="shop-feature-button" size="mini" bindtap="onChooseConfig"><text class="shop-feature-button-face">选配置 ›</text></button>
+      </view>
+      <image class="shop-feature-cat" src="/assets/customer/cat-silver-standing.png" mode="aspectFit" aria-label="银猫" />
+    </view>
+
+    <view wx:if="{{activeCategory === '我的报价'}}" class="shop-quote-state">
+      <customer-state status="empty" title="登录后查看本人报价" description="顾客登录与报价服务尚未接入；这里不会显示样本或他人资料。" />
+    </view>
+
+    <view wx:else class="shop-products-section">
+      <view class="shop-section-heading">
+        <text class="shop-section-title">热门推荐</text>
+        <text class="shop-section-note">虚构样本</text>
+      </view>
+      <view class="shop-product-grid">
+        <view wx:for="{{items}}" wx:key="id" class="shop-product" data-id="{{item.id}}" bindtap="onItemTap">
+          <customer-image src="{{item.image}}" alt-text="{{item.title}}示意图" aspect-ratio="1.42" fit-mode="aspectFit" />
+          <view class="shop-product-copy">
+            <text class="shop-product-title">{{item.title}}</text>
+            <text class="shop-product-spec">{{item.spec}}</text>
+            <view class="shop-product-bottom">
+              <text class="shop-product-price">{{item.priceText}}</text>
+              <button wx:if="{{item.available}}" class="shop-product-action" size="mini" data-id="{{item.id}}" catchtap="onProductAction"><text class="shop-product-action-face">{{item.actionLabel}}</text></button>
+              <text wx:else class="shop-product-unavailable">暂停售卖</text>
+            </view>
+          </view>
+        </view>
+      </view>
+      <text wx:if="{{activeCategory === '配件'}}" class="shop-demo-note">配件分类结果 · 型号和价格均为虚构示意</text>
+    </view>
+  </scroll-view>
+</view>

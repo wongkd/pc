@@ -1,0 +1,25 @@
+{
+  "id": "MP10",
+  "status": "review",
+  "updatedAt": "2026-09-23T20:52:05+08:00",
+  "summary": "商城两列四件混合商品卡已实现；长标题、面议、坏图和下架态保留卡片结构；缺少微信工具截图。",
+  "evidence": [
+    "miniprogram/pages/shop/index.ts",
+    "miniprogram/pages/shop/index.wxml",
+    "miniprogram/pages/shop/index.wxss",
+    "miniprogram/pages/shop/index.json",
+    "miniprogram/tests/customer-home-shop.test.mjs",
+    "docs/verification/customer-4tab/MP10/README.md"
+  ],
+  "checks": [
+    { "command": "npm --prefix miniprogram test", "result": "not_run: npm unavailable in PowerShell" },
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass: 109/109" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p miniprogram/tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass" }
+  ],
+  "visual": "not_run",
+  "blockedBy": ["微信开发者工具服务端口关闭，375/390 与 320 视口的视觉检查未取得。"],
+  "next": "在微信开发者工具检查两列布局、长内容、图片失败和下架态，并记录 320/375/390 截图。"
+}

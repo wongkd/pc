@@ -23,7 +23,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   {
     path: '/sales',
     label: '开单',
-    matchPrefixes: ['/sales', '/quotes', '/orders'],
+    matchPrefixes: ['/sales'],
     pageIds: ['P03', 'P04', 'P05'],
   },
   {
@@ -36,6 +36,12 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   { path: '/recovery', label: '回收置换', matchPrefixes: ['/recovery'], pageIds: ['P11'] },
   { path: '/finance', label: '账本', matchPrefixes: ['/finance'], pageIds: ['P12'] },
 ]
+
+/** 高频业务入口放在主导航下方，不增加六项顶栏的数量。 */
+export const APP_QUICK_LINKS = [
+  { path: '/sales/quotes', label: '装机报价' },
+  { path: '/customers', label: '客户台账' },
+] as const
 
 /** 头像菜单里的入口（01 §3：设置不占顶栏）。 */
 export const ACCOUNT_MENU_ITEMS = [
@@ -53,11 +59,11 @@ export function findNavItemByPath(pathname: string): AppNavItem | undefined {
  *
  * 处置含义：
  *   kept        路径与行为不变
- *   kept-editor 路径不变，且必须继续渲染报价编辑器本体（已确认功能，不得改成重定向）
  *   placeholder 仍是「后续阶段模块」占位页，等对应任务卡替换
+ *   redirect    旧地址跳转已实现的正式页面
  *   account     入口从顶栏移入头像菜单，路径不变
  */
-export type LegacyHandling = 'kept' | 'kept-editor' | 'placeholder' | 'account'
+export type LegacyHandling = 'kept' | 'kept-editor' | 'placeholder' | 'account' | 'redirect'
 
 export interface LegacyLink {
   legacy: string
@@ -79,24 +85,24 @@ export const LEGACY_DEEP_LINK_MAP: LegacyLink[] = [
   },
   {
     legacy: '/quotes',
-    handling: 'kept-editor',
+    handling: 'redirect',
     nav: '开单',
     pageIds: ['P04'],
-    note: '当前是报价编辑器本体，必须在改造中继续可用；P04 的单据编辑路径 /quotes/:id/edit 归 T07。',
+    note: '旧报价工具已下线，旧地址跳转到新版 /sales/quotes。',
   },
   {
     legacy: '/orders',
-    handling: 'kept',
+    handling: 'redirect',
     nav: '开单',
     pageIds: ['P03'],
-    note: '02 §2 明确「旧 /orders、/quotes 保留兼容」，作为销售工作区入口。',
+    note: '旧订单列表已收拢到新版 /sales/orders。',
   },
   {
     legacy: '/orders/:id',
-    handling: 'kept',
+    handling: 'redirect',
     nav: '开单',
     pageIds: ['P02'],
-    note: '销售详情 / 处理页，T08c 替换其处理区。',
+    note: '旧订单详情已收拢到新版 /sales/orders。',
   },
   {
     legacy: '/inventory',
@@ -114,10 +120,10 @@ export const LEGACY_DEEP_LINK_MAP: LegacyLink[] = [
   },
   {
     legacy: '/purchases',
-    handling: 'placeholder',
+    handling: 'kept',
     nav: '库存',
     pageIds: ['P08'],
-    note: 'P08 的采购 / 到货 / 盘点在 /inventory/receipts、/inventory/counts 下，T06 落地；本卡不做重定向，避免让占位入口凭空消失。',
+    note: '采购、到货、付款与取消已在 /purchases 落地；库存页承担盘点与隔离件处理，旧深链仍指向正式采购工作区。',
   },
   {
     legacy: '/suppliers',
@@ -128,17 +134,17 @@ export const LEGACY_DEEP_LINK_MAP: LegacyLink[] = [
   },
   {
     legacy: '/customers',
-    handling: 'placeholder',
-    nav: '',
+    handling: 'kept',
+    nav: '常用页面',
     pageIds: ['P13'],
-    note: '客户与设备历史属 G2，T12 之后。',
+    note: '客户台账已有真实页面，通过主导航下方的常用页面入口访问。',
   },
   {
     legacy: '/assembly',
-    handling: 'placeholder',
+    handling: 'redirect',
     nav: '',
     pageIds: ['P02', 'P10'],
-    note: '装机与交付并入销售详情处理区与交付动作，不再单独占导航。',
+    note: '旧地址跳转 /sales/fulfillment，进入现有备料、检测与交付工作区。',
   },
   {
     legacy: '/after-sales',

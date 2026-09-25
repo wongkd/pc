@@ -1,0 +1,7 @@
+# 默认检索只看现行内容；追溯时显式指定归档路径或使用 rg --no-ignore。
+docs/archive/
+logs/
+**/package-lock.json
+**/contracts/generated/
+contracts/generated/
+backend/src/generated/

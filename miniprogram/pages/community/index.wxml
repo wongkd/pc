@@ -1,0 +1,28 @@
+<view class="customer-page community-page">
+  <customer-nav title="社区" />
+  <scroll-view class="community-tabs" scroll-x enhanced show-scrollbar="false">
+    <view class="community-tabs-inner">
+      <view wx:for="{{categories}}" wx:key="*this" class="community-tab {{selectedCategory === item ? 'is-selected' : ''}}" data-category="{{item}}" bindtap="onCategoryTap">
+        <text>{{item}}</text><view wx:if="{{selectedCategory === item}}" class="community-tab-line" />
+      </view>
+    </view>
+  </scroll-view>
+
+  <scroll-view class="customer-scroll community-scroll" scroll-y>
+    <customer-state wx:if="{{posts.length === 0}}" status="empty" title="这个分类暂时还没有内容" />
+    <view class="community-list">
+      <view wx:for="{{posts}}" wx:key="id" class="community-card {{item.layout === horizontalLayout ? 'community-card-horizontal' : ''}}" data-id="{{item.id}}" bindtap="onPostTap">
+        <view class="community-image-wrap">
+          <customer-image class="community-cover" src="{{item.image}}" aspect-ratio="{{item.aspectRatio}}" alt-text="{{item.title}} · 演示配图" />
+          <image wx:if="{{item.layout === 'large'}}" class="community-cat" src="/assets/customer/cat-gold-lounging.png" mode="aspectFit" />
+        </view>
+        <view class="community-card-body">
+          <text class="community-title">{{item.title}}</text>
+          <text class="community-summary">{{item.summary}}</text>
+          <view class="community-card-foot"><text class="community-date">{{item.date}}</text><image class="community-arrow" src="/assets/customer/chevron-active.png" mode="aspectFit" /></view>
+        </view>
+      </view>
+    </view>
+    <view class="community-runtime-note">{{runtimeNote}}</view>
+  </scroll-view>
+</view>

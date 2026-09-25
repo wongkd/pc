@@ -1,0 +1,33 @@
+{
+  "id": "MP15",
+  "status": "blocked",
+  "updatedAt": "2026-09-23T21:35:00+08:00",
+  "summary": "已复核 MP08、MP10、MP12、MP14 与实际源码，并重跑 111/111 小程序 M 档等价检查；缺少微信开发者工具原生截图，首次四屏视觉不能放行。",
+  "evidence": [
+    "docs/design/2026-09-22-customer-ip/four-tab-board-clean.png",
+    "docs/design/2026-09-22-customer-ip/four-tab-board-font-only.png",
+    "docs/verification/customer-4tab/MP08/receipt.json",
+    "docs/verification/customer-4tab/MP10/receipt.json",
+    "docs/verification/customer-4tab/MP12/receipt.json",
+    "docs/verification/customer-4tab/MP14/receipt.json",
+    "miniprogram/pages/home/index.wxss",
+    "miniprogram/pages/shop/index.wxss",
+    "miniprogram/pages/community/index.wxss",
+    "miniprogram/pages/mine/index.wxss",
+    "docs/verification/customer-4tab/MP15/README.md"
+  ],
+  "checks": [
+    { "command": "npm --prefix miniprogram test", "result": "not_run: npm unavailable in PowerShell" },
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass: 111/111" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass: 顾客 custom tabBar 四项及顺序一致" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p miniprogram/tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass: 6 个文件一致" },
+    { "command": "node scripts/check-doc-links.mjs", "result": "pass: 208 Markdown, 492 local links, 0 broken" }
+  ],
+  "visual": "not_run",
+  "blockedBy": [
+    "当前桌面自动化会话没有可绑定的微信开发者工具窗口，无法取得 320/375/390/430 原生截图、叠加图、差异图和偏差表。"
+  ],
+  "next": "在可用微信开发者工具会话取得四屏原生截图并完成 320 溢出、安全区、胶囊、字体、裁切与底栏人工复核后，再决定是否视觉放行。"
+}

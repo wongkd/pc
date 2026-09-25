@@ -1,0 +1,31 @@
+{
+  "scope": "本地隔离环境（真实 Worker + 内存 D1 + 真实 HTTP + 真实浏览器）；不是生产登录，不是微信真机",
+  "backendUrl": "http://127.0.0.1:8819",
+  "devUrl": "http://127.0.0.1:5206",
+  "checks": [
+    "登录表单可提交",
+    "登录后进入 ERP 外壳",
+    "路由可达：页面标题「装机检测与交付」出现",
+    "页面说明文案出现",
+    "状态筛选按钮（全部/进行中/草稿）出现",
+    "演示库存里有金百达 DDR5 16GB（用于铺单）",
+    "B04 零售单建成（200）",
+    "拿到销售单 ID",
+    "B05 确认成交（200）",
+    "B07 检测通过（200）",
+    "B10 交付成立（200）",
+    "列表出现刚建的销售单（客户名可见）",
+    "该单履约态显示为已交付",
+    "点进销售单详情",
+    "详情页显示履约/交付面板"
+  ],
+  "failed": [],
+  "errors": [],
+  "consoleErrors": [],
+  "apiFailures": [],
+  "screenshots": [
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E08-current\\screenshots\\01-fulfillment-list-empty.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E08-current\\screenshots\\02-fulfillment-list-with-order.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E08-current\\screenshots\\03-fulfillment-detail.png"
+  ]
+}

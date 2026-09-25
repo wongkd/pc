@@ -1,28 +1,58 @@
 /**
- * T02b · 微信小程序入口。
+ * 微信小程序入口。
  *
- * 本卡只建立壳：原生 tabBar 四项、五个页面、列表与详情的真实页面跳转。
- * **不连接门店服务、不写任何业务数据、不收款**（05 §T02b「不做」）。
+ * MP16 起：启动时解析**唯一的运行环境结论**（演示 / 测试 / 生产），
+ * 并把结果写入 globalData 供页面区分「演示样本」与「真实数据」。
  *
- * 身份与权限属 T03，一致性属 T04。在那两张卡完成前，本端的所有数据都来自
- * `features/demo-data.ts` 的虚构样本，样本整体不可导入生产
- * （`contracts/v1/fixtures.json` 的 `demoPolicy.prodBlocked`）。
+ * ⚠️ 环境解析失败时**明确记录错误**，不静默回落演示样本 ——
+ *    否则正式版会拿虚构商品冒充真实数据（MP16 放行条件）。
+ *    解析规则见 `features/customer/environment.ts`。
+ *
+ * 身份与权限属 T03；一致性属 T04。在接通真实服务前，四屏仍使用
+ * `features/customer/fixtures.ts` 的固定样本（`demoPolicy.prodBlocked`）。
  */
 
+import {
+  describeCustomerEnvironment,
+  resolveCustomerEnvironment,
+} from './features/customer/environment'
+
 export interface WorkbenchGlobalData {
-  /** 当前门店显示名。骨架阶段无服务端身份，固定为演示门店。 */
+  /** 当前门店显示名。真实身份接通前固定为演示门店。 */
   storeLabel: string
-  /** 是否处于演示数据模式。接通真实服务前恒为 true。 */
+  /** 是否处于演示数据模式。由环境解析结果决定，不再恒为 true。 */
   demoMode: boolean
+  /** 当前环境名，供页面区分演示与真实。 */
+  environmentName: 'demo' | 'test' | 'prod'
+  /** 一行环境说明，供页面直接展示。 */
+  environmentNote: string
+  /** 环境未就绪的具体原因；null 表示已就绪。 */
+  environmentError: string | null
 }
 
 App<{ globalData: WorkbenchGlobalData }>({
   globalData: {
     storeLabel: '演示门店',
-    demoMode: true,
+    // 保守初值：解析成功前不宣称自己处于演示模式。
+    demoMode: false,
+    environmentName: 'demo',
+    environmentNote: '正在确认运行环境',
+    environmentError: null,
   },
 
   onLaunch() {
-    console.info('[T02b] 小程序壳启动：演示数据模式，未连接门店服务。')
+    try {
+      const environment = resolveCustomerEnvironment()
+      this.globalData.environmentName = environment.name
+      this.globalData.demoMode = environment.demoData
+      this.globalData.environmentNote = describeCustomerEnvironment(environment)
+      this.globalData.environmentError = null
+      console.info(`[MP16] 顾客端环境已就绪：${environment.name}`)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      this.globalData.environmentError = message
+      this.globalData.environmentNote = '在线服务尚未就绪'
+      console.error(`[MP16] 顾客端环境未就绪：${message}`)
+    }
   },
 })

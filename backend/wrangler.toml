@@ -1,11 +1,47 @@
 name = "pc-backend"
 main = "src/index.ts"
 compatibility_date = "2025-06-01"
+keep_vars = false
+workers_dev = true
+
+[secrets]
+required = ["JWT_SECRET", "DEEPSEEK_KEY"]
+
+[vars]
+REQUIRE_PERSISTENT_STORAGE = "true"
+# D10 正式期初已完成本地隔离验收；部署前必须完成目标环境只读核对并应用 0030 迁移。
+INVENTORY_OPENING_MODE = "formal"
 
 [[d1_databases]]
 binding = "DB"
 database_name = "pc-db"
 database_id = "2218dbef-fb7d-4248-8430-07dcd4fd0a17"
+
+# ── F1 附件对象存储（2026-09-22 栋哥拍板用 R2）────────────────
+# 后端此刻就跑在 CF Workers 上，R2 是唯一有原生绑定的对象存储（零密钥、零配置）。
+# 免费额度 10GB 存储 + 100 万写 + 1000 万读 + 出网流量免费，按「每单 12 张 × 2MB」够 400 单以上。
+#
+# ⚠️ 三个必须记住的边界：
+#   1. R2 的图片域名**备不了案**（备案要求接入国内云资源）⇒ 顾客端（小程序）不能从 R2 取图。
+#      因此 B35 响应里 customerShareable 恒为 false，不假装对外可读。
+#   2. 后端终态要迁腾讯云 CloudBase。届时在 domains/storage.ts 新增一个 COS 实现，
+#      把下面这个绑定换成 COS 配置即可，业务代码不动（接口不变）。
+#   3. 本地与测试**不配**这个绑定，resolveStorage 会回落到内存实现（进程退出即丢，
+#      且只覆盖同一个 isolate）—— 那是测试替身，不是生产存储。
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "pc-attachments"
+
+# ERP 生产页面与 API 由同一 Worker 提供；切换 erp 子域时保留当前 D1 / R2。
+[[routes]]
+pattern = "erp.huangqidong.cn/*"
+zone_name = "huangqidong.cn"
+
+[assets]
+directory = "../frontend/dist"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
+not_found_handling = "single-page-application"
 
 # ── 凭据规则（2026-09-17 起）────────────────────────────────
 # 本文件不再写任何明文凭据，可安全提交到 Git。
@@ -18,6 +54,6 @@ database_id = "2218dbef-fb7d-4248-8430-07dcd4fd0a17"
 #   wrangler secret put DEEPSEEK_KEY
 #   wrangler secret put JWT_SECRET
 #
-# ⚠️ 在生产 secret 建立之前不要执行 wrangler deploy：
-#    当前线上 Worker 的 PDD_* 来自上一次带 vars 的部署，
-#    部署新配置会让这三个变量消失。
+# 旧版 PDD 查询接口已下线；生产 PDD_* 普通变量不再使用。
+# keep_vars=false 让 Wrangler 按上面的 [vars] 同步变量，并移除 Dashboard 中未声明的旧变量。
+# Cloudflare secret 不会因部署而删除；密钥值不写回本配置。

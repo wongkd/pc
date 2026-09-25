@@ -1,0 +1,21 @@
+{
+  "id": "E12",
+  "status": "working",
+  "summary": "抵用额度（置换折抵）后端与契约收尾（B31/B32/R11）：落地契约早已 frozen 的三动作——建置换关联（POST /trade-ins）、应用折抵（POST /trade-ins/:id/apply-offset，min(销售正余额, 回收剩余应付)，双方主体须相同否则 OWNERSHIP_INVALID）、撤销折抵（POST /trade-ins/:id/reverse-offset，原笔保留+新增 reversed 笔不搬实物）、R11 读（GET /trade-ins/:id）。Q-04「找零」按栋哥裁定「两者都支持，默认保留」落地：剩余额度默认留在回收单应付（可拆分无有效期），找零复用 B33 付款不新增契约动作。迁移 0021 建 trade_ins + offsets 两表；B33 付款超付守卫联动改为「剩余应付 = payable − 有效折抵」（防折抵后双重支付）；R10 读模型加 offsetCents 字段。前端由栋哥另行用 ChatGPT 实现（方案 B：折抵动作挂在回收单/销售单详情里），本卡不做前端、不做浏览器验收，故 status=working 不标 verified。验证：后端 268 用例 0 失败（原 257 + E12 11）/ 契约六件套全绿（validate-contracts 3441、generate-dto --check、sync-contracts --check、check-client-parity、sync-error-codes、check-doc-links 181 链接 0 断链）/ HTTP 端到端 17 项 0 失败。",
+  "next": "前端（tradein-api.ts + 置换页/折抵动作入口）由栋哥用 ChatGPT 实现；完成后补浏览器验收（实际看图），并由原负责会话重跑门禁后把 status 刷新为 verified。已知边界（非 bug）：trade_ins.state 首版只用 active、closed 预留；折抵不 bump recovery 版本（recovery 表不被改写），并发安全由 offsets 守卫 + SQLite 串行写保证。",
+  "updatedAt": "2026-09-22T12:27:46+08:00",
+  "evidence": [
+    "backend/migrations/0021_tradein.sql",
+    "backend/src/domains/tradein.ts",
+    "backend/src/routes/tradein-v2.ts",
+    "backend/src/domains/access.ts",
+    "backend/src/domains/recovery.ts",
+    "backend/src/index.ts",
+    "backend/tests/e12-tradein-http.test.mjs",
+    "contracts/v1/objects.json",
+    "contracts/v1/legacy-mapping.json",
+    "contracts/v1/actions.json",
+    "docs/verification/E12-current/README.md",
+    "docs/verification/E12-current/verify-e12.cjs"
+  ]
+}

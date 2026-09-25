@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>装机报价 · 四种提效方案</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span class="brand-mark">装</span><strong>装一下机</strong><span class="crumb">/ 装机报价 / 新建体验</span></div><span class="demo-badge">独立方案演示 · 未接业务系统</span></header>
+  <main>
+    <section class="intro"><div><p class="eyebrow">少重复录入，把时间留给配配置</p><h1>新报价，从熟悉的配件开始。</h1><p class="muted">四种操作方式，可以分别试用。切换方案会保留当前页内的输入。</p></div><div class="recommendation"><span>建议先做</span><strong>A + B</strong><small>默认常用配件，按场景微调</small></div></section>
+    <nav class="variants" aria-label="报价方案选择">
+      <button data-variant="a" class="variant mint"><span class="variant-top"><b>A</b><small>轻量 · 最快落地</small></span><strong>常用配件预置</strong><span>打开就有 8 类配件，只填型号和价格。</span></button>
+      <button data-variant="b" class="variant peach"><span class="variant-top"><b>B</b><small>推荐 · 适合日常</small></span><strong>按装机场景生成</strong><span>独显、核显、升级，选择后自动列齐。</span></button>
+      <button data-variant="c" class="variant lilac"><span class="variant-top"><b>C</b><small>进阶 · 重复配置更快</small></span><strong>店内常用配置</strong><span>套用完整型号与数量，再核价、换件。</span></button>
+      <button data-variant="d" class="variant rose"><span class="variant-top"><b>D</b><small>批量 · 已有配置清单</small></span><strong>整单粘贴录入</strong><span>粘贴表格或规范文本，核对后生成。</span></button>
+    </nav>
+    <section class="work-layout">
+      <div class="editor">
+        <div class="editor-head"><div><p class="eyebrow" id="mode-label"></p><h2 id="editor-title"></h2></div><button class="button" id="reset">重置本方案演示</button></div>
+        <div id="controls"></div>
+        <div class="table-panel"><div class="table-caption"><div><strong>配置清单</strong><span id="row-count"></span></div><span class="subtle">型号留空的配件不会当成商品</span></div><div class="table-scroll"><table><thead><tr><th>配件</th><th>具体型号 / 服务内容</th><th>来源</th><th>数量</th><th>单价（元）</th><th>小计</th><th><span class="sr-only">操作</span></th></tr></thead><tbody id="rows"></tbody></table></div><div class="add-bar"><span>加一项</span><div id="add-options"></div></div></div>
+        <p class="footnote">本页仅使用虚构示例；不保存正式报价。新品商品关联、二手实物及客供设备需要在正式流程中核对。</p>
+      </div>
+      <aside class="aside">
+        <section class="summary"><p class="eyebrow">当前演示清单</p><div class="summary-total" id="total">—</div><p class="subtle">已填金额合计 · 示例，不代表正式报价</p><div class="summary-grid"><div><strong id="filled">0</strong><span>已填型号</span></div><div><strong id="pending">8</strong><span>待补内容 / 价格</span></div></div><p class="summary-note" id="summary-note"></p><button class="button primary" id="review">检查当前配置</button><p id="review-result" role="status"></p></section>
+        <section class="explanation"><p class="eyebrow">这个版本解决什么</p><h3 id="benefit-title"></h3><p id="benefit"></p><div class="effort"><span>实施复杂度</span><strong id="effort"></strong></div><div class="reason"><strong>需要注意</strong><p id="caution"></p></div></section>
+        <section class="next-step"><strong>更顺手的最终组合</strong><p>A 做默认起点，B 切换配件结构；常卖的整套配置再存成 C。D 留给已有清单的场景。</p></section>
+      </aside>
+    </section>
+    <section class="comparison"><h2>选的是操作方式，也可以组合</h2><div class="comparison-grid"><article><b>A · 少建行</b><p>8 行基础配件一次准备好，减少 7 次“加一行”，类别也不用反复填写。</p></article><article><b>B · 少增删</b><p>按用途调整清单；显示器、键鼠和服务费按需勾选，避免每单重新整理。</p></article><article><b>C · 少抄型号</b><p>重复方案从现有配置开始，主要做核价、替换和客户需求调整。</p></article><article><b>D · 少逐格录入</b><p>已有 Excel 或文字配置时，一次粘贴；保留逐行核对，不能直接发给顾客。</p></article></div></section>
+  </main>
+  <div class="toast" id="toast" role="status" hidden></div>
+</body>
+</html>

@@ -1,7 +1,9 @@
 {
   "scripts": {
+    "dev:local": "node scripts/dev-server.mjs",
     "test": "node --test --test-concurrency=1 \"tests/*.test.mjs\"",
-    "check:error-codes": "node scripts/sync-error-codes.mjs --check"
+    "check:error-codes": "node scripts/sync-error-codes.mjs --check",
+    "check:migrations": "node scripts/check-migration-sequence.mjs"
   },
   "devDependencies": {
     "@cloudflare/workerd-windows-64": "^1.20260625.1",

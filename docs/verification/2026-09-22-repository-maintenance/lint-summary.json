@@ -1,0 +1,299 @@
+[
+  {
+    "path": "frontend\\src\\App.tsx",
+    "errors": 6,
+    "warnings": 1,
+    "messages": [
+      {
+        "line": 316,
+        "rule": "react-hooks/set-state-in-effect",
+        "severity": 2,
+        "message": "Error: Calling setState synchronously within an effect can trigger cascading renders"
+      },
+      {
+        "line": 323,
+        "rule": "react-hooks/set-state-in-effect",
+        "severity": 2,
+        "message": "Error: Calling setState synchronously within an effect can trigger cascading renders"
+      },
+      {
+        "line": 330,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 337,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 339,
+        "rule": "no-empty",
+        "severity": 2,
+        "message": "Empty block statement."
+      },
+      {
+        "line": 346,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 364,
+        "rule": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "React Hook useEffect has a missing dependency: 'categoryOrder'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "path": "frontend\\src\\components\\HardwareLibrarySection.tsx",
+    "errors": 0,
+    "warnings": 1,
+    "messages": [
+      {
+        "line": 351,
+        "rule": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "React Hook useCallback has a missing dependency: 'priceImage'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "path": "frontend\\src\\components\\OrdersPages.tsx",
+    "errors": 1,
+    "warnings": 1,
+    "messages": [
+      {
+        "line": 16,
+        "rule": "react-hooks/set-state-in-effect",
+        "severity": 2,
+        "message": "Error: Calling setState synchronously within an effect can trigger cascading renders"
+      },
+      {
+        "line": 16,
+        "rule": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "React Hook useEffect has a missing dependency: 'reload'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "path": "frontend\\src\\components\\ProductManagementPage.tsx",
+    "errors": 2,
+    "warnings": 1,
+    "messages": [
+      {
+        "line": 20,
+        "rule": "react-hooks/set-state-in-effect",
+        "severity": 2,
+        "message": "Error: Calling setState synchronously within an effect can trigger cascading renders"
+      },
+      {
+        "line": 21,
+        "rule": "react-hooks/set-state-in-effect",
+        "severity": 2,
+        "message": "Error: Calling setState synchronously within an effect can trigger cascading renders"
+      },
+      {
+        "line": 21,
+        "rule": "react-hooks/exhaustive-deps",
+        "severity": 1,
+        "message": "React Hook useEffect has a missing dependency: 'load'. Either include it or remove the dependency array."
+      }
+    ]
+  },
+  {
+    "path": "frontend\\src\\components\\QuoteItemsSection.tsx",
+    "errors": 1,
+    "warnings": 0,
+    "messages": [
+      {
+        "line": 6,
+        "rule": "react-refresh/only-export-components",
+        "severity": 2,
+        "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+      }
+    ]
+  },
+  {
+    "path": "frontend\\src\\components\\SystemSettingsPage.tsx",
+    "errors": 3,
+    "warnings": 0,
+    "messages": [
+      {
+        "line": 6,
+        "rule": "react-refresh/only-export-components",
+        "severity": 2,
+        "message": "Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components."
+      },
+      {
+        "line": 26,
+        "rule": "react-hooks/set-state-in-effect",
+        "severity": 2,
+        "message": "Error: Calling setState synchronously within an effect can trigger cascading renders"
+      },
+      {
+        "line": 29,
+        "rule": "react-hooks/set-state-in-effect",
+        "severity": 2,
+        "message": "Error: Calling setState synchronously within an effect can trigger cascading renders"
+      }
+    ]
+  },
+  {
+    "path": "frontend\\src\\utils\\api.test.ts",
+    "errors": 4,
+    "warnings": 0,
+    "messages": [
+      {
+        "line": 54,
+        "rule": "@typescript-eslint/no-unused-vars",
+        "severity": 2,
+        "message": "'_input' is defined but never used."
+      },
+      {
+        "line": 54,
+        "rule": "@typescript-eslint/no-unused-vars",
+        "severity": 2,
+        "message": "'_init' is defined but never used."
+      },
+      {
+        "line": 72,
+        "rule": "@typescript-eslint/no-unused-vars",
+        "severity": 2,
+        "message": "'_input' is defined but never used."
+      },
+      {
+        "line": 72,
+        "rule": "@typescript-eslint/no-unused-vars",
+        "severity": 2,
+        "message": "'_init' is defined but never used."
+      }
+    ]
+  },
+  {
+    "path": "frontend\\src\\utils\\api.ts",
+    "errors": 11,
+    "warnings": 0,
+    "messages": [
+      {
+        "line": 27,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 29,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 31,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 31,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 32,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 32,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 34,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 35,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 37,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 37,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 38,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      }
+    ]
+  },
+  {
+    "path": "frontend\\vite.config.ts",
+    "errors": 7,
+    "warnings": 0,
+    "messages": [
+      {
+        "line": 37,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 38,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 38,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 41,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 54,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 55,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      },
+      {
+        "line": 68,
+        "rule": "@typescript-eslint/no-explicit-any",
+        "severity": 2,
+        "message": "Unexpected any. Specify a different type."
+      }
+    ]
+  }
+]

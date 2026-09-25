@@ -1,0 +1,18 @@
+{
+  "id": "MP06",
+  "status": "review",
+  "updatedAt": "2026-09-23T20:27:48+08:00",
+  "summary": "固定比例图片失败回退与公共状态组件已实现；本地 M 档门禁通过，微信工具截图未做，尚未接入业务页面。",
+  "evidence": ["miniprogram/components/customer-image/index.ts", "miniprogram/components/customer-image/view.ts", "miniprogram/components/customer-state/index.ts", "miniprogram/components/customer-state/view.ts", "miniprogram/tests/customer-components.test.mjs", "docs/verification/customer-4tab/MP06/README.md"],
+  "checks": [
+    { "command": "npm --prefix miniprogram test", "result": "not_run: npm unavailable in PATH" },
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass (105/105)" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p miniprogram/tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass" }
+  ],
+  "visual": "not_run",
+  "blockedBy": ["微信开发者工具及真机坏图/错误状态样例截图未取得"],
+  "next": "在页面样例中接入图片与状态组件并绑定真实重试动作；通过微信工具查看坏图和长错误不溢出后再放行。"
+}

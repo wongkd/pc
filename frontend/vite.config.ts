@@ -2,65 +2,28 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const BACKEND_BASE = 'https://pc.huangqidong.cn'
+/**
+ * 开发期 /api 的目标。
+ *
+ * 默认指向**本地隔离后端** `backend/scripts/dev-server.mjs`
+ * （miniflare 跑真实 Worker 入口 + 内存 D1 + 演示数据，不连远端）。
+ *
+ * 这里刻意不再默认指向生产（旧配置是 `/api/auth` → https://pc.huangqidong.cn）：
+ * 前端调页面时会一路触发真实读写，拿生产库当调试库等于在真账上试手；
+ * AGENTS 的停止条件也把「请求指向生产且环境未隔离」列为不得继续写入。
+ *
+ * 确实要连别的环境时用 `VITE_API_TARGET` 显式指定 —— 那是明确的选择，不是默认值。
+ */
+const LOCAL_API_TARGET = process.env.VITE_API_TARGET || 'http://127.0.0.1:8787'
+const IS_LOCAL_TARGET = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/.test(LOCAL_API_TARGET)
 
-// ── 比价 API 代理插件 ──
-function priceComparePlugin() {
-  const API_BASE = 'https://appapi.maishou88.com'
-  const HEADERS = {
-    'User-Agent': 'MaiShouApp/3.7.7 (iPhone; iOS 26.3; Scale/3.00)',
-    'openid': '564bdce0fa408fc9e1d5d42fd022ef0b',
-    'version': '3.7.7.2',
-    'referer': 'https://hnbc018.kuaizhan.com/',
-    'accept': 'application/json',
-  }
-
-  return {
-    name: 'price-compare-api',
-    configureServer(server: any) {
-      server.middlewares.use('/api/search', async (req: any, res: any) => {
-        if (req.method !== 'POST') { res.statusCode = 405; res.end(); return }
-        let body = ''
-        req.on('data', (chunk: any) => body += chunk)
-        req.on('end', async () => {
-          try {
-            const { keyword, source = '0' } = JSON.parse(body)
-            const form = new URLSearchParams({
-              isCoupon: '0', keyword: String(keyword),
-              openid: '564bdce0fa408fc9e1d5d42fd022ef0b',
-              order: 'desc', page: '1', pddListId: '',
-              sort: '', sourceType: String(source), user_id: '',
-            })
-            const r = await fetch(`${API_BASE}/api/v1/homepage/searchList`, {
-              method: 'POST', headers: { ...HEADERS, 'content-type': 'application/x-www-form-urlencoded' }, body: form,
-            })
-            const data: any = await r.json()
-            const rows = (data?.data || []).map((v: any) => ({
-              goodsId: v.goodsId,
-              source: v.sourceType,
-              title: v.title,
-              shopName: v.shopName,
-              originalPrice: v.originalPrice,
-              actualPrice: v.actualPrice,
-              couponPrice: v.couponPrice,
-              monthSales: v.monthSales,
-              picUrl: v.picUrl,
-            }))
-            res.setHeader('Content-Type', 'application/json')
-            res.end(JSON.stringify({ ok: true, data: rows }))
-          } catch (e: any) {
-            res.statusCode = 500
-            res.end(JSON.stringify({ ok: false, error: e.message }))
-          }
-        })
-      })
-    },
-  }
+if (!IS_LOCAL_TARGET) {
+  console.warn(`\n⚠️  /api 代理指向非本地地址：${LOCAL_API_TARGET}\n    此时 dev 的每一次读写都会落到该环境。请确认它不是你不想动的那套数据。\n`)
 }
 
 export default defineConfig({
   base: '/',
-  plugins: [react(), priceComparePlugin()],
+  plugins: [react()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
@@ -68,8 +31,9 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/api/auth': {
-        target: BACKEND_BASE,
+      // 全部 /api 打到本地隔离后端；不再只代理 /api/auth 且指向生产。
+      '/api': {
+        target: LOCAL_API_TARGET,
         changeOrigin: true,
       },
     },

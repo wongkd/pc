@@ -1,0 +1,30 @@
+{
+  "scope": "本地隔离环境（真实 Worker + 内存 D1 + 真实 HTTP + 真实浏览器）；不是生产登录，不是微信真机",
+  "backendUrl": "http://127.0.0.1:8820",
+  "devUrl": "http://127.0.0.1:5207",
+  "checks": [
+    "演示库存里有金百达 DDR5 16GB（用于铺单）",
+    "账本页路由可达：标题「账本」出现",
+    "账本页汇总卡「现金净额」出现",
+    "账本页汇总卡「应收」出现",
+    "账本页汇总卡「应付」出现",
+    "资金流水方向过滤（全部/流入/流出）出现",
+    "铺「已交付」单成功",
+    "已交付订单详情出现「登记退货」表单",
+    "退货记录区可见（有或无记录）",
+    "退货表单可提交",
+    "退货登记后出现「待批准」记录",
+    "已成交未交付订单详情出现「取消销售单」表单",
+    "已成交未交付订单详情出现「批准欠款交付」表单"
+  ],
+  "failed": [],
+  "errors": [],
+  "consoleErrors": [],
+  "apiFailures": [],
+  "screenshots": [
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E09-current\\screenshots\\01-finance-page.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E09-current\\screenshots\\02-order-detail-delivered.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E09-current\\screenshots\\03-order-detail-after-return.png",
+    "C:\\Users\\wuerl\\Documents\\工作同步\\pc-quote\\docs\\verification\\E09-current\\screenshots\\04-order-detail-confirmed.png"
+  ]
+}

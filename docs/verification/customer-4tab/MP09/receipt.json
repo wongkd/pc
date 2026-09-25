@@ -1,0 +1,25 @@
+{
+  "id": "MP09",
+  "status": "review",
+  "updatedAt": "2026-09-23T20:52:05+08:00",
+  "summary": "商城三分类、主推横幅与银猫已实现；我的报价不展示样本；缺少微信工具视觉截图。",
+  "evidence": [
+    "miniprogram/pages/shop/index.ts",
+    "miniprogram/pages/shop/index.wxml",
+    "miniprogram/pages/shop/index.wxss",
+    "miniprogram/pages/shop/index.json",
+    "miniprogram/tests/customer-home-shop.test.mjs",
+    "docs/verification/customer-4tab/MP09/README.md"
+  ],
+  "checks": [
+    { "command": "npm --prefix miniprogram test", "result": "not_run: npm unavailable in PowerShell" },
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass: 109/109" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p miniprogram/tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass" }
+  ],
+  "visual": "not_run",
+  "blockedBy": ["微信开发者工具服务端口关闭，未取得 375/390 商城截图。"],
+  "next": "在微信开发者工具检查商城分类、主推图与切换恢复，再复核 MP10。"
+}

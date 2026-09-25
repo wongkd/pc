@@ -1,0 +1,22 @@
+{
+  "id": "E11",
+  "status": "verified",
+  "summary": "回收拆件与抵用收尾（把并行会话留下的半成品收到可验收）全卡完成：补上此前缺失的 0018 迁移（重建 inventory_movements 把 source 枚举从 0007 的 14 值补齐到契约 16 值 recovery_acquisition / inspection_release，并原样重建余额触发器）；接通 B33 的 /finance/payments HTTP 出口（只认回收单来源，采购付款明确拒绝不伪造，权限 finance/payment owner_only 不登记旧码）；修掉 3 个只在「带损耗拆件」路径爆的真实 bug（损耗流水 from_bucket 误写 quarantine 撞余额 CHECK、守恒 guard 写成 SELECT 1 WHERE 拼出 SQL 语法错误、sourceRow 的 product_id 与 plan 的 productId 字段名不匹配导致绑定 undefined）；补后端 HTTP 测试 12 例；前端 /recovery 由 T02a 占位页换成一页两态真页面（列表 + 详情，含登记/验机/估价/取得所有权/付款/拆件/归还七个动作，按权限码显隐，金额整数分）。验证：后端 257 用例 0 失败（原 245 + E11 12）/ 前端 170 / build 通过 / lint 新增 0 / 契约六件套全绿（validate-contracts 通过、generate-dto --check、sync-contracts --check、check-client-parity、sync-error-codes、check-doc-links 175 链接 0 断链）/ 端到端 HTTP 34 项 0 失败 + 浏览器 28 项 0 失败。已知边界（非 bug，已登记 OPEN-ITEMS）：报价发出后不能就地改价（契约无 offered→inspecting 回头路，G-27）、B33 只接回收单、抵用 B31/B32 未实现属独立一刀、B19 隔离件出 quarantine 未做。",
+  "next": "E11 已收工。剩余候选等栋哥点：①抵用额度 B31/B32（契约 frozen，无表无路由无前端，完整首版最后一块）②B19 隔离件出 quarantine（0018 已补枚举，判定逻辑未做）③Q-09 顾客侧分享页④不撞契约的收敛（G-21 客户入口 / G-20 新旧商品页边界 / D-E 演示样本 / T-11 错误提示吞真因）。上线硬前置另见 docs/plans/2026-09-22-go-live-prerequisites/README.md（5 步串行行政手续 + 小程序端仍为旧店员壳、顾客端未开工）。",
+  "updatedAt": "2026-09-22T11:34:37+08:00",
+  "evidence": [
+    "backend/migrations/0018_inventory_movement_sources.sql",
+    "backend/src/domains/recovery.ts",
+    "backend/src/routes/recovery-v2.ts",
+    "backend/src/routes/finance-v2.ts",
+    "backend/src/domains/access.ts",
+    "backend/tests/e11-recovery-http.test.mjs",
+    "contracts/v1/legacy-mapping.json",
+    "frontend/src/App.tsx",
+    "frontend/src/features/workbench/recovery-api.ts",
+    "frontend/src/features/workbench/WorkbenchRecoveryPage.tsx",
+    "docs/verification/E11-current/README.md",
+    "docs/verification/E11-current/verify-e11.cjs",
+    "docs/verification/E11-current/verify-e11-browser.cjs"
+  ]
+}

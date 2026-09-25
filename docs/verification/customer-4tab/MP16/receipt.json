@@ -1,0 +1,27 @@
+{
+  "id": "MP16",
+  "status": "review",
+  "updatedAt": "2026-09-23T22:19:53+08:00",
+  "summary": "顾客端运行环境收敛为唯一结论来源：三档环境+地址表+解析守卫；正式版不得连测试/演示环境、真实模式缺 HTTPS 地址立即抛错且不回落演示样本、顾客存储带 pc-customer: 前缀与员工端物理隔离。M 档 123/123 与类型/结构/契约检查通过；未在微信开发者工具运行，微信实连因无备案域名阻塞。",
+  "evidence": [
+    "miniprogram/features/customer/environment.ts",
+    "miniprogram/services/customer/client.ts",
+    "miniprogram/app.ts",
+    "miniprogram/tsconfig.json",
+    "miniprogram/tests/customer-environment.test.mjs",
+    "docs/verification/customer-4tab/MP16/README.md"
+  ],
+  "checks": [
+    { "command": "node --test \"miniprogram/tests/*.test.mjs\"", "result": "pass: 123/123 (fail 0)" },
+    { "command": "miniprogram/node_modules/.bin/tsc.cmd -p tsconfig.json --noEmit", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-pages.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/check-classes.mjs", "result": "pass" },
+    { "command": "node miniprogram/scripts/sync-contracts.mjs --check", "result": "pass: 6 个文件一致" }
+  ],
+  "visual": "not_applicable",
+  "blockedBy": [
+    "无可用 HTTPS API 域名：pc.huangqidong.cn 挂 Cloudflare 且未做国内接入备案，本地 Worker 为 http://127.0.0.1:8787（非 HTTPS），故 test/prod 两档 apiBaseUrl 留空，微信实连未做。备案状态以腾讯云控制台现场事实为准。",
+    "未在微信开发者工具运行启动路径：本卡未改动 wxml/wxss，四屏视觉无变化，故未截图；app.ts 入口自身无原生证据。"
+  ],
+  "next": "执行 MP17 顾客身份与归属契约；动 contracts/v1、backend/migrations、index.ts 接线前先复核这些路径的时间戳与 diff，确认无其他会话写入。"
+}

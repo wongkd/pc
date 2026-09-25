@@ -28,24 +28,24 @@
   ],
   "generatedFrom": {
     "contracts/v1/conventions.json": "7bb796c30321dd1704daa9b402688d36b3837126c0ab4d5b3c6aaa2b54014468",
-    "contracts/v1/enums.json": "21566fea1b5a808b73bf1f6f56dbbbd3e6ec8325be434a1885d3c0e1d8ecc725",
-    "contracts/v1/objects.json": "5c17376cb06deba11b860e72bffa7729730de245c01c192e7dcbb3a126022b41",
-    "contracts/v1/errors.json": "5a8982770fadae12c9a5b9383931695386d3ead9786414641452917321d9d330",
+    "contracts/v1/enums.json": "e58b7130606979690e144aa906cfb5ab8ee6a40fee7bb5e187900acb70ec597e",
+    "contracts/v1/objects.json": "223a29497a02c064ecb96cbaebf631f18353d00493846e0b97fe605071b37841",
+    "contracts/v1/errors.json": "528da1185ea9b855caae3dc7cc5efaa464aae508f5a233c156262215a25c0ecd",
     "contracts/v1/money-rules.json": "40909ace82363a4e4715ac5d044160b92dfd9346a180425f41e7a72e264aa595",
-    "contracts/v1/actions.json": "d97b502219f4225e9f1328890081a528624df9abe88d6c31af928a50ed86bc1f"
+    "contracts/v1/actions.json": "372cc2da1145197f6179356b2fee986262f07cb1e50ca1458eaad25968506828"
   },
   "artifacts": [
     {
       "file": "actions.ts",
-      "sha256": "f3f158ea0b51a59ff6a2fd0713b207c5270219b1980784c24236bccfb9bec772"
+      "sha256": "df628de2d50c76cb0bbe121d584bdc342c8e671d2b31170dd77fb47bf6c3e73a"
     },
     {
       "file": "enums.ts",
-      "sha256": "cd1a4b3641fd1f146cb5b90257fde80c9a961bdfb09c99d0dc793fb13dceeb99"
+      "sha256": "1b22d8d1f2d4c5a9e9544c59a066c0028b0a87f68dc7b9d0b2c3fc637154f81c"
     },
     {
       "file": "errors.ts",
-      "sha256": "4fed1d49a3f1484a239d18c0859b1d78b7bb1dac0a22e43a8d6d88d47889f988"
+      "sha256": "18531bb6f5c19935d97e9663c0917cff814beb69257ce21978cb59717bfa6a8c"
     },
     {
       "file": "money.ts",
@@ -53,7 +53,7 @@
     },
     {
       "file": "objects.ts",
-      "sha256": "2c002cc5196f134e9d00cc8f3987d49f2ca605faa6ad8f388c8eb74931b0bce1"
+      "sha256": "2b9affa9765b1d920c61013c55c50e6b6d467c1f35a6e4a729424c23236ff9ef"
     }
   ],
   "selfHashNote": "manifest.json 与 artifacts 的 sha256 均指文件正文（不含 manifest 自身哈希）。"

@@ -41,6 +41,17 @@ export const StockCondition = {
 export type StockCondition = (typeof StockCondition)[keyof typeof StockCondition]
 export const StockConditionValues: readonly StockCondition[] = Object.values(StockCondition)
 
+/** 逐件成色等级（B30 上架门槛七项之一，B30 契约修订补入）：全新 / 95新 / 9成新 / 8成新 / 7成新及以下。与 StockCondition（new/used 粗分）并存 —— 后者是入库分类，本枚举是会写进顾客报价单的细分成色，两者不是同一件事 */
+export const ConditionGrade = {
+  BRAND_NEW: "brand_new",
+  LIKE_NEW: "like_new",
+  EXCELLENT: "excellent",
+  GOOD: "good",
+  FAIR: "fair",
+} as const
+export type ConditionGrade = (typeof ConditionGrade)[keyof typeof ConditionGrade]
+export const ConditionGradeValues: readonly ConditionGrade[] = Object.values(ConditionGrade)
+
 /** 所有权。客户暂存、客供、送修均不属于可卖库存；外送自有维修件仍为 store，位置为 external */
 export const OwnershipType = {
   STORE: "store",
@@ -73,10 +84,11 @@ export const StockBucket = {
 export type StockBucket = (typeof StockBucket)[keyof typeof StockBucket]
 export const StockBucketValues: readonly StockBucket[] = Object.values(StockBucket)
 
-/** 报价状态。发出后修改形成新版本，不覆盖原客户版本 */
+/** 报价状态。发出后修改形成新版本，不覆盖原客户版本。confirmed 表示顾客已确认该版本：确认 ≠ 付款、确认不锁库存（R12）；确认后本版本不可再改，要改必须出新版本重新发出并重新确认（R10） */
 export const QuoteStatus = {
   DRAFT: "draft",
   ISSUED: "issued",
+  CONFIRMED: "confirmed",
   CONVERTED: "converted",
   EXPIRED: "expired",
   CLOSED: "closed",
@@ -141,13 +153,14 @@ export const BalanceDirection = {
 export type BalanceDirection = (typeof BalanceDirection)[keyof typeof BalanceDirection]
 export const BalanceDirectionValues: readonly BalanceDirection[] = Object.values(BalanceDirection)
 
-/** 回收单主状态。所有权仅在 acquired 且接收确认完成时转为门店，不能由「已付款」推断 */
+/** 回收单主状态。所有权仅在 acquired 且接收确认完成时转为门店，不能由「已付款」推断；disassembled 为拆件完成态（B44），拆出零件各走待检判定 */
 export const RecoveryState = {
   DRAFT: "draft",
   RECEIVED_FOR_INSPECTION: "received_for_inspection",
   INSPECTING: "inspecting",
   OFFERED: "offered",
   ACQUIRED: "acquired",
+  DISASSEMBLED: "disassembled",
   REFURBISHING: "refurbishing",
   READY_FOR_SALE: "ready_for_sale",
   RETURN_PENDING: "return_pending",
@@ -179,6 +192,26 @@ export const WarrantyDecision = {
 } as const
 export type WarrantyDecision = (typeof WarrantyDecision)[keyof typeof WarrantyDecision]
 export const WarrantyDecisionValues: readonly WarrantyDecision[] = Object.values(WarrantyDecision)
+
+/** 本店对整备上架件承诺的质保月数（B30 上架门槛七项之一，B30 契约修订补入）。值是月数的字符串形式，便于与「质保至 YYYY-MM-DD」互算；不由系统自动判定，与 WarrantyDecision（维修时的质保判定）不是同一件事 */
+export const WarrantyTerm = {
+  3: "3",
+  6: "6",
+  12: "12",
+  24: "24",
+} as const
+export type WarrantyTerm = (typeof WarrantyTerm)[keyof typeof WarrantyTerm]
+export const WarrantyTermValues: readonly WarrantyTerm[] = Object.values(WarrantyTerm)
+
+/** 客户确认维修方案的方式。记录的是真实联系渠道，不由系统判定（E10 契约修订补入，B22 引用） */
+export const ConfirmationMethod = {
+  PHONE: "phone",
+  WECHAT: "wechat",
+  IN_PERSON: "in_person",
+  OTHER: "other",
+} as const
+export type ConfirmationMethod = (typeof ConfirmationMethod)[keyof typeof ConfirmationMethod]
+export const ConfirmationMethodValues: readonly ConfirmationMethod[] = Object.values(ConfirmationMethod)
 
 /** 待检件的检测结论 */
 export const InspectionResult = {
@@ -260,6 +293,14 @@ export const FinancialDisposition = {
 export type FinancialDisposition = (typeof FinancialDisposition)[keyof typeof FinancialDisposition]
 export const FinancialDispositionValues: readonly FinancialDisposition[] = Object.values(FinancialDisposition)
 
+/** 退货贷项的审批状态。退货登记后为 pending（待老板审批），经 B43 批准转为 approved 才计入应退；B18 现金退款只能对 approved 贷项执行 */
+export const CreditState = {
+  PENDING: "pending",
+  APPROVED: "approved",
+} as const
+export type CreditState = (typeof CreditState)[keyof typeof CreditState]
+export const CreditStateValues: readonly CreditState[] = Object.values(CreditState)
+
 /** 付款 / 收款项对应的业务来源类型 */
 export const PaymentPurpose = {
   SALE_ORDER: "sale_order",
@@ -270,12 +311,13 @@ export const PaymentPurpose = {
 export type PaymentPurpose = (typeof PaymentPurpose)[keyof typeof PaymentPurpose]
 export const PaymentPurposeValues: readonly PaymentPurpose[] = Object.values(PaymentPurpose)
 
-/** 照片用途：型号示意、接修证据、回收证据、交付证据 */
+/** 附件用途：型号示意、接修证据、回收证据、交付证据、生成的单据文件 */
 export const AttachmentPurpose = {
   PRODUCT_REFERENCE: "product_reference",
   SERVICE_INTAKE: "service_intake",
   RECOVERY_EVIDENCE: "recovery_evidence",
   DELIVERY_EVIDENCE: "delivery_evidence",
+  DOCUMENT_EXPORT: "document_export",
 } as const
 export type AttachmentPurpose = (typeof AttachmentPurpose)[keyof typeof AttachmentPurpose]
 export const AttachmentPurposeValues: readonly AttachmentPurpose[] = Object.values(AttachmentPurpose)
@@ -353,11 +395,12 @@ export const TaskCategory = {
 export type TaskCategory = (typeof TaskCategory)[keyof typeof TaskCategory]
 export const TaskCategoryValues: readonly TaskCategory[] = Object.values(TaskCategory)
 
-/** 每个库存副作用的唯一来源标识。conversion 对应整机拆件，首版默认关闭；未列出的来源必须先补契约再实现 */
+/** 每个库存副作用的唯一来源标识。conversion 对应整机拆件（B44，2026-09-21 E10 起启用）；inspection_release 对应待检件判定通过放回可卖（B19）；未列出的来源必须先补契约再实现 */
 export const InventoryMovementSource = {
   PURCHASE_RECEIPT: "purchase_receipt",
   QUICK_PURCHASE: "quick_purchase",
   OPENING_BALANCE: "opening_balance",
+  RECOVERY_ACQUISITION: "recovery_acquisition",
   RESERVATION: "reservation",
   UNRESERVATION: "unreservation",
   ASSEMBLY_PICK: "assembly_pick",
@@ -368,6 +411,8 @@ export const InventoryMovementSource = {
   SUPPLIER_RETURN: "supplier_return",
   COUNT_ADJUSTMENT: "count_adjustment",
   CONVERSION: "conversion",
+  INSPECTION_QUARANTINE: "inspection_quarantine",
+  INSPECTION_RELEASE: "inspection_release",
 } as const
 export type InventoryMovementSource = (typeof InventoryMovementSource)[keyof typeof InventoryMovementSource]
 export const InventoryMovementSourceValues: readonly InventoryMovementSource[] = Object.values(InventoryMovementSource)
@@ -392,7 +437,7 @@ export const CounterpartyKind = {
 export type CounterpartyKind = (typeof CounterpartyKind)[keyof typeof CounterpartyKind]
 export const CounterpartyKindValues: readonly CounterpartyKind[] = Object.values(CounterpartyKind)
 
-/** 动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现 */
+/** 动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B39（报损）、B40（价格调整）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit */
 export const ActionCode = {
   B01: "B01",
   B02: "B02",
@@ -430,9 +475,44 @@ export const ActionCode = {
   B34: "B34",
   B35: "B35",
   B36: "B36",
+  B37: "B37",
+  B38: "B38",
+  B41: "B41",
+  B42: "B42",
+  B43: "B43",
+  B44: "B44",
 } as const
 export type ActionCode = (typeof ActionCode)[keyof typeof ActionCode]
 export const ActionCodeValues: readonly ActionCode[] = Object.values(ActionCode)
+
+/** 顾客微信身份的认领状态：unclaimed=已建立微信身份但未关联门店客户档案；claimed=已关联；rejected=认领被驳回（验证手机号不匹配或店员否决）。 */
+export const CustomerClaimStatus = {
+  UNCLAIMED: "unclaimed",
+  CLAIMED: "claimed",
+  REJECTED: "rejected",
+} as const
+export type CustomerClaimStatus = (typeof CustomerClaimStatus)[keyof typeof CustomerClaimStatus]
+export const CustomerClaimStatusValues: readonly CustomerClaimStatus[] = Object.values(CustomerClaimStatus)
+
+/** 旧客户档案的认领方式。wechat-phone=以微信 getPhoneNumber 返回的已验证手机号匹配；clerk-confirm=店员在 ERP 人工确认关联。刻意不含「顾客自填手机号」—— 自填号码可冒领他人档案。 */
+export const CustomerClaimMethod = {
+  WECHAT_PHONE: "wechat-phone",
+  CLERK_CONFIRM: "clerk-confirm",
+} as const
+export type CustomerClaimMethod = (typeof CustomerClaimMethod)[keyof typeof CustomerClaimMethod]
+export const CustomerClaimMethodValues: readonly CustomerClaimMethod[] = Object.values(CustomerClaimMethod)
+
+/** 员工记录客户首次来源渠道；为空表示未记录，不影响建档、报价或交易。 */
+export const CustomerSourceChannel = {
+  WALK_IN: "walk_in",
+  PHONE: "phone",
+  WECHAT: "wechat",
+  REFERRAL: "referral",
+  MINI_PROGRAM: "mini_program",
+  OTHER: "other",
+} as const
+export type CustomerSourceChannel = (typeof CustomerSourceChannel)[keyof typeof CustomerSourceChannel]
+export const CustomerSourceChannelValues: readonly CustomerSourceChannel[] = Object.values(CustomerSourceChannel)
 
 // ── 状态机（取值与转换均由契约冻结；守卫文案仅供展示，程序分支依据 from/to/action）──
 export interface StateTransition {
@@ -447,7 +527,9 @@ export const STATE_MACHINES: Record<string, { initial: string; transitions: Stat
     transitions: [
       { from: "draft", to: "issued", action: "B02", guard: "完整配置与条款" },
       { from: "issued", to: "issued", action: "B02", guard: "发出后修改形成新版本，不覆盖原客户版本" },
+      { from: "issued", to: "confirmed", action: "B42", guard: "顾客确认当前已发出且未过期的版本；确认后本版本不可再改，要改必须出新版本重新发出并重新确认" },
       { from: "issued", to: "converted", action: "B03", guard: "成交时固化 quoteVersion 到销售单" },
+      { from: "confirmed", to: "converted", action: "B03", guard: "已确认版本成交同样固化 quoteVersion 到销售单（2026-09-21 E06 补：E05b 新增 confirmed 态时未同步这条出口，而「顾客确认后成交」是主路径）" },
       { from: "issued", to: "expired", action: null, guard: "超过 validUntil" },
       { from: "draft", to: "closed", action: null, guard: "未在本方案中明确，实现前须补" },
       { from: "issued", to: "closed", action: null, guard: "未在本方案中明确，实现前须补" },
@@ -483,7 +565,8 @@ export const STATE_MACHINES: Record<string, { initial: string; transitions: Stat
       { from: "inspecting", to: "return_pending", action: "B29", guard: "谈不成，准备归还" },
       { from: "offered", to: "acquired", action: "B28", guard: "最终价、验机结论、双方确认与接收事实齐备；原子取得所有权" },
       { from: "offered", to: "return_pending", action: "B29", guard: "客户放弃出售" },
-      { from: "acquired", to: "refurbishing", action: "B30", guard: "需要整备" },
+      { from: "acquired", to: "disassembled", action: "B44", guard: "整机拆件入库：源件退役、产出件新建待检、损耗单列报废（不整机转卖）" },
+      { from: "acquired", to: "refurbishing", action: "B30", guard: "需要整备（仅对拆出的单件）" },
       { from: "acquired", to: "ready_for_sale", action: "B30", guard: "无需整备时直接补齐上架门槛" },
       { from: "refurbishing", to: "ready_for_sale", action: "B30", guard: "逐件编号、成色、检测、成本、披露、标价、质保齐备" },
       { from: "return_pending", to: "returned", action: "B29", guard: "归还附件与实物确认，不产生采购成本与可卖库存" },
@@ -502,6 +585,16 @@ export const STATE_MACHINES: Record<string, { initial: string; transitions: Stat
       { from: "retesting", to: "ready_return", action: "B25", guard: "复测通过且费用结清或有有效欠款批准" },
       { from: "ready_return", to: "returned", action: "B25", guard: "记录实际归还人与时间" },
       { from: "returned", to: "closed", action: null, guard: "未在本方案中明确，实现前须补" },
+    ]
+  },
+  "AttachmentUploadState": {
+    initial: "pending",
+    transitions: [
+      { from: "pending", to: "uploaded", action: "B35", guard: "字节已写入存储，服务端实算 sha256 与真实 mime 校验通过" },
+      { from: "pending", to: "failed", action: "B35", guard: "上传中断或校验不通过（声明与实际不符）；保留失败原因，不占有效存储" },
+      { from: "uploaded", to: "attached", action: "B35", guard: "完成确认时归属实体校验通过且属于同店，业务记录才可引用" },
+      { from: "pending", to: "orphaned", action: null, guard: "超过保留期仍未完成上传，等待清理" },
+      { from: "uploaded", to: "orphaned", action: null, guard: "超过保留期仍未关联任何业务实体，等待清理" },
     ]
   },
 }

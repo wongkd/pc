@@ -5,15 +5,24 @@
  * 证明的是「页面上真的出现这些内容与状态」，不证明任何后端行为。
  * 尺寸、对比度等视觉验收不在这里，见验证记录的「未运行」清单。
  */
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from '../../app/AppShell'
 import { WorkbenchTodayPage } from './WorkbenchTodayPage'
 import type { Profile } from '../../utils/api'
+import type { WorkbenchPayload, WorkbenchTask } from './workbench-api'
+
+const { fetchWorkbenchMock } = vi.hoisted(() => ({ fetchWorkbenchMock: vi.fn() }))
+
+vi.mock('./workbench-api', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./workbench-api')>()
+  return { ...actual, fetchWorkbench: fetchWorkbenchMock }
+})
 
 afterEach(cleanup)
+beforeEach(() => fetchWorkbenchMock.mockReset())
 
 const profile: Profile = {
   user: { id: 1, email: 'demo@example.com' },
@@ -40,14 +49,14 @@ function renderShell() {
   )
 }
 
-describe('AppShell 六导航', () => {
-  it('顶栏只有六项，且为 01 §3 指定的名称', () => {
+describe('AppShell 主导航与常用页面', () => {
+  it('保留六业务入口并提供报价与客户台账快捷入口', () => {
     renderShell()
     const nav = screen.getByRole('navigation', { name: '主导航' })
     const labels = within(nav)
       .getAllByRole('link')
       .map((link) => link.textContent)
-    expect(labels).toEqual(['今天', '开单', '库存', '售后', '回收置换', '账本'])
+    expect(labels).toEqual(['今天', '开单', '库存', '售后', '回收置换', '账本', '装机报价', '客户台账'])
   })
 
   it('当前页所在导航高亮，且只有一项', () => {
@@ -106,10 +115,18 @@ describe('AppShell 六导航', () => {
   })
 })
 
+function LocationProbe() {
+  const location = useLocation()
+  return <output data-testid="location">{location.pathname}{location.search}</output>
+}
+
 function renderWorkbench() {
   return render(
     <MemoryRouter initialEntries={['/dashboard']}>
-      <WorkbenchTodayPage />
+      <>
+        <WorkbenchTodayPage />
+        <LocationProbe />
+      </>
     </MemoryRouter>,
   )
 }
@@ -118,116 +135,207 @@ function taskList() {
   return screen.getByRole('list', { name: '待办列表' })
 }
 
-function selectTask(entityId: string) {
-  fireEvent.click(within(taskList()).getByText(entityId))
+function makeTask(overrides: Partial<WorkbenchTask> = {}): WorkbenchTask {
+  return {
+    taskId: 'sale_order:SO-2026-001',
+    entityType: 'sale_order',
+    entityId: 'SO-2026-001',
+    entityVersion: 3,
+    category: 'delivery',
+    title: '装机交付 · SO-2026-001',
+    customerDisplay: '李女士',
+    deviceSummary: '白色设计主机',
+    photoKind: 'delivery_evidence',
+    photoUrl: null,
+    dueAt: '2026-09-25T08:00:00Z',
+    deadlineText: '今天 16:00 取机',
+    blockerSummary: null,
+    amountSummary: {
+      totalCents: 628000,
+      receivedCents: 200000,
+      offsetCents: 0,
+      balanceCents: 428000,
+      balanceDirection: 'client_due',
+      estimateCents: null,
+      countsTowardReceivable: true,
+      note: null,
+    },
+    primaryAction: { code: 'B06', label: '开始备料与装机', enabled: true, blockers: [] },
+    detailTarget: '/sales/orders',
+    ...overrides,
+  }
 }
 
-describe('今天工作台', () => {
-  it('四项待办指标与待收款金额按样本显示', () => {
+function metrics(taskTotal = 1): WorkbenchPayload['metrics'] {
+  return {
+    pendingDelivery: { label: '待交机', value: 1, filterTarget: '/dashboard?category=delivery' },
+    stockShortage: { label: '缺货订单', value: 0, filterTarget: '/dashboard?category=stock_shortage' },
+    servicePending: { label: '维修待办', value: 0, filterTarget: '/dashboard?category=service' },
+    receivable: { label: '待收款', valueCents: 428000, filterTarget: '/finance?view=receivable' },
+    taskTotal: { label: '待办总数', value: taskTotal, filterTarget: '/dashboard' },
+  }
+}
+
+function success(...tasks: WorkbenchTask[]) {
+  return {
+    ok: true,
+    status: 200,
+    data: {
+      metrics: metrics(tasks.length),
+      tasks,
+      filters: { scope: 'open', limit: 200 },
+      generatedAt: '2026-09-25T08:30:00.000Z',
+    },
+    meta: { requestId: 'req_workbench_001', serverTime: '2026-09-25T08:30:00.000Z', contractVersion: 'v1' },
+  }
+}
+
+function failure(message = '工作台接口暂时不可用') {
+  return {
+    ok: false,
+    unknownResult: false,
+    code: 'SERVICE_UNAVAILABLE',
+    message,
+    status: 503,
+    fieldErrors: null,
+    currentVersion: null,
+    retryable: true,
+    operationId: null,
+    requestId: null,
+    actions: [],
+  }
+}
+
+describe('今天工作台（R02 接口响应）', () => {
+  it('渲染 GET /api/v2/workbench 的业务指标与待办，不依赖 DEMO 样本', async () => {
+    fetchWorkbenchMock.mockResolvedValue(success(makeTask()))
     renderWorkbench()
-    expect(screen.getByRole('button', { name: /待交机/ }).textContent).toContain('2')
-    expect(screen.getByRole('button', { name: /缺货订单/ }).textContent).toContain('2')
-    expect(screen.getByRole('button', { name: /维修待办/ }).textContent).toContain('2')
-    expect(screen.getByRole('button', { name: /待收款/ }).textContent).toContain('12,800.00')
+    expect(await screen.findByText('SO-2026-001')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /待交机/ }).textContent).toContain('1')
+    expect(screen.getByRole('button', { name: /缺货订单/ }).textContent).toContain('0')
+    expect(screen.getByRole('button', { name: /待收款/ }).textContent).toContain('4,280.00')
+    expect(screen.getByText('1 项')).toBeTruthy()
+    expect(screen.queryByText(/DEMO-/)).toBeNull()
+    expect(fetchWorkbenchMock).toHaveBeenCalledTimes(1)
   })
 
-  it('默认列出全部七条，并在页面上标明是演示样本', () => {
-    renderWorkbench()
-    expect(screen.getByText('7 项')).toBeTruthy()
-    expect(screen.getByText(/ID 前缀 DEMO-/)).toBeTruthy()
-    expect(within(taskList()).getByText('DEMO-SO-003')).toBeTruthy()
-  })
-
-  it('指标点击即按类别筛选', () => {
-    renderWorkbench()
-    fireEvent.click(screen.getByRole('button', { name: /待交机/ }))
-    expect(screen.getByText('2 项')).toBeTruthy()
-    expect(within(taskList()).getByText('DEMO-SO-003')).toBeTruthy()
-    expect(within(taskList()).queryByText('DEMO-SO-002')).toBeNull()
-  })
-
-  it('详情默认选中首条，禁用主动作显示阻断原因而不是只变灰', () => {
-    renderWorkbench()
-    const detail = screen.getByRole('article')
-    expect(within(detail).getByText(/装机检查 2\/3 项完成；附件未打包/)).toBeTruthy()
-    const primary = within(detail).getByRole('button', { name: '办理交付（先核对）' })
-    expect((primary as HTMLButtonElement).disabled).toBe(true)
-    expect(within(detail).getByText(/阻断：检查项 2\/3 完成/)).toBeTruthy()
-  })
-
-  it('未确认费用显示为预计，不当作确定应收', () => {
-    renderWorkbench()
-    fireEvent.click(screen.getByRole('button', { name: '维修' }))
-    selectTask('DEMO-RE-006')
-    const detail = screen.getByRole('article')
-    expect(within(detail).getByText(/^预计 ¥480\.00$/)).toBeTruthy()
-    expect(within(detail).queryByText(/^待收/)).toBeNull()
-  })
-
-  it('已结清单据显示已结清，不显示负尾款', () => {
-    renderWorkbench()
-    selectTask('DEMO-SO-011')
-    const detail = screen.getByRole('article')
-    expect(within(detail).getByText('已结清')).toBeTruthy()
-  })
-
-  it('筛选无结果时清空详情并给出清空入口', () => {
-    renderWorkbench()
-    fireEvent.change(screen.getByPlaceholderText('搜索单号 / 客户 / 设备'), {
-      target: { value: '不存在的单号' },
+  it('指标和文本搜索在同一接口结果集中筛选', async () => {
+    const delivery = makeTask()
+    const service = makeTask({
+      taskId: 'service_order:SV-2026-002',
+      entityType: 'service_order',
+      entityId: 'SV-2026-002',
+      category: 'service',
+      title: '维修 · 显卡间歇黑屏',
+      primaryAction: { code: 'B21', label: '录入检测与维修方案', enabled: true, blockers: [] },
+      detailTarget: '/after-sales',
     })
-    expect(screen.getByText('当前筛选没有事项')).toBeTruthy()
+    fetchWorkbenchMock.mockResolvedValue(success(delivery, service))
+    renderWorkbench()
+    expect(await screen.findByText('SV-2026-002')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: /待交机/ }))
+    expect(screen.getByText('1 项')).toBeTruthy()
+    expect(within(taskList()).getByText('SO-2026-001')).toBeTruthy()
+    expect(within(taskList()).queryByText('SV-2026-002')).toBeNull()
+    fireEvent.change(screen.getByPlaceholderText('搜索单号 / 客户 / 设备'), {
+      target: { value: '李女士' },
+    })
+    expect(screen.getByText('1 项')).toBeTruthy()
+    expect(within(taskList()).getByText('SO-2026-001')).toBeTruthy()
+  })
+
+  it('空接口结果显示真实空态，金额指标仍按服务端响应显示', async () => {
+    fetchWorkbenchMock.mockResolvedValue(success())
+    renderWorkbench()
+    expect(await screen.findByText('当前筛选没有事项')).toBeTruthy()
     expect(screen.queryByRole('article')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: '清空筛选' }))
-    expect(screen.getByText('7 项')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /待收款/ }).textContent).toContain('4,280.00')
   })
 
-  it('列表与设备看板是同一结果集', () => {
+  it('保留接口提供的图片 URL；缺少附件时不伪造图片或实拍标注', async () => {
+    fetchWorkbenchMock.mockResolvedValue(success(makeTask({ photoUrl: '/api/v2/attachments/att_123/download' })))
     renderWorkbench()
-    fireEvent.click(screen.getByRole('tab', { name: '设备看板' }))
-    expect(screen.getByText('7 项')).toBeTruthy()
-    expect(within(taskList()).getByText('DEMO-TR-001')).toBeTruthy()
+    await screen.findByText('SO-2026-001')
+    const images = Array.from(document.querySelectorAll('.wb-device-photo img'))
+    expect(images.length).toBeGreaterThan(0)
+    expect(images.every((image) => image.getAttribute('src') === '/api/v2/attachments/att_123/download')).toBe(true)
+    expect(screen.getByText('实物照片')).toBeTruthy()
+
+    cleanup()
+    fetchWorkbenchMock.mockResolvedValue(success(makeTask()))
+    renderWorkbench()
+    await screen.findByText('SO-2026-001')
+    expect(document.querySelector('.wb-photo-placeholder')?.textContent).toContain('暂无图片')
+    expect(document.querySelector('.wb-device-photo img')).toBeNull()
+    expect(document.querySelector('.wb-device-photo figcaption')?.textContent).toBe('暂无附件')
   })
 
-  it('未接通的主动作只说明不提交', () => {
+  it.each(['demo://photos/SO-2026-001.png', '/assets/workbench/tower.jpg'])(
+    '接口误返演示素材地址 %s 时拒绝显示，明确标记素材已隔离',
+    async (photoUrl) => {
+      fetchWorkbenchMock.mockResolvedValue(success(makeTask({ photoUrl })))
+      renderWorkbench()
+      await screen.findByText('SO-2026-001')
+      expect(document.querySelector('.wb-photo-placeholder')?.textContent).toContain('演示图片不可用于真实待办')
+      expect(document.querySelector('.wb-device-photo img')).toBeNull()
+      expect(document.querySelector('.wb-device-photo figcaption')?.textContent).toBe('演示素材已禁用')
+    },
+  )
+
+  it('错误响应可重试，重试成功后显示新的接口快照', async () => {
+    fetchWorkbenchMock
+      .mockResolvedValueOnce(failure())
+      .mockResolvedValueOnce(success(makeTask()))
     renderWorkbench()
-    selectTask('DEMO-SO-002')
-    const detail = screen.getByRole('article')
-    fireEvent.click(within(detail).getByRole('button', { name: '核对到货' }))
-    expect(screen.getByRole('status').textContent).toContain('尚未接通')
-    expect(screen.getByRole('status').textContent).toContain('未提交任何数据')
+    expect(await screen.findByText('工作台接口暂时不可用')).toBeTruthy()
+    expect(screen.getByText('待办未能加载')).toBeTruthy()
+    expect(screen.queryByText('当前筛选没有事项')).toBeNull()
+    expect(within(screen.getByRole('button', { name: /待交机/ })).getByText('—')).toBeTruthy()
+    expect(screen.queryByText('SO-2026-001')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(await screen.findByText('SO-2026-001')).toBeTruthy()
+    expect(fetchWorkbenchMock).toHaveBeenCalledTimes(2)
   })
 
-  it('长文本不丢字段，设备名完整可读', () => {
+  it('网络层意外 reject 后仍退出加载态并可重试', async () => {
+    fetchWorkbenchMock
+      .mockRejectedValueOnce(new Error('连接被中断'))
+      .mockResolvedValueOnce(success(makeTask()))
     renderWorkbench()
-    expect(screen.getAllByText(/白色设计主机 · 设计用装机/).length).toBeGreaterThan(0)
+    expect(await screen.findByText('连接被中断')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(await screen.findByText('SO-2026-001')).toBeTruthy()
   })
 
-  it('图片加载失败时保留设备名称与降级占位', () => {
+  it.each([
+    [makeTask(), '/sales/fulfillment?orderNo=SO-2026-001'],
+    [makeTask({ category: 'stock_shortage', primaryAction: { code: 'B15', label: '登记到货入库', enabled: true, blockers: [] } }), '/inventory/purchases?sourceOrderNo=SO-2026-001'],
+    [makeTask({ taskId: 'service_order:SV-2026-002', entityType: 'service_order', entityId: 'SV-2026-002', category: 'service', primaryAction: { code: 'B21', label: '录入检测与维修方案', enabled: true, blockers: [] }, detailTarget: '/after-sales' }), '/after-sales?orderNo=SV-2026-002'],
+    [makeTask({ taskId: 'recovery_order:RC-2026-003', entityType: 'recovery_order', entityId: 'RC-2026-003', category: 'recovery', primaryAction: { code: 'B27', label: '验机与估价', enabled: true, blockers: [] }, detailTarget: '/recovery' }), '/recovery?orderNo=RC-2026-003'],
+  ] as Array<[WorkbenchTask, string]>)('主动作打开对应业务工作区并带上单号', async (task, target) => {
+    fetchWorkbenchMock.mockResolvedValue(success(task))
     renderWorkbench()
-    const detail = screen.getByRole('article')
-    // jsdom 不加载资源，主动触发 error 验证本地图片丢失的降级路径。
-    const img = detail.querySelector('.wb-device-photo img') as HTMLImageElement
-    expect(img).toBeTruthy()
-    fireEvent.error(img)
-    expect(within(detail).getByText('未加载图片')).toBeTruthy()
-    expect(within(detail).getByText('AI 示意 · 非实拍')).toBeTruthy()
-    expect(within(detail).getByText('白色设计主机 · 设计用装机')).toBeTruthy()
-    // 两个演示事项可以复用同一资源；切换后也必须重试加载。
-    selectTask('DEMO-SO-002')
-    expect(detail.querySelector('.wb-device-photo img')).toBeTruthy()
+    expect(await screen.findByText(task.entityId)).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: task.primaryAction.label }))
+    expect(screen.getByTestId('location').textContent).toBe(target)
   })
 
-  it('＋开单 只把已存在的入口放行，其余如实说明', () => {
+  it('接口标记阻断时主动作禁用并显示服务端原因', async () => {
+    const blocked = makeTask({
+      primaryAction: {
+        code: 'B10',
+        label: '办理交付（先核对）',
+        enabled: false,
+        blockers: [{ code: 'VALIDATION_ERROR', message: '尾款还没结清', targetPage: '账本', targetField: null }],
+      },
+      blockerSummary: '尾款还没结清',
+    })
+    fetchWorkbenchMock.mockResolvedValue(success(blocked))
     renderWorkbench()
-    fireEvent.click(screen.getByRole('button', { name: '＋ 开单' }))
-    expect(screen.getByRole('menuitem', { name: /装机报价/ })).toBeTruthy()
-    fireEvent.click(screen.getByRole('menuitem', { name: /配件零售/ }))
-    expect(screen.getByRole('status').textContent).toContain('尚未接通')
-  })
-
-  it('详情提供跳转完整单据的入口', () => {
-    renderWorkbench()
-    expect(screen.getByRole('button', { name: '打开完整单据' })).toBeTruthy()
+    expect(await screen.findByText('SO-2026-001')).toBeTruthy()
+    const action = screen.getByRole('button', { name: '办理交付（先核对）' }) as HTMLButtonElement
+    expect(action.disabled).toBe(true)
+    expect(screen.getByText('阻断：尾款还没结清（去账本）')).toBeTruthy()
+    expect(screen.getByTestId('location').textContent).toBe('/dashboard')
   })
 })

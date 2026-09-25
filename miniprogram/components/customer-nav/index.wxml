@@ -1,0 +1,24 @@
+<view wx:if="{{layout}}" class="customer-nav" style="height: {{layout.navigationHeight}}px; padding-top: {{layout.statusBarHeight}}px;">
+  <view class="customer-nav__row" style="height: {{layout.contentHeight}}px; padding-left: {{layout.leftInset}}px; padding-right: {{layout.rightInset}}px;">
+    <view wx:if="{{showBack && (hasPage || backFallback)}}" class="customer-nav__back customer-tap" bindtap="onBackTap" aria-label="返回">
+      <view class="customer-nav__back-mark"></view>
+    </view>
+    <view class="customer-nav__copy">
+      <image wx:if="{{storeLine}}" class="customer-nav__location" src="/assets/customer/serviceLocation-active.png" mode="aspectFit" aria-hidden="true" />
+      <text wx:if="{{storeLine}}" class="customer-nav__store">{{storeLine}}</text>
+      <text wx:else class="customer-nav__title">{{title}}</text>
+      <text wx:if="{{storeLine}}" class="customer-nav__chevron" aria-hidden="true">›</text>
+    </view>
+    <view wx:if="{{mineActions}}" class="customer-nav__mine-actions">
+      <view class="customer-nav__action customer-tap" bindtap="onQrTap" aria-label="二维码">
+        <image class="customer-nav__icon" src="/assets/customer/menuQr-active.png" mode="aspectFit" />
+      </view>
+      <view class="customer-nav__action customer-tap" bindtap="onSettingsTap" aria-label="设置">
+        <image class="customer-nav__icon" src="/assets/customer/menuSettings-active.png" mode="aspectFit" />
+      </view>
+    </view>
+    <view wx:elif="{{rightAction}}" class="customer-nav__action customer-tap" bindtap="onRightActionTap" aria-label="辅助操作">
+      <slot name="action"></slot>
+    </view>
+  </view>
+</view>

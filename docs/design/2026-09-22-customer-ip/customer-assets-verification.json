@@ -1,0 +1,561 @@
+{
+  "date": "2026-09-22",
+  "status": "passed",
+  "count": 46,
+  "totalBytes": 922871,
+  "internalBudgetBytes": 1572864,
+  "rows": [
+    {
+      "name": "hero-home.jpg",
+      "bytes": 83962,
+      "width": 900,
+      "height": 675,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "banner-home.jpg",
+      "bytes": 30690,
+      "width": 900,
+      "height": 300,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "hero-shop.jpg",
+      "bytes": 41728,
+      "width": 900,
+      "height": 506,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "product-black-tower.jpg",
+      "bytes": 42594,
+      "width": 600,
+      "height": 600,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "product-white-tower.jpg",
+      "bytes": 41096,
+      "width": 600,
+      "height": 600,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "product-gpu.jpg",
+      "bytes": 37065,
+      "width": 600,
+      "height": 600,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "product-monitor.jpg",
+      "bytes": 33915,
+      "width": 600,
+      "height": 600,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "post-cream-desk.jpg",
+      "bytes": 84104,
+      "width": 900,
+      "height": 506,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "post-dark-desk.jpg",
+      "bytes": 68835,
+      "width": 900,
+      "height": 506,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "post-cooling.jpg",
+      "bytes": 55614,
+      "width": 600,
+      "height": 450,
+      "cornerAlpha": [
+        255,
+        255,
+        255,
+        255
+      ]
+    },
+    {
+      "name": "cat-home-pair.png",
+      "bytes": 49659,
+      "width": 420,
+      "height": 280,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cat-silver-standing.png",
+      "bytes": 51793,
+      "width": 260,
+      "height": 390,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cat-gold-lounging.png",
+      "bytes": 81927,
+      "width": 420,
+      "height": 280,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "cat-archive-folder.png",
+      "bytes": 79109,
+      "width": 420,
+      "height": 320,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "avatar-cat.png",
+      "bytes": 55832,
+      "width": 320,
+      "height": 320,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "brand-wordmark.png",
+      "bytes": 36630,
+      "width": 900,
+      "height": 300,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceBuild-active.png",
+      "bytes": 1595,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceBuild-muted.png",
+      "bytes": 1626,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceRecycle-active.png",
+      "bytes": 1554,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceRecycle-muted.png",
+      "bytes": 1561,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceRepair-active.png",
+      "bytes": 1388,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceRepair-muted.png",
+      "bytes": 1433,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceLocation-active.png",
+      "bytes": 2553,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "serviceLocation-muted.png",
+      "bytes": 2627,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabHome-active.png",
+      "bytes": 975,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabHome-muted.png",
+      "bytes": 1252,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabShop-active.png",
+      "bytes": 959,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabShop-muted.png",
+      "bytes": 1347,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabCommunity-active.png",
+      "bytes": 646,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabCommunity-muted.png",
+      "bytes": 1322,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabMine-active.png",
+      "bytes": 1542,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "tabMine-muted.png",
+      "bytes": 2325,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuQuote-active.png",
+      "bytes": 1263,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuQuote-muted.png",
+      "bytes": 1320,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuOrder-active.png",
+      "bytes": 1496,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuOrder-muted.png",
+      "bytes": 1530,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuAppointment-active.png",
+      "bytes": 1517,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuAppointment-muted.png",
+      "bytes": 1564,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuAfterSales-active.png",
+      "bytes": 2916,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuAfterSales-muted.png",
+      "bytes": 3040,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuQr-active.png",
+      "bytes": 1144,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuQr-muted.png",
+      "bytes": 1172,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuSettings-active.png",
+      "bytes": 2633,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "menuSettings-muted.png",
+      "bytes": 2623,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "chevron-active.png",
+      "bytes": 692,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "name": "chevron-muted.png",
+      "bytes": 703,
+      "width": 81,
+      "height": 81,
+      "cornerAlpha": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

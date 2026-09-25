@@ -144,6 +144,23 @@ describe('写动作 · 幂等键', () => {
     expect(id2).toBe(id1)
   })
 
+  it('查询到终态后只清除对应请求，不影响其他未知动作', async () => {
+    const { client } = setup(async () => { throw new Error('timeout') })
+    await client.write('/inventory/products', { action: 'B12', entityId: 'p-1', payload: { name: '一号' } })
+    await client.write('/inventory/products', { action: 'B12', entityId: 'p-2', payload: { name: '二号' } })
+    const first = client.pendingRequestId('B12', 'p-1')
+    const second = client.pendingRequestId('B12', 'p-2')
+    expect(client.pendingActionCount()).toBe(2)
+    expect(first).toBeTruthy()
+    expect(second).toBeTruthy()
+
+    client.resolvePendingAction(first as string)
+
+    expect(client.pendingActionCount()).toBe(1)
+    expect(client.pendingRequestId('B12', 'p-1')).toBeNull()
+    expect(client.pendingRequestId('B12', 'p-2')).toBe(second)
+  })
+
   it('载荷变了 → 换新 requestId（不然服务端会判 IDEMPOTENCY_MISMATCH）', async () => {
     const { transport, client } = setup(async () => ({ status: 503, text: null }))
     await client.write('/sales/orders/o-1/payments', { action: 'B08', entityId: 'o-1', payload: { amountCents: 5000 } })

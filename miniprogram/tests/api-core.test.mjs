@@ -57,7 +57,7 @@ function setup(respond) {
       fallbackMessage: fallbackMessageFor,
       isRetryable: isRetryableCode,
     },
-    currentTarget: () => '/pages/sales/index?tab=used',
+    currentTarget: () => '/pages/shop/index?category=used',
     newRequestId: () => `req_test_${String((counter += 1)).padStart(3, '0')}`,
     now: () => 1_760_000_000_000,
   })
@@ -234,7 +234,7 @@ test('AUTH_REQUIRED：清 token、记住原目标页，但保留草稿', async (
   assert.equal(result.ok, false)
   assert.equal(session.getToken(), null)
   assert.equal(storage.getItem('pc-quote:v2:drafts'), 'draft-1')
-  assert.equal(session.peekTarget(), '/pages/sales/index?tab=used')
+  assert.equal(session.peekTarget(), '/pages/shop/index?category=used')
 })
 
 test('SESSION_REVOKED：撤权后连草稿与待确认动作一起清（03 §8 L194）', async () => {
@@ -253,7 +253,7 @@ test('SESSION_REVOKED：撤权后连草稿与待确认动作一起清（03 §8 L
   assert.equal(session.getToken(), null)
   assert.equal(storage.getItem('pc-quote:v2:drafts'), null)
   assert.equal(client.pendingActionCount(), 0)
-  assert.equal(session.peekTarget(), '/pages/sales/index?tab=used')
+  assert.equal(session.peekTarget(), '/pages/shop/index?category=used')
 })
 
 test('403 不动会话：无权限是用户的事，不是登录失效', async () => {

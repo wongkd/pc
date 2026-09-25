@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { acceptInvitation, addLibraryItems, createProduct, fetchLibrary, fetchProductCategories, fetchProducts, fetchProfile, normalizeTitles, selectStore, updateLibraryItem, updateProductStatus } from './api'
+import { acceptInvitation, createProduct, fetchProductCategories, fetchProducts, fetchProfile, selectStore, updateProductStatus } from './api'
 import { has } from '../components/SystemSettingsPage'
 
 const createStorage = () => {
@@ -38,20 +38,8 @@ describe('api utils', () => {
     expect(has(['quote/view'], 'member/manage')).toBe(false)
   })
 
-  it('throws normalize error instead of returning empty results silently', async () => {
-    vi.stubGlobal('localStorage', createStorage())
-    vi.stubGlobal('fetch', vi.fn(async () => success({ ok: false, error: '缺少标题' })))
-    await expect(normalizeTitles([])).rejects.toThrow('缺少标题')
-  })
-
-  it('maps backend library name field to frontend description', async () => {
-    vi.stubGlobal('localStorage', createStorage())
-    vi.stubGlobal('fetch', vi.fn(async () => success([{ id: 1, category: 'GPU', name: 'RTX 4070 SUPER', price: '4899', image: 'gpu.jpg', refreshed_at: '2026-07-01', platform: 'mai88' }])))
-    await expect(fetchLibrary()).resolves.toEqual([{ id: 1, category: 'GPU', description: 'RTX 4070 SUPER', price: 4899, image: 'gpu.jpg', refreshed_at: '2026-07-01', platform: 'mai88' }])
-  })
-
   it('uses snake_case query and payload fields for product APIs', async () => {
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => success({ items: [], total: 0, page: 1, page_size: 20 }))
+    const fetchMock = vi.fn<(input: RequestInfo | URL, init?: RequestInit) => Promise<ReturnType<typeof success>>>(async () => success({ items: [], total: 0, page: 1, page_size: 20 }))
     vi.stubGlobal('localStorage', createStorage())
     vi.stubGlobal('fetch', fetchMock)
     await fetchProducts({ categoryId: 3, pageSize: 20, status: 'active' })
@@ -68,15 +56,4 @@ describe('api utils', () => {
     await expect(fetchProductCategories()).rejects.toThrow('SKU 已存在')
   })
 
-  it('sends description as backend name when adding and updating library items', async () => {
-    const fetchMock = vi.fn(async (_input: RequestInfo | URL, _init?: RequestInit) => success({ ok: true }))
-    vi.stubGlobal('localStorage', createStorage())
-    vi.stubGlobal('fetch', fetchMock)
-    await addLibraryItems([{ category: 'CPU', description: 'Intel i7', price: 2999, image: 'cpu.jpg' }])
-    await updateLibraryItem(12, { description: 'Intel i9', price: 3999 })
-    const addRequest = fetchMock.mock.calls[0]?.[1] as RequestInit
-    const updateRequest = fetchMock.mock.calls[1]?.[1] as RequestInit
-    expect(JSON.parse(String(addRequest.body))).toEqual({ items: [{ category: 'CPU', name: 'Intel i7', price: 2999, image: 'cpu.jpg', platform: '' }] })
-    expect(JSON.parse(String(updateRequest.body))).toEqual({ name: 'Intel i9', price: 3999 })
-  })
 })

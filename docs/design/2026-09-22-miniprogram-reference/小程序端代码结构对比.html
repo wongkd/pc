@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小程序端 · 开源代码结构对比</title>
+<style>
+  :root{--ink:#2F3943;--ink2:#5C6672;--ink3:#8B949E;--bg:#F7F6F3;--card:#FFF;--line:#E6E3DC;--acc:#334B42;--acc2:#AE8555;--bad:#A8453C;--ok:#2E7D5B}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;font-size:14px;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1240px;margin:0 auto;padding:48px 32px 80px}
+  header{border-bottom:2px solid var(--acc);padding-bottom:22px;margin-bottom:34px}
+  h1{margin:0 0 8px;font-size:27px;letter-spacing:-.3px}
+  .sub{color:var(--ink2)}
+  .meta{margin-top:14px;font-size:12px;color:var(--ink3);font-family:ui-monospace,Consolas,monospace}
+  h2{font-size:17px;margin:48px 0 16px;padding-left:11px;border-left:3px solid var(--acc2)}
+  pre{font-family:ui-monospace,Consolas,"Courier New",monospace;font-size:11.5px;line-height:1.75;margin:0;white-space:pre;overflow-x:auto;color:#3A4551}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .pcard{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;overflow:hidden}
+  .phd{display:flex;flex-direction:column;gap:2px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px dashed var(--line)}
+  .phd strong{font-size:13px;word-break:break-all}
+  .phd span{font-size:11px;color:var(--ink3);font-family:ui-monospace,Consolas,monospace}
+  .phd em{font-size:11.5px;color:var(--acc2);font-style:normal;font-weight:600;margin-top:3px}
+  .mine{background:#FCFCFA;border:2px solid var(--acc);border-radius:10px;padding:20px 22px;margin-bottom:16px}
+  .mine h3{margin:0 0 4px;font-size:14px}
+  .mine p{margin:0 0 14px;font-size:12.5px;color:var(--ink2)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px}
+  th{background:#F1EFEA;text-align:left;padding:9px 10px;font-size:11px;color:var(--ink2);font-weight:600;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 10px;border-bottom:1px solid #F0EEE9;vertical-align:top;color:var(--ink2)}
+  tr:last-child td{border-bottom:none}
+  td.nm{font-weight:600;color:var(--ink);white-space:nowrap}
+  td.me{background:#F7F9F7;color:var(--ink);font-weight:600}
+  td.me b{color:var(--bad)}
+  td.me i{color:var(--ok);font-style:normal}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px}
+  .box ol{margin:0;padding-left:20px}
+  .box li{margin-bottom:11px;font-size:13.5px;color:var(--ink2)}
+  .box li b{color:var(--ink)}
+  .box code{background:#F1EFEA;padding:1px 6px;border-radius:4px;font-family:ui-monospace,Consolas,monospace;font-size:12px;color:#3A4551}
+  .note{background:#FBF8F2;border:1px solid #EDE4D4;border-left:3px solid var(--acc2);border-radius:8px;padding:14px 18px;margin-top:20px;font-size:13px;color:#6B5B44}
+  .warnbox{background:#FDF6F5;border:1px solid #EFD8D5;border-left:3px solid var(--bad);border-radius:8px;padding:14px 18px;font-size:13px;color:#7A4038}
+  footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--ink3)}
+</style>
+</head>
+<body><div class="wrap">
+
+  <header>
+    <h1>小程序端 · 开源代码结构对比</h1>
+    <div class="sub">只比目录结构、分层与工程化。视觉一律不评——皮肤由 ChatGPT 重做。</div>
+    <div class="meta">2026-09-22 &nbsp;|&nbsp; 6 个开源项目 + 你现有项目 &nbsp;|&nbsp; 目录树取自各仓库实际文件</div>
+  </header>
+
+  <h2>一条硬事实</h2>
+  <div class="warnbox">
+    <b>「原生 TypeScript + 完整业务闭环 + 高星」的小程序项目，开源里不存在。</b><br>
+    按 TypeScript 筛，最高才 48★（2021 年的模板）；高星的（21.8k / 2.6k / 859）全是 JS。原因：高星项目基本成形于 2017–2019 年 JS 时代，TS 化是近几年的事，而成熟的企业级项目通常不开源。
+    <br><br>⇒ 所以能选的路只有三条，见最后一节。
+  </div>
+
+  <h2>先看你自己的项目</h2>
+  <div class="mine">
+    <h3>miniprogram/ · 原生 TS · 58 个源文件</h3>
+    <p>已经有了：分包、业务逻辑层、契约生成物、自检脚本、8 个单测。底子比多数开源项目干净。</p>
+    <pre>assets/ui/  assets/workbench/
+contracts/generated/   ← 契约生成物
+features/              ← 业务逻辑，11 个 .ts
+  amount-view  api-client  api-core
+  display-text  error-behavior  session
+  inventory-view  demo-*
+packages/              ← 分包
+  sales/order-detail/
+  inventory/item-detail/
+pages/                 ← 8 个，扁平
+  home/ shop/ community/ mine/
+  today/ sales/ inventory/ more/
+scripts/               ← 自检脚本
+  check-pages  check-classes  sync-contracts
+templates/landing.wxml
+tests/                 ← 8 个 .test.mjs
+app.ts  app.json  app.wxss
+tsconfig.json  project.config.json</pre>
+  </div>
+
+  <h2>6 个开源项目的真实目录树</h2>
+  <div class="grid">
+  <div class="pcard">
+    <div class="phd"><strong>Tencent/tdesign-miniprogram-starter-retail</strong><span>原生 JS · MIT · 294 文件 · 2026-09</span><em>分层最规范</em></div>
+    <pre>common/
+components/          ← 10 个业务组件
+  goods-card/ goods-list/ price/
+  filter/ filter-popup/ promotion/
+  load-more/ loading-content/
+  swipeout/ webp-image/
+config/
+custom-tab-bar/      ← 自定义 tabBar
+model/               ← mock 数据
+pages/               ← 页面按域分组
+  home/ goods/ cart/ order/
+  category/ coupon/ promotion/ user/
+services/            ← API 层，按域拆
+  _utils/ activity/ address/ cart/
+  comments/ coupon/ good/ home/
+  order/ promotion/ usercenter/
+style/  utils/
+.github/workflows/  .husky/  .vscode/</pre>
+  </div>
+  <div class="pcard">
+    <div class="phd"><strong>EastWorld/wechat-app-mall</strong><span>原生 JS · Apache-2.0 · 698 文件 · 2026-09</span><em>功能最全</em></div>
+    <pre>components/          ← 7 个组件
+  login/ payment/ bind-mobile/
+  date-time-selecter/ goods-pop/
+  vip-success/ fuwuxieyi/
+pages/               ← 50+ 个，扁平堆叠
+  index/ goods/ order/ order-list/
+  order-details/ shop-cart/ my/
+  deposit/ recharge/ recycle/
+  withdraw/ coupons/ invoice/ …
+packageCps/          ← 分包：CPS 推广
+packageFx/           ← 分包：分销
+packageStreamMedia/  ← 分包：直播
+images/  typings/  utils/  game/</pre>
+  </div>
+  <div class="pcard">
+    <div class="phd"><strong>iamdarcy/hioshop-miniprogram</strong><span>原生 JS · MIT · 79 文件 · 2024-05（停更）</span><em>最轻量</em></div>
+    <pre>components/
+  canvasdrawer/
+config/
+lib/
+  wxParse/           ← 富文本解析
+images/icon  images/nav
+pages/               ← 11 个
+  index/ goods/ cart/ category/
+  order-check/ payOffline/ payResult/
+  search/ share/ ucenter/ app-auth/
+services/
+utils/</pre>
+  </div>
+  <div class="pcard">
+    <div class="phd"><strong>MatrixCross/Weapp-Starter</strong><span>原生 TS · MIT · 33★ · 2025-05</span><em>TS 工程化</em></div>
+    <pre>src/
+  apis/              ← 独立 API 层
+  components/        ← 组件
+    component-a/ component-b/ svg-icon/
+  packages/logs/     ← 分包
+  pages/index/
+  store/             ← 状态管理
+  utils/request/     ← 请求封装
+  assets/svg/
+typings/             ← 全局类型
+.husky/              ← Git 钩子
+docs/components/</pre>
+  </div>
+  <div class="pcard">
+    <div class="phd"><strong>NewFuture/miniprogram-template</strong><span>原生 TS · MIT · 48★ · 2021-09</span><em>多环境 + 代码生成</em></div>
+    <pre>env/                 ← 多环境配置（dev/prod）
+src/
+  assets/icon/
+  components/
+  model/             ← 数据模型
+  pages/index/ pages/logs/
+  utils/
+  wxs/               ← WXS 脚本单独放
+.dtpl/               ← 代码片段模板
+  component/         ← 一键生成组件骨架
+  page/              ← 一键生成页面骨架
+.github/workflows/
+.vscode/</pre>
+  </div>
+  <div class="pcard">
+    <div class="phd"><strong>zhihuifanqiechaodan/miniprogram-template</strong><span>原生 TS · 32★ · 2026-08</span><em>通用组件齐</em></div>
+    <pre>miniprogram/
+  assets/
+  components/        ← 4 个通用组件
+    custom-broken-network/   ← 断网
+    custom-iconfont/         ← 图标字体
+    custom-image/            ← 图片占位/失败
+    custom-nav-bar/          ← 自定义导航
+  config/
+  custom-tab-bar/
+  pages/home/ pages/profile/
+  utils/
+typings/
+  api-types/         ← API 类型
+  types/wx/          ← 微信类型
+.husky/</pre>
+  </div></div>
+
+  <h2>逐层对比</h2>
+  <table>
+    <thead><tr><th>层</th><th>TDesign 零售</th><th>wechat-app-mall</th><th>hioshop</th><th>Weapp-Starter</th><th>NewFuture</th><th>zhihuifanqie</th><th>你现有</th></tr></thead>
+    <tbody>
+  <tr>
+    <td class="nm">组件化目录</td>
+    <td>components/ 10 个业务组件</td><td>components/ 7 个</td><td>components/ 1 个</td><td>components/ + svg-icon</td><td>components/</td><td>components/ 4 个通用</td>
+    <td class="me">**无**</td>
+  </tr>
+  <tr>
+    <td class="nm">服务/API 层</td>
+    <td>services/ 按域拆 10 组</td><td>utils 混合</td><td>services/</td><td>apis/ 独立</td><td>utils/ 混合</td><td>utils/ 混合</td>
+    <td class="me">features/ 11 个扁平</td>
+  </tr>
+  <tr>
+    <td class="nm">状态管理</td>
+    <td>—</td><td>—</td><td>—</td><td>**store/**</td><td>—</td><td>—</td>
+    <td class="me">**无**</td>
+  </tr>
+  <tr>
+    <td class="nm">类型定义</td>
+    <td>—</td><td>typings/</td><td>—</td><td>typings/</td><td>—</td><td>typings/api-types 分层</td>
+    <td class="me">仅 contracts/generated</td>
+  </tr>
+  <tr>
+    <td class="nm">多环境配置</td>
+    <td>config/</td><td>—</td><td>config/</td><td>—</td><td>**env/**</td><td>config/</td>
+    <td class="me">**无**</td>
+  </tr>
+  <tr>
+    <td class="nm">分包</td>
+    <td>无</td><td>3 个功能分包</td><td>无</td><td>packages/</td><td>—</td><td>无</td>
+    <td class="me">2 个分包 ✅</td>
+  </tr>
+  <tr>
+    <td class="nm">自定义 tabBar</td>
+    <td>✅</td><td>—</td><td>—</td><td>—</td><td>—</td><td>✅</td>
+    <td class="me">无</td>
+  </tr>
+  <tr>
+    <td class="nm">代码生成模板</td>
+    <td>—</td><td>—</td><td>—</td><td>—</td><td>**.dtpl/** 页面/组件骨架</td><td>—</td>
+    <td class="me">无</td>
+  </tr>
+  <tr>
+    <td class="nm">工程化</td>
+    <td>husky + CI + eslint</td><td>部分</td><td>部分</td><td>husky</td><td>CI + vscode</td><td>husky</td>
+    <td class="me">自检脚本 + 8 单测</td>
+  </tr>
+  <tr>
+    <td class="nm">TypeScript</td>
+    <td>❌ JS</td><td>❌ JS</td><td>❌ JS</td><td>✅</td><td>✅</td><td>✅</td>
+    <td class="me">✅</td>
+  </tr></tbody>
+  </table>
+
+  <h2>你真正缺的三样</h2>
+  <div class="box">
+    <ol>
+      <li><b>components/ —— 组件化目录（最缺）。</b>你现在是页面直接写 WXML，没有任何可复用组件。顾客端页面一多，重复结构会迅速失控。可直接照抄的三个最通用：<code>custom-image</code>（图片占位/失败兜底）、<code>custom-nav-bar</code>（自定义导航，绕开原生导航栏的限制）、<code>custom-broken-network</code>（断网态）。<br><span style="color:var(--ink3);font-size:12.5px">→ 抄 zhihuifanqiechaodan/miniprogram-template，它这四个通用组件就是为这个场景做的。</span></li>
+      <li><b>store/ —— 状态管理。</b>你的 <code>features/session.ts</code> 相当于手写的轻量版，但没有统一 store。跨页共享「当前报价单 / 登录态 / 购物车」时会散。Weapp-Starter 用 <code>store/</code> 解决，模式可直接借鉴。</li>
+      <li><b>typings/ —— 类型定义分层。</b>你现在类型只有 <code>contracts/generated</code>（协议层）。缺小程序自身的类型分层（API 响应类型 / 页面数据类型），Weapp-Starter 与 zhihuifanqiechaodan 都有 <code>typings/api-types</code> 这样的结构。</li>
+    </ol>
+    <div class="note">
+      <b>反过来，有一样你做得比它们都好：</b><code>scripts/check-pages.mjs</code> + <code>check-classes.mjs</code> + 8 个单测 + 契约生成物同步。TDesign 零售有 eslint/husky 但没有这类业务自检。这部分不要丢。
+    </div>
+  </div>
+
+  <h2>三条路，你选一条</h2>
+  <div class="box">
+    <ol>
+      <li><b>A · 不换底座，只补结构（推荐）。</b>在现有项目上补 <code>components/</code>、<code>store/</code>、<code>typings/</code> 三层。代价最小，且不破坏已通过的契约同步与自检链路。<b>你现在的结构已经是原生 TS 里靠前的，推倒重来是净亏。</b></li>
+      <li><b>B · 换 TDesign 零售模板作底座。</b>结构分层最规范（<code>services/</code> 按域拆 + <code>components/</code> 10 个业务组件），但它是 <b>JS</b>，TS 化要补全量类型；且它的业务（零售电商）与顾客端（报价单）差得远，要删改一半。<b>只在"你想顺带把代码规范统一"时才值。</b></li>
+      <li><b>C · 换 wechat-app-mall 作底座。</b>功能最全（50+ 页面、支付/物流/售后都有），但 <code>pages/</code> 扁平堆 50+ 个，结构乱、代码老、无 TS。<b>改造量大于自建，不建议。</b></li>
+    </ol>
+    <div class="note">
+      <b>共同前提：</b>无论走哪条，视觉都不要从这些项目里抄——你说得对，它们都丑。它们能提供的只有<b>目录分层、组件划分、工程配置</b>这三样。
+    </div>
+  </div>
+
+  <footer>目录结构经 GitHub API 于 2026-09-22 读取各仓库实际文件树。许可证：TDesign 零售 / hioshop / Weapp-Starter / NewFuture / zhihuifanqiechaodan 为 MIT，wechat-app-mall 为 Apache-2.0，均可商用。</footer>
+</div></body></html>

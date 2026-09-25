@@ -67,7 +67,7 @@ export interface ErrorHandling {
 }
 
 /**
- * 16 个错误码的完整行为表。
+ * 契约错误码的完整行为表（数量随契约变化）。
  * 用 `Record<ErrorCode, ErrorHandling>` 是为了让 tsc 强制「不多不少」覆盖契约全部取值 ——
  * 契约新增错误码时这里会编译失败，而不是静默漏掉。
  */
@@ -132,6 +132,16 @@ export const ERROR_HANDLING: Record<ErrorCode, ErrorHandling> = {
     actions: ['refetch-balance', 'keep-input', 'no-auto-retry'],
     fallbackMessage: '折抵累计超出应收或应付',
   },
+  PURCHASE_PAYMENT_CONFLICT: {
+    retryable: false,
+    actions: ['show-precondition', 'reload-entity', 'keep-input', 'no-auto-retry'],
+    fallbackMessage: '采购已有净付款，不能直接取消未到数量',
+  },
+  PURCHASE_CANCEL_EXCEEDED: {
+    retryable: false,
+    actions: ['reload-entity', 'keep-input', 'no-auto-retry'],
+    fallbackMessage: '取消数量超过采购单尚未处置的数量',
+  },
   OWNERSHIP_INVALID: {
     retryable: false,
     actions: ['show-precondition', 'no-auto-retry'],
@@ -151,6 +161,26 @@ export const ERROR_HANDLING: Record<ErrorCode, ErrorHandling> = {
     retryable: true,
     actions: ['wait-and-retry', 'query-operation'],
     fallbackMessage: '服务暂不可用',
+  },
+  // ── MP17 顾客身份（2026-09-23）────────────────────────────────────────
+  // 顾客会话与员工会话是两条链路，故顾客的登录失效不复用 AUTH_REQUIRED / SESSION_REVOKED。
+  CUSTOMER_CODE_INVALID: {
+    retryable: true,
+    // code 换 openid 失败：会话没建起来，清掉可能存在的半成品身份并重走登录。
+    actions: ['clear-session', 'goto-login', 'no-auto-retry'],
+    fallbackMessage: '顾客微信登录凭证无效：code 缺失、重复使用、已过期，或与当前 AppID 不匹配',
+  },
+  CUSTOMER_IDENTITY_REVOKED: {
+    retryable: true,
+    // 身份解绑 / 会话版本递增：与员工撤权同处理，连本地草稿一起清，避免新身份看到旧输入。
+    actions: ['clear-session', 'clear-drafts', 'goto-login', 'no-auto-retry'],
+    fallbackMessage: '顾客微信身份已解绑，或该顾客的会话版本已被递增',
+  },
+  CUSTOMER_CLAIM_REQUIRED: {
+    retryable: false,
+    // 未认领不是「没有记录」，必须走认领前置步骤；自动重试永远不会变绿。
+    actions: ['show-precondition', 'no-auto-retry'],
+    fallbackMessage: '微信身份有效，但尚未认领到门店客户档案，或认领被驳回',
   },
 }
 
