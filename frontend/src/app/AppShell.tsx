@@ -46,6 +46,15 @@ export function AppShell({
   )
 
   const activeNav = findNavItemByPath(location.pathname)
+  const locationLabel = location.pathname.startsWith('/customers')
+    ? '客户台账'
+    : location.pathname.startsWith('/sales/quotes')
+      ? '装机报价'
+      : location.pathname.startsWith('/recovery')
+        ? '实物流转 / 收旧件'
+        : location.pathname.startsWith('/purchases')
+          ? '实物流转 / 采购到货'
+          : activeNav?.label ?? '工作空间'
 
   // 沿用旧壳对「系统设置」的可见性判断，不在换壳时放宽既有门槛。
   // 这层只是界面提示，真正的边界在后端（02 §7：不依赖前端隐藏保护权限）。
@@ -135,7 +144,7 @@ export function AppShell({
           ))}
         </nav>
 
-        <span className="wb-location-label">门店 ERP <span>/</span> {location.pathname.startsWith("/customers") ? "客户台账" : location.pathname.startsWith("/sales/quotes") ? "装机报价" : activeNav?.label ?? "工作空间"}</span>
+        <span className="wb-location-label">门店 ERP <span>/</span> {locationLabel}</span>
         <div className="wb-topbar-side">
           <div className="wb-search">
             <input

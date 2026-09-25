@@ -701,11 +701,12 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
     <div className="wb-page">
       <header className="wb-page-head">
         <div>
-          <p className="wb-kicker">库存</p>
-          <h1>商品与实物</h1>
+          <p className="wb-kicker">实物流转</p>
+          <h1>配件台账</h1>
           <p className="wb-caption">
-            数据来自本店库存账；自有在库量 = 可卖 + 已订 + 待处理，在途与客户保管单列。
+            按具体实物或批次查看本店库存；自有在库量 = 可卖 + 已订 + 待处理，在途与客户保管单列。
           </p>
+          <p className="wb-caption">报价不改库存；成交预留只占可售量，实际交付才出库。采购实收、确认收购和拆件产出按来源入库。</p>
           <p className="wb-caption">B16 首发只批准不减少账面库存的差异；减库存报损走暂缓中的 B39。</p>
         </div>
         <div className="wb-page-head-actions">
@@ -734,6 +735,33 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
           {canCount ? <button type="button" className="wb-btn" onClick={openCount}>录入盘点</button> : null}
         </div>
       </header>
+
+      <section className="wb-item-flow-hub" aria-label="配件收发常用入口">
+        <div className="wb-item-flow-hub__heading">
+          <div>
+            <p className="wb-kicker">从配件实际来源进入</p>
+            <h2>实物收进来，或确认交出去</h2>
+          </div>
+          <p>库存流水由业务单据按实物收发产生。报价、估价和预留不会直接改库存数量。</p>
+        </div>
+        <div className="wb-item-flow-hub__groups">
+          <div className="wb-item-flow-hub__group">
+            <h3>入库来源</h3>
+            <p>到货或确认取得所有权后，按来源登记实物。</p>
+            <div className="wb-item-flow-hub__links">
+              <a className="wb-btn" href="/purchases">采购到货</a>
+              <a className="wb-btn" href="/recovery">收旧件</a>
+            </div>
+          </div>
+          <div className="wb-item-flow-hub__group">
+            <h3>出库去向</h3>
+            <p>成交先预留；确认配件已交付时才记出库。</p>
+            <div className="wb-item-flow-hub__links">
+              <a className="wb-btn wb-btn--primary" href="/sales/fulfillment">备料与交付</a>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {openingWindow?.mode === 'formal' && openingWindow.status === 'open' ? (
         <p className="wb-inv-notice wb-inv-notice--warn">

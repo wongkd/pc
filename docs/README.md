@@ -8,6 +8,7 @@
 | 业务需求 | [ERP 规划](plans/2026-09-19-erp-first/README.md)与[原始需求对照](plans/2026-09-19-erp-first/00-requirements.md) |
 | 报价业务 | [报价规则](2026-09-19-报价单业务规则.md)；[Q01](plans/2026-09-19-quote-flow/README.md)供追溯 |
 | 已冻结经营规则 / 实施边界 | [D01–D10 规则R1](plans/2026-09-23-owner-decisions/README.md)与[异常及实施台账](plans/2026-09-23-owner-decisions/edge-cases.md)：用户已授权采纳推荐，未交付能力逐项暂缓 |
+| 配件收发流程 V2 | [流程复评与简化方案](plans/2026-09-26-item-flow-simplification/README.md) / [V2 生产发布回执](verification/2026-09-26-v2-item-flow-release/README.md)：保留 V1 基线、记录 V2 变更与生产验收边界 |
 | ERP 视觉 | [彩色 Core V2](design/2026-09-19-erp-core/v2/README.md)，维修/回收原型由验证索引进入 |
 | 顾客小程序 | [4Tab 任务包](plans/2026-09-22-customer-miniprogram-reset/README.md)；[主体与上线背景](2026-09-19-小程序主体与上线方案.md)不代表当前平台核验 |
 | 生产重置 / 旧工具下线 | [2026-09-25 发布回执](verification/2026-09-25-production-reset-release/README.md)；历史文件分类见[入口治理回执](verification/2026-09-25-erp-entry-cleanup/README.md) |

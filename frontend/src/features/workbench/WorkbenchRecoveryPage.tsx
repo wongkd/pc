@@ -112,14 +112,6 @@ const RECOVERY_FLOW_STEPS = [
   { title: '结算并处理旧机', detail: '置换抵款、付款或拆件' },
 ] as const
 
-function recoveryFlowIndex(state: RecoveryState): number {
-  if (state === 'received_for_inspection' || state === 'inspecting') return 1
-  if (state === 'offered') return 2
-  if (state === 'acquired') return 3
-  if (state === 'return_pending') return 3
-  return state === 'returned' || state === 'disassembled' || state === 'refurbishing' || state === 'ready_for_sale' ? 4 : 0
-}
-
 type RecoveryNextStep = { title: string; detail: string; action: string | null; href?: string }
 
 function recoveryNextStep(state: RecoveryState): RecoveryNextStep {
@@ -147,53 +139,52 @@ function recoveryNextStep(state: RecoveryState): RecoveryNextStep {
   }
 }
 
-function RecoveryFlowGuide({ state }: { state?: RecoveryState }) {
-  const currentIndex = state ? recoveryFlowIndex(state) : -1
+function recoveryInventoryImpact(state: RecoveryState, itemCount: number, ownedItemCount: number) {
+  if (state === 'returned') return '已归还卖方 · 不进入本店库存'
+  if (state === 'disassembled') return '源设备已出库 · 拆出的配件分别入待检库存'
+  if (state === 'acquired') return `${ownedItemCount} / ${itemCount} 件已取得并进入待检库存`
+  if (state === 'refurbishing' || state === 'ready_for_sale') return `${ownedItemCount} 件归店实物继续由配件台账跟踪`
+  return '客户暂存中 · 登记、验机和估价都不改变库存'
+}
+
+function RecoveryFlowGuide({ state, itemCount = 0, ownedItemCount = 0 }: {
+  state?: RecoveryState
+  itemCount?: number
+  ownedItemCount?: number
+}) {
   const nextStep = state ? recoveryNextStep(state) : null
 
   return (
     <section className="wb-recovery-guide" aria-label="回收操作指引">
       <div className="wb-recovery-guide__heading">
         <div>
-          <p className="wb-kicker">先确认流程，再操作单据</p>
-          <h2>{state ? '这张回收单的处理进度' : '回收置换按这 4 步处理'}</h2>
+          <p className="wb-kicker">配件流转</p>
+          <h2>{nextStep?.title ?? '收旧件只在确认收购时入库'}</h2>
         </div>
-        {!state ? <p>登记不等于收购；取得所有权后，旧设备才进入本店待检库存。</p> : null}
       </div>
-      {state === 'returned' ? (
-        <p className="wb-recovery-guide__note">这张单以归还结束，旧设备没有转入本店库存。</p>
-      ) : (
-        <ol className="wb-recovery-guide__steps">
-          {RECOVERY_FLOW_STEPS.map((step, index) => {
-            const isDone = currentIndex > index
-            const isCurrent = currentIndex === index
-            return (
-              <li key={step.title} className={isDone ? 'is-done' : isCurrent ? 'is-current' : ''} aria-current={isCurrent ? 'step' : undefined}>
-                <span className="wb-recovery-guide__number">{isDone ? '✓' : index + 1}</span>
-                <span className="wb-recovery-guide__step-copy"><strong>{step.title}</strong><small>{step.detail}</small></span>
-              </li>
-            )
-          })}
-        </ol>
-      )}
-      {nextStep ? (
+      {state ? <>
         <div className="wb-recovery-next">
           <div>
-            <span className="wb-recovery-next__eyebrow">本单下一步</span>
-            <h3>{nextStep.title}</h3>
-            <p>{nextStep.detail}</p>
+            <span className="wb-recovery-next__eyebrow">当前库存影响</span>
+            <p>{recoveryInventoryImpact(state, itemCount, ownedItemCount)}</p>
           </div>
-          {nextStep.action ? <a className="wb-btn wb-btn--primary" href={nextStep.href ?? '#recovery-actions'}>{nextStep.action} <span aria-hidden="true">↓</span></a> : null}
-          {state === 'acquired' ? (
-            <div className="wb-recovery-next__choices">
-              <a href="#recovery-tradein">用旧设备抵新订单 <span aria-hidden="true">↓</span></a>
-              <a href="#recovery-actions">给卖方登记付款 <span aria-hidden="true">↓</span></a>
-            </div>
-          ) : null}
+          {nextStep?.action ? <a className="wb-btn wb-btn--primary" href={nextStep.href ?? '#recovery-actions'}>{nextStep.action} <span aria-hidden="true">↓</span></a> : null}
+          {state === 'acquired' ? <div className="wb-recovery-next__choices">
+            <a href="#recovery-tradein">选择销售单并抵扣 <span aria-hidden="true">↓</span></a>
+            <a href="#recovery-actions">登记实际付款 <span aria-hidden="true">↓</span></a>
+          </div> : null}
         </div>
-      ) : (
-        <p className="wb-recovery-guide__note"><strong>计划做置换抵款？</strong>登记时先关联客户档案，并确保新销售单属于同一客户；散客回收单不能关联客户销售单。</p>
-      )}
+        {nextStep ? <p className="wb-recovery-guide__note">{nextStep.detail}</p> : null}
+      </> : <p className="wb-recovery-guide__note">登记、验机、估价不会入库；确认取得所有权时入待检库存。拆件会记录源设备出库和产出配件入库。</p>}
+      <details className="wb-recovery-guide__more">
+        <summary>{state ? '查看完整处理规则' : '查看处理步骤与置换规则'}</summary>
+        <ol className="wb-recovery-guide__steps">
+          {RECOVERY_FLOW_STEPS.map((step) => <li key={step.title}>
+            <span className="wb-recovery-guide__step-copy"><strong>{step.title}</strong><small>{step.detail}</small></span>
+          </li>)}
+        </ol>
+        <p className="wb-recovery-guide__note"><strong>置换抵款：</strong>只有已取得所有权、且同一客户有待收销售单时才能折抵；折抵不是现金收款，散客回收按实际付款登记。</p>
+      </details>
     </section>
   )
 }
@@ -721,20 +712,9 @@ function RecoveryDetail(props: DetailProps) {
         </div>
       </div>
 
-      <RecoveryFlowGuide state={detail.state} />
+      <RecoveryFlowGuide state={detail.state} itemCount={detail.items.length} ownedItemCount={ownedItems.length} />
 
       {actionError ? <p className="wb-inv-notice wb-inv-notice--warn">{actionError}</p> : null}
-
-      <div className="wb-inv-totals">
-        <div className="wb-inv-total"><span>估价</span><strong>{detail.initialEstimateCents === null ? '—' : formatYuan(detail.initialEstimateCents)}</strong></div>
-        <div className="wb-inv-total"><span>最终收购价</span><strong>{detail.finalAcquisitionCents === null ? '—' : formatYuan(detail.finalAcquisitionCents)}</strong></div>
-        <div className="wb-inv-total"><span>已折抵</span><strong>{formatYuan(detail.offsetCents)}</strong></div>
-        <div className="wb-inv-total"><span>现金已付</span><strong>{formatYuan(detail.paidCents)}</strong></div>
-        <div className="wb-inv-total"><span>剩余待结算</span><strong>{formatYuan(Math.max(detail.payableCents - detail.offsetCents, 0))}</strong></div>
-      </div>
-
-      <AttachmentPanel attachments={detail.attachments ?? []} ownerType="recovery_order" ownerId={detail.id} canUpload={props.canUpload} onUploaded={() => onReload(detail.id)} />
-      <TradeInPanel recovery={detail} permissions={props.permissions} onChanged={() => onReload(detail.id)} />
 
       <div className="wb-quote-table-scroll">
         <table className="wb-quote-table">
@@ -762,6 +742,23 @@ function RecoveryDetail(props: DetailProps) {
           </tbody>
         </table>
       </div>
+
+      <details className="wb-recovery-optional">
+        <summary>结算金额 · 待结算 {formatYuan(Math.max(detail.payableCents - detail.offsetCents - detail.paidCents, 0))}</summary>
+        <div className="wb-inv-totals">
+          <div className="wb-inv-total"><span>初步估价</span><strong>{detail.initialEstimateCents === null ? '—' : formatYuan(detail.initialEstimateCents)}</strong></div>
+          <div className="wb-inv-total"><span>最终收购价</span><strong>{detail.finalAcquisitionCents === null ? '—' : formatYuan(detail.finalAcquisitionCents)}</strong></div>
+          <div className="wb-inv-total"><span>已折抵</span><strong>{formatYuan(detail.offsetCents)}</strong></div>
+          <div className="wb-inv-total"><span>现金已付</span><strong>{formatYuan(detail.paidCents)}</strong></div>
+          <div className="wb-inv-total"><span>待结算</span><strong>{formatYuan(Math.max(detail.payableCents - detail.offsetCents - detail.paidCents, 0))}</strong></div>
+        </div>
+      </details>
+
+      <details className="wb-recovery-optional">
+        <summary>照片与附件 · {detail.attachments?.length ?? 0} 项</summary>
+        <AttachmentPanel attachments={detail.attachments ?? []} ownerType="recovery_order" ownerId={detail.id} canUpload={props.canUpload} onUploaded={() => onReload(detail.id)} />
+      </details>
+      <TradeInPanel recovery={detail} permissions={props.permissions} onChanged={() => onReload(detail.id)} />
 
       <section id="recovery-actions" className="wb-recovery-actions" aria-label="本单可执行操作">
         <h2>本单可执行操作</h2>

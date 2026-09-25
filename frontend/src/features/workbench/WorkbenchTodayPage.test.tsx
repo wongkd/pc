@@ -10,6 +10,7 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from '../../app/AppShell'
+import { findNavItemByPath } from '../../app/navigation'
 import { WorkbenchTodayPage } from './WorkbenchTodayPage'
 import type { Profile } from '../../utils/api'
 import type { WorkbenchPayload, WorkbenchTask } from './workbench-api'
@@ -50,13 +51,13 @@ function renderShell() {
 }
 
 describe('AppShell 主导航与常用页面', () => {
-  it('保留六业务入口并提供报价与客户台账快捷入口', () => {
+  it('将采购、回收与库存收拢到实物流转，并提供报价与客户快捷入口', () => {
     renderShell()
     const nav = screen.getByRole('navigation', { name: '主导航' })
     const labels = within(nav)
       .getAllByRole('link')
       .map((link) => link.textContent)
-    expect(labels).toEqual(['今天', '开单', '库存', '售后', '回收置换', '账本', '装机报价', '客户台账'])
+    expect(labels).toEqual(['今天', '开单', '实物流转', '售后', '账本', '装机报价', '客户台账'])
   })
 
   it('当前页所在导航高亮，且只有一项', () => {
@@ -65,6 +66,12 @@ describe('AppShell 主导航与常用页面', () => {
       .getAllByRole('link')
       .filter((link) => link.className.includes('is-active'))
     expect(active.map((link) => link.textContent)).toEqual(['今天'])
+  })
+
+  it('回收、采购和库存深链归在同一实物流转导航下', () => {
+    expect(findNavItemByPath('/recovery/RO-1')?.label).toBe('实物流转')
+    expect(findNavItemByPath('/purchases/PO-1')?.label).toBe('实物流转')
+    expect(findNavItemByPath('/inventory')?.label).toBe('实物流转')
   })
 
   it('设置不占顶栏，只在账号菜单里', () => {

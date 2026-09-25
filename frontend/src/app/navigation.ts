@@ -1,8 +1,8 @@
 /**
  * 网页端导航定义与旧深链映射。
  *
- * 六项顶栏的依据：`docs/plans/2026-09-17-web-wechat-plan/01-scope-and-architecture.md`
- * 第 41 行「电脑六项顶栏：今天、开单、库存、售后、回收置换、账本；设置置于头像菜单」。
+ * V2 将库存、采购到货、回收收件和 SN 台账归为一个「实物流转」工作区；
+ * 业务深链保留，员工从配件结果回到同一组实物入口。
  *
  * 页面路径依据同目录 `02-ui-specification.md` §2 页面地图。
  * 本文件只描述导航与映射，不含业务权限判定（权限由服务端返回的 profile 决定）。
@@ -28,16 +28,15 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   },
   {
     path: '/inventory',
-    label: '库存',
-    matchPrefixes: ['/inventory', '/sn', '/purchases', '/suppliers'],
-    pageIds: ['P06', 'P07', 'P08'],
+    label: '实物流转',
+    matchPrefixes: ['/inventory', '/sn', '/purchases', '/suppliers', '/recovery'],
+    pageIds: ['P06', 'P07', 'P08', 'P11'],
   },
   { path: '/after-sales', label: '售后', matchPrefixes: ['/after-sales'], pageIds: ['P09', 'P10'] },
-  { path: '/recovery', label: '回收置换', matchPrefixes: ['/recovery'], pageIds: ['P11'] },
   { path: '/finance', label: '账本', matchPrefixes: ['/finance'], pageIds: ['P12'] },
 ]
 
-/** 高频业务入口放在主导航下方，不增加六项顶栏的数量。 */
+/** 高频页面入口放在主导航下方；实物收发入口集中在配件台账页。 */
 export const APP_QUICK_LINKS = [
   { path: '/sales/quotes', label: '装机报价' },
   { path: '/customers', label: '客户台账' },
@@ -107,30 +106,30 @@ export const LEGACY_DEEP_LINK_MAP: LegacyLink[] = [
   {
     legacy: '/inventory',
     handling: 'kept',
-    nav: '库存',
+    nav: '实物流转',
     pageIds: ['P06'],
-    note: '型号与实物列表，T05b 重建为库存表格 / 逐件视图。',
+    note: '型号与实物列表，按配件台账展示库存及来源流水。',
   },
   {
     legacy: '/sn',
     handling: 'kept',
-    nav: '库存',
+    nav: '实物流转',
     pageIds: ['P07', 'P14'],
-    note: 'SN 台账；规格未把 SN 单列为导航项，暂归库存，T05 收口是否并入实物详情。',
+    note: 'SN 台账仍保留独立深链，在导航上归入实物流转。',
   },
   {
     legacy: '/purchases',
     handling: 'kept',
-    nav: '库存',
+    nav: '实物流转',
     pageIds: ['P08'],
-    note: '采购、到货、付款与取消已在 /purchases 落地；库存页承担盘点与隔离件处理，旧深链仍指向正式采购工作区。',
+    note: '采购、到货、付款与取消保留来源单据，深链归入实物流转。',
   },
   {
     legacy: '/suppliers',
     handling: 'placeholder',
-    nav: '库存',
+    nav: '实物流转',
     pageIds: [],
-    note: '规格没有供应商独立页面 ID，暂留占位，归属待定。',
+    note: '规格没有供应商独立页面 ID，暂留占位。',
   },
   {
     legacy: '/customers',

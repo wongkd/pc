@@ -122,6 +122,13 @@ function renderPage(permissions: string[] = ['*']) {
 }
 
 describe('库存页 · 读取与显示', () => {
+  it('把实物收货和交付入口放在配件台账首屏', async () => {
+    renderPage()
+    expect((await screen.findByRole('link', { name: '采购到货' })).getAttribute('href')).toBe('/purchases')
+    expect(screen.getByRole('link', { name: '收旧件' }).getAttribute('href')).toBe('/recovery')
+    expect(screen.getByRole('link', { name: '备料与交付' }).getAttribute('href')).toBe('/sales/fulfillment')
+  })
+
   it('列出真实接口返回的型号与三桶数量', async () => {
     renderPage()
     expect(await screen.findByText('影驰 RTX 4060 Ti 金属大师')).toBeTruthy()

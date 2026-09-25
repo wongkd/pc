@@ -25,7 +25,7 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
   const canApply = hasAny(permissions, ['tradein/offset'])
   const canReverse = hasAny(permissions, ['tradein/reverse'])
   const [sales, setSales] = useState<{ id: string; orderNo: string; customerName: string; tradeState: string; balanceCents: number }[]>([])
-  const [saleState, setSaleState] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [saleState, setSaleState] = useState<'loading' | 'ready' | 'error'>(canCreate && recovery.seller.customerId !== null ? 'loading' : 'ready')
   const [saleError, setSaleError] = useState('')
   const [saleId, setSaleId] = useState('')
   const [tradeInId, setTradeInId] = useState('')
@@ -36,9 +36,10 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [unknownWrite, setUnknownWrite] = useState<{ requestId: string; action: string; tradeInId?: string } | null>(null)
+  const [expanded, setExpanded] = useState(recovery.state === 'acquired' && recovery.offsetCents === 0)
 
   useEffect(() => {
-    if (!canCreate || recovery.seller.customerId === null) { setSaleState('ready'); return }
+    if (!canCreate || recovery.seller.customerId === null) return
     let active = true
     void fetchSaleOrders({ limit: 200 }).then((result) => {
       if (!active) return
@@ -56,15 +57,15 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
   const selectedSale = useMemo(() => sales.find((sale) => sale.id === saleId), [sales, saleId])
   const suggestedCents = detail
     ? Math.min(Math.max(detail.saleOrder.balanceCents, 0), Math.max(detail.recoveryPayableRemainingCents, 0))
-    : selectedSale ? Math.min(Math.max(selectedSale.balanceCents, 0), Math.max(recovery.payableCents - recovery.offsetCents, 0)) : 0
+    : selectedSale ? Math.min(Math.max(selectedSale.balanceCents, 0), Math.max(recovery.payableCents - recovery.offsetCents - recovery.paidCents, 0)) : 0
 
-  const loadTradeIn = useCallback(async (id: string) => {
+  const loadTradeIn = useCallback(async (id: string, preserveAmount = false) => {
     setBusy(true); setError(''); setNotice('')
     const result = await fetchTradeIn(id.trim())
     if (result.ok) {
       setTradeInId(result.data.id)
       setDetail(result.data)
-      setAmount(result.data.recoveryPayableRemainingCents > 0 ? (Math.min(Math.max(result.data.saleOrder.balanceCents, 0), result.data.recoveryPayableRemainingCents) / 100).toFixed(2) : '')
+      if (!preserveAmount) setAmount(result.data.recoveryPayableRemainingCents > 0 ? (Math.min(Math.max(result.data.saleOrder.balanceCents, 0), result.data.recoveryPayableRemainingCents) / 100).toFixed(2) : '')
       setError('')
     } else setError(result.message)
     setBusy(false)
@@ -88,7 +89,7 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
       const completed = unknownWrite
       setUnknownWrite(null)
       setNotice(`${completed.action}已由服务端确认。`)
-      if (completed.tradeInId) await loadTradeIn(completed.tradeInId)
+      if (completed.tradeInId) await loadTradeIn(completed.tradeInId, completed.action === '建立置换关联')
       onChanged()
       return
     }
@@ -104,14 +105,64 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
   useEffect(() => {
     if (!canView || recovery.tradeIns.length !== 1 || detail) return
     const [existing] = recovery.tradeIns
-    setTradeInId(existing.id)
-    void loadTradeIn(existing.id)
+    let active = true
+    void fetchTradeIn(existing.id).then((result) => {
+      if (!active) return
+      if (result.ok) {
+        setTradeInId(result.data.id)
+        setDetail(result.data)
+        const limit = Math.min(Math.max(result.data.saleOrder.balanceCents, 0), Math.max(result.data.recoveryPayableRemainingCents, 0))
+        setAmount(limit > 0 ? (limit / 100).toFixed(2) : '')
+      } else setError(result.message)
+    })
+    return () => { active = false }
   // The association list is refreshed by the parent after successful writes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canView, recovery.tradeIns, detail, loadTradeIn])
+  }, [canView, recovery.tradeIns, detail])
+
+  const submitOffset = async (tradeIn: TradeInDetail, amountCents: number) => {
+    const limit = Math.min(Math.max(tradeIn.saleOrder.balanceCents, 0), Math.max(tradeIn.recoveryPayableRemainingCents, 0))
+    if (amountCents > limit) {
+      setError(`本次金额超过当前可抵上限 ${formatYuan(limit)}。关联已保留，请调整金额后继续。`)
+      return false
+    }
+    const result = await applyTradeInOffset(tradeIn.id, {
+      amountCents,
+      saleOrderVersion: tradeIn.saleOrder.version,
+      recoveryVersion: tradeIn.recovery.version,
+    })
+    if (!result.ok) {
+      handleUnknown(result, '应用折抵', tradeIn.id)
+      if (!result.unknownResult) {
+        const latest = await fetchTradeIn(tradeIn.id)
+        if (latest.ok) {
+          setDetail(latest.data)
+          const nextLimit = Math.min(Math.max(latest.data.saleOrder.balanceCents, 0), Math.max(latest.data.recoveryPayableRemainingCents, 0))
+          setAmount(nextLimit > 0 ? (nextLimit / 100).toFixed(2) : '')
+        }
+        setNotice('置换关联已建立，折抵尚未完成；已刷新可抵金额，可在此继续。')
+      }
+      return false
+    }
+
+    setNotice(result.data.summary || '置换关联与折抵已提交。')
+    const refreshed = await fetchTradeIn(tradeIn.id)
+    if (refreshed.ok) {
+      setDetail(refreshed.data)
+      const nextLimit = Math.min(Math.max(refreshed.data.saleOrder.balanceCents, 0), Math.max(refreshed.data.recoveryPayableRemainingCents, 0))
+      setAmount(nextLimit > 0 ? (nextLimit / 100).toFixed(2) : '')
+    }
+    onChanged()
+    return true
+  }
 
   const createAssociation = async () => {
     if (!selectedSale) return
+    const amountCents = canApply ? yuanToCents(amount) : null
+    if (canApply && amountCents === null) { setError('请输入大于 0 的折抵金额。'); return }
+    if (canApply && amountCents !== null && amountCents > suggestedCents) {
+      setError(`本次金额不能超过可抵上限 ${formatYuan(suggestedCents)}。`)
+      return
+    }
     setBusy(true); setError(''); setNotice('')
     const saleDetail = await fetchSaleOrderDetail(selectedSale.id)
     if (!saleDetail.ok) { setError(saleDetail.message); setBusy(false); return }
@@ -127,14 +178,22 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
     }
     if (!result.data.entityId) { setError('服务端未返回置换关联编号，请刷新后核对单据状态。'); setBusy(false); return }
     setTradeInId(result.data.entityId)
+    onChanged()
     const detailResult = await fetchTradeIn(result.data.entityId)
     if (detailResult.ok) {
       setDetail(detailResult.data)
-      setAmount(Math.min(Math.max(detailResult.data.saleOrder.balanceCents, 0), Math.max(detailResult.data.recoveryPayableRemainingCents, 0)) > 0
-        ? (Math.min(Math.max(detailResult.data.saleOrder.balanceCents, 0), Math.max(detailResult.data.recoveryPayableRemainingCents, 0)) / 100).toFixed(2) : '')
-      setNotice('置换关联已建立。请核对服务端读取的双方单据，再提交折抵金额。')
-      onChanged()
-    } else setError(detailResult.message)
+      if (amountCents !== null) {
+        setNotice('关联已建立，正在提交折抵…')
+        await submitOffset(detailResult.data, amountCents)
+      } else {
+        const limit = Math.min(Math.max(detailResult.data.saleOrder.balanceCents, 0), Math.max(detailResult.data.recoveryPayableRemainingCents, 0))
+        setAmount(limit > 0 ? (limit / 100).toFixed(2) : '')
+        setNotice('置换关联已建立；当前账号没有折抵权限，请有权限的人继续处理。')
+      }
+    } else {
+      setError(`关联已建立，但读取折抵上限失败：${detailResult.message}`)
+      setNotice('关联已保留；刷新或重新读取后可以继续折抵，不要再次建立关联。')
+    }
     setBusy(false)
   }
 
@@ -143,9 +202,7 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
     const amountCents = yuanToCents(amount)
     if (amountCents === null) { setError('请输入大于 0 的折抵金额。'); return }
     setBusy(true); setError(''); setNotice('')
-    const result = await applyTradeInOffset(detail.id, { amountCents, saleOrderVersion: detail.saleOrder.version, recoveryVersion: recovery.version })
-    if (!result.ok) handleUnknown(result, '应用折抵', detail.id)
-    else { setNotice(result.data.summary || '折抵已提交。'); await loadTradeIn(detail.id); onChanged() }
+    await submitOffset(detail, amountCents)
     setBusy(false)
   }
 
@@ -153,7 +210,7 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
     if (!detail) return
     if (!reason.trim()) { setError('撤销折抵前请填写原因。'); return }
     setBusy(true); setError(''); setNotice('')
-    const result = await reverseTradeInOffset(detail.id, { offsetId, reason: reason.trim(), saleOrderVersion: detail.saleOrder.version, recoveryVersion: recovery.version })
+    const result = await reverseTradeInOffset(detail.id, { offsetId, reason: reason.trim(), saleOrderVersion: detail.saleOrder.version, recoveryVersion: detail.recovery.version })
     if (!result.ok) handleUnknown(result, '撤销折抵', detail.id)
     else { setReason(''); setNotice(result.data.summary || '已新增撤销记录，原折抵仍保留。'); await loadTradeIn(detail.id); onChanged() }
     setBusy(false)
@@ -161,34 +218,39 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
 
   if (!canView && !canCreate) return null
   return (
-    <section id="recovery-tradein" className="wb-detail wb-tradein-panel wb-recovery-tradein" aria-label="用旧设备抵新购款">
-      <div className="wb-recovery-tradein__heading">
+    <details id="recovery-tradein" className="wb-detail wb-tradein-panel wb-recovery-tradein" open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)} aria-label="用旧设备抵新购款">
+      <summary className="wb-recovery-tradein__heading">
         <div>
           <p className="wb-kicker">可选结算方式</p>
-          <h2>用旧设备抵新购款</h2>
+          <h2>抵扣同一客户的销售款</h2>
         </div>
-        <p className="wb-recovery-tradein__summary">这是两张单据之间的抵扣记录，不是现金收款。客户仍需支付抵扣后的余额。</p>
-      </div>
-      <ol className="wb-recovery-tradein__steps">
-        <li><span>1</span><div><strong>选同一客户的销售单</strong><small>散客回收单不能做置换抵扣</small></div></li>
-        <li><span>2</span><div><strong>建立关联</strong><small>先核对销售单号和客户</small></div></li>
-        <li><span>3</span><div><strong>填写并应用金额</strong><small>销售待收和回收应付都会减少</small></div></li>
-      </ol>
+        <p className="wb-recovery-tradein__summary">已抵 {formatYuan(recovery.offsetCents)} · 回收待付 {formatYuan(Math.max(recovery.payableCents - recovery.offsetCents - recovery.paidCents, 0))}。折抵不是现金收款。</p>
+        <span className="wb-recovery-tradein__toggle" aria-hidden="true">⌄</span>
+      </summary>
       {canCreate ? <>
         {saleState === 'loading' ? <p className="wb-caption">正在加载可折抵销售单…</p> : null}
         {saleState === 'error' ? <p className="wb-inv-notice wb-inv-notice--warn">{saleError} <button type="button" className="wb-btn" onClick={() => { setSaleState('loading'); void fetchSaleOrders({ limit: 200 }).then((result) => { if (result.ok) { setSales(result.data.orders.filter((order) => ['draft', 'confirmed'].includes(order.tradeState) && order.balanceCents > 0)); setSaleState('ready'); setSaleError('') } else { setSaleError(result.message); setSaleState('error') } }) }}>重试</button></p> : null}
         {recovery.state !== 'acquired' ? <p className="wb-caption">取得回收单所有权后，才可以建立抵用关联。</p> : null}
         {recovery.state === 'acquired' && recovery.seller.customerId === null ? <p className="wb-recovery-tradein__blocker" role="note">这张回收单登记为散客，没有关联客户档案，因此不能和销售单做置换折抵。可以在“本单可执行操作”里直接登记付款。</p> : null}
-        {saleState === 'ready' && recovery.state === 'acquired' && recovery.seller.customerId !== null ? <>
-          <p className="wb-recovery-tradein__customer">回收客户：<strong>{recovery.seller.name || '未命名客户'}</strong>。请选择该客户自己的待收销售单；其他客户的单据无法关联。</p>
-          <p className="wb-caption">候选列表会显示本店有余额的销售单，请核对单号和客户。系统会再次校验客户归属。</p>
+        {saleState === 'ready' && recovery.state === 'acquired' && recovery.seller.customerId !== null && recovery.tradeIns.length === 0 && !detail ? <>
+          <p className="wb-recovery-tradein__customer">客户：<strong>{recovery.seller.name || '未命名客户'}</strong>。系统只允许选择同一客户有余额的销售单。</p>
           <div className="wb-form-actions">
-          <label className="wb-field"><span>选择待收款销售单（草稿或已成交）</span><select value={saleId} onChange={(event) => setSaleId(event.target.value)}>
+          <label className="wb-field"><span>销售单</span><select value={saleId} onChange={(event) => {
+            const nextId = event.target.value
+            setSaleId(nextId)
+            const nextSale = sales.find((sale) => sale.id === nextId)
+            const limit = nextSale ? Math.min(Math.max(nextSale.balanceCents, 0), Math.max(recovery.payableCents - recovery.offsetCents - recovery.paidCents, 0)) : 0
+            setAmount(limit > 0 ? (limit / 100).toFixed(2) : '')
+          }}>
             <option value="">请选择销售单</option>{sales.map((sale) => <option key={sale.id} value={sale.id}>{sale.orderNo} · {sale.tradeState === 'draft' ? '草稿' : '已成交'} · {sale.customerName || '未填写客户'} · 待收 {formatYuan(sale.balanceCents)}</option>)}
           </select></label>
-          <button type="button" className="wb-btn" disabled={busy || Boolean(unknownWrite) || !selectedSale} onClick={() => void createAssociation()}>建立置换关联</button>
+          {canApply ? <label className="wb-field"><span>本次抵扣金额（最多 {formatYuan(suggestedCents)}）</span><input value={amount} onChange={(event) => setAmount(event.target.value)} inputMode="decimal" placeholder="输入客户同意的金额" /></label> : null}
+          <button type="button" className="wb-btn wb-btn--primary" disabled={busy || Boolean(unknownWrite) || !selectedSale || (canApply && (yuanToCents(amount) === null || (yuanToCents(amount) ?? 0) > suggestedCents))} onClick={() => void createAssociation()}>
+            {canApply ? '建立关联并应用折抵' : '建立置换关联'}
+          </button>
           {sales.length === 0 ? <span className="wb-caption">当前没有待收销售单；请先给这位客户建立报价或销售单。</span> : null}
           </div>
+          {canApply ? <p className="wb-caption">提交后会先建立销售单关联，再应用折抵。若折抵中断，关联会保留，可在下方继续，不必重新建立。</p> : null}
         </> : null}
       </> : null}
       {canView && recovery.tradeIns.length > 1 ? <div className="wb-form-actions">
@@ -202,7 +264,7 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
         <button type="button" className="wb-btn" disabled={busy || !tradeInId.trim()} onClick={() => void loadTradeIn(tradeInId)}>读取关联</button>
       </div> : null}
       {detail ? <>
-        <p className="wb-recovery-tradein__association"><strong>关联编号 {detail.id}</strong> · 销售单 <strong>{detail.saleOrder.orderNo}</strong> ↔ 回收单 <strong>{detail.recovery.orderNo}</strong></p>
+        <p className="wb-recovery-tradein__association">销售单 <strong>{detail.saleOrder.orderNo}</strong> ↔ 回收单 <strong>{detail.recovery.orderNo}</strong></p>
         <div className="wb-recovery-tradein__balances">
           <div><span>销售单还需收</span><strong>{formatYuan(Math.max(detail.saleOrder.balanceCents, 0))}</strong></div>
           <div><span>回收单尚应付</span><strong>{formatYuan(detail.recoveryPayableRemainingCents)}</strong></div>
@@ -216,13 +278,13 @@ export function TradeInPanel({ recovery, permissions, onChanged }: {
         </li>)}</ul>}
         {canApply && suggestedCents > 0 ? <div className="wb-form-actions">
           <label className="wb-field"><span>本次折抵金额（元，最多 {formatYuan(suggestedCents)}）</span><input value={amount} onChange={(event) => setAmount(event.target.value)} placeholder="输入客户同意的金额" /></label>
-          <button type="button" className="wb-btn wb-btn--primary" disabled={busy || Boolean(unknownWrite)} onClick={() => void apply()}>应用折抵</button>
+          <button type="button" className="wb-btn wb-btn--primary" disabled={busy || Boolean(unknownWrite)} onClick={() => void apply()}>{detail.offsets.length === 0 ? '继续应用折抵' : '再应用折抵'}</button>
         </div> : null}
         {canReverse && detail.offsets.some((offset) => offset.state === 'applied') ? <label className="wb-field"><span>撤销原因</span><input value={reason} onChange={(event) => setReason(event.target.value)} placeholder="填写撤销原因" /></label> : null}
       </> : null}
       {error ? <p className="wb-inv-notice wb-inv-notice--warn" role="alert">{error}</p> : null}
       {notice ? <p className="wb-inv-notice" role="status">{notice}</p> : null}
       {unknownWrite ? <button type="button" className="wb-btn" disabled={busy} onClick={() => void checkUnknownWrite()}>查询结果</button> : null}
-    </section>
+    </details>
   )
 }

@@ -779,7 +779,7 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
             <p className="wb-kicker">报价与销售工作区</p>
             <h1>{editor.quoteId ? `编辑报价（将生成新版本）` : '新建装机报价'}</h1>
             <p className="wb-caption">
-              金额一律按元输入、按分记账。发出后配置与价格锁定在本版本；要改就保存出新版本，旧版本原样留档。
+              报价只记录拟售配件，不改库存；转销售单后按实物预留，实际交付才出库。金额按元输入、按分记账；发出后修改会生成新版本，旧版留档。
             </p>
           </div>
           <div className="wb-page-head-actions">
