@@ -1,17 +1,18 @@
 # 当前状态
 
-更新：2026-09-26。V1 基线标签 `v1-backup-2026-09-26` 固定在 `7a56cf4f5426f388d219172a92ab9ea835b4c361`；最新仓库体验版已部署生产 Worker `eee68a74-de11-4774-a60c-cdd473bffa63`，流量 100%。员工真实业务闭环仍未验收，不代表 RC 整体验收放行。
+更新：2026-09-26。V1 基线标签 `v1-backup-2026-09-26` 固定在 `7a56cf4f5426f388d219172a92ab9ea835b4c361`；合并提交 `8b75245` 已部署生产 Worker `18d061cd-e8ee-4343-bec2-312b6a3c8e82`，流量 100%。员工真实业务闭环仍未验收，不代表 RC 整体验收放行。此次合并解决多个对话各自部署完整 Worker 版本导致线上流量切换的问题，见[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。
 本文是代码入口与已有证据的摘要，历史测试数不代表本轮重新通过。
 
 | 范围 | 当前事实与证据 |
 |---|---|
+| 发布与工作树基线 | 78 个文件已提交到本地分支 `codex/v2-item-flow`（`8b75245`）并从完整工作树发布。多个独立对话部署到同一 `pc-backend` 时会依次把 100% 流量切到各自版本；后续生产发布必须基于最新完整集成提交。当前仓库没有配置 Git remote，因此此次是本地提交 + Cloudflare 生产发布，没有 Git push。详见[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。 |
 | 配件收发流程 V2 | 已将库存、采购到货、收旧件和销售交付聚合到“仓库”入口，并简化报价、回收详情和置换主要操作。V1 基线与 V2 生产发布证据见[V2 回执](verification/2026-09-26-v2-item-flow-release/README.md)；无迁移或生产业务数据写入。批次出库余量、旧 SN 台账、维修耗件映射和真实员工流程仍未闭环。 |
-| 商品建档、期初库存与仓库日志 | 分类改为固定下拉并支持其他自定义；导航已改为“仓库”，增加默认折叠、库存可见成员可读的近 50 条操作日志。Worker `eee68a74-de11-4774-a60c-cdd473bffa63` 已部署的生产版本仍使用一次性限时登记窗口；生产窗口未开启、未写库存。当前工作区按用户最新决定改为随时逐商品登记；商品先建档、库存失败可稍后补录，尚未测试、构建、浏览器验收或部署。见[仓库体验发布回执](verification/2026-09-26-warehouse-refresh/README.md)与[轻量化改造记录](plans/2026-09-26-lightweight-stock-entry/README.md)。 |
+| 商品建档、期初库存与仓库日志 | 分类改为固定下拉并支持其他自定义；导航已改为“仓库”，增加默认折叠、库存可见成员可读的近 50 条操作日志。合并版已加入随时逐商品登记已有库存；商品先建档，库存失败可稍后补录。生产未开启旧期初窗口、未写库存。细节见[仓库体验发布回执](verification/2026-09-26-warehouse-refresh/README.md)、[轻量化改造记录](plans/2026-09-26-lightweight-stock-entry/README.md)和[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。 |
 | 经营规则 D01–D10 | [规则逐项核验](verification/2026-09-25-operating-rules/README.md)：15%预付款门槛与库存预留有后端守卫；已核实净收款及同客户同销售单有效折抵均可计入，未付款不占货。老板退款登记须确认实际已退款；B18 是人工核实记账，不是支付渠道证明，未知结果不得调用。报价条款进订单快照，但顾客暂无订单详情读取；基础质保按版本留档。D10 成本四分类、盘点行防重和窗口规则已隔离验收；生产 0029/0030 已应用、Worker `a9b78a73-6b17-4de5-ba82-c1dbc4858187` 已 100% 部署，见[生产回执](verification/2026-09-26-d10-production-release/README.md)。窗口仍未开启、真实库存未录入。未知成本销售例外、估值毛利单列报表和关闭后的追加调整仍未实现；B39/B40、供应商真实退款/贷项、自动配送计费、延保选购收费/履约仍暂缓。 |
 | 自动编号与追溯 | 用户已确认“内部自动编号 + 厂家 SN 可选扫码 + 备注；耗材按批次编号 + 备注”。首版源码已接入期初库存、采购到货、维修设备、回收取得/拆件及库存查询；隔离预览 D1 已应用 0027、0028，生产迁移状态另行核实。批次只记录入库数量，未按批次追踪出库余量；旧 SN 台账仍独立。见[方案与当前边界](plans/2026-09-24-auto-serial/README.md) |
 | 网页视觉 | 彩色 [Core V2](design/2026-09-19-erp-core/v2/README.md) 已定；[E03](verification/2026-09-21-E03/README.md) 是历史页面覆盖记录。旧报价编辑器已移除；新版 A4 打印仍待 QT03 实看。回收页已补分步操作指引并发布，详见[回执](verification/2026-09-25-recovery-guidance-release/README.md) |
 | 客户 / 库存 / 报价 | E04、E04b、E05、E05b 已有真实接口与本地证据，见[索引](verification/README.md) |
-| 管理员测试数据清理 | B45 未发出报价草稿与 B46 无业务引用商品清理已部署，Worker `ec14139c-e51f-457d-a8e8-413240644342` 为 100%；入口在设置 → 测试数据清理。静态门禁、构建、生产首页与资产检查通过；登录后浏览器业务验收未做，没有删除任何生产记录。库存实物、流水、顾客设备交接与交易历史保留。见[生产回执](verification/2026-09-26-admin-data-cleanup/README.md) |
+| 管理员测试数据清理 | B45 未发出报价草稿与 B46 无业务引用商品清理已随合并版发布，入口在设置 → 测试数据清理。登录后浏览器业务验收未做，没有删除任何生产记录。库存实物、流水、顾客设备交接与交易历史保留。旧版发布记录见[生产回执](verification/2026-09-26-admin-data-cleanup/README.md)，当前 Worker 及验证见[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。 |
 | 报价新建模板 A+B | QT01/QT02 已本地实现；列表读模型缺陷已单独修复，详见[独立回执](verification/2026-09-25-quote-list-work-revision/README.md)。本机正式页面独立重载后列表与详情均为工作版本 v1、2 行、应付 ¥779.99。A4 正式打印模板已按用户确认字段、质保规则及报价日期起算 24 小时有效期更新；报价行支持顾客可见备注，二手配件默认质保改为 1 个月。本轮新建编辑器改为具名响应式字段组，A4 分页重复表头并保护明细行和签字区；前端 build 通过。E05、定向前端测试与 build 的既有证据见回执。系统打印预览实看与取消状态待 Edge 验收，**QT03 未放行**。见[A4 最终版说明](design/2026-09-25-quote-print-a4/README.md)与[本机打印续验](verification/2026-09-25-quote-list-work-revision/print-followup.md)；保留[原续验与截图](verification/2026-09-24-quote-templates-ab/QT03-followup.md)；C/D 不在本期 |
 | 销售 / 采购 / 交付 / 售后 / 回收 / 账本 | E06–E11 已有实现与分卡验证；[报价引用与数量件预留补洞](verification/2026-09-21-E06E07-gapfix/README.md)已完成。本地同 Worker/D1 浏览器续验已补销售到交付、售后完整链、回收验机到折抵、客户新增/编辑及刷新回读和实际单据失败恢复；不代表整体验收、远端或生产放行，见[浏览器续验](verification/2026-09-25-web-browser-acceptance/README.md) |
 | P2 ERP 总集成 | [本地总链](verification/2026-09-23-P2-erp-integration/README.md)已在同一真实 Worker / 内存 D1 串行通过报价确认、成交缺货、采购到货付款、补占用、装机交付、售后、回收抵用与账本；并修复确认报价无法转单。后端 360/360、前端 test/build 与契约迁移门禁本轮通过；不等于浏览器、远端或生产验收 |
@@ -38,10 +39,10 @@
 - 本地默认 Worker + 内存 D1/附件；Cloudflare 预览只连独立测试 D1。附件接口在正式/预览变量启用时要求 R2 绑定。专用隔离环境已核实真实 R2 CLI 读写与恢复 Worker 绑定；生产 D1/R2 绑定与路由已确认，生产完整恢复、Worker 回退、应用层 R2 canary 和员工权限矩阵仍未验证。
 - 既有本地验证记录中的前端 build 通过；本轮生产店主登录成功，今天页、库存、采购、售后、回收、账本、客户、报价、销售与交付列表均实看空态。此次生产只读验收边界见[续验回执](verification/2026-09-25-production-staff-acceptance/README.md)；真实业务闭环仍没有数据可验。本地业务链见[续验记录](verification/2026-09-25-web-browser-acceptance/README.md)。
 - 员工权限前置数据已复验：本地预览内存库新增 `sales` 演示角色种子；未传 `roleId` 邀请、接受、重新登录及逐域 HTTP 权限 30 项通过。生产设置页显示 5 种角色说明和当前成员状态；员工实际会话、菜单显隐和服务端拒绝仍未验证，见[本地复验](verification/2026-09-25-staff-permissions/README.md)与[生产续验](verification/2026-09-25-production-staff-acceptance/README.md)。
-- 最新部署后核验见[D10 / E04 生产回执](verification/2026-09-26-d10-production-release/README.md)：首页资源与本地构建一致，未登录 API 被鉴权挡住；没有做生产登录后的业务流程验收。
+- 本轮合并发布回执见[记录](verification/2026-09-26-consolidated-release/README.md)：Worker `18d061cd-e8ee-4343-bec2-312b6a3c8e82` 为 100%，线上 JS/CSS 文件名与本地构建一致；未做本轮生产登录后的业务流程验收。D10 / E04 历史发布见[旧回执](verification/2026-09-26-d10-production-release/README.md)。
 - 微信工具、iOS/Android、真实支付、跨实例并发与恢复演练不由网页测试代替。
-- 源码有大量既有未提交修改；保留这些改动、不混合提交。此次只应用已有 0029/0030 迁移并发布 Worker，没有写客户、库存或其他业务行，没有开期初窗口；未提交 Git。
+- 当前发布代码已提交为 `8b75245` 并部署。没有应用数据库迁移、没有开启期初窗口，也没有写客户、库存或其他生产业务行。原有未跟踪日志和截图继续保留在工作区，未加入提交。
 
-- 网页全局视觉已按顾客小程序白底黑字、细线、小圆角和米色点缀在本地统一；前端 210 项测试与构建通过，代表页桌面/手机实拍见[视觉统一回执](verification/2026-09-25-web-visual-unification/README.md)。待用户视觉评审，其余页面状态未穷举，尚未发布。
+- 网页全局视觉已按顾客小程序白底黑字、细线、小圆角和米色点缀统一，并随合并版部署；代表页桌面/手机实拍见[视觉统一回执](verification/2026-09-25-web-visual-unification/README.md)。该回执截图是较早版本，本轮没有重新进行全页面视觉验收。
 
 下一动作只见[交接](NEXT-SESSION-PROMPT.md)，未解决的问题只见[OPEN-ITEMS](OPEN-ITEMS.md)。
