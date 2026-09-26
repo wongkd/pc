@@ -29,7 +29,7 @@ export function LoginPanel({ onLogin }: Props) {
   return (
     <div className="login-overlay">
       <div className="login-card">
-        <img className="login-brand-mark" src="/assets/xu-wen-erp-avatar.png" alt="" />
+        <img className="login-brand-mark" src="/assets/xu-wen-erp-avatar-96.png" alt="" width={46} height={46} />
         <h2>装一下机 · 门店 ERP</h2>
         <p className="login-sub">{joiningByInvite ? '使用管理员提供的邀请码加入门店' : '登录门店，继续处理报价、库存与客户'}</p>
         <form onSubmit={handleSubmit}>

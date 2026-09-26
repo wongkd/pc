@@ -35,5 +35,5 @@ export interface WorkbenchPayload {
 }
 
 export function fetchWorkbench(): Promise<ApiResult<WorkbenchPayload>> {
-  return workbenchClient.client.read<WorkbenchPayload>('/workbench', { params: { scope: 'open', limit: 200 } })
+  return workbenchClient.client.read<WorkbenchPayload>('/workbench', { params: { scope: 'open', limit: 100 } })
 }

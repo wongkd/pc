@@ -113,7 +113,9 @@ export function AppShell({
       )}
       <header className="wb-topbar">
         <div className="wb-brand">
-          <img className="wb-brand-mark" src="/assets/xu-wen-erp-avatar.png" alt="" />
+          {/* 品牌头像用 96×96 衍生图（品牌原图 512×512 仍保留在同目录 xu-wen-erp-avatar.png）。
+              96 = 顶栏 36px 与登录卡 46px 的 2 倍以上，够桌面与高分屏；原图 420KB 每屏都白下。 */}
+          <img className="wb-brand-mark" src="/assets/xu-wen-erp-avatar-96.png" alt="" width={36} height={36} />
           <span className="wb-brand-copy">
             <strong>装一下机</strong>
             <small>徐闻闻所未闻科技</small>

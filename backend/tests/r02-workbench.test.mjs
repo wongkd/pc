@@ -257,10 +257,9 @@ test('R02：确认成交后到交付阶段的单，主动作是 B10，尾款未�
   assert.ok(task)
   assert.equal(task.primaryAction.code, 'B10')
   assert.equal(task.primaryAction.enabled, false, '尾款没结清不能放行交付')
-  // 卡点顺序照后端 deliverSaleOrder 的闸门顺序：装机检测 → SN → 尾款。
-  // 这张单没做检测单、实物也还没绑 SN，前两条都会出现 —— 断言「顺序」而不是写死集合，
-  // 免得把夹具的 SN 配置细节耦合进断言。
+  // 内部编号由数据库保证，厂家 SN 可选；此单仍缺检测且尾款未结。
   const codes = task.primaryAction.blockers.map((item) => item.code)
+  assert.ok(!codes.includes('SERIAL_MISMATCH'), '不要求可选的厂家 SN')
   assert.equal(codes[0], 'CHECKLIST_INCOMPLETE', '检测闸门排在最前')
   assert.ok(codes.includes('VALIDATION_ERROR'), '尾款未结清必须出现在卡点里')
   assert.ok(

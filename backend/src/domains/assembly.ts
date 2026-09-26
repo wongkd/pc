@@ -195,29 +195,6 @@ export async function readCoverageGaps(
   return gaps
 }
 
-/**
- * 「需逐件追踪的行已有内部编号」预读。厂家 SN 是可选信息，不作为交付门槛。
- */
-async function readMissingSnItemIds(
-  db: OperationsDb,
-  storeId: number,
-  itemIds: readonly string[],
-): Promise<string[]> {
-  if (itemIds.length === 0) return []
-  const placeholders = itemIds.map(() => '?').join(', ')
-  const result = await db
-    .prepare(
-      `SELECT si.id, si.asset_code
-       FROM stock_items si JOIN hardware h ON h.id = si.product_id
-       WHERE si.store_id = ? AND si.id IN (${placeholders}) AND h.tracking_mode = 'item'`,
-    )
-    .bind(storeId, ...itemIds)
-    .all<{ id: string; asset_code: string | null }>()
-  return (result.results ?? [])
-    .filter((row) => !row.asset_code || !row.asset_code.trim())
-    .map((row) => row.id)
-}
-
 /** 逐件交付的移动成本快照：取得成本 + 整备成本。未知成本为 null，不写 0（R01）。 */
 async function readItemCosts(
   db: OperationsDb,
@@ -1369,22 +1346,10 @@ export async function deliverSaleOrder(
     )
   }
 
-  // 闸门 4：需 SN 的行已绑定。
+  // 内部编号由 stock_items 的 NOT NULL + CHECK 保证；厂家 SN 可选。
   const itemIds = lines
     .map((line) => line.stock_item_id)
     .filter((value): value is string => Boolean(value))
-  const missingSn = await readMissingSnItemIds(db, ctx.storeId, itemIds)
-  if (missingSn.length > 0) {
-    const assets = await readStockItems(db, ctx.storeId, missingSn)
-    const names = [...assets.keys()].join('、')
-    return fail(
-      ctx.requestId,
-      'SERIAL_MISMATCH',
-      `这些实物还没有内部编号，不能交付：${names}。请先补齐库存实物编号`,
-      422,
-    )
-  }
-
   // 成本快照（逐件行）：交付当时的取得 + 整备成本。未知成本照实记 costKnown=false。
   const costs = await readItemCosts(db, ctx.storeId, itemIds)
   // 出库流水必须有商品主键；行上没落商品时按实物反推（与 B03/B05 同一口径），
@@ -1684,10 +1649,8 @@ export async function queryFulfillmentBoard(
   if (!order) return null
   const lines = await readSaleLines(db, storeId, orderId)
 
-  const itemIds = lines
-    .map((line) => line.stock_item_id)
-    .filter((value): value is string => Boolean(value))
-  const missingSnItems = await readMissingSnItemIds(db, storeId, itemIds)
+  // 兼容旧响应字段：内部编号由数据库约束保证，厂家 SN 不作为交付门槛。
+  const missingSnItems: string[] = []
 
   const checklistRows = await db
     .prepare(

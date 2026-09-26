@@ -541,3 +541,314 @@ describe('库存页 · B19 退役', () => {
     })
   })
 })
+
+/** 可控挂起的读取：用来让响应「晚到」，验证过期响应不会覆盖新结果。 */
+function deferred<T>() {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((res) => { resolve = res })
+  return { promise, resolve }
+}
+
+function lotItem(id: string, assetCode: string, productId: string, productName: string) {
+  return {
+    id, productId, productName, assetCode, remark: '', condition: 'used' as const,
+    snRaw: null, snNormalized: null, ownership: 'store' as const,
+    availability: 'available' as const, location: 'store' as const, activeReservationRef: null,
+  }
+}
+
+describe('库存页 · 只读请求不重复、过期响应不覆盖', () => {
+  it('连点已经生效的筛选项不再重复读取', async () => {
+    renderPage()
+    await screen.findByText('影驰 RTX 4060 Ti 金属大师')
+    expect(mocks.fetchInventory).toHaveBeenCalledTimes(1)
+
+    // 默认「全部 / 全部成色」已经生效，再点它们没有改变任何状态，不该再读一次
+    fireEvent.click(screen.getByRole('button', { name: '全部' }))
+    fireEvent.click(screen.getByRole('button', { name: '全部成色' }))
+    expect(mocks.fetchInventory).toHaveBeenCalledTimes(1)
+
+    // 真正换了值才读；同一个值再点两次仍然不读
+    fireEvent.click(screen.getByRole('button', { name: '可卖' }))
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(2))
+    fireEvent.click(screen.getByRole('button', { name: '可卖' }))
+    fireEvent.click(screen.getByRole('button', { name: '可卖' }))
+    expect(mocks.fetchInventory).toHaveBeenCalledTimes(2)
+    expect(mocks.fetchInventory).toHaveBeenLastCalledWith({
+      q: undefined, availability: 'available', condition: undefined, limit: 50,
+    })
+  })
+
+  it('首屏读取晚到时不能盖掉用户已经切好的筛选结果', async () => {
+    const slowMount = deferred<ReturnType<typeof listPayload>>()
+    const filtered = deferred<ReturnType<typeof listPayload>>()
+    mocks.fetchInventory.mockImplementationOnce(() => slowMount.promise)
+    render(<WorkbenchInventoryPage permissions={['*']} />)
+
+    // 首屏还在读，用户已经切到「可卖」
+    mocks.fetchInventory.mockImplementationOnce(() => filtered.promise)
+    fireEvent.click(screen.getByRole('button', { name: '可卖' }))
+    filtered.resolve(listPayload([row({ id: 'p-filtered', name: '筛选后的型号' })]))
+    expect(await screen.findByText('筛选后的型号')).toBeTruthy()
+
+    // 首屏那次现在才回来，且带着全量数据 —— 不能覆盖筛选结果，也不能把视图改成错误态
+    slowMount.resolve(listPayload([row({ id: 'p-all', name: '未筛选的型号' })]))
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText('未筛选的型号')).toBeNull()
+    expect(screen.getByText('筛选后的型号')).toBeTruthy()
+    expect(screen.queryByText('库存没能加载出来')).toBeNull()
+  })
+
+  it('快速换行展开时，晚到的旧明细不能写到新展开的型号下面', async () => {
+    const itemA = row({ id: 'p-a', name: '型号甲', trackingMode: 'item', requiresSn: true })
+    const itemB = row({ id: 'p-b', name: '型号乙', trackingMode: 'item', requiresSn: true })
+    mocks.fetchInventory.mockResolvedValue(listPayload([itemA, itemB]))
+    render(<WorkbenchInventoryPage permissions={['*']} />)
+    await screen.findByText('型号甲')
+
+    const breakdownA = deferred<ReturnType<typeof listPayload>>()
+    const breakdownB = deferred<ReturnType<typeof listPayload>>()
+    mocks.fetchInventory.mockImplementation((filters: { productRef?: string } = {}) => {
+      if (filters.productRef === 'p-a') return breakdownA.promise
+      if (filters.productRef === 'p-b') return breakdownB.promise
+      return Promise.resolve(listPayload([itemA, itemB]))
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    fireEvent.click(screen.getByRole('button', { name: /型号乙/ }))
+    breakdownB.resolve(listPayload([itemB], [lotItem('si-b', 'U-B', 'p-b', '型号乙')]))
+    expect(await screen.findByText('U-B')).toBeTruthy()
+
+    // 旧明细（型号甲）现在才回来：展开的是型号乙，它不能把甲的数据写到乙下面
+    breakdownA.resolve(listPayload([itemA], [lotItem('si-a', 'U-A', 'p-a', '型号甲')]))
+    // 一共三次：首屏 1 次 + 两个型号各 1 次；旧响应回来不会再补发请求
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(3))
+    expect(screen.queryByText('U-A')).toBeNull()
+    expect(screen.getByText('U-B')).toBeTruthy()
+  })
+
+  it('同一型号的明细还在路上时再展开，复用同一次读取而不是再发一条', async () => {
+    const itemA = row({ id: 'p-a', name: '型号甲', trackingMode: 'item', requiresSn: true })
+    mocks.fetchInventory.mockResolvedValue(listPayload([itemA]))
+    render(<WorkbenchInventoryPage permissions={['*']} />)
+    await screen.findByText('型号甲')
+    expect(mocks.fetchInventory).toHaveBeenCalledTimes(1)
+
+    const breakdown = deferred<ReturnType<typeof listPayload>>()
+    mocks.fetchInventory.mockImplementation(() => breakdown.promise)
+    // 展开 → 收起 → 再展开，全程不等明细回来（连点三次）
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    expect(mocks.fetchInventory).toHaveBeenCalledTimes(2) // 首屏 1 次 + 明细 1 次（复用）
+
+    breakdown.resolve(listPayload([itemA], [lotItem('si-a', 'U-A', 'p-a', '型号甲')]))
+    expect(await screen.findByText('U-A')).toBeTruthy()
+    // 明细回来之后条目已清掉：再次展开是全新读取，不会复用已经结束的请求
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(3))
+  })
+
+  it('明细读取失败不会被当成缓存，再展开会重新请求', async () => {
+    const itemA = row({ id: 'p-a', name: '型号甲', trackingMode: 'item', requiresSn: true })
+    mocks.fetchInventory.mockResolvedValue(listPayload([itemA]))
+    render(<WorkbenchInventoryPage permissions={['*']} />)
+    await screen.findByText('型号甲')
+
+    mocks.fetchInventory.mockResolvedValueOnce(failPayload('明细读取失败'))
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    expect(await screen.findByText(/逐件实物没读出来/)).toBeTruthy()
+
+    // 失败后条目必须已清除：再展开是一次新的请求，且能拿到数据
+    mocks.fetchInventory.mockResolvedValue(listPayload([itemA], [lotItem('si-a', 'U-A', 'p-a', '型号甲')]))
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ })) // 收起
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ })) // 再展开
+    expect(await screen.findByText('U-A')).toBeTruthy()
+    expect(mocks.fetchInventory).toHaveBeenCalledTimes(3)
+  })
+
+  it('筛选读取失败进入错误态，重试带着当前筛选恢复', async () => {
+    renderPage()
+    await screen.findByText('影驰 RTX 4060 Ti 金属大师')
+    mocks.fetchInventory.mockResolvedValueOnce(failPayload('库存读取失败'))
+    fireEvent.click(screen.getByRole('button', { name: '可卖' }))
+    expect(await screen.findByText('库存没能加载出来')).toBeTruthy()
+
+    mocks.fetchInventory.mockResolvedValue(listPayload(WITH_COST))
+    fireEvent.click(screen.getByRole('button', { name: '重试' }))
+    expect(await screen.findByText('影驰 RTX 4060 Ti 金属大师')).toBeTruthy()
+    // 重试不能退回全量：筛选条件要跟着走
+    expect(mocks.fetchInventory).toHaveBeenLastCalledWith({
+      q: undefined, availability: 'available', condition: undefined, limit: 50,
+    })
+  })
+
+  it('写入成功后按当前筛选重新读取列表，不把视图退回全量', async () => {
+    mocks.saveProduct.mockResolvedValue({
+      ok: true, status: 200,
+      data: { operationId: 'req-new', entityId: 'p-new', entityVersion: 1, summary: '建立商品' },
+      meta: { requestId: 'req-new', serverTime: '', contractVersion: 'v2' },
+    })
+    renderPage()
+    await screen.findByText('影驰 RTX 4060 Ti 金属大师')
+    fireEvent.click(screen.getByRole('button', { name: '可卖' }))
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(2))
+
+    fireEvent.click(screen.getByRole('button', { name: '新增商品' }))
+    fireEvent.change(screen.getByLabelText('商品名称'), { target: { value: '写入后刷新测试' } })
+    fireEvent.change(screen.getByLabelText('分类'), { target: { value: '显卡' } })
+    fireEvent.click(screen.getByRole('button', { name: '建立商品' }))
+
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(3))
+    expect(mocks.fetchInventory).toHaveBeenLastCalledWith({
+      q: undefined, availability: 'available', condition: undefined, limit: 50,
+    })
+    expect(await screen.findByText(/已建立商品「写入后刷新测试」/)).toBeTruthy()
+  })
+})
+
+/**
+ * P06：写入之后的刷新与用户操作抢跑。
+ *
+ * 修复前的两个缺口：
+ *   ① `reload()` 的闭包里存着「调用它时」展开的那一行；`await readList()` 期间用户换了行，
+ *      它会拿**旧行**去刷新明细 —— 而 `loadBreakdown` 一进函数就推进代次，
+ *      把用户**当前**那一行的在途响应一并作废：新行永远停在加载中，旧行的批次却写到它下面。
+ *   ② 写入后的刷新会命中 `breakdownInflightRef` 里**写入之前**发出的那条明细请求，
+ *      复用它等于拿回写入前的快照，刷新等于没做。
+ *
+ * 三条用例都让旧请求「延迟返回」，把抢跑窗口摆出来，而不是只断言最终画面。
+ */
+describe('库存页 · 写入期间换行 / 换筛选（P06）', () => {
+  const itemA = row({ id: 'p-a', name: '型号甲', trackingMode: 'item', requiresSn: true })
+  const itemB = row({ id: 'p-b', name: '型号乙', trackingMode: 'item', requiresSn: true })
+
+  const SAVE_OK = {
+    ok: true as const,
+    status: 200,
+    data: { operationId: 'req-new', entityId: 'p-new', entityVersion: 1, summary: '建立商品' },
+    meta: { requestId: 'req-new', serverTime: '', contractVersion: 'v2' },
+  }
+
+  /** 走真实的建档表单提交，触发「写入成功 → reload()」这条路径。 */
+  function submitNewProduct() {
+    fireEvent.click(screen.getByRole('button', { name: '新增商品' }))
+    fireEvent.change(screen.getByLabelText('商品名称'), { target: { value: '写入后刷新测试' } })
+    fireEvent.change(screen.getByLabelText('分类'), { target: { value: '显卡' } })
+    fireEvent.click(screen.getByRole('button', { name: '建立商品' }))
+  }
+
+  it('写入等待期间换行展开：旧行的刷新不能作废新行的明细，也不能写到新行下面', async () => {
+    const breakdownA = deferred<ReturnType<typeof listPayload>>()
+    const breakdownB = deferred<ReturnType<typeof listPayload>>()
+    const afterWrite = deferred<ReturnType<typeof listPayload>>()
+    let listCalls = 0
+
+    mocks.saveProduct.mockResolvedValue(SAVE_OK)
+    mocks.fetchInventory.mockImplementation((filters: { productRef?: string } = {}) => {
+      if (filters.productRef === 'p-a') return breakdownA.promise
+      if (filters.productRef === 'p-b') return breakdownB.promise
+      listCalls += 1
+      return listCalls === 1 ? Promise.resolve(listPayload([itemA, itemB])) : afterWrite.promise
+    })
+
+    render(<WorkbenchInventoryPage permissions={['*']} />)
+    await screen.findByText('型号甲')
+
+    // 先展开甲，明细读到就绪
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    breakdownA.resolve(listPayload([itemA], [lotItem('si-a', 'U-A', 'p-a', '型号甲')]))
+    expect(await screen.findByText('U-A')).toBeTruthy()
+
+    // 写入：刷新列表的请求停在路上（首屏 1 + 甲明细 1 + 这次列表 1）
+    submitNewProduct()
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(3))
+
+    // 刷新还没回来，用户换了行展开乙
+    fireEvent.click(screen.getByRole('button', { name: /型号乙/ }))
+    breakdownB.resolve(listPayload([itemB], [lotItem('si-b', 'U-B', 'p-b', '型号乙')]))
+    expect(await screen.findByText('U-B')).toBeTruthy()
+
+    // 写入后的列表刷新这时才回来：甲是「开始刷新时」展开的行，现在已经不是了
+    const callsBefore = mocks.fetchInventory.mock.calls.length
+    afterWrite.resolve(listPayload([itemA, itemB]))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    // 不该再补一次甲的明细：那会把用户正看着的乙顶成过期响应
+    expect(mocks.fetchInventory.mock.calls.length).toBe(callsBefore)
+    expect(screen.queryByText('U-A')).toBeNull()
+    expect(screen.getByText('U-B')).toBeTruthy()
+  })
+
+  it('写入等待期间换筛选：这次刷新整条作废，明细不该再被刷一次', async () => {
+    const breakdownA = deferred<ReturnType<typeof listPayload>>()
+    const afterWrite = deferred<ReturnType<typeof listPayload>>()
+    const filtered = deferred<ReturnType<typeof listPayload>>()
+    let listCalls = 0
+
+    mocks.saveProduct.mockResolvedValue(SAVE_OK)
+    mocks.fetchInventory.mockImplementation(
+      (filters: { productRef?: string; availability?: string } = {}) => {
+        if (filters.productRef === 'p-a') return breakdownA.promise
+        listCalls += 1
+        if (listCalls === 1) return Promise.resolve(listPayload([itemA, itemB]))
+        return filters.availability === 'available' ? filtered.promise : afterWrite.promise
+      },
+    )
+
+    render(<WorkbenchInventoryPage permissions={['*']} />)
+    await screen.findByText('型号甲')
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    breakdownA.resolve(listPayload([itemA], [lotItem('si-a', 'U-A', 'p-a', '型号甲')]))
+    expect(await screen.findByText('U-A')).toBeTruthy()
+
+    // 写入后列表刷新在路上，用户又点了筛选：那之后这次的刷新结果已经不算数了
+    submitNewProduct()
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(3))
+    fireEvent.click(screen.getByRole('button', { name: '可卖' }))
+
+    afterWrite.resolve(listPayload([itemA, itemB]))
+    filtered.resolve(listPayload([itemA, itemB]))
+    await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledTimes(4))
+
+    // 第 4 次是用户那次筛选；作废的刷新不该再连带刷一次明细
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(mocks.fetchInventory).toHaveBeenCalledTimes(4)
+    expect(screen.getByText('U-A')).toBeTruthy()
+  })
+
+  it('写入后的刷新不复用写入前发出的明细请求，否则拿回的是写入前的快照', async () => {
+    const stale = deferred<ReturnType<typeof listPayload>>()
+    const fresh = deferred<ReturnType<typeof listPayload>>()
+    let breakdownCalls = 0
+
+    mocks.saveProduct.mockResolvedValue(SAVE_OK)
+    mocks.fetchInventory.mockImplementation((filters: { productRef?: string } = {}) => {
+      if (filters.productRef === 'p-a') {
+        breakdownCalls += 1
+        return breakdownCalls === 1 ? stale.promise : fresh.promise
+      }
+      return Promise.resolve(listPayload([itemA, itemB]))
+    })
+
+    render(<WorkbenchInventoryPage permissions={['*']} />)
+    await screen.findByText('型号甲')
+
+    // 展开甲：明细请求发出去，但一直不回来
+    fireEvent.click(screen.getByRole('button', { name: /型号甲/ }))
+    await waitFor(() => expect(breakdownCalls).toBe(1))
+
+    // 明细还在路上就写入：刷新完成时必须**重新**读一次明细，而不是复用这条在途请求
+    submitNewProduct()
+    await waitFor(() => expect(breakdownCalls).toBe(2))
+
+    // 写入前那条现在才回来：它是旧快照，不能显示
+    stale.resolve(listPayload([itemA], [lotItem('si-stale', 'U-STALE', 'p-a', '型号甲')]))
+    await new Promise((resolve) => setTimeout(resolve, 20))
+    expect(screen.queryByText('U-STALE')).toBeNull()
+
+    fresh.resolve(listPayload([itemA], [lotItem('si-fresh', 'U-FRESH', 'p-a', '型号甲')]))
+    expect(await screen.findByText('U-FRESH')).toBeTruthy()
+  })
+})

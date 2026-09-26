@@ -23,8 +23,17 @@
  *    照片（photoKind / photoUrl）本轮一律 null —— 附件读路径归 BK-05，不在此处半接。
  *
  * 4. **不逐个订单去查**。工作台是全店扫描，用批量 SQL 一次读齐三类单据；
- *    缺件 / 缺 SN / 最新检查单都用相关子查询就地算，不按行回调 `queryFulfillmentBoard`
+ *    缺件 / 最新检查单都用相关子查询就地算，不按行回调 `queryFulfillmentBoard`
  *    （那是单订单看板，N+1 会把工作台拖垮）。
+ *
+ * 5. **统计不跟明细共用一条上限**（P03）。三类明细各有 `LIMIT 200`，统计却必须是完整在办集合，
+ *    否则超过上限的店会少算（实测 274 条在办销售单被统计成 200 条）。所以统计单发一条聚合语句，
+ *    明细的上限与统计口径互不影响 —— 详见 `workbenchTotalsStatement` 的注释。
+ *
+ * 6. **明细窗口装的是「最该被看到的 200 条」**（P06）。原先三类明细各自按 `created_at ASC` 取前 200 条、
+ *    再在应用层排序，窗口外的逾期单就此消失（也搜不到）。现在排序按契约 ordering 下推到 SQL
+ *    （到期时间升序、空值最后 —— 与「逾期 → 今天 → 未来 → 无到期」等价），被切掉的事项保证不如窗口内的紧急。
+ *    `primaryAction.enabled` 依赖闸门计算（检查单 / 尾款），无法下推，仍只在应用层排。
  *
  * ── 两处与契约样本形态**故意不同**的地方（都记了理由，不是漏改）──
  *
@@ -54,8 +63,10 @@ export type TaskCategory = (typeof TASK_CATEGORIES)[number]
 export const TASK_SCOPES = ['open'] as const
 export type TaskScope = (typeof TASK_SCOPES)[number]
 
-export const WORKBENCH_DEFAULT_LIMIT = 50
-export const WORKBENCH_MAX_LIMIT = 200
+export const WORKBENCH_DEFAULT_LIMIT = 20
+export const WORKBENCH_MAX_LIMIT = 100
+// SQL 候选窗口独立于 API 返回上限，保持原有排序覆盖范围。
+const WORKBENCH_CANDIDATE_LIMIT = 200
 
 type BalanceDirection = 'client_due' | 'settled' | 'store_due'
 
@@ -184,6 +195,15 @@ const RECOVERY_STATE_LABELS: Record<string, string> = {
   return_pending: '待归还客户',
 }
 
+/**
+ * 有下一步动作的在办状态集合 —— 直接从主动作判定表取键，不另外抄一份清单：
+ * 统计口径与「能不能派生出一条待办」必须永远是同一份来源，抄一份就会漂。
+ */
+const SERVICE_ACTION_STATES = Object.keys(SERVICE_ACTION_BY_STATE)
+const RECOVERY_ACTION_STATES = Object.keys(RECOVERY_ACTION_BY_STATE)
+
+const placeholders = (count: number): string => Array.from({ length: count }, () => '?').join(', ')
+
 // ─────────────────────────────── 文案与判定表 ───────────────────────────────
 
 // ─────────────────────────────── 时间与文案 ───────────────────────────────
@@ -294,7 +314,6 @@ interface SaleTaskRow {
   version: number
   created_at: string
   shortage_count: number
-  missing_sn_count: number
   latest_checklist_result: string | null
   latest_checklist_configuration_version: number | null
 }
@@ -303,8 +322,8 @@ interface SaleTaskRow {
  * 在办销售单一次读齐。缺件口径与 `querySaleOrders` 的 `shortage_count` 完全一致
  * （行数量 − 该行有效数量占用），不另立第二套算法。
  */
-async function readSaleTasks(db: OperationsDb, storeId: number): Promise<WorkbenchTask[]> {
-  const result = await db
+function saleTasksStatement(db: OperationsDb, storeId: number): D1PreparedStatement {
+  return db
     .prepare(
       `SELECT o.id, o.order_no, o.customer_snapshot, o.kind, o.fulfillment_state, o.due_at,
               o.total_cents, o.cash_net_cents, o.offset_net_cents, o.balance_cents,
@@ -315,11 +334,6 @@ async function readSaleTasks(db: OperationsDb, storeId: number): Promise<Workben
                                         WHERE r.store_id = o.store_id AND r.line_ref = l.id
                                           AND r.status = 'active'
                                           AND r.quantity_bucket_ref IS NOT NULL), 0)) AS shortage_count,
-              (SELECT COUNT(*) FROM sale_lines l
-                 JOIN stock_items si ON si.id = l.stock_item_id
-                 JOIN hardware h ON h.id = si.product_id
-                WHERE l.sale_order_id = o.id AND h.tracking_mode = 'item'
-                  AND (si.asset_code IS NULL OR TRIM(si.asset_code) = '')) AS missing_sn_count,
               (SELECT c.result FROM sale_checklists c
                 WHERE c.store_id = o.store_id AND c.sale_order_id = o.id
                 ORDER BY c.checklist_version DESC LIMIT 1) AS latest_checklist_result,
@@ -328,13 +342,19 @@ async function readSaleTasks(db: OperationsDb, storeId: number): Promise<Workben
                 ORDER BY c.checklist_version DESC LIMIT 1) AS latest_checklist_configuration_version
        FROM sale_orders o
        WHERE o.store_id = ? AND o.trade_state = 'confirmed' AND o.fulfillment_state <> 'delivered'
-       ORDER BY o.created_at ASC
+       -- 排序下推（P06）：逾期 → 今天到期 → 未来 → 无到期，同组按到期时间。
+       -- 不需要把「今天」算进 SQL：无论今天是哪天，逾期的 due_at 一定早于今天、今天的早于未来，
+       -- 所以「到期时间升序 + 空值最后」与契约 ordering 的前两档完全等价，也就不用带时区参数。
+       ORDER BY CASE WHEN o.due_at IS NULL OR TRIM(o.due_at) = '' THEN 1 ELSE 0 END ASC,
+                o.due_at ASC, o.created_at ASC, o.id ASC
        LIMIT ?`,
     )
-    .bind(storeId, WORKBENCH_MAX_LIMIT)
-    .all<SaleTaskRow>()
+    .bind(storeId, WORKBENCH_CANDIDATE_LIMIT)
+}
 
-  return (result.results ?? []).map((row) => applyDeliveryGates(saleTaskFrom(row), row))
+/** 行 → 待办。`primaryAction.enabled` 依赖检查单 / 尾款，只在应用层算，SQL 里不重复这套口径。 */
+function saleTasksFromRows(rows: SaleTaskRow[]): WorkbenchTask[] {
+  return rows.map((row) => applyDeliveryGates(saleTaskFrom(row), row))
 }
 
 /**
@@ -437,7 +457,7 @@ function saleTaskFrom(row: SaleTaskRow): WorkbenchTask {
  */
 function applyDeliveryGates(task: WorkbenchTask, row: SaleTaskRow): WorkbenchTask {
   // 闸门只对「已经在交付阶段」的单有意义：还没到 ready_delivery 时，
-  // blocker 是「没到交付阶段」本身，逐条列检查单 / SN / 尾款只会误导。
+  // blocker 是「没到交付阶段」本身，逐条列检查单 / 尾款只会误导。
   if (row.fulfillment_state !== 'ready_delivery') return task
 
   const blockers: WorkbenchBlocker[] = []
@@ -451,15 +471,6 @@ function applyDeliveryGates(task: WorkbenchTask, row: SaleTaskRow): WorkbenchTas
       code: 'CHECKLIST_INCOMPLETE',
       message: '还没有「通过」的装机检测记录；先检测通过再交付',
       targetPage: '装机检测',
-      targetField: null,
-    })
-  }
-
-  if (row.missing_sn_count > 0) {
-    blockers.push({
-      code: 'SERIAL_MISMATCH',
-      message: `${row.missing_sn_count} 件实物还没有内部编号`,
-      targetPage: '库存',
       targetField: null,
     })
   }
@@ -498,8 +509,8 @@ interface ServiceTaskRow {
   device_code: string
 }
 
-async function readServiceTasks(db: OperationsDb, storeId: number): Promise<WorkbenchTask[]> {
-  const result = await db
+function serviceTasksStatement(db: OperationsDb, storeId: number): D1PreparedStatement {
+  return db
     .prepare(
       `SELECT so.id, so.order_no, so.symptom, so.state, so.confirmed_charge_cents,
               so.balance_cents, so.balance_direction, so.due_at, so.version, so.created_at,
@@ -508,14 +519,17 @@ async function readServiceTasks(db: OperationsDb, storeId: number): Promise<Work
          JOIN customer_device_custody d ON d.id = so.device_id
        -- 终态不进待办：returned / closed 的工单没有下一步动作可给。
        WHERE so.store_id = ? AND so.state NOT IN ('returned', 'closed')
-       ORDER BY so.created_at ASC
+       -- 与销售单同一套排序下推（见 saleTasksStatement 的说明）。
+       ORDER BY CASE WHEN so.due_at IS NULL OR TRIM(so.due_at) = '' THEN 1 ELSE 0 END ASC,
+                so.due_at ASC, so.created_at ASC, so.id ASC
        LIMIT ?`,
     )
-    .bind(storeId, WORKBENCH_MAX_LIMIT)
-    .all<ServiceTaskRow>()
+    .bind(storeId, WORKBENCH_CANDIDATE_LIMIT)
+}
 
+function serviceTasksFromRows(rows: ServiceTaskRow[]): WorkbenchTask[] {
   const tasks: WorkbenchTask[] = []
-  for (const row of result.results ?? []) {
+  for (const row of rows) {
     const action = SERVICE_ACTION_BY_STATE[row.state]
     // 认不出的状态宁可不显示，也不给一个指向错误动作的按钮。
     if (!action) continue
@@ -587,8 +601,8 @@ interface RecoveryTaskRow {
   item_count: number
 }
 
-async function readRecoveryTasks(db: OperationsDb, storeId: number): Promise<WorkbenchTask[]> {
-  const result = await db
+function recoveryTasksStatement(db: OperationsDb, storeId: number): D1PreparedStatement {
+  return db
     .prepare(
       `SELECT r.id, r.order_no, r.seller_snapshot, r.state, r.initial_estimate_cents,
               r.final_acquisition_cents, r.payable_cents, r.paid_cents, r.version, r.created_at,
@@ -597,14 +611,20 @@ async function readRecoveryTasks(db: OperationsDb, storeId: number): Promise<Wor
        -- 终态不进待办：returned 已离店；ready_for_sale 的下一步是销售而非库存动作，
        -- 属回收/销售交界，本卡不给它编一个主动作。
        WHERE r.store_id = ? AND r.state NOT IN ('returned', 'ready_for_sale')
-       ORDER BY r.created_at ASC
+         -- draft 也不能进来（P06）：它在应用层才被丢掉（没有下一步动作），
+         -- 却会白占一个 200 条窗口的名额，把真正待处理的回收单挤出可见范围。
+         AND r.state <> 'draft'
+       -- 回收单没有 due_at（应用层 dueAt 恒 null），排不上「逾期优先」那两档；
+       -- 这里只加 id 兜底保证切片稳定，最终次序仍由应用层按 primaryAction.enabled + 单号排。
+       ORDER BY r.created_at ASC, r.id ASC
        LIMIT ?`,
     )
-    .bind(storeId, WORKBENCH_MAX_LIMIT)
-    .all<RecoveryTaskRow>()
+    .bind(storeId, WORKBENCH_CANDIDATE_LIMIT)
+}
 
+function recoveryTasksFromRows(rows: RecoveryTaskRow[]): WorkbenchTask[] {
   const tasks: WorkbenchTask[] = []
-  for (const row of result.results ?? []) {
+  for (const row of rows) {
     const action = RECOVERY_ACTION_BY_STATE[row.state]
     if (!action) continue
 
@@ -646,42 +666,124 @@ async function readRecoveryTasks(db: OperationsDb, storeId: number): Promise<Wor
   return tasks
 }
 
+// ─────────────────────────── 全店在办统计（与明细分开读） ───────────────────────────
+
+/**
+ * 为什么统计要单独一条聚合语句，而不是从明细里数出来：
+ *
+ * 三类明细各自带 `LIMIT 200`（一条待办列表不可能无限长），而 metrics 的口径是
+ * **未筛选的完整在办集合**（conventions.pagination.snapshot「分页不得改变汇总口径」）。
+ * 从被截断的明细派生统计，超过上限的店就会少算 —— P03 在本地隔离库实测过：
+ * 一家有 274 条在办销售单的店被统计成 200 条（133 待交机 + 67 缺货，正好卡在每类上限），
+ * 应收也从 ¥1,175,907.29 少算成 ¥876,680.52。
+ *
+ * 这条语句只做聚合、不取明细，所以全量在办不占内存，也不受列表上限影响。
+ *
+ * 它和三类明细一起进**同一批** `db.batch()`（P06）：D1 的 batch 是隐式事务，
+ * 批内语句看到的是同一份数据 —— 这才是 `pagination.snapshot` 要的「同一读取快照」。
+ */
+const SHORTAGE_LINE_EXISTS = `EXISTS (SELECT 1 FROM sale_lines l
+          WHERE l.sale_order_id = o.id AND l.source = 'new' AND l.stock_item_id IS NULL
+            AND l.qty > COALESCE((SELECT SUM(r.qty) FROM stock_reservations r
+                                  WHERE r.store_id = o.store_id AND r.line_ref = l.id
+                                    AND r.status = 'active' AND r.quantity_bucket_ref IS NOT NULL), 0))`
+
+interface WorkbenchTotalsRow {
+  sale_delivery: number
+  sale_shortage: number
+  sale_receivable_cents: number
+  service_open: number
+  service_receivable_cents: number
+  recovery_open: number
+}
+
+interface WorkbenchTotals {
+  delivery: number
+  shortage: number
+  service: number
+  recovery: number
+  taskTotal: number
+  receivableCents: number
+}
+
+function workbenchTotalsStatement(db: OperationsDb, storeId: number): D1PreparedStatement {
+  return db
+    .prepare(
+      `WITH sale AS (
+         SELECT o.balance_cents, ${SHORTAGE_LINE_EXISTS} AS has_shortage
+           FROM sale_orders o
+          WHERE o.store_id = ? AND o.trade_state = 'confirmed' AND o.fulfillment_state <> 'delivered'
+       ), svc AS (
+         SELECT COUNT(*) AS open_count,
+                COALESCE(SUM(CASE WHEN so.confirmed_charge_cents IS NOT NULL AND so.balance_cents > 0
+                                  THEN so.balance_cents ELSE 0 END), 0) AS receivable_cents
+           FROM service_orders so
+          WHERE so.store_id = ? AND so.state IN (${placeholders(SERVICE_ACTION_STATES.length)})
+       ), rec AS (
+         SELECT COUNT(*) AS open_count
+           FROM recovery_orders r
+          WHERE r.store_id = ? AND r.state IN (${placeholders(RECOVERY_ACTION_STATES.length)})
+       )
+       SELECT totals.sale_delivery, totals.sale_shortage, totals.sale_receivable_cents,
+              svc.open_count AS service_open, svc.receivable_cents AS service_receivable_cents,
+              rec.open_count AS recovery_open
+         FROM (
+           SELECT COALESCE(SUM(CASE WHEN has_shortage = 1 THEN 1 ELSE 0 END), 0) AS sale_shortage,
+                  COALESCE(SUM(CASE WHEN has_shortage = 0 THEN 1 ELSE 0 END), 0) AS sale_delivery,
+                  COALESCE(SUM(CASE WHEN balance_cents > 0 THEN balance_cents ELSE 0 END), 0) AS sale_receivable_cents
+             FROM sale
+         ) totals
+         CROSS JOIN svc CROSS JOIN rec`,
+    )
+    .bind(storeId, storeId, ...SERVICE_ACTION_STATES, storeId, ...RECOVERY_ACTION_STATES)
+}
+
+function totalsFromRow(row: WorkbenchTotalsRow | null): WorkbenchTotals {
+  const delivery = Number(row?.sale_delivery ?? 0)
+  const shortage = Number(row?.sale_shortage ?? 0)
+  const service = Number(row?.service_open ?? 0)
+  const recovery = Number(row?.recovery_open ?? 0)
+  return {
+    delivery,
+    shortage,
+    service,
+    recovery,
+    taskTotal: delivery + shortage + service + recovery,
+    receivableCents: Number(row?.sale_receivable_cents ?? 0) + Number(row?.service_receivable_cents ?? 0),
+  }
+}
+
 // ─────────────────────────────── 对外查询 ───────────────────────────────
 
 /** 契约读模型的固定文案与跳转目标（照 fixtures.V1.metrics 的形态）。 */
-function buildMetrics(tasks: readonly WorkbenchTask[]): WorkbenchMetrics {
-  const countOf = (category: TaskCategory) => tasks.filter((task) => task.category === category).length
-  // 应收 = countsTowardReceivable=true 的 balanceCents 之和（V1.expected.receivableFormula）
-  const receivableCents = tasks.reduce((sum, task) => {
-    const amount = task.amountSummary
-    if (!amount || !amount.countsTowardReceivable) return sum
-    return sum + Math.max(amount.balanceCents ?? 0, 0)
-  }, 0)
-
+function buildMetrics(totals: WorkbenchTotals): WorkbenchMetrics {
   return {
     pendingDelivery: {
       label: '待交机',
-      value: countOf('delivery'),
+      value: totals.delivery,
       filterTarget: '/dashboard?category=delivery',
     },
     stockShortage: {
       label: '缺货订单',
-      value: countOf('stock_shortage'),
+      value: totals.shortage,
       filterTarget: '/dashboard?category=stock_shortage',
     },
     servicePending: {
       label: '维修待办',
-      value: countOf('service'),
+      value: totals.service,
       filterTarget: '/dashboard?category=service',
     },
+    // 应收 = countsTowardReceivable=true 的 balanceCents 之和（V1.expected.receivableFormula）：
+    // 在办销售单恒计入；工单只有「已确认收费」才计入；回收单在取得所有权前不计。
+    // 负余额（store_due）按 0 计，不用负数冲抵别人的应收。
     receivable: {
       label: '待收款',
-      valueCents: receivableCents,
+      valueCents: totals.receivableCents,
       filterTarget: '/finance?view=receivable',
     },
     taskTotal: {
       label: '待办总数',
-      value: tasks.length,
+      value: totals.taskTotal,
       filterTarget: '/dashboard?scope=open',
     },
   }
@@ -697,9 +799,10 @@ function matchesQuery(task: WorkbenchTask, q: string | null, category: TaskCateg
 }
 
 /**
- * 工作台读模型。一次快照读齐三类单据 → 派生待办 → 同口径汇总。
- * `metrics` 基于**未筛选**的完整在办集合（conventions.pagination.snapshot：
+ * 工作台读模型。四段读一次批处理发出：三类明细（各有 200 条上限）+ 一次全店统计（聚合，不受上限影响）。
+ * `metrics` 是**未筛选的完整在办集合**的统计（conventions.pagination.snapshot：
  * 「分页不得改变汇总口径」），`tasks` 才受 q / category / limit 影响。
+ * 因此 `taskTotal` 可以大于 `tasks.length` —— 界面要能区分「还有多少没显示」与「筛掉了」。
  */
 export async function queryWorkbench(
   db: OperationsDb,
@@ -716,18 +819,30 @@ export async function queryWorkbench(
       ? Math.min(query.limit as number, WORKBENCH_MAX_LIMIT)
       : WORKBENCH_DEFAULT_LIMIT
 
-  // 顺序读三类单据：D1 每次查询都是独立往返，串行读 + 一个 generatedAt
-  // 是这套环境里能做到的「同一读取快照」（conventions.pagination.snapshot）。
-  const saleTasks = await readSaleTasks(db, storeId)
-  const serviceTasks = await readServiceTasks(db, storeId)
-  const recoveryTasks = await readRecoveryTasks(db, storeId)
+  // 四段读**一次批处理发出**（P06）：D1 的 batch 是隐式事务，批内语句看到同一份数据，
+  // 这才真正满足 conventions.pagination.snapshot 的「同一读取快照」。
+  // 原先四段串行独立往返，中间任何一个员工写入都会让 metrics 与 tasks 描述两份不同的数据 ——
+  // 一个 generatedAt 只是标记时刻，并不能把四次读变成一个快照。
+  // 也不改成 Promise.all：并发发出四段互不知情的读，跨语句照样没有一致性，
+  // 只是把读放大与失败语义变得更难说清。
+  const [saleResult, serviceResult, recoveryResult, totalsResult] = await db.batch([
+    saleTasksStatement(db, storeId),
+    serviceTasksStatement(db, storeId),
+    recoveryTasksStatement(db, storeId),
+    workbenchTotalsStatement(db, storeId),
+  ])
+
+  const saleTasks = saleTasksFromRows((saleResult?.results ?? []) as SaleTaskRow[])
+  const serviceTasks = serviceTasksFromRows((serviceResult?.results ?? []) as ServiceTaskRow[])
+  const recoveryTasks = recoveryTasksFromRows((recoveryResult?.results ?? []) as RecoveryTaskRow[])
+  const totals = totalsFromRow((totalsResult?.results?.[0] ?? null) as WorkbenchTotalsRow | null)
 
   const all = [...saleTasks, ...serviceTasks, ...recoveryTasks].map((task) => ({
     ...task,
     deadlineText: describeDeadline(task.dueAt, now),
   }))
 
-  const metrics = buildMetrics(all)
+  const metrics = buildMetrics(totals)
   const tasks = sortTasksForWorkbench(
     all.filter((task) => matchesQuery(task, q, category)),
     now,

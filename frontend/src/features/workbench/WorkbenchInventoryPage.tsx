@@ -16,7 +16,7 @@
  *   2. 不把网络超时当作失败：写动作超时进「结果未知」，提示先用原 requestId 查询结果；
  *   3. 不伪造成功：写动作只有服务端 2xx + 契约成功信封才提示已保存。
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import {
@@ -46,6 +46,7 @@ import {
 } from './inventory-api'
 import type { AttachmentView } from './attachment-api'
 import type {
+  InventoryFilters,
   InventoryItemRow,
   InventoryActivityEntry,
   InventoryListPayload,
@@ -324,8 +325,37 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
     if (nextOpen && (!activityLoaded || activityState === 'error')) void loadActivity()
   }
 
+  /**
+   * 读取代次：只有**最后一次发起**的读取才允许把结果写进状态。
+   *
+   * 保存后重载、连点筛选、快速换行展开都会同时在途多个请求；没有这道闸门时，
+   * 晚到的旧响应会盖掉新结果。浏览器实测到了这个后果：把旧请求按住、先让新请求返回，
+   * 再放行旧响应，展开中的「影驰 RTX 4060 Ti」下面显示的是「华硕 B760M-PLUS」的入库批次。
+   *
+   * 三种读取各用一个代次（列表 / 展开明细 / 实物详情），**互不牵连**：
+   * 刷新列表不该作废正在读的展开明细，反之也一样。
+   * 代次是组件实例级的：退出登录、换门店都会让整棵路由子树卸载重挂（App 先回到验证态），
+   * 引用随之重置，所以旧响应不可能落到新会话或新门店的页面上。
+   */
+  const listReadRef = useRef(0)
+  const breakdownReadRef = useRef(0)
+  const itemDetailReadRef = useRef(0)
+
+  /**
+   * 「此刻展开的是哪一行」的实时值（P06）。
+   *
+   * 为什么不能直接用 state `expanded`：`reload()` 里 `await readList()` 期间用户可能换行或收起，
+   * 那一刻闭包里的 `expanded` 已经过期 —— 写完期初/商品后拿**旧行**去刷新明细，
+   * 而 `loadBreakdown` 一进函数就推进代次，会把用户**当前**那一行的在途响应一并作废：
+   * 表现为新展开的行永远停在「正在加载」，旧行的批次却写到了它下面。
+   * 这个 ref 与 `setExpanded` 在同一处同步写，读到的就是此刻真正的展开项。
+   */
+  const expandedRef = useRef<string | null>(null)
+
   /** 当前筛选条件用于「保存后重新加载」；依赖写在 reload 的依赖表里，不用 ref 传。 */
-  const applyResult = useCallback((result: Awaited<ReturnType<typeof fetchInventory>>) => {
+  const applyResult = useCallback((result: Awaited<ReturnType<typeof fetchInventory>>, token: number): boolean => {
+    // 晚到的旧响应：直接丢，不覆盖新结果，也不把新结果改回 error。
+    if (token !== listReadRef.current) return false
     if (result.ok) {
       setRows(result.data.items)
       setTotals(result.data.totals)
@@ -334,16 +364,53 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
       setOpeningWindow(result.data.openingWindow)
       setListError('')
       setListState('ready')
-      return
+      return true
     }
     setRows(null)
     setListError(result.unknownResult ? '请求结果未知，请稍后重试。' : result.message)
     setListState('error')
+    return true
   }, [])
 
-  const loadBreakdown = useCallback(async (productRef: string) => {
+  /**
+   * 发起一次列表读取：先取号再发请求，响应回来时按号判断还该不该写入。
+   * 返回值说明这次响应有没有被采纳（false = 期间已有更新的读取，本次结果整条作废）。
+   */
+  const readList = useCallback((filters: InventoryFilters) => {
+    const token = (listReadRef.current += 1)
+    return fetchInventory(filters).then((result) => applyResult(result, token))
+  }, [applyResult])
+
+  /**
+   * 在途展开明细：同一个型号还没回来的读取，后一次展开直接复用，不再发第二条。
+   *
+   * 例外：写入之后的刷新传 `{ force: true }` 不复用 —— 那时的在途请求是写入**之前**发出的，
+   * 复用它会拿回写入前的快照，等于刷新根本没做。见 `reload` 的注释。
+   *
+   * 有实测依据（探针场景 5）：连点「B760M → 4060 Ti → B760M」发出 3 次明细请求，
+   * 其中 B760M 被读了两遍；这两条在 1～3Mbps 的链路上是同时在途的，等于白下一个包。
+   *
+   * 键只按型号，是因为这张表挂在**组件实例**上：退出登录、换门店都会让整棵路由子树
+   * 卸载重挂（App 先回到验证态），表随之清空 —— 上一个用户或门店的在途响应不可能交给新会话。
+   * 成败都会删掉条目，失败不会变成永久缓存，下一次展开照常重新请求。
+   */
+  const breakdownInflightRef = useRef(new Map<string, ReturnType<typeof fetchInventory>>())
+
+  const loadBreakdown = useCallback(async (productRef: string, options?: { force?: boolean }) => {
+    const token = (breakdownReadRef.current += 1)
     setBreakdownState('loading')
-    const result = await fetchInventory({ productRef, limit: BREAKDOWN_LIMIT })
+    // force 只给「写入之后的刷新」用：这时 Map 里可能还压着一条**写入之前**发出的请求，
+    // 复用它等于拿回写入前的快照，刷新就白做了。被动展开照常复用，省一次下载。
+    const inflight = options?.force ? undefined : breakdownInflightRef.current.get(productRef)
+    const pending = inflight ?? fetchInventory({ productRef, limit: BREAKDOWN_LIMIT })
+    breakdownInflightRef.current.set(productRef, pending)
+    const result = await pending.finally(() => {
+      // 成功或失败都要清：留着等于把这个型号永久钉在一条旧请求上。
+      // 只清自己那一条：被 force 顶掉的旧请求回来时 Map 里已经是新请求，不能顺手把它删了。
+      if (breakdownInflightRef.current.get(productRef) === pending) breakdownInflightRef.current.delete(productRef)
+    })
+    // 展开的已经是别的型号了：这份明细属于上一次展开，丢弃。
+    if (token !== breakdownReadRef.current) return
     if (result.ok) {
       setBreakdown(result.data.lotItems)
       setBatchBreakdown(result.data.batches ?? [])
@@ -357,25 +424,36 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   }, [])
 
   const reload = useCallback(async () => {
-    const result = await fetchInventory({
+    // 先记住「这次刷新开始时展开的是哪一行」，而不是等列表回来后再读当时的展开项：
+    // 等待期间用户完全可能换行或收起。
+    const expandedAtStart = expandedRef.current
+    const applied = await readList({
       q: appliedQuery || undefined,
       availability: availability === 'all' ? undefined : availability,
       condition: condition === 'all' ? undefined : condition,
       limit: PAGE_LIMIT,
     })
-    applyResult(result)
+    // 期间用户又发起了新的列表读取（换筛选、或再点一次保存）：这次刷新的结果已整条作废，
+    // 明细也不该再动 —— 用户那次读取拿到的是写入之后的列表。
+    if (!applied) return
     // 展开中的那一行也要跟着刷新：写完期初/商品后型号数量会变，
     // 只刷列表会让展开区停在上一次的快照上，等于同一个页面出现两套数字。
-    if (expanded) await loadBreakdown(expanded)
-  }, [appliedQuery, availability, condition, applyResult, expanded, loadBreakdown])
+    // 只在「开始时就展开、现在还是它」时刷：中途换行的话那一行是用户自己的新展开，
+    // 它的读取本来就发生在写入之后、数据已经最新，再刷一次只会把自己顶成过期请求。
+    if (expandedAtStart && expandedRef.current === expandedAtStart) {
+      await loadBreakdown(expandedAtStart, { force: true })
+    }
+  }, [appliedQuery, availability, condition, readList, loadBreakdown])
 
   // 首次加载：setState 只发生在 Promise 回调里。在 effect 体内同步调用会 setState 的函数
   // 会触发级联渲染（react-hooks/set-state-in-effect），所以这里不走 reload()。
+  // 首次读取也要取号：它还没回来时用户就可能已经点了筛选，那一刻它同样属于「旧响应」。
   useEffect(() => {
     let active = true
+    const token = (listReadRef.current += 1)
     void fetchInventory({ limit: PAGE_LIMIT })
       .then((result) => {
-        if (!active) return
+        if (!active || token !== listReadRef.current) return
         if (result.ok) {
           setRows(result.data.items)
           setTotals(result.data.totals)
@@ -389,7 +467,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
         }
       })
       .catch(() => {
-        if (!active) return
+        if (!active || token !== listReadRef.current) return
         setListError('库存加载失败')
         setListState('error')
       })
@@ -399,19 +477,24 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   const runSearch = (keyword: string) => {
     setListState('loading')
     setNotice('')
-    void fetchInventory({
+    void readList({
       q: keyword || undefined,
       availability: availability === 'all' ? undefined : availability,
       condition: condition === 'all' ? undefined : condition,
       limit: PAGE_LIMIT,
-    }).then(applyResult)
+    })
   }
 
   /** 成本列是否渲染：只看响应里有没有这个键，不在前端自己判权限（04 §3 L57）。 */
   const canViewCost = useMemo(() => (rows ?? []).some((row) => 'totalCostCents' in row), [rows])
 
   const toggleRow = (row: InventoryProductRow) => {
+    // 收起 / 换行都把两个详情代次推进一格：在途的那次响应到达时已经不属于当前展开项，
+    // 否则它会在收起之后把 breakdownState 从 idle 顶回 ready。
+    breakdownReadRef.current += 1
+    itemDetailReadRef.current += 1
     if (expanded === row.id) {
+      expandedRef.current = null
       setExpanded(null)
       setBreakdown([])
       setBreakdownState('idle')
@@ -419,6 +502,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
       setItemDetailRef(null)
       return
     }
+    expandedRef.current = row.id
     setExpanded(row.id)
     setBreakdown([])
     setItemDetail(null)
@@ -428,15 +512,19 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
 
   const openItemDetail = (stockItemId: string) => {
     if (itemDetailRef === stockItemId) {
+      itemDetailReadRef.current += 1
       setItemDetail(null)
       setItemDetailRef(null)
       return
     }
+    const token = (itemDetailReadRef.current += 1)
     setItemDetailRef(stockItemId)
     setWorkflowError('')
     setInspectionFindings('')
     setItemDetail(null)
     void fetchStockItem(stockItemId).then((result) => {
+      // 已经点开了别的实物：这份详情属于上一件，回填会把它写到别人的标题下面。
+      if (token !== itemDetailReadRef.current) return
       if (result.ok) {
         setItemDetail(result.data)
         setItemAttachments((current) => ({ ...current, [stockItemId]: result.data.attachments ?? [] }))
@@ -447,9 +535,11 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   }
 
   const refreshItemDetail = async (id: string) => {
+    const token = (itemDetailReadRef.current += 1)
     const result = await fetchStockItem(id)
+    // 只有刚写过的那件实物还开着才回填；附件表按实物 ID 存，可以无条件合并。
     if (result.ok) {
-      setItemDetail(result.data)
+      if (token === itemDetailReadRef.current) setItemDetail(result.data)
       setItemAttachments((current) => ({ ...current, [id]: result.data.attachments ?? [] }))
     }
     await reload()
@@ -1029,7 +1119,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
         />
         <button type="submit" className="wb-btn">搜索</button>
         {appliedQuery ? (
-          <button type="button" className="wb-btn" onClick={() => { setQuery(''); setAppliedQuery(''); setAvailability('all'); setCondition('all'); setListState('loading'); void fetchInventory({ limit: PAGE_LIMIT }).then(applyResult) }}>
+          <button type="button" className="wb-btn" onClick={() => { setQuery(''); setAppliedQuery(''); setAvailability('all'); setCondition('all'); setListState('loading'); void readList({ limit: PAGE_LIMIT }) }}>
             清除筛选
           </button>
         ) : null}
@@ -1065,7 +1155,13 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
             type="button"
             className={availability === filter.key ? 'is-active' : ''}
             aria-pressed={availability === filter.key}
-            onClick={() => { setAvailability(filter.key); setListState('loading'); void fetchInventory({ q: appliedQuery || undefined, availability: filter.key === 'all' ? undefined : filter.key, condition: condition === 'all' ? undefined : condition, limit: PAGE_LIMIT }).then(applyResult) }}
+            onClick={() => {
+              // 连点已生效的筛选项：界面状态和查询都没变，再发一次是纯重复读取。
+              if (availability === filter.key) return
+              setAvailability(filter.key)
+              setListState('loading')
+              void readList({ q: appliedQuery || undefined, availability: filter.key === 'all' ? undefined : filter.key, condition: condition === 'all' ? undefined : condition, limit: PAGE_LIMIT })
+            }}
           >
             {filter.label}
           </button>
@@ -1079,7 +1175,13 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
             type="button"
             className={condition === filter.key ? 'is-active' : ''}
             aria-pressed={condition === filter.key}
-            onClick={() => { setCondition(filter.key); setListState('loading'); void fetchInventory({ q: appliedQuery || undefined, availability: availability === 'all' ? undefined : availability, condition: filter.key === 'all' ? undefined : filter.key, limit: PAGE_LIMIT }).then(applyResult) }}
+            onClick={() => {
+              // 同上：同值再点不重发请求。
+              if (condition === filter.key) return
+              setCondition(filter.key)
+              setListState('loading')
+              void readList({ q: appliedQuery || undefined, availability: availability === 'all' ? undefined : availability, condition: filter.key === 'all' ? undefined : filter.key, limit: PAGE_LIMIT })
+            }}
           >
             {filter.label}
           </button>
