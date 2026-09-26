@@ -1,14 +1,14 @@
 # 下一次从这里继续
 
-更新：2026-09-26。多个对话各自部署后都切换同一 Worker 的 100% 流量，造成线上看起来被后续版本覆盖；现将当前 78 个文件合并提交 `8b75245` 并发布完整版本。最新生产 Worker `18d061cd-e8ee-4343-bec2-312b6a3c8e82` 为 100%，资源文件名与本地构建一致。先读[当前状态](STATUS.md)、[未解决项](OPEN-ITEMS.md)和[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。
+更新：2026-09-26。多个对话各自部署后都切换同一 Worker 的 100% 流量，造成线上看起来被后续版本覆盖；现将当前 78 个文件合并提交 `8b75245` 并发布完整版本。随后 UI 修复提交 `a7c2ac2` 已推送上线；最新生产 Worker `36b76790-2c3b-46db-8738-7af1ac5d95cc` 为 100%，资产匹配本次构建。先读[当前状态](STATUS.md)、[未解决项](OPEN-ITEMS.md)、[合并发布回执](verification/2026-09-26-consolidated-release/README.md)和[本次 UI 发布回执](verification/2026-09-26-inventory-ui-cleanup-release/README.md)。
 
 ## 当前版本
 
 - V1 基线：`v1-backup-2026-09-26`，提交 `7a56cf4f5426f388d219172a92ab9ea835b4c361`。
-- V2 标签：`v2-2026-09-26`；分支 `codex/v2-item-flow`；本轮提交 `8b75245`。
-- 最新生产 Worker：`18d061cd-e8ee-4343-bec2-312b6a3c8e82`（100%）。生产 CSS/JS：`index-DK-iPbPP.css`、`index-znmx03a7.js`。
-- 完整版含 V2 仓库入口、简化商品/库存登记、员工可读操作日志、管理员测试数据清理、服务与报价调整及 v1.1 契约同步。
-- 后端 393/393、前端 217/217、契约 3608 项、生成/跨端/迁移/文档门禁通过；生产首页 HTTP 200 且资源文件名与本地构建一致。JS chunk 595.13 kB，Vite 提示超过 500 kB；未迁移数据库或写生产业务数据。未做本轮登录后业务验收。
+- V2 标签：`v2-2026-09-26`；分支 `codex/v2-item-flow`；完整集成提交 `8b75245`，UI 修复提交 `a7c2ac2`。
+- 最新生产 Worker：`36b76790-2c3b-46db-8738-7af1ac5d95cc`（100%）。生产 CSS/JS：`index-Z4Rh2NyP.css`、`index-DXmC-XXO.js`。
+- 完整版含 V2 仓库入口、简化商品/库存登记、管理员清理入口、服务与报价调整及 v1.1 契约同步；本次修复登记库存弹窗布局并在报价/仓库页加入管理员清理快捷入口。
+- 后端 393/393、前端历史基线 217/217；本次定向前端测试 41/41，构建和 Wrangler dry-run 通过。生产首页 HTTP 200 且资源文件名与本地构建一致。JS chunk 595.94 kB，Vite 提示超过 500 kB；未迁移数据库或写生产业务数据。未做登录后的删除业务验收。
 - GitHub 远端 `origin` 指向 `wongkd/pc`；本地 `codex/v2-item-flow` 已推送覆盖远端 `main`，并与 `origin/main` 对齐。发布回执记录了旧远端主线无共同历史、经用户确认覆盖的情况。
 
 ## 下一步

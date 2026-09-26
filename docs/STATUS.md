@@ -1,6 +1,6 @@
 # 当前状态
 
-更新：2026-09-26。V1 基线标签 `v1-backup-2026-09-26` 固定在 `7a56cf4f5426f388d219172a92ab9ea835b4c361`；合并提交 `8b75245` 已部署生产 Worker `18d061cd-e8ee-4343-bec2-312b6a3c8e82`，流量 100%。员工真实业务闭环仍未验收，不代表 RC 整体验收放行。此次合并解决多个对话各自部署完整 Worker 版本导致线上流量切换的问题，见[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。
+更新：2026-09-26。V1 基线标签 `v1-backup-2026-09-26` 固定在 `7a56cf4f5426f388d219172a92ab9ea835b4c361`；合并提交 `8b75245` 已部署生产 Worker `18d061cd-e8ee-4343-bec2-312b6a3c8e82`，流量 100%。随后 UI 修复提交 `a7c2ac2` 已推送并部署；当前 Worker `36b76790-2c3b-46db-8738-7af1ac5d95cc` 流量 100%，见[库存登记与清理入口发布回执](verification/2026-09-26-inventory-ui-cleanup-release/README.md)。员工真实业务闭环仍未验收，不代表 RC 整体验收放行。此次合并解决多个对话各自部署完整 Worker 版本导致线上流量切换的问题，见[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。
 本文是代码入口与已有证据的摘要，历史测试数不代表本轮重新通过。
 
 | 范围 | 当前事实与证据 |
@@ -12,7 +12,7 @@
 | 自动编号与追溯 | 用户已确认“内部自动编号 + 厂家 SN 可选扫码 + 备注；耗材按批次编号 + 备注”。首版源码已接入期初库存、采购到货、维修设备、回收取得/拆件及库存查询；隔离预览 D1 已应用 0027、0028，生产迁移状态另行核实。批次只记录入库数量，未按批次追踪出库余量；旧 SN 台账仍独立。见[方案与当前边界](plans/2026-09-24-auto-serial/README.md) |
 | 网页视觉 | 彩色 [Core V2](design/2026-09-19-erp-core/v2/README.md) 已定；[E03](verification/2026-09-21-E03/README.md) 是历史页面覆盖记录。旧报价编辑器已移除；新版 A4 打印仍待 QT03 实看。回收页已补分步操作指引并发布，详见[回执](verification/2026-09-25-recovery-guidance-release/README.md) |
 | 客户 / 库存 / 报价 | E04、E04b、E05、E05b 已有真实接口与本地证据，见[索引](verification/README.md) |
-| 管理员测试数据清理 | B45 未发出报价草稿与 B46 无业务引用商品清理已随合并版发布，入口在设置 → 测试数据清理。登录后浏览器业务验收未做，没有删除任何生产记录。库存实物、流水、顾客设备交接与交易历史保留。旧版发布记录见[生产回执](verification/2026-09-26-admin-data-cleanup/README.md)，当前 Worker 及验证见[合并发布回执](verification/2026-09-26-consolidated-release/README.md)。 |
+| 管理员测试数据清理 | B45 未发出报价草稿与 B46 无业务引用商品清理已随合并版发布；入口在设置“清理草稿与空商品”，报价页和仓库页也有就近入口。登录后删除流程未做业务验收，没有删除任何生产记录。库存实物、流水、顾客设备交接与交易历史保留。详见[本次 UI 发布回执](verification/2026-09-26-inventory-ui-cleanup-release/README.md)、[原清理功能回执](verification/2026-09-26-admin-data-cleanup/README.md)。 |
 | 报价新建模板 A+B | QT01/QT02 已本地实现；列表读模型缺陷已单独修复，详见[独立回执](verification/2026-09-25-quote-list-work-revision/README.md)。本机正式页面独立重载后列表与详情均为工作版本 v1、2 行、应付 ¥779.99。A4 正式打印模板已按用户确认字段、质保规则及报价日期起算 24 小时有效期更新；报价行支持顾客可见备注，二手配件默认质保改为 1 个月。本轮新建编辑器改为具名响应式字段组，A4 分页重复表头并保护明细行和签字区；前端 build 通过。E05、定向前端测试与 build 的既有证据见回执。系统打印预览实看与取消状态待 Edge 验收，**QT03 未放行**。见[A4 最终版说明](design/2026-09-25-quote-print-a4/README.md)与[本机打印续验](verification/2026-09-25-quote-list-work-revision/print-followup.md)；保留[原续验与截图](verification/2026-09-24-quote-templates-ab/QT03-followup.md)；C/D 不在本期 |
 | 销售 / 采购 / 交付 / 售后 / 回收 / 账本 | E06–E11 已有实现与分卡验证；[报价引用与数量件预留补洞](verification/2026-09-21-E06E07-gapfix/README.md)已完成。本地同 Worker/D1 浏览器续验已补销售到交付、售后完整链、回收验机到折抵、客户新增/编辑及刷新回读和实际单据失败恢复；不代表整体验收、远端或生产放行，见[浏览器续验](verification/2026-09-25-web-browser-acceptance/README.md) |
 | P2 ERP 总集成 | [本地总链](verification/2026-09-23-P2-erp-integration/README.md)已在同一真实 Worker / 内存 D1 串行通过报价确认、成交缺货、采购到货付款、补占用、装机交付、售后、回收抵用与账本；并修复确认报价无法转单。后端 360/360、前端 test/build 与契约迁移门禁本轮通过；不等于浏览器、远端或生产验收 |
