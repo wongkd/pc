@@ -13,7 +13,9 @@
 - 线上构建文件：`/assets/index-DK-iPbPP.css`、`/assets/index-znmx03a7.js`。
 - 本版汇总 V2 仓库流程、商品与库存登记、仓库操作日志、管理员测试数据清理、售后/报价页面调整及 v1.1 契约生成物。
 - 生产此前已有多次独立 Worker 发布；Cloudflare 部署记录显示最新版本的 100% 流量指向单一 Worker 版本。后续生产发布应从最新集成基线构建完整版本，不能直接从落后的任务工作树发布。
-- 当前 Git 仓库未配置 remote；提交保存在本地，没有 Git push。线上发布是 Wrangler 部署，不依赖 Git 推送。
+- GitHub 目标：公开仓库 [`wongkd/pc`](https://github.com/wongkd/pc)，默认分支 `main`。仓库描述为电脑硬件报价系统，与本项目匹配。
+- 推送：用户确认旧远端可覆盖后，将本地 `codex/v2-item-flow` 推送到 `main`。远端原提交 `169b72a99d586a2fe90dbf2c3627d9d6734b2202` 与本地历史无共同祖先，因此使用 `--force-with-lease`，且只在远端仍为该 SHA 时覆盖；推送后远端 `main` 为 `70ca726`。本地已添加 `origin` 并复核远端 SHA。
+- 线上发布由 Wrangler 完成；GitHub 推送保存代码历史，不执行 Cloudflare 部署。
 
 ## 验证
 
