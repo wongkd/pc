@@ -1,6 +1,6 @@
-// AUTO-GENERATED FROM contracts/v1 — DO NOT EDIT
+// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT
 // 生成命令：node contracts/tools/generate-dto.mjs
-// 来源：contracts/v1/enums.json；取值唯一来源，两端不得各自新增。
+// 来源：contracts/v1.1/enums.json；取值唯一来源，两端不得各自新增。
 
 export type ContractId = string
 export type Cents = number
@@ -437,7 +437,7 @@ export const CounterpartyKind = {
 export type CounterpartyKind = (typeof CounterpartyKind)[keyof typeof CounterpartyKind]
 export const CounterpartyKindValues: readonly CounterpartyKind[] = Object.values(CounterpartyKind)
 
-/** 动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B39（报损）、B40（价格调整）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit */
+/** 动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B39（报损）、B40（价格调整）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit；B45（清理未发出报价草稿）、B46（清理未引用商品档案）为 2026-09-26 v1.1 契约修订新增，权限 store/manage。 */
 export const ActionCode = {
   B01: "B01",
   B02: "B02",
@@ -481,6 +481,8 @@ export const ActionCode = {
   B42: "B42",
   B43: "B43",
   B44: "B44",
+  B45: "B45",
+  B46: "B46",
 } as const
 export type ActionCode = (typeof ActionCode)[keyof typeof ActionCode]
 export const ActionCodeValues: readonly ActionCode[] = Object.values(ActionCode)

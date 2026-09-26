@@ -16,8 +16,8 @@
 import { createWebApiClient } from '../../api/client.ts'
 import type { ApiResult } from '../../api/core.ts'
 import type { InventoryMovementSource } from '../../contracts/generated/enums'
-import type { FormalOpeningLineInput, OpeningCostBasis, OpeningWindowStatus } from '../../contracts/v2/generated/inventory-opening'
-export type { OpeningCostBasis, OpeningWindowStatus } from '../../contracts/v2/generated/inventory-opening'
+import type { FormalOpeningLineInput, InventoryActivityListPayload, OpeningCostBasis, OpeningWindowStatus } from '../../contracts/v2/generated/inventory-opening'
+export type { InventoryActivityEntry, OpeningCostBasis, OpeningWindowStatus } from '../../contracts/v2/generated/inventory-opening'
 
 /** 页面共用一个客户端：会话、待确认动作、超时口径都只有一份。 */
 export const inventoryClient = createWebApiClient()
@@ -133,6 +133,11 @@ export function fetchInventory(filters: InventoryFilters = {}): Promise<ApiResul
       cursor: filters.cursor,
     },
   })
+}
+
+/** 仓库操作日志：只读、按当前门店隔离，所有可查看库存的成员共享。 */
+export function fetchInventoryActivity(): Promise<ApiResult<InventoryActivityListPayload>> {
+  return inventoryClient.client.read<InventoryActivityListPayload>('/inventory/activity')
 }
 
 /** R07 的实物详情：来源、有效占用与最近流水。 */

@@ -1,10 +1,11 @@
 {
   "contractVersion": "v2",
-  "inherits": "v1",
+  "inherits": "v1.1",
   "scope": "D10 formal opening inventory and its inventory read metadata",
   "moduleEnvelopeVersion": "v2; inventory operations not otherwise listed inherit the v1 payload shape",
   "routes": [
     "GET /api/v2/inventory",
+    "GET /api/v2/inventory/activity",
     "GET /api/v2/inventory/items/:id",
     "POST /api/v2/inventory/products",
     "POST /api/v2/inventory/openings",
@@ -29,12 +30,36 @@
     "zero_cost": "Exactly zero cents and owner-approved evidence are required; keep distinct from unknown."
   },
   "types": [
+    { "name": "InventoryActivityKind", "constant": "INVENTORY_ACTIVITY_KINDS", "values": ["movement", "operation"] },
     { "name": "OpeningCostBasis", "constant": "OPENING_COST_BASES", "values": ["known_actual", "assessed_estimate", "unknown", "zero_cost"] },
     { "name": "OpeningWindowMode", "constant": "OPENING_WINDOW_MODES", "values": ["disabled", "preview", "formal"] },
     { "name": "OpeningWindowState", "constant": "OPENING_WINDOW_STATES", "values": ["disabled", "preview", "not_started", "open", "expired", "closed"] },
     { "name": "OpeningWindowCloseReason", "constant": "OPENING_WINDOW_CLOSE_REASONS", "values": ["first_business_movement"] }
   ],
   "interfaces": [
+    {
+      "name": "InventoryActivityEntry",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "kind", "type": "InventoryActivityKind" },
+        { "name": "occurredAt", "type": "string" },
+        { "name": "actorUserId", "type": "number | null" },
+        { "name": "actorRole", "type": "'owner' | 'member' | 'system'" },
+        { "name": "action", "type": "string" },
+        { "name": "entityType", "type": "string | null" },
+        { "name": "entityId", "type": "string | null" },
+        { "name": "productName", "type": "string | null" },
+        { "name": "qty", "type": "number | null" },
+        { "name": "fromBucket", "type": "string | null" },
+        { "name": "toBucket", "type": "string | null" }
+      ]
+    },
+    {
+      "name": "InventoryActivityListPayload",
+      "fields": [
+        { "name": "items", "type": "InventoryActivityEntry[]" }
+      ]
+    },
     {
       "name": "InventoryItemCostMetadata",
       "fields": [

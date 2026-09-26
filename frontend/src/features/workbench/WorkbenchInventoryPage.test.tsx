@@ -14,6 +14,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 
 const mocks = vi.hoisted(() => ({
   fetchInventory: vi.fn(),
+  fetchInventoryActivity: vi.fn(),
   fetchStockItem: vi.fn(),
   saveProduct: vi.fn(),
   openInventoryOpeningWindow: vi.fn(),
@@ -27,6 +28,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('./inventory-api', () => ({
   fetchInventory: mocks.fetchInventory,
+  fetchInventoryActivity: mocks.fetchInventoryActivity,
   fetchStockItem: mocks.fetchStockItem,
   saveProduct: mocks.saveProduct,
   openInventoryOpeningWindow: mocks.openInventoryOpeningWindow,
@@ -171,7 +173,7 @@ describe('库存页 · 读取与显示', () => {
     mocks.fetchInventory.mockResolvedValue(listPayload([]))
     render(<WorkbenchInventoryPage permissions={['*']} />)
     expect(await screen.findByText('还没有商品档案')).toBeTruthy()
-    expect(screen.getByText(/隔离预览仅保留旧格式试录，不会建立正式期初窗口/)).toBeTruthy()
+    expect(screen.getByText(/隔离预览只使用演示数据，不会写入正式库存/)).toBeTruthy()
   })
 
   it('展开型号按 productRef 单独拉逐件实物', async () => {
@@ -221,6 +223,27 @@ describe('库存页 · 商品建档', () => {
     expect(await screen.findByText('已建立商品「二手 3080 显卡」')).toBeTruthy()
   })
 
+  it('分类必须从固定选项中选择，其他分类可填写自定义名称', async () => {
+    mocks.saveProduct.mockResolvedValue({
+      ok: true, status: 200,
+      data: { operationId: 'req-category', entityId: 'p-category', entityVersion: 1, summary: '建立商品' },
+      meta: { requestId: 'req-category', serverTime: '', contractVersion: 'v2' },
+    })
+    renderPage()
+    await screen.findByText('影驰 RTX 4060 Ti 金属大师')
+    fireEvent.click(screen.getByRole('button', { name: '新增商品' }))
+    fireEvent.change(screen.getByLabelText('商品名称'), { target: { value: 'PCIe 无线网卡' } })
+    fireEvent.click(screen.getByRole('button', { name: '建立商品' }))
+    expect(await screen.findByText('请选择商品分类')).toBeTruthy()
+    expect(mocks.saveProduct).not.toHaveBeenCalled()
+
+    fireEvent.change(screen.getByLabelText('分类'), { target: { value: '__custom_category__' } })
+    fireEvent.change(screen.getByLabelText('自定义分类'), { target: { value: '扩展卡' } })
+    fireEvent.click(screen.getByRole('button', { name: '建立商品' }))
+    await waitFor(() => expect(mocks.saveProduct).toHaveBeenCalledTimes(1))
+    expect(mocks.saveProduct.mock.calls[0][0].category).toBe('扩展卡')
+  })
+
   it('改商品带 expectedVersion；版本冲突给出可照做的提示', async () => {
     mocks.saveProduct.mockResolvedValue(failPayload('对象已被更新', { code: 'VERSION_CONFLICT', status: 409 }))
     renderPage()
@@ -247,6 +270,7 @@ describe('库存页 · 商品建档', () => {
     await screen.findByText('影驰 RTX 4060 Ti 金属大师')
     fireEvent.click(screen.getByRole('button', { name: '新增商品' }))
     fireEvent.change(screen.getByLabelText('商品名称'), { target: { value: '可能已保存的商品' } })
+    fireEvent.change(screen.getByLabelText('分类'), { target: { value: '显卡' } })
     fireEvent.click(screen.getByRole('button', { name: '建立商品' }))
 
     expect(await screen.findByText(/请求结果未知：可能已经保存成功/)).toBeTruthy()
@@ -262,7 +286,7 @@ describe('库存页 · 商品建档', () => {
     renderPage([])
     await screen.findByText('影驰 RTX 4060 Ti 金属大师')
     expect(screen.queryByRole('button', { name: '新增商品' })).toBeNull()
-    expect(screen.queryByRole('button', { name: /录入期初库存/ })).toBeNull()
+    expect(screen.queryByRole('button', { name: /现有库存/ })).toBeNull()
     expect(screen.getByRole('columnheader', { name: '成本' })).toBeTruthy()
   })
 })
@@ -271,9 +295,8 @@ describe('库存页 · 期初录入', () => {
   async function openOpening(permissions: string[] = ['*']) {
     renderPage(permissions)
     await screen.findByText('影驰 RTX 4060 Ti 金属大师')
-    fireEvent.click(screen.getByRole('button', { name: /录入期初库存/ }))
+    fireEvent.click(screen.getByRole('button', { name: /现有库存/ }))
     await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledWith({ limit: 100 }))
-    fireEvent.change(screen.getByLabelText('人工实盘凭据'), { target: { value: '实盘 2026-09-19 全场' } })
   }
 
   it('数量件：数量照填，空成本不写成 0', async () => {
@@ -285,15 +308,15 @@ describe('库存页 · 期初录入', () => {
     await openOpening()
     fireEvent.change(screen.getByLabelText('型号'), { target: { value: 'p-1' } })
     fireEvent.change(screen.getByLabelText('数量'), { target: { value: '4' } })
-    fireEvent.click(screen.getByRole('button', { name: '提交期初' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存库存' }))
 
     await waitFor(() => expect(mocks.recordOpening).toHaveBeenCalledTimes(1))
     const payload = mocks.recordOpening.mock.calls[0][0]
-    expect(payload.approvedCountRef).toBe('实盘 2026-09-19 全场')
+    expect(payload.approvedCountRef).toMatch(/^existing-stock-/)
     expect(payload.costBasis).toEqual({ kind: 'unknown' })
     expect(payload.lines).toEqual([{ productRef: 'p-1', qty: 4 }])
     expect('unitCostCents' in payload.lines[0]).toBe(false)
-    expect(await screen.findByText(/期初已建账/)).toBeTruthy()
+    expect(await screen.findByText(/现有库存已登记/)).toBeTruthy()
   })
 
   it('逐件商品固定为一件，内部编号自动生成且不要求厂家 SN', async () => {
@@ -302,20 +325,19 @@ describe('库存页 · 期初录入', () => {
     mocks.fetchInventory.mockResolvedValue(listPayload([itemRow]))
     render(<WorkbenchInventoryPage permissions={['*']} />)
     await screen.findByText('影驰 RTX 4060 Ti 金属大师')
-    fireEvent.click(screen.getByRole('button', { name: /录入期初库存/ }))
+    fireEvent.click(screen.getByRole('button', { name: /现有库存/ }))
     await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledWith({ limit: 100 }))
-    fireEvent.change(screen.getByLabelText('人工实盘凭据'), { target: { value: '实盘 2026-09-19 全场' } })
     fireEvent.change(screen.getByLabelText('型号'), { target: { value: 'p-1' } })
 
     expect(screen.getByDisplayValue('提交后自动生成')).toBeTruthy()
     expect((screen.getByLabelText('厂家 SN（可选，可扫码）') as HTMLInputElement).disabled).toBe(false)
-    fireEvent.change(screen.getByLabelText('旧格式单件成本（元，留空 = 未知）'), { target: { value: '2850' } })
+    fireEvent.change(screen.getByLabelText('单件成本（元，可留空）'), { target: { value: '2850' } })
     mocks.recordOpening.mockResolvedValue({
       ok: true, status: 200,
       data: { operationId: 'req-op2', entityId: 'op-2', entityVersion: 1, summary: '期初建账 1 行 / 1 件' },
       meta: { requestId: 'req-op2', serverTime: '', contractVersion: 'v2' },
     })
-    fireEvent.click(screen.getByRole('button', { name: '提交期初' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存库存' }))
 
     await waitFor(() => expect(mocks.recordOpening).toHaveBeenCalledTimes(1))
     const payload = mocks.recordOpening.mock.calls[0][0]
@@ -326,62 +348,80 @@ describe('库存页 · 期初录入', () => {
     expect(payload.costBasis).toEqual({ kind: 'known' })
   })
 
-  it('正式期初先开启一次窗口，再逐行保存估值依据和日期', async () => {
-    let status: 'not_started' | 'open' = 'not_started'
+  it('正式登记不需要开启窗口，编号和估值日期由系统补齐', async () => {
     const windowState = () => ({
-      mode: 'formal' as const, status, openedAt: '2026-09-25T00:00:00.000Z',
-      closesAt: '2026-10-02T00:00:00.000Z', closedAt: null, closeReason: null,
+      mode: 'formal' as const, status: 'not_started' as const, openedAt: null,
+      closesAt: null, closedAt: null, closeReason: null,
     })
     mocks.fetchInventory.mockImplementation(async () => listPayload(WITH_COST, [], false, windowState()))
-    mocks.openInventoryOpeningWindow.mockImplementation(async (days: number) => {
-      status = 'open'
-      expect(days).toBe(7)
-      return {
-        ok: true, status: 200,
-        data: { operationId: 'req-window', entityId: 'opening-window:1', entityVersion: 1, summary: '已开启正式期初窗口' },
-        meta: { requestId: 'req-window', serverTime: '', contractVersion: 'v2' },
-      }
-    })
     mocks.recordOpening.mockResolvedValue({
       ok: true, status: 200,
-      data: { operationId: 'req-formal-opening', entityId: 'open-1', entityVersion: 1, summary: '期初建账 1 行 / 2 件' },
+      data: { operationId: 'req-formal-opening', entityId: 'open-1', entityVersion: 1, summary: '登记现有库存 2 件' },
       meta: { requestId: 'req-formal-opening', serverTime: '', contractVersion: 'v2' },
     })
 
     render(<WorkbenchInventoryPage permissions={['*']} />)
     await screen.findByText('影驰 RTX 4060 Ti 金属大师')
-    fireEvent.click(screen.getByRole('button', { name: '开启正式期初窗口' }))
-    await screen.findByRole('button', { name: '录入正式期初库存' })
-    expect(mocks.openInventoryOpeningWindow).toHaveBeenCalledWith(7)
-
-    fireEvent.click(screen.getByRole('button', { name: '录入正式期初库存' }))
+    fireEvent.click(screen.getByRole('button', { name: '登记现有库存' }))
     await waitFor(() => expect(mocks.fetchInventory).toHaveBeenCalledWith({ limit: 100 }))
-    fireEvent.change(screen.getByLabelText('人工实盘凭据'), { target: { value: '盘点单 OPEN-2026-01' } })
-    fireEvent.change(screen.getByLabelText('盘点明细行引用'), { target: { value: 'A-01' } })
     fireEvent.change(screen.getByLabelText('型号'), { target: { value: 'p-1' } })
-    fireEvent.change(screen.getByLabelText('成本口径'), { target: { value: 'assessed_estimate' } })
-    fireEvent.change(screen.getByLabelText('单件成本（元）'), { target: { value: '1800' } })
-    fireEvent.change(screen.getByLabelText('估值依据'), { target: { value: '同型号近月成交价' } })
-    fireEvent.change(screen.getByLabelText('估值日期'), { target: { value: '2026-09-24' } })
+    fireEvent.change(screen.getByLabelText('单件成本（元，可留空）'), { target: { value: '1800' } })
+    fireEvent.change(screen.getByLabelText('成本类型'), { target: { value: 'assessed_estimate' } })
     fireEvent.change(screen.getByLabelText('数量'), { target: { value: '2' } })
-    fireEvent.click(screen.getByRole('button', { name: '提交期初' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存库存' }))
 
     await waitFor(() => expect(mocks.recordOpening).toHaveBeenCalledTimes(1))
     const payload = mocks.recordOpening.mock.calls[0][0]
     expect(payload).not.toHaveProperty('costBasis')
+    expect(payload.approvedCountRef).toMatch(/^existing-stock-/)
     expect(payload.lines[0]).toMatchObject({
-      approvedCountLineRef: 'A-01', productRef: 'p-1', qty: 2, costBasis: 'assessed_estimate', unitCostCents: 180000,
-      costEvidenceRef: '同型号近月成交价', costAssessedAt: '2026-09-24',
+      productRef: 'p-1', qty: 2, costBasis: 'assessed_estimate', unitCostCents: 180000,
     })
+    expect(payload.lines[0].approvedCountLineRef).toMatch(/^line-/)
+    expect(payload.lines[0].costAssessedAt).toMatch(/^\d{4}-\d{2}-\d{2}$/)
+    expect(mocks.openInventoryOpeningWindow).not.toHaveBeenCalled()
   })
 
-  it('没填实盘凭据就提交会被拦下', async () => {
+  it('无需手工填写实盘编号，系统自动生成登记编号', async () => {
+    mocks.recordOpening.mockResolvedValue({
+      ok: true, status: 200,
+      data: { operationId: 'req-auto-ref', entityId: 'open-auto', entityVersion: 1, summary: '登记现有库存 1 件' },
+      meta: { requestId: 'req-auto-ref', serverTime: '', contractVersion: 'v2' },
+    })
     renderPage()
     await screen.findByText('影驰 RTX 4060 Ti 金属大师')
-    fireEvent.click(screen.getByRole('button', { name: /录入期初库存/ }))
-    fireEvent.click(screen.getByRole('button', { name: '提交期初' }))
-    expect(await screen.findByText(/请填写人工实盘凭据/)).toBeTruthy()
-    expect(mocks.recordOpening).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByRole('button', { name: /现有库存/ }))
+    await screen.findByLabelText('型号')
+    fireEvent.change(screen.getByLabelText('型号'), { target: { value: 'p-1' } })
+    fireEvent.click(screen.getByRole('button', { name: '保存库存' }))
+    await waitFor(() => expect(mocks.recordOpening).toHaveBeenCalledTimes(1))
+    expect(mocks.recordOpening.mock.calls[0][0].approvedCountRef).toMatch(/^existing-stock-/)
+  })
+})
+
+describe('仓库操作日志', () => {
+  it('默认折叠，库存可见成员点击后才能读取日志', async () => {
+    mocks.fetchInventoryActivity.mockResolvedValue({
+      ok: true, status: 200,
+      data: {
+        items: [{
+          id: 'operation:7', kind: 'operation', occurredAt: '2026-09-26T01:02:00.000Z',
+          actorUserId: 7, actorRole: 'member', action: 'B13', entityType: 'StockItem',
+          entityId: 'item-7', productName: '影驰 RTX 4060 Ti 金属大师', qty: null,
+          fromBucket: null, toBucket: null,
+        }],
+      },
+      meta: { requestId: null, serverTime: '', contractVersion: 'v2' },
+    })
+    renderPage(['inventory/view'])
+    await screen.findByText('影驰 RTX 4060 Ti 金属大师')
+    expect(mocks.fetchInventoryActivity).not.toHaveBeenCalled()
+    expect(screen.getByRole('button', { name: /操作日志/ }).getAttribute('aria-expanded')).toBe('false')
+
+    fireEvent.click(screen.getByRole('button', { name: /操作日志/ }))
+    expect(await screen.findByText('现有库存登记')).toBeTruthy()
+    expect(screen.getByText('员工账号 #7')).toBeTruthy()
+    expect(mocks.fetchInventoryActivity).toHaveBeenCalledTimes(1)
   })
 })
 
@@ -446,15 +486,15 @@ describe('库存页 · 盘点失败重试与权限', () => {
     mocks.queryOperationResult.mockResolvedValue({ ok: true, status: 'unknown', code: null, message: '', resultRef: null })
     renderPage(['inventory/count'])
     await screen.findByText('影驰 RTX 4060 Ti 金属大师')
-    fireEvent.click(screen.getByRole('button', { name: '录入盘点' }))
-    fireEvent.change(screen.getByLabelText('实盘数量'), { target: { value: '2' } })
+    fireEvent.click(screen.getByRole('button', { name: '记录实盘数量' }))
+    fireEvent.change(screen.getByLabelText('现场实盘数量'), { target: { value: '2' } })
     fireEvent.change(screen.getByLabelText('备注 / 批准原因'), { target: { value: '主板库存复核' } })
-    fireEvent.click(screen.getByRole('button', { name: '保存实盘' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存实盘记录' }))
 
     expect(await screen.findByText(/实盘内容已保留/)).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: '查询结果' }))
     await screen.findByText(/后台查不到这个请求编号，可以重新提交/)
-    fireEvent.click(screen.getByRole('button', { name: '保存实盘' }))
+    fireEvent.click(screen.getByRole('button', { name: '保存实盘记录' }))
 
     await waitFor(() => expect(mocks.createInventoryCount).toHaveBeenCalledTimes(2))
     expect(mocks.createInventoryCount.mock.calls[1]?.[0]).toEqual(mocks.createInventoryCount.mock.calls[0]?.[0])

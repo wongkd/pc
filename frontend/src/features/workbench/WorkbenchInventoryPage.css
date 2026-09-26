@@ -1,0 +1,370 @@
+.wb-inventory-page .wb-page-head {
+  align-items: flex-start;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--wb-line);
+}
+
+.wb-inventory-page .wb-page-head > div:first-child {
+  max-width: 760px;
+}
+
+.wb-inventory-page .wb-page-head .wb-caption {
+  max-width: 720px;
+  line-height: 1.7;
+}
+
+.wb-opening-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 310px);
+  align-items: center;
+  gap: 28px;
+  margin: 0 0 24px;
+  padding: 24px 28px;
+  border: 1px solid var(--wb-line);
+  border-left: 3px solid var(--wb-ink);
+  border-radius: var(--wb-radius-card);
+  background: var(--wb-sage);
+}
+
+.wb-opening-panel.is-open {
+  background: var(--wb-photo);
+}
+
+.wb-opening-panel-copy {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.wb-opening-panel-mark {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--wb-ink);
+  color: #fff;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-opening-panel-eyebrow {
+  margin: 0 0 5px;
+  color: var(--wb-muted);
+  font-size: 12px;
+  letter-spacing: .04em;
+}
+
+.wb-opening-panel h2 {
+  margin: 0 0 8px;
+  color: var(--wb-ink);
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.wb-opening-panel-copy p:last-child {
+  max-width: 660px;
+  margin: 0;
+  color: var(--wb-muted);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.wb-opening-panel-actions {
+  display: grid;
+  grid-template-columns: minmax(110px, 1fr) minmax(150px, auto);
+  align-items: end;
+  gap: 10px;
+}
+
+.wb-opening-days {
+  min-width: 0;
+}
+
+.wb-opening-days small {
+  color: var(--wb-muted);
+  font-size: 11px;
+}
+
+.wb-opening-start {
+  min-height: 48px;
+  white-space: nowrap;
+}
+
+.wb-activity-panel {
+  margin: 0 0 24px;
+  overflow: hidden;
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-card);
+  background: var(--wb-surface);
+}
+
+.wb-activity-toggle {
+  display: flex;
+  width: 100%;
+  min-height: 70px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border: 0;
+  background: transparent;
+  color: var(--wb-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.wb-activity-toggle:hover {
+  background: var(--wb-photo);
+}
+
+.wb-activity-toggle:focus-visible,
+.wb-activity-refresh:focus-visible {
+  outline: 2px solid var(--wb-accent);
+  outline-offset: -3px;
+}
+
+.wb-activity-toggle-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wb-activity-toggle-copy strong {
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.wb-activity-toggle-copy small,
+.wb-activity-toggle-state {
+  color: var(--wb-muted);
+  font-size: 12px;
+}
+
+.wb-activity-chevron {
+  width: 9px;
+  height: 9px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 160ms ease;
+}
+
+.wb-activity-panel.is-open .wb-activity-chevron {
+  transform: rotate(225deg) translate(-2px, -1px);
+}
+
+.wb-activity-content {
+  padding: 2px 20px 18px;
+  border-top: 1px solid var(--wb-line);
+}
+
+.wb-activity-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.wb-activity-entry {
+  position: relative;
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--wb-line);
+}
+
+.wb-activity-entry-dot {
+  z-index: 1;
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border: 1px solid var(--wb-ink);
+  border-radius: 50%;
+  background: var(--wb-surface);
+}
+
+.wb-activity-entry.is-movement .wb-activity-entry-dot {
+  background: var(--wb-ink);
+}
+
+.wb-activity-entry:not(:last-child)::before {
+  position: absolute;
+  top: 22px;
+  bottom: -1px;
+  left: 3px;
+  width: 1px;
+  background: var(--wb-line);
+  content: '';
+}
+
+.wb-activity-entry-body {
+  min-width: 0;
+}
+
+.wb-activity-entry-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wb-activity-entry-head strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.wb-activity-entry-head time,
+.wb-activity-entry-meta {
+  color: var(--wb-muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-activity-entry-body > p {
+  margin: 5px 0 0;
+  overflow-wrap: anywhere;
+  color: var(--wb-muted);
+  font-size: 12px;
+}
+
+.wb-activity-change {
+  display: inline-block;
+  margin-top: 7px;
+  padding: 3px 8px;
+  border: 1px solid var(--wb-line);
+  background: var(--wb-photo);
+  color: var(--wb-ink);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-activity-entry-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 7px;
+}
+
+.wb-activity-state {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 18px 0 4px;
+  color: var(--wb-muted);
+  font-size: 13px;
+}
+
+.wb-activity-state--error {
+  color: var(--wb-danger);
+}
+
+.wb-activity-refresh {
+  min-height: 36px;
+  margin-top: 14px;
+  padding: 0 10px;
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius-btn);
+  background: var(--wb-surface);
+  color: var(--wb-ink);
+  cursor: pointer;
+}
+
+.wb-product-core-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px 16px;
+}
+
+.wb-product-name {
+  grid-column: 1 / -1;
+}
+
+.wb-inventory-page .wb-modal-card {
+  max-width: 760px;
+  padding: 28px;
+}
+
+.wb-inventory-page .wb-modal-head {
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--wb-line);
+}
+
+.wb-inventory-page .wb-modal-head h2 {
+  font-size: 20px;
+  font-weight: 500;
+}
+
+@media (max-width: 860px) {
+  .wb-opening-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 20px;
+  }
+
+  .wb-opening-panel-actions {
+    grid-template-columns: minmax(140px, 190px) minmax(170px, max-content);
+  }
+}
+
+@media (max-width: 720px) {
+  .wb-inventory-page .wb-page-head {
+    padding-bottom: 16px;
+  }
+
+  .wb-opening-panel {
+    padding: 20px 16px;
+  }
+
+  .wb-opening-panel-copy {
+    gap: 12px;
+  }
+
+  .wb-opening-panel-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .wb-opening-start {
+    width: 100%;
+  }
+
+  .wb-activity-toggle {
+    min-height: 64px;
+    padding: 12px 14px;
+  }
+
+  .wb-activity-content {
+    padding-right: 14px;
+    padding-left: 14px;
+  }
+
+  .wb-activity-entry-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .wb-product-core-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .wb-product-name {
+    grid-column: auto;
+  }
+
+  .wb-inventory-page .wb-modal-card {
+    padding: 20px 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-activity-chevron {
+    transition: none;
+  }
+}

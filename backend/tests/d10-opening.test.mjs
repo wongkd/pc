@@ -57,8 +57,9 @@ after(async () => {
   await Promise.all([formalEnv?.dispose(), previewEnv?.dispose()])
 })
 
-test('D10 正式期初：成本四分类、窗口期限、行级防重和首笔流水关闭', async () => {
+test('D10 轻量现有库存登记：无需窗口，成本分类与逐商品防重仍有效', async () => {
   const client = formalClients.get(1)
+  const productBeforeWindow = await createProduct(client, 'd10-product-before-window')
   const productActual = await createProduct(client, 'd10-product-actual')
   const productEstimate = await createProduct(client, 'd10-product-estimate')
   const productUnknown = await createProduct(client, 'd10-product-unknown')
@@ -66,13 +67,12 @@ test('D10 正式期初：成本四分类、窗口期限、行级防重和首笔�
   const productItemEstimate = await createProduct(client, 'd10-product-item-estimate', { trackingMode: 'item' })
 
   const beforeWindow = await json(await client.post('/api/v2/inventory/openings', {
-    requestId: 'd10-opening-before-window', approvedCountRef: 'D10-COUNT-01',
-    lines: [{ approvedCountLineRef: 'A-01', productRef: productActual, qty: 1, costBasis: 'known_actual', unitCostCents: 500, costEvidenceRef: 'INV-1' }],
+    requestId: 'd10-opening-before-window', approvedCountRef: 'D10-COUNT-BEFORE-WINDOW',
+    lines: [{ approvedCountLineRef: 'A-01', productRef: productBeforeWindow, qty: 1, costBasis: 'known_actual', unitCostCents: 500 }],
   }))
-  assert.equal(beforeWindow.body.error.code, 'VALIDATION_ERROR')
-  assert.match(beforeWindow.body.error.message, /窗口|期限|关闭/)
-  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM inventory_openings WHERE request_id = ?')
-    .bind('d10-opening-before-window').first()).n, 0)
+  assert.equal(beforeWindow.status, 200, JSON.stringify(beforeWindow.body))
+  assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM inventory_opening_windows WHERE store_id = ?')
+    .bind(ownerA.storeId).first()).n, 0, '登记现有库存不需要先开窗口')
 
   const tooLong = await openWindow(client, 'd10-window-too-long', 8)
   assert.equal(tooLong.status, 400)
@@ -183,7 +183,7 @@ test('D10 正式期初：成本四分类、窗口期限、行级防重和首笔�
   assert.match(cannotReopen.body.error.message, /已经开启过|不能重新开启/)
 })
 
-test('D10 正式期初：过截止时间后拒绝写入且不能重新开启', async () => {
+test('D10 轻量现有库存登记：过往窗口到期不再阻止新商品登记', async () => {
   const client = formalClients.get(2)
   const productRef = await createProduct(client, 'd10-expired-product')
   const opened = await openWindow(client, 'd10-expired-window', 1)
@@ -197,11 +197,11 @@ test('D10 正式期初：过截止时间后拒绝写入且不能重新开启', a
     requestId: 'd10-opening-after-expiry', approvedCountRef: 'D10-COUNT-LATE',
     lines: [{ approvedCountLineRef: 'L-1', productRef, qty: 1, costBasis: 'unknown' }],
   }))
-  assert.equal(lateOpening.body.error.code, 'VALIDATION_ERROR')
+  assert.equal(lateOpening.status, 200, JSON.stringify(lateOpening.body))
   const reopen = await openWindow(client, 'd10-expired-reopen', 1)
   assert.equal(reopen.status, 400)
   assert.equal((await db.prepare('SELECT COUNT(*) AS n FROM inventory_openings WHERE request_id = ?')
-    .bind('d10-opening-after-expiry').first()).n, 0)
+    .bind('d10-opening-after-expiry').first()).n, 1)
 })
 
 test('D10 正式期初：已有正式库存流水后不能首次打开窗口', async () => {

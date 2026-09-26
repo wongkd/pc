@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * T02b · 把 contracts/v1 的生成物落到小程序端内目录，并防止三处漂移。
+ * T02b · 把当前 V1.1 契约生成物落到小程序端内目录，并防止三处漂移。
  *
  *   node miniprogram/scripts/sync-contracts.mjs          写入端内目录（幂等）
  *   node miniprogram/scripts/sync-contracts.mjs --check   只比对，不写入；有差异退出码 1
  *
- * 三方一致性：contracts/v1（唯一来源） → contracts/generated（中立生成物，T01c）
+ * 三方一致性：contracts/v1.1（唯一来源） → contracts/generated（中立生成物，T01c）
  *          → miniprogram/contracts/generated（端内消费副本，T02b）
  *
  * 端内副本不是第二份契约，只是同一份编译产物。任何一方被手工修改都会被本脚本检出。
- * 目标路径由 contracts/v1/fixtures.json 的 dtoGeneration.targets[id=miniprogram] 冻结。
+ * 目标路径由 contracts/v1.1/fixtures.json 的 dtoGeneration.targets[id=miniprogram] 冻结。
  *
  * 与 frontend/scripts/sync-contracts.mjs 的关系：两者**故意保持两份**。
  * 契约的 dtoGeneration.targets 本就是「每端一个落地目标」的声明，两端的构建链不同、
@@ -49,7 +49,7 @@ function die(lines) {
 
 // ── 1. 冻结路径自检 ─────────────────────────────────────────────────────
 const { files } = buildArtifacts()
-const fixtures = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'v1', 'fixtures.json'), 'utf8'))
+const fixtures = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'v1.1', 'fixtures.json'), 'utf8'))
 const target = (fixtures.dtoGeneration?.targets ?? []).find((t) => t.id === TARGET_ID)
 if (!target) die([`契约 dtoGeneration.targets 中找不到 id=${TARGET_ID} 的目标`])
 if (target.rootPath !== FROZEN_TARGET) {
@@ -107,4 +107,4 @@ if (neutral) {
 }
 
 if (failures.length) die(['端内生成物与契约不一致：', ...failures])
-console.log(`✓ 端内生成物与 contracts/v1 一致（${names.length} 个文件，目标 ${FROZEN_TARGET}）`)
+console.log(`✓ 端内生成物与 contracts/v1.1 一致（${names.length} 个文件，目标 ${FROZEN_TARGET}）`)

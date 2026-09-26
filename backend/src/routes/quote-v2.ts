@@ -35,6 +35,7 @@ import {
   QUOTE_CONFIRM_SOURCES,
   confirmQuote,
   createQuote,
+  deleteDraftQuote,
   issueQuote,
   queryQuoteDetail,
   queryQuotes,
@@ -59,7 +60,7 @@ export interface QuoteRouteContext extends PermissionHolder {
   storeId: number
 }
 
-const CONTRACT_VERSION = 'v1'
+const CONTRACT_VERSION = 'v1.1'
 const PREFIX = '/api/v2'
 const LINE_SOURCES = ['new', 'used', 'customer', 'service'] as const
 
@@ -67,6 +68,7 @@ const QUOTE_LIST_PATH = `${PREFIX}/sales/quotes`
 const QUOTE_SAVE_PATH = /^\/api\/v2\/sales\/quotes\/([^/]+)\/save$/
 const QUOTE_ISSUE_PATH = /^\/api\/v2\/sales\/quotes\/([^/]+)\/issue$/
 const QUOTE_CONFIRM_PATH = /^\/api\/v2\/sales\/quotes\/([^/]+)\/confirm$/
+const QUOTE_DELETE_DRAFT_PATH = /^\/api\/v2\/sales\/quotes\/([^/]+)\/delete-draft$/
 const QUOTE_DETAIL_PATH = /^\/api\/v2\/sales\/quotes\/([^/]+)$/
 
 // ────────────────────────────── 契约信封 ──────────────────────────────
@@ -497,6 +499,33 @@ async function handleQuoteConfirm(req: Request, env: QuoteRouteEnv, context: Quo
   return writeResponse(result, 'confirmed')
 }
 
+async function handleQuoteDraftDelete(req: Request, env: QuoteRouteEnv, context: QuoteRouteContext, rawId: string): Promise<Response> {
+  const denied = requireGrant(context, 'store/manage')
+  if (denied) return denied
+
+  const { body, response } = await readJson(req)
+  if (!body) return response!
+  const requestId = requireRequestId(body, req)
+  if (!requestId) return fail('VALIDATION_ERROR', '缺少 requestId，或与 Idempotency-Key 头不一致', 400)
+  const reason = asText(body.reason)
+  if (!reason || reason.length > 200) return fail('VALIDATION_ERROR', '请填写不超过 200 字的清理原因', 400, { requestId })
+
+  let quoteId = rawId
+  try {
+    quoteId = decodeURIComponent(rawId)
+  } catch {
+    return fail('VALIDATION_ERROR', '报价单编号无法解析', 400, { requestId })
+  }
+
+  const result = await deleteDraftQuote(
+    env.DB,
+    { storeId: context.storeId, actorUserId: context.userId, requestId, action: 'B45', payloadHash: '' },
+    quoteId,
+    reason,
+  )
+  return writeResponse(result, 'deleted')
+}
+
 /**
  * 分发入口。返回 null 表示「不是本模块的路径」，由调用方继续走原来的 404。
  */
@@ -528,6 +557,12 @@ export async function routeQuoteV2(req: Request, env: QuoteRouteEnv, context: Qu
   if (confirmMatch) {
     if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
     return handleQuoteConfirm(req, env, context, confirmMatch[1])
+  }
+
+  const deleteDraftMatch = QUOTE_DELETE_DRAFT_PATH.exec(path)
+  if (deleteDraftMatch) {
+    if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleQuoteDraftDelete(req, env, context, deleteDraftMatch[1])
   }
 
   const detailMatch = QUOTE_DETAIL_PATH.exec(path)

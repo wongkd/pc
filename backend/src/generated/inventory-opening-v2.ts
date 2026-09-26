@@ -1,5 +1,8 @@
 // AUTO-GENERATED FROM contracts/v2/inventory-opening.json — DO NOT EDIT
 
+export const INVENTORY_ACTIVITY_KINDS = ["movement","operation"] as const
+export type InventoryActivityKind = (typeof INVENTORY_ACTIVITY_KINDS)[number]
+
 export const OPENING_COST_BASES = ["known_actual","assessed_estimate","unknown","zero_cost"] as const
 export type OpeningCostBasis = (typeof OPENING_COST_BASES)[number]
 
@@ -11,6 +14,25 @@ export type OpeningWindowState = (typeof OPENING_WINDOW_STATES)[number]
 
 export const OPENING_WINDOW_CLOSE_REASONS = ["first_business_movement"] as const
 export type OpeningWindowCloseReason = (typeof OPENING_WINDOW_CLOSE_REASONS)[number]
+
+export interface InventoryActivityEntry {
+  id: string
+  kind: InventoryActivityKind
+  occurredAt: string
+  actorUserId: number | null
+  actorRole: 'owner' | 'member' | 'system'
+  action: string
+  entityType: string | null
+  entityId: string | null
+  productName: string | null
+  qty: number | null
+  fromBucket: string | null
+  toBucket: string | null
+}
+
+export interface InventoryActivityListPayload {
+  items: InventoryActivityEntry[]
+}
 
 export interface InventoryItemCostMetadata {
   acquisitionCostCents?: number | null

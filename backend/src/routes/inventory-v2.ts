@@ -30,6 +30,7 @@ import {
   approveCount,
   createCount,
   createOpening,
+  deleteUnusedProduct,
   inspectStockItem,
   makeItemAvailable,
   OPENING_COST_BASES,
@@ -38,6 +39,7 @@ import {
   queryInventory,
   queryOpeningWindow,
   queryStockItem,
+  queryUnusedProducts,
   writeProduct,
   type CountApproveInput,
   type CountInput,
@@ -84,6 +86,9 @@ const MAKE_AVAILABLE_PATH = /^\/api\/v2\/inventory\/items\/([^/]+)\/make-availab
 // 与 /inventory/items/* 无交集（counts 不是 items），但保持「具体路径优先」的一致写法。
 const COUNT_APPROVE_PATH = /^\/api\/v2\/inventory\/counts\/([^/]+)\/approve$/
 const COUNTS_PATH = '/api/v2/inventory/counts'
+const INVENTORY_ACTIVITY_PATH = `${PREFIX}/inventory/activity`
+const PRODUCT_CLEANUP_CANDIDATES_PATH = '/api/v2/inventory/products/cleanup-candidates'
+const DELETE_UNUSED_PRODUCT_PATH = /^\/api\/v2\/inventory\/products\/([^/]+)\/delete-unused$/
 const OPERATION_PATH = /^\/api\/v2\/operations\/([^/]+)$/
 
 // ────────────────────────────── 契约信封 ──────────────────────────────
@@ -544,6 +549,97 @@ async function handleInventoryRead(req: Request, env: InventoryRouteEnv, context
   )
 }
 
+/** 仓库日志：已入账的库存流水 + 商品、期初、盘点、整备等关键操作。 */
+async function handleInventoryActivity(env: InventoryRouteEnv, context: InventoryRouteContext): Promise<Response> {
+  const denied = requireGrant(context, INVENTORY_PERMISSIONS.view)
+  if (denied) return denied
+
+  const [movementResult, operationResult] = await Promise.all([
+    env.DB.prepare(
+      `SELECT
+         'movement:' || im.id AS id,
+         'movement' AS kind,
+         im.occurred_at AS occurredAt,
+         im.actor_user_id AS actorUserId,
+         CASE
+           WHEN COALESCE((SELECT sm.is_owner FROM store_members sm
+             WHERE sm.store_id = im.store_id AND sm.user_id = im.actor_user_id LIMIT 1), 0) = 1 THEN 'owner'
+           ELSE 'member'
+         END AS actorRole,
+         im.source AS action,
+         'InventoryMovement' AS entityType,
+         im.id AS entityId,
+         h.name AS productName,
+         im.qty AS qty,
+         im.from_bucket AS fromBucket,
+         im.to_bucket AS toBucket
+       FROM inventory_movements im
+       LEFT JOIN hardware h ON h.id = im.product_id AND h.store_id = im.store_id
+       WHERE im.store_id = ?
+       ORDER BY im.occurred_at DESC, im.recorded_at DESC
+       LIMIT 50`,
+    ).bind(context.storeId).all<InventoryActivityRecord>(),
+    env.DB.prepare(
+      `SELECT
+         'operation:' || o.id AS id,
+         'operation' AS kind,
+         o.created_at AS occurredAt,
+         o.actor_user_id AS actorUserId,
+         CASE
+           WHEN COALESCE((SELECT sm.is_owner FROM store_members sm
+             WHERE sm.store_id = o.store_id AND sm.user_id = o.actor_user_id LIMIT 1), 0) = 1 THEN 'owner'
+           ELSE 'member'
+         END AS actorRole,
+         o.action AS action,
+         o.result_entity_type AS entityType,
+         o.result_entity_id AS entityId,
+         COALESCE(product.name, itemProduct.name) AS productName,
+         NULL AS qty,
+         NULL AS fromBucket,
+         NULL AS toBucket
+       FROM operations o
+       LEFT JOIN hardware product
+         ON o.result_entity_type = 'Product'
+        AND product.store_id = o.store_id
+        AND product.entity_id = o.result_entity_id
+       LEFT JOIN stock_items si
+         ON o.result_entity_type = 'StockItem'
+        AND si.store_id = o.store_id
+        AND si.id = o.result_entity_id
+       LEFT JOIN hardware itemProduct ON itemProduct.id = si.product_id AND itemProduct.store_id = o.store_id
+       WHERE o.store_id = ? AND o.status = 'succeeded'
+         AND o.action IN ('B12', 'B13', 'B14', 'B16', 'B19', 'B30', 'B37', 'B46')
+       ORDER BY o.created_at DESC, o.id DESC
+       LIMIT 50`,
+    ).bind(context.storeId).all<InventoryActivityRecord>(),
+  ])
+
+  const items = [
+    ...(movementResult.results ?? []),
+    ...(operationResult.results ?? []),
+  ].sort((left, right) => {
+    const timeDifference = Date.parse(right.occurredAt) - Date.parse(left.occurredAt)
+    return Number.isNaN(timeDifference) || timeDifference === 0 ? right.id.localeCompare(left.id) : timeDifference
+  }).slice(0, 50)
+
+  return ok({ items }, null)
+}
+
+interface InventoryActivityRecord {
+  id: string
+  kind: 'movement' | 'operation'
+  occurredAt: string
+  actorUserId: number | null
+  actorRole: 'owner' | 'member' | 'system'
+  action: string
+  entityType: string | null
+  entityId: string | null
+  productName: string | null
+  qty: number | null
+  fromBucket: string | null
+  toBucket: string | null
+}
+
 async function handleStockItemRead(req: Request, env: InventoryRouteEnv, context: InventoryRouteContext, rawId: string): Promise<Response> {
   const denied = requireGrant(context, INVENTORY_PERMISSIONS.itemView)
   if (denied) return denied
@@ -579,6 +675,50 @@ async function handleProductWrite(req: Request, env: InventoryRouteEnv, context:
   if (!input) return fail('VALIDATION_ERROR', problem ?? '商品数据无效', 400, { requestId })
 
   const result = await writeProduct(env.DB, { storeId: context.storeId, actorUserId: context.userId, requestId, action: 'B12', payloadHash: '' }, input)
+  return writeResponse(result, 'product')
+}
+
+async function handleUnusedProductCandidates(env: InventoryRouteEnv, context: InventoryRouteContext): Promise<Response> {
+  const denied = requireGrant(context, 'store/manage')
+  if (denied) return denied
+  const products = await queryUnusedProducts(env.DB, context.storeId)
+  return ok({ products }, null)
+}
+
+async function handleUnusedProductDelete(
+  req: Request,
+  env: InventoryRouteEnv,
+  context: InventoryRouteContext,
+  rawProductRef: string,
+): Promise<Response> {
+  const denied = requireGrant(context, 'store/manage')
+  if (denied) return denied
+
+  let productRef: string
+  try {
+    productRef = decodeURIComponent(rawProductRef)
+  } catch {
+    return fail('VALIDATION_ERROR', '商品编号无法解析', 400)
+  }
+
+  let body: Record<string, unknown>
+  try {
+    body = (await req.json()) as Record<string, unknown>
+  } catch {
+    return fail('VALIDATION_ERROR', '请求体不是合法 JSON', 400)
+  }
+
+  const requestId = requireRequestId(body, req)
+  if (!requestId) return fail('VALIDATION_ERROR', '缺少 requestId，或与 Idempotency-Key 头不一致', 400)
+  const reason = asText(body.reason)
+  if (!reason) return fail('VALIDATION_ERROR', '请填写清理原因', 400, { requestId })
+
+  const result = await deleteUnusedProduct(
+    env.DB,
+    { storeId: context.storeId, actorUserId: context.userId, requestId, action: 'B46', payloadHash: '' },
+    productRef,
+    reason,
+  )
   return writeResponse(result, 'product')
 }
 
@@ -632,7 +772,7 @@ async function handleOpeningWrite(req: Request, env: InventoryRouteEnv, context:
     env.DB,
     { storeId: context.storeId, actorUserId: context.userId, requestId, action: 'B13', payloadHash: '' },
     input,
-    { requireOpenWindow: mode === 'formal', requireFormalMetadata: mode === 'formal' },
+    { requireOpenWindow: false, requireFormalMetadata: mode === 'formal' },
   )
   return writeResponse(result, 'opening')
 }
@@ -913,9 +1053,25 @@ export async function routeInventoryV2(req: Request, env: InventoryRouteEnv, con
   const path = url.pathname
   if (!path.startsWith(`${PREFIX}/`)) return null
 
+  if (path === INVENTORY_ACTIVITY_PATH) {
+    if (req.method !== 'GET') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleInventoryActivity(env, context)
+  }
+
   if (path === `${PREFIX}/inventory`) {
     if (req.method !== 'GET') return fail('VALIDATION_ERROR', '该方法不支持', 405)
     return handleInventoryRead(req, env, context)
+  }
+
+  if (path === PRODUCT_CLEANUP_CANDIDATES_PATH) {
+    if (req.method !== 'GET') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleUnusedProductCandidates(env, context)
+  }
+
+  const deleteUnusedProductMatch = DELETE_UNUSED_PRODUCT_PATH.exec(path)
+  if (deleteUnusedProductMatch) {
+    if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleUnusedProductDelete(req, env, context, deleteUnusedProductMatch[1])
   }
 
   // B30/B19 子路径必须排在实物详情之前：ITEM_PATH 的 (.+) 会贪婪吞掉子路径。

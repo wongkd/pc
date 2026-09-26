@@ -215,6 +215,15 @@ export function fetchQuotes(filters: { status?: QuoteStatusFilter | null; q?: st
   })
 }
 
+/** B45：仅管理员可以清理未发出、未分享、未转单的报价草稿。 */
+export function deleteDraftQuote(quoteId: string, reason: string): Promise<ApiResult<QuoteWriteOutcome>> {
+  return quoteClient.client.write<QuoteWriteOutcome>(`/sales/quotes/${encodeURIComponent(quoteId)}/delete-draft`, {
+    action: 'B45',
+    entityId: quoteId,
+    payload: { reason },
+  })
+}
+
 /** R05：报价详情。revision 省略时读「当前工作版本」（有草稿读草稿，否则最新已发版）。 */
 export function fetchQuoteDetail(quoteId: string, revision?: number | null): Promise<ApiResult<QuoteDetailPayload>> {
   return quoteClient.client.read<QuoteDetailPayload>(`/sales/quotes/${encodeURIComponent(quoteId)}`, {

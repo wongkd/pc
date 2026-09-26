@@ -1,0 +1,1395 @@
+{
+  "contractVersion": "v1.1",
+  "artifact": "actions",
+  "frozenBy": "T26a",
+  "frozenAt": "2026-09-26",
+  "status": "frozen",
+  "scopeNote": "本文件冻结动作编号、路径、权限与新旧权限映射。响应信封、写入约定、幂等要求与授权原则由 conventions.json 冻结，本文件只引用不重复定义；对象字段见 objects.json，状态与枚举见 enums.json，错误码见 errors.json，旧表结构见 legacy-mapping.json。",
+  "sources": [
+    "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md §3（读取接口）、§4（写入统一约定）、§5（动作目录 B01–B36）、§6（错误码）、§8（微信登录与绑定）",
+    "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md §7（金额与守恒）、§8（权限默认表）",
+    "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md §5（各业务页具体表单与动作）、§6（主动作规则）",
+    "backend/src/index.ts（旧权限码与实际守卫资源；行号见 legacyPermissionMap.evidence）"
+  ],
+  "pathRule": "本文件 path 为业务路径。完整请求路径 = conventions.api.prefix + path，前缀为 /api/v2（04 §3 首行）。业务路径在 T01 冻结，两端不得各自取名（04 §5 末段）。",
+  "envelopeRef": "./conventions.json",
+  "rules": [
+    "每个动作默认 POST，且全部遵守 requestId / expectedVersion（04 §5 首段）。",
+    "金额一律由服务端按 money-rules.json 重算；客户端传入的金额只作意图，不作结果。",
+    "allowedActions 由服务端按 action + permission + entityState 三重校验产出（03 §8、conventions.authorization）。按钮可点只是提示，POST 仍重新校验。",
+    "错误处理以 errors.json 的 code 分支，不得靠匹配中文文案判断（04 §4）。",
+    "未明确的补充动作必须先在契约登记编号与路径再实现，不允许用通用 PUT status 绕过业务（04 §5 末段）。"
+  ],
+  "inputNotation": {
+    "format": "name:Type[!|?][]",
+    "markers": {
+      "!": "必填；缺失即 VALIDATION_ERROR",
+      "?": "可空或可省略；语义区分见 conventions.nullable（缺失与未知不同）",
+      "[]": "数组",
+      "无标记": "按 04 §5 原文为常规字段；具体必填性由对应任务卡细化并回写本文件"
+    },
+    "envelopeFields": "requestId 与 expectedVersion 不逐个动作重复列出，由 conventions.write 统一约束；expectedVersion 仅对已有实体必填。"
+  },
+  "permissionModel": {
+    "naming": "域/动作，全小写、连字符分隔，沿旧 backend/src/index.ts 的 resource/verb 形态。域名取业务域，不取页面名。",
+    "levels": {
+      "action": "守卫一个写动作或一组同类写动作",
+      "field": "不守卫动作，只决定响应中是否返回受限字段"
+    },
+    "grantPolicyValues": {
+      "default": "默认角色可授予；旧权限映射的直接结果",
+      "explicit": "默认角色不授予，须老板单独勾选（03 §8『单独授权』行）",
+      "owner_only": "仅老板与 admin；旧系统无对应权限，旧宽权限不得自动获得"
+    },
+    "wildcard": {
+      "code": "*",
+      "rule": "roles 含 owner 或 admin 时为 ['*']，等价全权（backend/src/index.ts 第 106 行）。这是唯一的宽权限来源，保留但不再扩大适用范围。"
+    },
+    "noWideningGuard": "旧 quote/edit 与 library/edit 是高危宽权限。它们不得自动映射为 sales/refund、sales/order-credit-approval、inventory/opening、inventory/count-approve、inventory/damage、recovery/acquire、tradein/offset、tradein/reverse、finance/payment、finance/reverse（03 §8『欠款交付、退款冲销、报损盘差』老板专属；04 §5 备注）。这些码在 codes 中 grantPolicy 为 owner_only 且 legacySource 为 null。",
+    "legacyPermissions": {
+      "note": "旧系统 11 个权限码的角色可得性判定，供机器校验「旧权限不得放宽」。依据：03 §8 权限默认表把「成员、权限、导出、绑定码」列为老板专属；旧 permissions 表无种子迁移（legacy-mapping.json Q04），故可得性按代码守卫加 03 §8 判定，不按表行内容判定。",
+      "ownerOnly": ["store/manage", "member/manage", "role/view"],
+      "clerkGrantable": ["library/view", "library/edit", "quote/view", "quote/edit", "template/view", "template/edit", "cost/view", "margin/view"],
+      "rule": "owner_only 的新权限码，其 legacySource 只能取自 ownerOnly 集合或为 null。若取自 clerkGrantable，等于把老板能力下放给店员，属违规。judgedBy: validate-contracts.mjs 第 10.3 节。"
+    },
+    "codes": [
+      { "code": "sales/quote-view", "domain": "sales", "level": "action", "desc": "查看报价列表与详情", "legacySource": "quote/view", "grantPolicy": "default" },
+      { "code": "sales/quote-edit", "domain": "sales", "level": "action", "desc": "新建、保存、发出报价；管理报价模板", "legacySource": "quote/edit + template/view + template/edit", "grantPolicy": "default" },
+      { "code": "sales/quote-convert", "domain": "sales", "level": "action", "desc": "报价转为销售单", "legacySource": "quote/edit", "grantPolicy": "default" },
+      { "code": "sales/order-view", "domain": "sales", "level": "action", "desc": "查看销售单、客户与设备资料（按权限分域）", "legacySource": "quote/view", "grantPolicy": "default" },
+      { "code": "sales/order-edit", "domain": "sales", "level": "action", "desc": "新建、确认、补分配、取消销售单", "legacySource": "quote/edit", "grantPolicy": "default" },
+      { "code": "sales/order-assembly", "domain": "sales", "level": "action", "desc": "备料、装机、检测记录", "legacySource": "quote/edit", "grantPolicy": "default" },
+      { "code": "sales/order-payment", "domain": "sales", "level": "action", "desc": "登记销售收款", "legacySource": "quote/edit", "grantPolicy": "explicit" },
+      { "code": "sales/order-credit-approval", "domain": "sales", "level": "action", "desc": "批准欠款交付", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "sales/order-deliver", "domain": "sales", "level": "action", "desc": "确认实物交付与出库", "legacySource": "quote/edit", "grantPolicy": "explicit" },
+      { "code": "sales/return-create", "domain": "sales", "level": "action", "desc": "登记退货接收与贷项", "legacySource": "quote/edit", "grantPolicy": "default" },
+      { "code": "sales/refund", "domain": "sales", "level": "action", "desc": "登记现金退款", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "inventory/product-view", "domain": "inventory", "level": "action", "desc": "查看商品主数据与分类品牌", "legacySource": "library/view", "grantPolicy": "default" },
+      { "code": "inventory/product-edit", "domain": "inventory", "level": "action", "desc": "新建与修改商品主数据", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/view", "domain": "inventory", "level": "action", "desc": "查看库存汇总、采购单与流水", "legacySource": "library/view", "grantPolicy": "default" },
+      { "code": "inventory/item-view", "domain": "inventory", "level": "action", "desc": "查看逐件实物来源、占用与检验记录", "legacySource": "library/view", "grantPolicy": "default" },
+      { "code": "inventory/sn-view", "domain": "inventory", "level": "action", "desc": "查询序列号", "legacySource": "library/view", "grantPolicy": "default" },
+      { "code": "inventory/sn-edit", "domain": "inventory", "level": "action", "desc": "绑定与修改序列号", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/opening", "domain": "inventory", "level": "action", "desc": "录入期初数量、实物与成本", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "inventory/purchase-create", "domain": "inventory", "level": "action", "desc": "创建采购与到货计划", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/purchase-cancel", "domain": "inventory", "level": "action", "desc": "取消采购未到部分", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/supplier-return", "domain": "inventory", "level": "action", "desc": "退供", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/receipt", "domain": "inventory", "level": "action", "desc": "登记实际到货与原子入库", "legacySource": "library/edit", "grantPolicy": "explicit" },
+      { "code": "inventory/count", "domain": "inventory", "level": "action", "desc": "录入盘点实盘结果", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/count-approve", "domain": "inventory", "level": "action", "desc": "批准盘点差异并生成调整", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "inventory/inspection", "domain": "inventory", "level": "action", "desc": "待检件判定为可卖或继续隔离", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/refurbish", "domain": "inventory", "level": "action", "desc": "整备成本记录与上架门槛达成", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "inventory/damage", "domain": "inventory", "level": "action", "desc": "报损", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "inventory/cost-view", "domain": "inventory", "level": "field", "desc": "响应中返回采购成本与逐件成本字段", "legacySource": "cost/view", "grantPolicy": "default" },
+      { "code": "inventory/margin-view", "domain": "inventory", "level": "field", "desc": "响应中返回毛利字段", "legacySource": "margin/view", "grantPolicy": "default" },
+      { "code": "service/view", "domain": "service", "level": "action", "desc": "查看维修工单、方案与费用", "legacySource": "quote/view", "grantPolicy": "default" },
+      { "code": "service/edit", "domain": "service", "level": "action", "desc": "接修、检测、方案、换件、外送与归还", "legacySource": "quote/edit", "grantPolicy": "default" },
+      { "code": "service/charge", "domain": "service", "level": "action", "desc": "登记售后收费", "legacySource": "quote/edit", "grantPolicy": "explicit" },
+      { "code": "recovery/view", "domain": "recovery", "level": "action", "desc": "查看回收单、检测与估价", "legacySource": "quote/view", "grantPolicy": "default" },
+      { "code": "recovery/edit", "domain": "recovery", "level": "action", "desc": "回收登记、验机、估价与归还", "legacySource": "quote/edit", "grantPolicy": "default" },
+      { "code": "recovery/acquire", "domain": "recovery", "level": "action", "desc": "确认回收最终价并取得所有权", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "tradein/view", "domain": "tradein", "level": "action", "desc": "查看置换单据与有效折抵", "legacySource": "quote/view", "grantPolicy": "default" },
+      { "code": "tradein/create", "domain": "tradein", "level": "action", "desc": "建立置换关联", "legacySource": "quote/edit", "grantPolicy": "default" },
+      { "code": "tradein/offset", "domain": "tradein", "level": "action", "desc": "确认并应用折抵", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "tradein/reverse", "domain": "tradein", "level": "action", "desc": "撤销折抵（双方冲销，不搬动实物）", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "finance/view", "domain": "finance", "level": "action", "desc": "查看应收应付汇总与流水", "legacySource": "quote/view", "grantPolicy": "default" },
+      { "code": "finance/ledger-view", "domain": "finance", "level": "action", "desc": "查看完整账本与对账", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "finance/payment", "domain": "finance", "level": "action", "desc": "登记采购与回收付款", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "finance/reverse", "domain": "finance", "level": "action", "desc": "受控反冲账务分录", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "store/manage", "domain": "platform", "level": "action", "desc": "门店设置", "legacySource": "store/manage", "grantPolicy": "owner_only" },
+      { "code": "member/manage", "domain": "platform", "level": "action", "desc": "成员管理与邀请", "legacySource": "member/manage", "grantPolicy": "owner_only" },
+      { "code": "role/view", "domain": "platform", "level": "action", "desc": "查看角色与权限配置", "legacySource": "role/view", "grantPolicy": "owner_only" },
+      { "code": "document/export", "domain": "platform", "level": "action", "desc": "生成与导出单据文件", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "attachment/upload", "domain": "platform", "level": "action", "desc": "上传业务附件与照片", "legacySource": "library/edit", "grantPolicy": "default" },
+      { "code": "auth/binding-code", "domain": "platform", "level": "action", "desc": "生成微信绑定码", "legacySource": null, "grantPolicy": "owner_only" }
+    ]
+  },
+  "actions": [
+    {
+      "code": "B01",
+      "name": "创建报价草稿",
+      "domain": "sales",
+      "entity": "Quote",
+      "stateMachine": "QuoteStatus",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/quotes", "permission": "sales/quote-edit" }],
+      "inputs": ["customer:CustomerRef?", "title:string?", "lines:SaleLine[]", "terms:Terms?", "validUntil:datetime?"],
+      "result": "新建 Quote，状态 draft。最少草稿允许先为空；完整度只在 issue（B02）与 convert（B03）强制。",
+      "effects": ["Quote"],
+      "errors": ["VALIDATION_ERROR", "AUTH_REQUIRED", "PERMISSION_DENIED", "SERVICE_UNAVAILABLE"],
+      "uiRefs": ["新建装机报价", "选件"],
+      "notes": [
+        "选件页允许新品 / 二手现货 / 客供 / 服务四类来源；二手行必须带 StockItem 实物 ID，客供件不计自有库存（02 §5、03 领域规则）。",
+        "报价阶段不锁货（02 §5）。"
+      ]
+    },
+    {
+      "code": "B02",
+      "name": "保存与发出报价",
+      "domain": "sales",
+      "entity": "QuoteVersion",
+      "stateMachine": "QuoteStatus",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/sales/quotes/:id/save", "permission": "sales/quote-edit" },
+        { "method": "POST", "path": "/sales/quotes/:id/issue", "permission": "sales/quote-edit" }
+      ],
+      "inputs": ["revision:int!", "编辑字段:同B01字段集", "issue额外要求:完整配置行与条款"],
+      "result": "生成新草稿版本；issue 生成不可变已发版本，原客户版本不被覆盖。",
+      "effects": ["QuoteVersion", "Quote"],
+      "errors": ["VALIDATION_ERROR", "VERSION_CONFLICT", "PERMISSION_DENIED", "IDEMPOTENCY_MISMATCH"],
+      "uiRefs": ["新建装机报价", "选件"],
+      "notes": [
+        "issued 状态再次 save 形成新版本而非原地改写（enums.json QuoteStatus 自环转换）。",
+        "优惠分摊与金额重算见 money-rules.json。"
+      ]
+    },
+    {
+      "code": "B03",
+      "name": "报价转为销售单",
+      "domain": "sales",
+      "entity": "SaleOrder",
+      "stateMachine": "QuoteStatus",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/quotes/:id/convert", "permission": "sales/quote-convert" }],
+      "inputs": [
+        "quoteVersion:int!",
+        "customerSnapshot:CustomerSnapshot!",
+        "dueAt:datetime!",
+        "allocationChoices:AllocationChoice[]!",
+        "lineProductMap:LineProductMap[]（行序 → hardware.entity_id；报价行没带商品引用时在转单时补）"
+      ],
+      "result": "生成销售单与数量缺口清单。本动作不写预留：R07（未付款不预留不采购）优先于旧措辞「现货预留」，实际占用由 B05 在收到定金后写。成交前 new / used 行必须映射到商品（QuoteVersion.rules 第 1 条），映射不出则整次失败；指定二手实物已被占用时同样整次失败，不部分成功。",
+      "effects": ["SaleOrder", "Reservation", "Quote"],
+      "errors": ["STOCK_CONFLICT", "VERSION_CONFLICT", "OWNERSHIP_INVALID", "VALIDATION_ERROR"],
+      "uiRefs": ["确认成交"],
+      "notes": [
+        "冲突处理策略见 conventions.write 与 errors.json STOCK_CONFLICT。",
+        "⚠️ effects 列出 Reservation 只表示「本动作定下了要占什么（哪些行、哪件实物）」这一占用意向；B03 本身不写任何 stock_reservations / inventory_movements 行。实际写入在 B05（enums.json inventoryBucketRules 把 available → reserved 绑在 B05 上）。",
+        "lineProductMap 是为「报价行 product_ref 为空」准备的补救口：草稿允许临时行（QuoteVersion.rules 第 1 条），而已发出的版本不可回改，因此补映射只能发生在转单这一步，结果只写进 sale_lines，不回头改报价版本。"
+      ]
+    },
+    {
+      "code": "B04",
+      "name": "创建零售与直接销售单",
+      "domain": "sales",
+      "entity": "SaleOrder",
+      "stateMachine": "SaleTradeState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders", "permission": "sales/order-edit" }],
+      "inputs": ["kind:SaleKind!", "customerSnapshot:CustomerSnapshot!", "lines:SaleLine[]!", "terms:Terms!", "dueAt:datetime?"],
+      "result": "生成销售单草稿（draft），仍须调用 B05 confirm 才锁货。",
+      "effects": ["SaleOrder"],
+      "errors": ["VALIDATION_ERROR", "PERMISSION_DENIED"],
+      "uiRefs": ["新建零售"],
+      "notes": ["零售单可跳过装机与检测（enums.json SaleFulfillmentState：waiting_stock 可直达 ready_delivery）。"]
+    },
+    {
+      "code": "B05",
+      "name": "确认成交与补分配",
+      "domain": "sales",
+      "entity": "Reservation",
+      "stateMachine": "SaleTradeState",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/sales/orders/:id/confirm", "permission": "sales/order-edit" },
+        { "method": "POST", "path": "/sales/orders/:id/allocate", "permission": "sales/order-edit" }
+      ],
+      "inputs": ["最新行数据:SaleLine[]", "候选实物或数量分配:AllocationChoice[]"],
+      "result": "成交并原子预留；或对缺口补充占用。服务端重新计算缺口，不信任客户端剩余量。",
+      "effects": ["SaleOrder", "Reservation", "StockItem", "StockBalance"],
+      "errors": ["STOCK_CONFLICT", "VERSION_CONFLICT", "OWNERSHIP_INVALID", "INSPECTION_REQUIRED"],
+      "uiRefs": ["确认成交", "缺件处理"],
+      "notes": [
+        "确认成交时商品行映射、最终价格与质保、客户承诺须完整；已被占用的指定二手件必须换件或取消该行（02 §5、enums.json）。",
+        "补分配缺件不改变交易状态（enums.json SaleTradeState 自环）。"
+      ]
+    },
+    {
+      "code": "B06",
+      "name": "开始备料与装机",
+      "domain": "sales",
+      "entity": "SaleOrder",
+      "stateMachine": "SaleFulfillmentState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders/:id/start-assembly", "permission": "sales/order-assembly" }],
+      "inputs": ["领料位置:StockLocation!", "客供件接收引用:ReceiptRef?"],
+      "result": "记录备料事实与阶段推进；不扣销量、不改变成交状态。",
+      "effects": ["SaleOrder", "InventoryMovement"],
+      "errors": ["VERSION_CONFLICT", "STOCK_CONFLICT", "OWNERSHIP_INVALID"],
+      "uiRefs": ["装机检测"],
+      "notes": ["waiting_stock → preparing 的守卫：所需店有件已预留、客供件已接收（enums.json）。"]
+    },
+    {
+      "code": "B07",
+      "name": "保存装机检测结果",
+      "domain": "sales",
+      "entity": "Checklist",
+      "stateMachine": "SaleFulfillmentState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders/:id/checks", "permission": "sales/order-assembly" }],
+      "inputs": ["templateVersion:int!", "configurationVersion:int!", "changedItems:ChecklistItem[]!", "resultEvidence:AttachmentRef[]"],
+      "result": "保存检查结果并刷新 version 与阻断项；检测不通过时隔离故障件、释放该件预留并重新形成缺口。",
+      "effects": ["Checklist", "TestRecord", "SaleOrder", "Reservation"],
+      "errors": ["VERSION_CONFLICT", "CHECKLIST_INCOMPLETE", "SERIAL_MISMATCH"],
+      "uiRefs": ["装机检测"],
+      "notes": [
+        "失败项目禁止自动打勾（02 §5 装机检测行）。",
+        "「不能勾中就假装已经服务器保存」（02 §6 ActionChecklist）。"
+      ]
+    },
+    {
+      "code": "B08",
+      "name": "登记销售收款",
+      "domain": "sales",
+      "entity": "CashEntry",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders/:id/payments", "permission": "sales/order-payment" }],
+      "inputs": ["amountCents:cents!", "method:PaymentMethod!", "occurredAt:timestamp!", "remark:string?"],
+      "result": "生成 CashEntry 并更新订单余额。不得再向账本 POST 一份复制记录。",
+      "effects": ["CashEntry", "SaleOrder"],
+      "errors": ["BALANCE_EXCEEDED", "VERSION_CONFLICT", "IDEMPOTENCY_MISMATCH", "VALIDATION_ERROR"],
+      "uiRefs": ["办理交付", "账本"],
+      "notes": [
+        "超收由服务端与数据库约束拒绝（legacy-mapping.json 记录的防超收触发器只覆盖旧路径，不等于幂等）。",
+        "资金写入一致性要求见 04 §7。"
+      ]
+    },
+    {
+      "code": "B09",
+      "name": "批准欠款交付",
+      "domain": "sales",
+      "entity": "SaleOrder",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders/:id/credit-approval", "permission": "sales/order-credit-approval" }],
+      "inputs": ["dueDate:date!", "reason:string!"],
+      "result": "记录老板批准的当时余额与条件；订单支付状态仍为未结清。",
+      "effects": ["SaleOrder", "AuditEvent"],
+      "errors": ["PERMISSION_DENIED", "VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["办理交付"],
+      "notes": ["欠款交付仅老板可执行，记录剩余金额、到期日、原因（03 §8）。不能让店员勾一个「跳过收款」绕过。"]
+    },
+    {
+      "code": "B10",
+      "name": "确认交付",
+      "domain": "sales",
+      "entity": "Delivery",
+      "stateMachine": "SaleFulfillmentState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders/:id/deliver", "permission": "sales/order-deliver" }],
+      "inputs": ["configurationVersion:int!", "checklistVersion:int!", "deliveryNote:string!", "creditApprovalRef:Ref?"],
+      "result": "交付、库存出库、成本快照、设备拥有关系同时成立。",
+      "effects": ["Delivery", "InventoryMovement", "StockItem", "SaleOrder", "CustomerDevice"],
+      "errors": ["CHECKLIST_INCOMPLETE", "SERIAL_MISMATCH", "BALANCE_EXCEEDED", "VERSION_CONFLICT", "OWNERSHIP_INVALID"],
+      "uiRefs": ["办理交付"],
+      "notes": [
+        "交付闸门六项必须同时满足（03 §7）：订单有效、实物来源解决、有效预留未失效、需 SN 行已绑定、检查通过、条款固化、款项结清或有批准欠款、同订单未交付过。",
+        "尾款为 0 显示「已结清」仍须确认实物交出（02 §5）。"
+      ]
+    },
+    {
+      "code": "B11",
+      "name": "取消销售单",
+      "domain": "sales",
+      "entity": "SaleOrder",
+      "stateMachine": "SaleTradeState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders/:id/cancel", "permission": "sales/order-edit" }],
+      "inputs": ["reason:string!"],
+      "result": "释放占用；预收转为应退，不自动产生现金退款（退款须另走 B18）。",
+      "effects": ["SaleOrder", "Reservation"],
+      "errors": ["VERSION_CONFLICT", "PERMISSION_DENIED", "IDEMPOTENCY_MISMATCH"],
+      "uiRefs": ["确认成交"],
+      "notes": ["已交付订单不可走此动作（enums.json 仅 draft / confirmed → cancelled）。"]
+    },
+    {
+      "code": "B12",
+      "name": "建立与修改商品主数据",
+      "domain": "inventory",
+      "entity": "Product",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/inventory/products", "permission": "inventory/product-edit" }],
+      "inputs": ["sku:string?", "name:string!", "trackingMode:TrackingMode!", "requiresSn:bool!", "specs:Spec[]"],
+      "result": "建立或修订型号；关键属性已发生业务后修改需专门规则，不允许静默改写历史成本口径。",
+      "effects": ["Product"],
+      "errors": ["VALIDATION_ERROR", "VERSION_CONFLICT", "PERMISSION_DENIED"],
+      "uiRefs": ["库存"],
+      "notes": ["sku 可由系统生成；不按散片 / 盒装 / 国行拆 SKU（ERP 产品方向 2026-07-20）。"]
+    },
+    {
+      "code": "B13",
+      "name": "录入期初库存",
+      "domain": "inventory",
+      "entity": "StockItem",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/inventory/openings", "permission": "inventory/opening" }],
+      "inputs": ["approvedCountRef:Ref!", "lines:OpeningLine[]!", "costBasis:CostBasis!"],
+      "result": "建立期初数量、实物与成本，并留审计痕迹。不是日常入库的捷径。",
+      "effects": ["StockItem", "StockBalance", "InventoryMovement", "AuditEvent"],
+      "errors": ["PERMISSION_DENIED", "VALIDATION_ERROR", "VERSION_CONFLICT"],
+      "uiRefs": ["库存"],
+      "notes": [
+        "期初成本口径必须显式声明，避免把「未知成本」写成 0（legacy-mapping.json：serial_numbers.purchase_cost_cents 默认 0，分不清免费与未知）。",
+        "03 §8：期初属老板专属，旧 library/edit 不得自动获得。"
+      ]
+    },
+    {
+      "code": "B14",
+      "name": "创建采购与到货计划",
+      "domain": "inventory",
+      "entity": "Purchase",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/inventory/purchases", "permission": "inventory/purchase-create" }],
+      "inputs": ["supplier:SupplierRef!", "lines:PurchaseLine[]!", "expectedAt:date?"],
+      "result": "形成采购单与在途 / 应付约定；不产生库存。",
+      "effects": ["Purchase"],
+      "errors": ["VALIDATION_ERROR", "PERMISSION_DENIED"],
+      "uiRefs": ["缺件处理"],
+      "notes": ["采购数量恒等式：采购量 = 已合格入库 + 已拒收/取消 + 尚待到货（03 §7）；退供另有关联退供单（B38）。"]
+    },
+    {
+      "code": "B15",
+      "name": "登记实际到货与入库",
+      "domain": "inventory",
+      "entity": "Receipt",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/inventory/receipts", "permission": "inventory/receipt" }],
+      "inputs": ["purchaseId:Ref?", "quickPurchase:QuickPurchase?", "lines:ReceiptLine[]!"],
+      "result": "原子完成入库、SN 记录、库存流水与采购实到；不自动占用（占用走 B05 allocate）。",
+      "effects": ["Receipt", "StockItem", "StockBalance", "InventoryMovement", "Purchase"],
+      "errors": ["SERIAL_MISMATCH", "VERSION_CONFLICT", "IDEMPOTENCY_MISMATCH", "VALIDATION_ERROR"],
+      "uiRefs": ["入库", "缺件处理"],
+      "notes": [
+        "实到 SN 重复时整笔返回逐行问题，不部分成功又报整体失败（03 §7）。",
+        "不能用勾选「到货」直接放行（02 §5 缺件处理行）。",
+        "purchaseId 与 quickPurchase 至少给一个，二者同时缺失为 VALIDATION_ERROR。"
+      ]
+    },
+    {
+      "code": "B16",
+      "name": "盘点录入与差异批准",
+      "domain": "inventory",
+      "entity": "InventoryMovement",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/inventory/counts", "permission": "inventory/count" },
+        { "method": "POST", "path": "/inventory/counts/:id/approve", "permission": "inventory/count-approve" }
+      ],
+      "inputs": ["范围与截止序号:CountScope!", "实盘:CountLine[]", "批准差异理由:string"],
+      "result": "生成盘点草稿；批准后生成差异调整事件。保存实盘结果不直接改库存。",
+      "effects": ["InventoryMovement", "StockBalance", "AuditEvent"],
+      "errors": ["VERSION_CONFLICT", "PERMISSION_DENIED", "VALIDATION_ERROR"],
+      "uiRefs": ["盘点"],
+      "notes": [
+        "同一编号含两个路径且权限不同：录入归 inventory/count，批准归 inventory/count-approve（老板专属）。",
+        "盘点时存在的并发出入库必须以截止时点 / 事件序号对齐（03 §7）；差异保存不自动改变库存（02 §5）。"
+      ]
+    },
+    {
+      "code": "B17",
+      "name": "登记退货",
+      "domain": "sales",
+      "entity": "ReturnRecord",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/returns", "permission": "sales/return-create" }],
+      "inputs": ["originalOrderId:Ref!", "lineAllocations:ReturnLine[]!", "stockItemIds:StockItemRef[]", "reason:string!", "acceptedQty:int!", "creditCents:cents!"],
+      "result": "形成退货接收待检与贷项；后端校验累计上限，不允许超退。",
+      "effects": ["ReturnRecord", "CashEntry", "StockItem", "SaleOrder"],
+      "errors": ["BALANCE_EXCEEDED", "VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["退货 / 退款"],
+      "notes": ["先收货待检再退款；可只退款无实物但须选原因（02 §5）。实物接收 / 贷项 / 现金退款各有状态与引用（04 §2）。"]
+    },
+    {
+      "code": "B18",
+      "name": "登记现金退款",
+      "domain": "sales",
+      "entity": "Refund",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/orders/:id/refunds", "permission": "sales/refund" }],
+      "inputs": ["amountCents:cents!", "method:PaymentMethod!", "occurredAt:timestamp!", "returnRef:Ref?", "adjustmentRef:Ref?", "reason:string!"],
+      "result": "生成现金退款分录并关联既有应退；不自动处理实物。",
+      "effects": ["Refund", "CashEntry", "SaleOrder"],
+      "errors": ["BALANCE_EXCEEDED", "PERMISSION_DENIED", "IDEMPOTENCY_MISMATCH", "VALIDATION_ERROR"],
+      "uiRefs": ["退货 / 退款"],
+      "notes": [
+        "本动作权限为 sales/refund，旧 quote/edit 与 library/edit 均不得自动获得（03 §8；permissionModel.noWideningGuard）。",
+        "returnRef 与 adjustmentRef 不能都缺失；退款额度按既有应退校验。"
+      ]
+    },
+    {
+      "code": "B43",
+      "name": "批准退货贷项",
+      "domain": "sales",
+      "entity": "ReturnRecord",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/returns/:id/approve-credit", "permission": "sales/refund" }],
+      "inputs": ["reason:string?"],
+      "result": "把退货单的贷项由 pending 批准为 approved，计入订单应退；未批准前不生效。",
+      "effects": ["ReturnRecord", "SaleOrder"],
+      "errors": ["PERMISSION_DENIED", "VERSION_CONFLICT", "VALIDATION_ERROR", "ENTITY_NOT_FOUND"],
+      "uiRefs": ["退货 / 退款"],
+      "notes": [
+        "E09（2026-09-21）契约修订新增：栋哥拍板「退货产生的应退贷项须老板审批才生效」。",
+        "本动作权限复用 sales/refund（owner_only），与 B18 现金退款同属老板专属；店员登记退货（B17）后贷项为 pending，须老板批准才计入应退。",
+        "批准后累计退货贷项不得超过原行净额（money-rules partialReturn.cap）。"
+      ]
+    },
+    {
+      "code": "B19",
+      "name": "待检件判定",
+      "domain": "inventory",
+      "entity": "StockItem",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/inventory/items/:id/inspection", "permission": "inventory/inspection" }],
+      "inputs": ["result:InspectionResult!", "findings:string!", "evidence:AttachmentRef[]", "disposition:StockBucket!"],
+      "result": "待检 → 可卖或继续隔离。所需证据未完成则拒绝。",
+      "effects": ["StockItem", "StockBalance"],
+      "errors": ["INSPECTION_REQUIRED", "OWNERSHIP_INVALID", "VERSION_CONFLICT"],
+      "uiRefs": ["库存"],
+      "notes": ["disposition 取值受 enums.json 的库存桶转换规则约束。"]
+    },
+    {
+      "code": "B20",
+      "name": "接修登记",
+      "domain": "service",
+      "entity": "ServiceOrder",
+      "stateMachine": "ServiceState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/service/orders", "permission": "service/edit" }],
+      "inputs": ["customer:CustomerRef!", "device:DeviceRef!", "symptom:string!", "accessories:string[]", "appearance:string", "intakePhotos:AttachmentRef[]"],
+      "result": "建立工单并登记客户设备保管；不加自有库存。",
+      "effects": ["ServiceOrder", "CustomerDevice", "StockItem"],
+      "errors": ["VALIDATION_ERROR", "PERMISSION_DENIED"],
+      "uiRefs": ["接修"],
+      "notes": [
+        "客户设备走 customer_custody 桶，不计自有库存与成本（ERP 产品方向 2026-07-20）。",
+        "无电话须填写替代联系说明；外店设备可新建，原销售可空（02 §5）。"
+      ]
+    },
+    {
+      "code": "B21",
+      "name": "录入检测与维修方案",
+      "domain": "service",
+      "entity": "ServiceOrder",
+      "stateMachine": "ServiceState",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/service/orders/:id/diagnosis", "permission": "service/edit" },
+        { "method": "POST", "path": "/service/orders/:id/proposal", "permission": "service/edit" }
+      ],
+      "inputs": ["检测结果:DiagnosisResult", "方案版本:ProposalDraft", "处理项目:ProposalItem[]", "价格:cents", "质保依据:string"],
+      "result": "形成诊断记录或新方案版本；等待客户确认前不改所有权、不领用收费配件。",
+      "effects": ["ServiceOrder", "DeviceConfiguration"],
+      "errors": ["VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["维修方案"],
+      "notes": ["方案版本与费用明细须可追溯（02 §5 维修方案行）。"]
+    },
+    {
+      "code": "B22",
+      "name": "记录方案确认",
+      "domain": "service",
+      "entity": "ServiceOrder",
+      "stateMachine": "ServiceState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/service/orders/:id/confirm-proposal", "permission": "service/edit" }],
+      "inputs": ["proposalVersion:int!", "confirmationMethod:ConfirmationMethod!", "confirmedAt:timestamp!", "note:string?"],
+      "result": "固化已确认收费与可执行方案；此后才可领用收费配件。",
+      "effects": ["ServiceOrder", "AuditEvent"],
+      "errors": ["VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["维修方案"],
+      "notes": ["「记录已联系」不代替真实联系（02 §5）；客户拒绝时按已确认检测约定处理并转 ready_return。"]
+    },
+    {
+      "code": "B23",
+      "name": "换件",
+      "domain": "service",
+      "entity": "DeviceChange",
+      "stateMachine": "ServiceState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/service/orders/:id/replace", "permission": "service/edit" }],
+      "inputs": ["oldComponentRef:Ref!", "newStockItem:StockItemRef?", "qty:int?", "oldItemDisposition:StockBucket!", "approvedProposalVersion:int!"],
+      "result": "备件消耗、配置新版本、成本与事件；原配置快照保留。",
+      "effects": ["DeviceChange", "DeviceConfiguration", "StockItem", "StockBalance", "InventoryMovement"],
+      "errors": ["STOCK_CONFLICT", "OWNERSHIP_INVALID", "VERSION_CONFLICT"],
+      "uiRefs": ["换件 / 返厂"],
+      "notes": ["必须记录旧件去向（enums.json ServiceState repairing→retesting 守卫）。"]
+    },
+    {
+      "code": "B24",
+      "name": "外送与返回",
+      "domain": "service",
+      "entity": "ServiceOrder",
+      "stateMachine": "ServiceState",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/service/orders/:id/dispatch", "permission": "service/edit" },
+        { "method": "POST", "path": "/service/orders/:id/receive-external", "permission": "service/edit" }
+      ],
+      "inputs": ["接收方:string!", "物流:string", "预期返回:date?", "实到事实:string"],
+      "result": "记录外部位置或返回待复测。寄出不等于已归还客户。",
+      "effects": ["ServiceOrder", "StockItem"],
+      "errors": ["VALIDATION_ERROR", "VERSION_CONFLICT"],
+      "uiRefs": ["换件 / 返厂"],
+      "notes": ["awaiting_approval → outsourced → retesting（enums.json）。"]
+    },
+    {
+      "code": "B25",
+      "name": "复测与归还客户",
+      "domain": "service",
+      "entity": "ServiceOrder",
+      "stateMachine": "ServiceState",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/service/orders/:id/retest", "permission": "service/edit" },
+        { "method": "POST", "path": "/service/orders/:id/return", "permission": "service/edit" }
+      ],
+      "inputs": ["复测结果:TestRecord", "附件:AttachmentRef[]", "归还备注:string!", "结算依据:string"],
+      "result": "复测通过且费用结清或有有效欠款批准后归还客户，记录实际归还人与时间。收款走共用资金服务（B41）。",
+      "effects": ["ServiceOrder", "TestRecord", "StockItem"],
+      "errors": ["BALANCE_EXCEEDED", "VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["维修方案"],
+      "notes": ["费用闸门：retesting → ready_return → returned，未结清且无批准不得归还（enums.json）。"]
+    },
+    {
+      "code": "B26",
+      "name": "回收登记",
+      "domain": "recovery",
+      "entity": "Recovery",
+      "stateMachine": "RecoveryState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/recovery/orders", "permission": "recovery/edit" }],
+      "inputs": ["seller:SellerRef!", "items:RecoveryItem[]!", "initialEstimate:cents?", "intake:IntakeFact!", "custody:CustodyFact!"],
+      "result": "登记卖方、实物与暂存事实，可保存待验机；不改变所有权。",
+      "effects": ["Recovery", "StockItem", "CustomerDevice"],
+      "errors": ["VALIDATION_ERROR", "PERMISSION_DENIED"],
+      "uiRefs": ["回收"],
+      "notes": ["客户暂存物不计自有库存与成本。"]
+    },
+    {
+      "code": "B27",
+      "name": "验机与估价",
+      "domain": "recovery",
+      "entity": "Recovery",
+      "stateMachine": "RecoveryState",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/recovery/orders/:id/inspect", "permission": "recovery/edit" },
+        { "method": "POST", "path": "/recovery/orders/:id/offer", "permission": "recovery/edit" }
+      ],
+      "inputs": ["检测结果:InspectionResult", "offerVersion:int?", "逐件价:RecoveryItemPrice[]", "最终条件:string"],
+      "result": "形成检测记录或新估价版本；不改所有权。最终价确认属 B28。",
+      "effects": ["Recovery", "StockItem"],
+      "errors": ["VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["回收"],
+      "notes": ["店员可保存初估与验机，最终价确认除外（03 §8）。"]
+    },
+    {
+      "code": "B28",
+      "name": "取得所有权",
+      "domain": "recovery",
+      "entity": "StockItem",
+      "stateMachine": "RecoveryState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/recovery/orders/:id/acquire", "permission": "recovery/acquire" }],
+      "inputs": ["offerVersion:int!", "receivedEvidence:AttachmentRef[]!", "sellerConfirmation:ConfirmationFact!"],
+      "result": "原子取得所有权、逐件成本、待整备库存与应付。",
+      "effects": ["StockItem", "Recovery", "InventoryMovement", "CashEntry"],
+      "errors": ["OWNERSHIP_INVALID", "VERSION_CONFLICT", "INSPECTION_REQUIRED", "PERMISSION_DENIED"],
+      "uiRefs": ["回收"],
+      "notes": [
+        "守卫：最终价、验机结论、双方确认与接收事实齐备（enums.json offered→acquired）。",
+        "旧 quote/edit 不得自动获得（03 §8 老板专属）。"
+      ]
+    },
+    {
+      "code": "B29",
+      "name": "归还客户",
+      "domain": "recovery",
+      "entity": "Recovery",
+      "stateMachine": "RecoveryState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/recovery/orders/:id/return", "permission": "recovery/edit" }],
+      "inputs": ["未收购事实:string!", "归还确认:ReturnFact!", "附件:AttachmentRef[]"],
+      "result": "客户暂存物归还，不产生采购成本与可卖库存。",
+      "effects": ["Recovery", "StockItem"],
+      "errors": ["VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["回收"],
+      "notes": ["inspecting 或 offered 均可达 return_pending → returned（enums.json）。"]
+    },
+    {
+      "code": "B30",
+      "name": "整备与上架",
+      "domain": "inventory",
+      "entity": "RefurbishmentCost",
+      "stateMachine": "RecoveryState",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/inventory/items/:id/refurbishments", "permission": "inventory/refurbish" },
+        { "method": "POST", "path": "/inventory/items/:id/make-available", "permission": "inventory/refurbish" }
+      ],
+      "inputs": ["明细成本:RefurbishmentLine[]", "检测:InspectionResult", "成色:ConditionGrade!", "披露:Disclosure!", "质保:WarrantyTerm!", "标价:cents!"],
+      "result": "记录整备事件或达成上架门槛。逐件编号、成色、检测、成本、披露、标价、质保齐备方可上架。",
+      "effects": ["RefurbishmentCost", "StockItem", "StockBalance"],
+      "errors": ["INSPECTION_REQUIRED", "VERSION_CONFLICT", "VALIDATION_ERROR"],
+      "uiRefs": ["整备 / 上架", "库存"],
+      "notes": [
+        "acquired → refurbishing → ready_for_sale，或无需整备时直接补齐门槛（enums.json）。",
+        "成本示例见 03 §7：收购 800 + 整备 80 = 880，交付只确认 880，不新增「采购 880」现金。"
+      ]
+    },
+    {
+      "code": "B44",
+      "name": "拆件入库",
+      "domain": "recovery",
+      "entity": "RecoveryTeardown",
+      "stateMachine": "RecoveryState",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/recovery/orders/:id/teardown", "permission": "recovery/edit" }],
+      "inputs": ["sourceStockItemId:StockItemRef!", "outputs:TeardownOutput[]!", "scrapLines:ScrapLine[]", "occurredAt:timestamp!"],
+      "result": "整机拆件：源件退役、产出件新建待检、损耗单列报废；产出成本 + 损耗 = 源件成本。",
+      "effects": ["RecoveryTeardown", "StockItem", "InventoryMovement", "Recovery"],
+      "errors": ["OWNERSHIP_INVALID", "VERSION_CONFLICT", "INSPECTION_REQUIRED", "VALIDATION_ERROR", "PERMISSION_DENIED"],
+      "uiRefs": ["回收"],
+      "notes": [
+        "只在 acquired 后拆（enums.json RecoveryState acquired → disassembled）。",
+        "产出件进 quarantine 待检，由 B19 判定后上架；损耗走 scrap 单列报废，不摊进产出件（栋哥 2026-09-21 拍板）。"
+      ]
+    },
+    {
+      "code": "B31",
+      "name": "建立置换关联与应用折抵",
+      "domain": "tradein",
+      "entity": "Offset",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/trade-ins", "permission": "tradein/create" },
+        { "method": "POST", "path": "/trade-ins/:id/apply-offset", "permission": "tradein/offset" }
+      ],
+      "inputs": ["saleOrderId:Ref!", "recoveryId:Ref!", "双方expectedVersion:int!", "amountCents:cents!"],
+      "result": "原子折抵双方余额并生成唯一凭据；折抵为非现金事件，同时作用双方余额。",
+      "effects": ["Offset", "SaleOrder", "Recovery"],
+      "errors": ["OFFSET_EXCEEDED", "VERSION_CONFLICT", "OWNERSHIP_INVALID", "PERMISSION_DENIED"],
+      "uiRefs": ["置换"],
+      "notes": [
+        "路径与权限分离：建立关联归 tradein/create，应用折抵归 tradein/offset（老板专属，03 §8「确认折抵」）。",
+        "最终价未定不能结算（02 §5 置换行）。"
+      ]
+    },
+    {
+      "code": "B32",
+      "name": "撤销折抵",
+      "domain": "tradein",
+      "entity": "Offset",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/trade-ins/:id/reverse-offset", "permission": "tradein/reverse" }],
+      "inputs": ["offsetId:Ref!", "reason:string!", "双方version:int!"],
+      "result": "双方冲销并保留历史；不自动搬动实物。",
+      "effects": ["Offset", "SaleOrder", "Recovery"],
+      "errors": ["OFFSET_EXCEEDED", "VERSION_CONFLICT", "PERMISSION_DENIED"],
+      "uiRefs": ["置换"],
+      "notes": [
+        "撤销折抵不自动归还实物；如果旧件已再售，不允许「恢复原状」制造不存在的库存（03 §7）。",
+        "撤销须老板确认（03 §8「退款冲销」）。"
+      ]
+    },
+    {
+      "code": "B33",
+      "name": "登记对外付款",
+      "domain": "finance",
+      "entity": "CashEntry",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/finance/payments", "permission": "finance/payment" }],
+      "inputs": ["counterparty:CounterpartyRef!", "sourceDocument:Ref!", "amountCents:cents!", "method:PaymentMethod!", "occurredAt:timestamp!"],
+      "result": "生成付款分录；付款额度按应付验证，超付拒绝。",
+      "effects": ["CashEntry", "Purchase", "Recovery"],
+      "errors": ["BALANCE_EXCEEDED", "IDEMPOTENCY_MISMATCH", "PERMISSION_DENIED", "VALIDATION_ERROR"],
+      "uiRefs": ["账本"],
+      "notes": ["付款方向为 out，不得与收款共用同一无方向记录。"]
+    },
+    {
+      "code": "B34",
+      "name": "反冲账务分录",
+      "domain": "finance",
+      "entity": "CashEntry",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/finance/entries/:id/reverse", "permission": "finance/reverse" }],
+      "inputs": ["reason:string!", "correctionRef:Ref?"],
+      "result": "受控反冲并重算相关余额。用于错误录入的账务纠正，不冒充真实退款。",
+      "effects": ["CashEntry", "SaleOrder", "Purchase", "Recovery"],
+      "errors": ["PERMISSION_DENIED", "IDEMPOTENCY_MISMATCH", "VERSION_CONFLICT"],
+      "uiRefs": ["账本"],
+      "notes": [
+        "冲销替代修改历史：错误修正优先追加补偿记录（03 §9、money-rules.json）。",
+        "本动作与 B18 退款语义不同，两者权限码不同（finance/reverse vs sales/refund）。"
+      ]
+    },
+    {
+      "code": "B35",
+      "name": "附件上传",
+      "domain": "platform",
+      "entity": "Attachment",
+      "stateMachine": "AttachmentUploadState",
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/attachments/upload-intents", "permission": "attachment/upload" },
+        { "method": "PUT", "path": "/attachments/upload-intents/:id/blob", "permission": "attachment/upload" },
+        { "method": "POST", "path": "/attachments/upload-intents/:id/complete", "permission": "attachment/upload" }
+      ],
+      "inputs": ["ownerEntityRef:Ref!", "purpose:AttachmentPurpose!", "mime:string!", "byteSize:int!", "文件完整性:sha256"],
+      "result": "签发临时上传凭证；验证文件完整性后可关联为业务附件。",
+      "effects": ["Attachment"],
+      "errors": ["VALIDATION_ERROR", "RATE_LIMITED", "PERMISSION_DENIED"],
+      "uiRefs": ["接修", "回收"],
+      "notes": [
+        "对象存储与 D1 不构成同一事务：先上传验证后关联，孤立上传需明确保留期与引用检查（04 §7 第 9 条）。",
+        "default 单张压缩后不超过 2MB、每单常规不超过 12 张，属产品预算而非平台上限（04 §9）。",
+        "F1（2026-09-22）契约修订：补入 PUT /attachments/upload-intents/:id/blob 作为文件字节的实际通道。04 §5 只规定签发凭证与完成确认两个端点，字节通道原本留白；由服务端经手字节，才能实算 sha256 与真实 mime，而不是信任客户端自报的完整性。",
+        "同次补入 enums.json 的 AttachmentUploadState 转换表，stateMachine 由 null 指过去（pending→uploaded→attached、pending→failed、pending/uploaded→orphaned）。"
+      ]
+    },
+    {
+      "code": "B36",
+      "name": "生成单据文件",
+      "domain": "platform",
+      "entity": "Operation",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [
+        { "method": "POST", "path": "/documents", "permission": "document/export" },
+        { "method": "GET", "path": "/documents/:attachmentId", "permission": "document/export" }
+      ],
+      "inputs": ["entityRef:Ref!", "snapshotVersion:int!", "audience:DocumentAudience!", "format:DocumentFormat!"],
+      "result": "生成并保存安全单据附件；GET /documents/:attachmentId 在同店鉴权后下载；不自动发给任何人。",
+      "effects": ["Operation", "Attachment"],
+      "errors": ["PERMISSION_DENIED", "VALIDATION_ERROR", "SERVICE_UNAVAILABLE"],
+      "uiRefs": ["账本"],
+      "notes": [
+        "audience=customer 时后端白名单 DTO，不含成本 / 供应商 / 原卖方 / SN / 内部备注（02 §6 CustomerDocument）。",
+        "HTML 文件写入 Attachment（purpose=document_export），同一单据版本复用同一附件；下载必须通过同店权限路由，不返回对象存储地址。",
+        "小程序不得以 html2canvas / window.print 实现导出（04 §9）。"
+      ]
+    },
+    {
+      "code": "B42",
+      "name": "记录顾客确认",
+      "domain": "sales",
+      "entity": "QuoteVersion",
+      "stateMachine": "QuoteStatus",
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/quotes/:id/confirm", "permission": "sales/quote-edit" }],
+      "inputs": ["expectedVersion:int", "source:miniprogram|wechat|offline!", "note:string?"],
+      "result": "把当前已发出且未过期的报价版本记为 confirmed，记录确认时间与来源。确认 ≠ 付款、确认不锁库存（R12）。",
+      "effects": ["QuoteVersion", "Quote"],
+      "errors": ["VALIDATION_ERROR", "VERSION_CONFLICT", "ENTITY_NOT_FOUND", "PERMISSION_DENIED"],
+      "uiRefs": ["新建装机报价"],
+      "notes": [
+        "E05b（2026-09-19）契约修订新增：E05 裁定「契约无已确认态」后，由本动作补上 issued → confirmed 转换（enums.json QuoteStatus）。",
+        "确认后本版本不可再被 B02 save 原地改写；要改必须保存出新版本重新发出并重新确认（R10）。",
+        "已过期（超过 validUntil）的版本须先续期（重新发出）再确认。确认动作不写库存、不产生任何资金流水。"
+      ]
+    },
+    {
+      "code": "B37",
+      "name": "取消采购",
+      "domain": "inventory",
+      "entity": "Purchase",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/inventory/purchases/:id/cancel", "permission": "inventory/purchase-cancel" }],
+      "inputs": ["lines:PurchaseCancelLine[]!", "reason:PurchaseCancelReason!", "note:string?", "occurredAt:timestamp?"],
+      "result": "按采购行取消尚未到货的数量；不改写订购量，不取消已到货或已拒收数量。",
+      "effects": ["Purchase"],
+      "errors": ["PURCHASE_CANCEL_EXCEEDED", "PURCHASE_PAYMENT_CONFLICT", "VERSION_CONFLICT", "IDEMPOTENCY_MISMATCH", "ENTITY_NOT_FOUND", "VALIDATION_ERROR", "PERMISSION_DENIED"],
+      "uiRefs": ["缺件处理"],
+      "notes": [
+        "部分取消必须逐采购行给出数量；采购恒等式为 ordered = received + rejected + cancelled + pending。",
+        "已到货数量即使后来通过 B38 退供，也仍属于已处置数量，不能用 B37 再取消。",
+        "本首版不把采购付款自动退款并入取消动作；存在净付款时返回 PURCHASE_PAYMENT_CONFLICT，先处理付款冲销。",
+        "B33 付款应付基数按未取消数量计算，不能为已取消数量付款。"
+      ]
+    },
+    {
+      "code": "B38",
+      "name": "退供",
+      "domain": "inventory",
+      "entity": "StockItem",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/inventory/supplier-returns", "permission": "inventory/supplier-return" }],
+      "inputs": ["purchaseId:Ref?", "stockItemId:StockItemRef?", "productRef:Ref!", "qty:int!", "condition:StockCondition?", "reason:string!", "supplierName:string?", "occurredAt:timestamp?"],
+      "result": "自有在库或待处理件减少并留下退供来源事件；不增加可用量，也不冒充采购到货。",
+      "effects": ["StockItem", "StockBalance", "InventoryMovement", "Receipt"],
+      "errors": ["OWNERSHIP_INVALID", "VERSION_CONFLICT", "VALIDATION_ERROR", "PERMISSION_DENIED"],
+      "uiRefs": ["缺件处理", "库存"],
+      "notes": [
+        "2026-09-21 E07 契约修订：由 supplementaryActions 的 reserved 提升为正式动作（enums.json ActionCode 同步补入 B38）。路径与权限沿用旧登记值，未另起新名。",
+        "对应 enums.json inventoryBucketRules 的两条：quarantine → retired（拒收退供）与 available → retired（已入库件退货供）。两条都不增加可用量。",
+        "退供是自有在库减少，必须带原因、责任与来源事件（03 §7）；不得用 B15 入库伪造差异，也不得退成 quarantine 再当可卖。",
+        "拒收发生在 B15 实到验收时（inspectionDisposition=return_to_supplier），此时实物从未进入自有在库；本动作处理的是已经进过账、事后决定退给供应商的部分。两者不互相替代。"
+      ]
+    },
+    {
+      "code": "B41",
+      "name": "售后收款",
+      "domain": "service",
+      "entity": "CashEntry",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/service/orders/:id/payments", "permission": "service/charge" }],
+      "inputs": ["amountCents:cents!", "method:PaymentMethod!", "occurredAt:timestamp!", "remark:string?"],
+      "result": "生成 CashEntry（purpose=service_order）并更新维修工单余额；账本应收并入维修待收。",
+      "effects": ["CashEntry", "ServiceOrder"],
+      "errors": ["BALANCE_EXCEEDED", "VERSION_CONFLICT", "IDEMPOTENCY_MISMATCH", "VALIDATION_ERROR"],
+      "uiRefs": ["维修方案", "账本"],
+      "notes": [
+        "2026-09-21 E10 契约修订：由 supplementaryActions 的 specified 提升为正式动作（enums.json ActionCode 同步补入 B41）。路径与权限沿用旧登记值，未另起新名。",
+        "复用 B08 资金字段；method 走 CashMethod 枚举（cash/wechat/alipay/bank/other），资金写入 cash_entries（purpose=service_order，allocation 关联维修工单，sale_order_id 为空）。",
+        "归还闸门：维修费未结清（balance_cents > 0）不得归还客户（B25 retesting→ready_return 守卫），首版不做欠款归还。"
+      ]
+    },
+    {
+      "code": "B45",
+      "name": "清理未发出报价草稿",
+      "domain": "sales",
+      "entity": "Quote",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "POST", "path": "/sales/quotes/:id/delete-draft", "permission": "store/manage" }],
+      "inputs": ["reason:string!"],
+      "result": "仅删除从未发出、未分享、未转销售单的报价草稿；保留删除操作记录。",
+      "effects": ["Quote", "QuoteVersion", "QuoteLine", "Operation"],
+      "errors": ["PERMISSION_DENIED", "ENTITY_NOT_FOUND", "IDEMPOTENCY_MISMATCH", "VALIDATION_ERROR"],
+      "uiRefs": ["管理员数据清理"],
+      "notes": [
+        "v1.1（2026-09-26）新增。管理权限只用于清理没有顾客承诺或业务副作用的未发出草稿。",
+        "已发出、曾分享、已确认或已转单记录不可硬删；这类记录保留历史并按业务状态处理。"
+      ]
+    },
+    {
+      "code": "B46",
+      "name": "清理未引用商品档案",
+      "domain": "inventory",
+      "entity": "Product",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [
+        { "method": "GET", "path": "/inventory/products/cleanup-candidates", "permission": "store/manage" },
+        { "method": "POST", "path": "/inventory/products/:id/delete-unused", "permission": "store/manage" }
+      ],
+      "inputs": ["reason:string!"],
+      "result": "仅删除没有库存、库存流水、新版报价、旧版报价工作副本、采购、销售、盘点、售后附件等关联的空商品档案；保留删除操作记录。",
+      "effects": ["Product", "Operation"],
+      "errors": ["PERMISSION_DENIED", "ENTITY_NOT_FOUND", "IDEMPOTENCY_MISMATCH", "VALIDATION_ERROR"],
+      "uiRefs": ["管理员数据清理"],
+      "notes": [
+        "v1.1（2026-09-26）新增。GET 只列出没有库存、流水、新版报价、采购、销售、旧订单、盘点或商品附件引用的商品；旧版报价 JSON 尚未核实时，该门店商品均不开放删除。",
+        "POST 只删除商品主数据，不删除库存实物、批次、交易或库存流水；操作原因与管理员操作记录保留。",
+        "只允许门店管理员操作；已被业务引用的商品须保留并停用，不可硬删。"
+      ]
+    }
+  ],
+  "supplementaryActions": [
+    {
+      "code": "B39",
+      "name": "报损",
+      "domain": "inventory",
+      "status": "reserved",
+      "owner": "T06c",
+      "path": null,
+      "permission": "inventory/damage",
+      "reason": "不得复用采购入库伪造差异（05 T06c）；老板权限（03 §8）。",
+      "source": "05 T06c；03 §8 欠款交付、退款冲销、报损盘差行"
+    },
+    {
+      "code": "B40",
+      "name": "普通价格调整",
+      "domain": "inventory",
+      "status": "reserved",
+      "owner": null,
+      "path": null,
+      "permission": null,
+      "reason": "04 §5 末段列为未明确补充动作，但未指定归属任务卡，也未说明作用于商品售价还是报价行。归属与权限码待定，不得由两端自行取名。",
+      "source": "04 §5 末段",
+      "blockedBy": "Q07"
+    }
+  ],
+  "authActions": [
+    {
+      "code": "A01",
+      "name": "微信登录与绑定",
+      "method": "POST",
+      "path": "/auth/wechat/login",
+      "permission": null,
+      "status": "specified",
+      "owner": "T03a",
+      "inputs": ["code:string!", "bindingCode:string?"],
+      "result": "校验微信身份与绑定码，绑定到指定门店成员，返回本系统短期会话。已绑定则只凭新 code 登录。",
+      "notes": [
+        "未登录前无可校验权限；openid 不是业务 token，未绑定不获任何门店权限（04 §8）。",
+        "拟定接口，T03a 必须现场打开官方文档核对 API、请求参数、基础库与错误（04 §8 末段）。"
+      ]
+    },
+    {
+      "code": "A02",
+      "name": "生成微信绑定码",
+      "method": "POST",
+      "path": "/auth/wechat/binding-codes",
+      "permission": "auth/binding-code",
+      "status": "specified",
+      "owner": "T03a",
+      "inputs": ["memberId:int!"],
+      "result": "生成有期限、一次使用的绑定码；数据库只存摘要，限尝试次数。",
+      "notes": ["建议 10 分钟有效；绑定码不写历史业务备注，不允许截图长期暴露（04 §8）。"]
+    },
+    {
+      "code": "A03",
+      "name": "登出",
+      "method": "POST",
+      "path": "/auth/logout",
+      "permission": null,
+      "status": "specified",
+      "owner": "T03a",
+      "inputs": [],
+      "result": "结束当前会话；退出 / 撤权 / 解绑导致本地受限缓存清除。",
+      "notes": ["会话撤销复用现有 token_version 机制，但 04 §8 要求先测试适配。"]
+    },
+    {
+      "code": "A04",
+      "name": "读取当前身份",
+      "method": "GET",
+      "path": "/me",
+      "permission": null,
+      "status": "specified",
+      "owner": "T03a",
+      "inputs": [],
+      "result": "返回 user、store、permissions、sessionVersion、capabilities。",
+      "notes": ["读接口统一结构见 04 §3；本条同时登记在 readActions R01，避免两处定义冲突。"]
+    },
+    {
+      "code": "A05",
+      "name": "顾客微信登录",
+      "method": "POST",
+      "path": "/customer/auth/wechat/login",
+      "permission": null,
+      "status": "specified",
+      "owner": "MP17",
+      "inputs": ["code:string!", "phoneCode:string?", "returnTarget:string?"],
+      "result": "用 wx.login 的 code 换取 openid，建立或复用顾客微信身份，返回顾客会话（默认 30 天）。未认领时只返回公开范围与认领指引。",
+      "notes": [
+        "未登录前无可校验权限；顾客身份与内部成员是两条链路，载荷不含 memberId（objects.json CustomerIdentity）。",
+        "phoneCode 来自 getPhoneNumber，仅用于安全认领（CustomerClaimMethod=wechat-phone）；禁止用顾客自填手机号认领。",
+        "returnTarget 仅用于「拒绝授权后返回原页」，必须按白名单校验目标，不得跳员工路由或外部地址。",
+        "同一 code 只能使用一次；重复使用、过期或 AppID 不匹配返回 CUSTOMER_CODE_INVALID。"
+      ]
+    },
+    {
+      "code": "A06",
+      "name": "顾客登出",
+      "method": "POST",
+      "path": "/customer/auth/logout",
+      "permission": null,
+      "status": "specified",
+      "owner": "MP17",
+      "inputs": [],
+      "result": "结束当前顾客会话并清除本地顾客缓存；匿名公开范围内容不受影响。",
+      "notes": ["切账号时必须清掉前一人的私人缓存与待确认动作（顾客存储带 pc-customer: 前缀，见 MP16）。"]
+    },
+    {
+      "code": "A07",
+      "name": "顾客会话与认领状态",
+      "method": "GET",
+      "path": "/customer/auth/session",
+      "permission": null,
+      "status": "specified",
+      "owner": "MP17",
+      "inputs": [],
+      "result": "返回顾客会话有效性与认领状态（claimStatus / claimMethod），供页面决定是否显示私人记录入口。",
+      "notes": [
+        "未认领（unclaimed）返回 CUSTOMER_CLAIM_REQUIRED 语义，而不是空数据 —— 空数据会让页面误判为「没有记录」。",
+        "身份撤销或会话版本递增后返回 CUSTOMER_IDENTITY_REVOKED。"
+      ]
+    }
+  ],
+  "readActions": [
+    { "code": "R01", "path": "/me", "permission": null, "result": "身份、门店、权限与会话版本", "uiRefs": ["全局"], "note": "等同于 A04；编号并存以便读接口分区完整。" },
+    { "code": "R02", "path": "/workbench", "permission": null, "result": "metrics、tasks、filters、generatedAt（TaskReadModel 列表）", "uiRefs": ["全局"], "note": "03 §8 行 1：待办属基础能力，老板与店员均可。" },
+    { "code": "R03", "path": "/search", "permission": null, "result": "customers / orders / devices / items 分组与脱敏摘要", "uiRefs": ["全局"], "note": "手机号搜索只在有权限时返回（03 §1）。" },
+    { "code": "R04", "path": "/sales/orders、/sales/orders/:id", "permission": "sales/order-view", "result": "列表摘要或完整处理视图，含 version、allowedActions、blockers", "uiRefs": ["确认成交", "办理交付", "缺件处理"] },
+    { "code": "R05", "path": "/sales/quotes、/sales/quotes/:id", "permission": "sales/quote-view", "result": "草稿或指定报价版本", "uiRefs": ["新建装机报价", "选件"] },
+    { "code": "R06", "path": "/inventory", "permission": "inventory/view", "result": "型号汇总与二手逐件；权限决定 cost 字段是否存在", "uiRefs": ["库存", "选件"] },
+    { "code": "R07", "path": "/inventory/items/:id", "permission": "inventory/item-view", "result": "来源、状态、有效占用、检验、质保、事件", "uiRefs": ["库存", "整备 / 上架"] },
+    { "code": "R08", "path": "/inventory/purchases、/inventory/purchases/:id", "permission": "inventory/view", "result": "采购、实到、在途、拒收与取消", "uiRefs": ["缺件处理"] },
+    { "code": "R09", "path": "/service/orders、/service/orders/:id", "permission": "service/view", "result": "工单、设备、方案、费用、步骤与允许动作", "uiRefs": ["接修", "维修方案", "换件 / 返厂"] },
+    { "code": "R10", "path": "/recovery/orders、/recovery/orders/:id", "permission": "recovery/view", "result": "接收、估价、最终价、所有权、整备与应付", "uiRefs": ["回收"] },
+    { "code": "R11", "path": "/trade-ins/:id", "permission": "tradein/view", "result": "两端单据、有效折抵、应收应付与处理状态", "uiRefs": ["置换"] },
+    { "code": "R12", "path": "/finance/overview、/finance/entries", "permission": "finance/view", "result": "汇总或流水，明确成交 / 现金 / 折抵不同列", "uiRefs": ["账本"] },
+    { "code": "R13", "path": "/customers/:id、/devices/:id", "permission": "sales/order-view", "result": "联系、单据、配置变更；按权限分域返回", "uiRefs": ["接修", "回收"] },
+    { "code": "R14", "path": "/operations/:requestId", "permission": null, "result": "status(pending/succeeded/failed)、resultRef、error", "uiRefs": ["全局"], "note": "「结果未知」时以原 requestId 查询（conventions.envelope、errors.json unknownResultProcedure）。" }
+  ],
+  "stateMachineGaps": {
+    "note": "本节登记核对时发现的规格留白：动作会改变对象状态，但该对象的状态机（或其转换守卫）在方案中没有原文。本契约不自行编造转换表 —— 硬编一个值会污染契约、并让后续任务把假设当地基。缺口由指定任务卡补全；补全时同步更新 enums.json 或 objects.json，并按 conventions.compatibility.versioning 决定是否提升 contractVersion。",
+    "howFound": "反向检查：统计哪些业务动作的 code 未被 enums.json 任何状态机转换引用，再逐个核对对象的 status / state / uploadState 字段是否存在对应状态机。2026-09-17 T01-rev1 复核：每条缺口补 specBasis（真实文件 + 行号 + 原文字符串），由校验脚本逐条验证引文确实存在于所引行；不能给出 specBasis 者不得登记为缺口。",
+    "originValues": {
+      "spec-undefined": "规格未定义该状态的取值与转换 —— 方案确实没写，不是转录遗漏。实现前须推动方案补定义或由业务确认，禁止自行编造。",
+      "spec-partial": "规格已给出取值但未给出转换守卫与边界条件 —— 属规格有意留白。取值可直接复用，转换须经业务确认后补入。"
+    },
+    "gaps": [
+      {
+        "object": "Reservation",
+        "missing": "状态机（字段与取值已存在，转换未定义）",
+        "severity": "high",
+        "detail": "Reservation 有 status 字段，且 04 §2 已给出三个取值 active / released / consumed，但未定义转换守卫。有效预留的失效、释放、消耗直接决定交付闸门（03 §7「有效预留未失效」）与库存桶转换，是 T04 唯一约束与 T08a 原子预留的共同前置。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 27, "quote": "status(active/released/consumed)" }
+        ],
+        "affectsActions": ["B03", "B05", "B10", "B11"],
+        "owner": "T08a",
+        "origin": "spec-partial"
+      },
+      {
+        "object": "ReturnRecord",
+        "missing": "单一条 status 字段（规格表述待澄清，非转录遗漏）",
+        "severity": "medium",
+        "detail": "04 §2 该行「约束 / 关系」列写明「实物接收 / 贷项 / 现金退款各有状态与引用」，但同一行「最低业务字段」列未列任何状态字段。已核实其中两问的承载：实物接收由 StockItem.availability 与库存桶承接（03 §4、03 §7）；现金退款由 Refund 单据承接（本对象字段 refundEntryRef）。剩余一问答不了 —— 「贷项」是否需独立状态（如老板审批 / 生效）规格未定义。本契约不自行编造取值；T11a 实现 B17 / B18 前须确认三条事实是否都需显式状态，或确认均由关联对象承接。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 36, "quote": "各有状态与引用" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 175, "quote": "退货实物可待检" }
+        ],
+        "affectsActions": ["B17", "B18"],
+        "owner": "T11a",
+        "origin": "spec-undefined"
+      },
+      {
+        "object": "Offset",
+        "missing": "状态机（字段已存在，取值与转换均未定义）",
+        "severity": "medium",
+        "detail": "Offset 有 state 字段，但 04 §2 未给取值，也无转换。涉及双向余额与撤销语义（撤销不自动归还实物，见 B32 notes）。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 38, "quote": "tradeInId" }
+        ],
+        "affectsActions": ["B31", "B32"],
+        "owner": "T14a",
+        "origin": "spec-undefined"
+      },
+      {
+        "object": "Operation",
+        "missing": "转换表（取值已定、转换未定）",
+        "severity": "medium",
+        "detail": "04 §2 有 status 字段，取值在 04 §3 给出：pending / succeeded / failed；转换守卫与超时语义未定义。04 §3、§4 要求「结果未知」时以原 requestId 查询，该流程依赖本状态机。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 65, "quote": "status(pending/succeeded/failed)" }
+        ],
+        "affectsActions": ["B36", "B08", "B10", "B15"],
+        "owner": "T04a",
+        "origin": "spec-partial"
+      },
+      {
+        "object": "CashEntry",
+        "missing": "状态机（字段为本契约新增，取值与转换未定义）",
+        "severity": "low",
+        "detail": "verificationState 为本契约新增字段（04 §2 只列 verifiedAt 可空），02 §5 账本页要求「核对状态」可筛选，T09a 人工核对流程依赖它。取值与转换均未定义。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 37, "quote": "verifiedAt" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 144, "quote": "核对状态" }
+        ],
+        "affectsActions": ["B08", "B18", "B33", "B34"],
+        "owner": "T09a",
+        "origin": "spec-undefined"
+      },
+      {
+        "object": "Product",
+        "missing": "状态机（字段已存在，取值与转换未定义）",
+        "severity": "low",
+        "detail": "Product 有 status 但 04 §2 未给取值；旧 hardware 用 status = active 过滤，新契约需明确停用语义与对在售订单的影响。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 19, "quote": "requiresSn" },
+          { "file": "backend/src/index.ts", "line": 733, "quote": "COALESCE(status, 'active')='active'" }
+        ],
+        "affectsActions": ["B12"],
+        "owner": "T05a",
+        "origin": "spec-undefined"
+      },
+      {
+        "object": "QuoteVersion",
+        "missing": "状态机（字段与取值均未独立定义）",
+        "severity": "low",
+        "detail": "QuoteVersion 的 status 与 QuoteStatus 的关系未说明 —— 版本自身是否需要 superseded 之类状态，取决于 B02「发出后修改形成新版本」的具体实现。04 §2 该行未给独立取值。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 24, "quote": "validUntil" }
+        ],
+        "affectsActions": ["B02", "B03"],
+        "owner": "T07a",
+        "origin": "spec-undefined"
+      }
+    ],
+    "notAGap": [
+      {
+        "claim": "Purchase 不设 status / state 字段",
+        "reclassifiedFrom": "T01b 曾登记为「status 字段（对象层缺口）/ high」；2026-09-17 T01-rev1 更正",
+        "reason": "采购进度由 orderedQty / receivedQty / cancelledQty 派生，04 §2 的最低字段列本就未含状态字段。存储状态会与三个计数器形成第二真相来源并允许漂移；派生可保证恒等式始终成立。派生式与验收口径见 objects.json 的 Purchase.derivedFields。",
+        "specBasis": [
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 28, "quote": "inspectionDisposition" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 102, "quote": "尚待到货数量" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/05-implementation-tasks.md", "line": 88, "quote": "显示在途 2" },
+          { "file": "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md", "line": 67, "quote": "在途余 2" }
+        ]
+      },
+      {
+        "claim": "B19 的库存桶转换不算缺口",
+        "reason": "enums.json 的 inventoryBucketRules 已定义桶与转换规则。",
+        "specBasis": []
+      },
+      {
+        "claim": "B12 建立商品、B13 期初、B20 接修、B35 上传等「创建型」动作不引用前置转换",
+        "reason": "属正常，初始状态即由创建动作确立。",
+        "specBasis": []
+      },
+      {
+        "claim": "Attachment 的 uploadState 缺口已由 F1 关闭",
+        "reason": "F1（2026-09-22）在 enums.json stateMachines 补入 AttachmentUploadState 转换表（pending→uploaded→attached、pending→failed、pending/uploaded→orphaned），actions.json 的 B35.stateMachine 由 null 改为该状态机，本条从 gaps 移出。状态推进由 B35 自身承载：签发＝pending（创建型动作确立初态）、写入字节＝uploaded、完成确认＝attached、校验不通过＝failed；orphaned 由保留期清理产生，不绑定动作编号。",
+        "specBasis": []
+      }
+    ],
+    "countingNote": "stateMachineGaps 不计入校验失败项，校验脚本只报告数量与对象名，避免把「已登记的已知缺口」误判为「契约不一致」。但每条缺口的 specBasis 必须逐条通过校验（文件存在、行号在范围内、引文确实出现在该行），以防再用未经核实的断言登记缺口。"
+  },
+  "legacyPermissionMap": {
+    "note": "映射依据为 backend/src/index.ts 的实际守卫资源，不按权限码字面名推断（legacy-mapping.json permissions 表条目已记录该结论）。旧权限表无种子迁移，行内容未核实（Q04），本映射不依赖行内容。",
+    "evidenceLegend": "file:行号 指向 backend/src/index.ts 中实际调用 requirePermission 的位置。",
+    "map": [
+      {
+        "legacy": "library/view",
+        "legacyLiteralName": "硬件库查看",
+        "actuallyGuards": [
+          "GET /api/products（商品主数据）",
+          "GET /api/product-categories、/api/product-brands",
+          "GET /api/library（实际读写 hardware 表）",
+          "GET /api/sn"
+        ],
+        "mapsTo": ["inventory/product-view", "inventory/view", "inventory/item-view", "inventory/sn-view"],
+        "doesNotGrant": ["inventory/cost-view", "inventory/margin-view"],
+          "evidence": ["backend/src/index.ts:575", "backend/src/index.ts:684", "backend/src/index.ts:724", "backend/src/index.ts:1400"],
+        "note": "字面名为「硬件库」，实际是商品与 SN 的通用读权限；成本与毛利另有独立权限码，不在本权限内。"
+      },
+      {
+        "legacy": "library/edit",
+        "legacyLiteralName": "硬件库编辑",
+        "actuallyGuards": [
+          "写 /api/products",
+          "写 /api/product-categories、/api/product-brands",
+          "写 /api/library（hardware）",
+          "写 /api/sn"
+        ],
+        "mapsTo": [
+          "inventory/product-edit",
+          "inventory/sn-edit",
+          "inventory/purchase-create",
+          "inventory/purchase-cancel",
+          "inventory/supplier-return",
+          "inventory/receipt",
+          "inventory/count",
+          "inventory/inspection",
+          "inventory/refurbish",
+          "attachment/upload"
+        ],
+        "doesNotGrant": [
+          "inventory/opening",
+          "inventory/count-approve",
+          "inventory/damage",
+          "sales/refund",
+          "recovery/acquire",
+          "tradein/offset",
+          "tradein/reverse",
+          "finance/payment",
+          "finance/reverse",
+          "sales/order-credit-approval"
+        ],
+          "evidence": ["backend/src/index.ts:575", "backend/src/index.ts:684", "backend/src/index.ts:724", "backend/src/index.ts:1400"],
+        "note": "旧系统唯一的通用写权限。grantPolicy 为 explicit 的动作（inventory/receipt、sales/order-deliver 等）在默认角色中不继承，须老板单独勾选。"
+      },
+      {
+        "legacy": "quote/view",
+        "legacyLiteralName": "报价查看",
+        "actuallyGuards": ["GET /api/quotes", "GET /api/orders", "GET /api/dashboard/todos", "GET /api/customers（客户档案、设备与客户订单）"],
+        "mapsTo": ["sales/quote-view", "sales/order-view", "service/view", "recovery/view", "tradein/view", "finance/view"],
+        "doesNotGrant": ["finance/ledger-view"],
+          "evidence": ["backend/src/index.ts:935", "backend/src/index.ts:1255", "backend/src/index.ts:1643"],
+        "note": "实际同时守卫报价、订单、待办与客户台账；新契约按业务域拆细，不等于把旧权限扩大。客户档案在 E04 曾复用报价权限码；E05（D-C 裁定）已把客户接口改为契约正牌码 sales/order-view / sales/order-edit，并保留 quote/view、quote/edit 作为**旧码兼容** —— 门店现有角色行里存的就是旧码，只认新码会让所有店员立刻失去客户权限，那是把权限收紧到不可用，不是安全加固。完整账本需 finance/ledger-view，旧码不授予。"
+      },
+      {
+        "legacy": "quote/edit",
+        "legacyLiteralName": "报价编辑",
+        "actuallyGuards": ["写 /api/quotes", "写 /api/orders（含 payments、status）", "写 /api/customers（客户档案与设备登记）"],
+        "mapsTo": [
+          "sales/quote-edit",
+          "sales/quote-convert",
+          "sales/order-edit",
+          "sales/order-assembly",
+          "sales/return-create",
+          "service/edit",
+          "recovery/edit",
+          "tradein/create"
+        ],
+        "doesNotGrant": [
+          "sales/refund",
+          "sales/order-credit-approval",
+          "recovery/acquire",
+          "tradein/offset",
+          "tradein/reverse",
+          "finance/payment",
+          "finance/reverse",
+          "service/charge",
+          "sales/order-payment",
+          "sales/order-deliver"
+        ],
+          "evidence": ["backend/src/index.ts:935", "backend/src/index.ts:1255"],
+        "note": "最关键的一条：03 §8 明确「不让旧宽权限自动获得退款能力」。quote/edit 是旧系统最大宽权限，本映射把它拆成 8 个具名权限，退款、折抵、最终价、付款、冲销一律排除。"
+      },
+      {
+        "legacy": "template/view",
+        "legacyLiteralName": "模板查看",
+        "actuallyGuards": ["GET /api/templates"],
+        "mapsTo": ["sales/quote-view"],
+        "doesNotGrant": ["sales/quote-edit"],
+        "evidence": ["backend/src/index.ts:909"],
+        "note": "新契约未单列模板权限，并入报价域；若后续需要独立控制模板，再拆码并提 contractVersion。"
+      },
+      {
+        "legacy": "template/edit",
+        "legacyLiteralName": "模板编辑",
+        "actuallyGuards": ["写 /api/templates"],
+        "mapsTo": ["sales/quote-edit"],
+        "doesNotGrant": ["sales/refund"],
+        "evidence": ["backend/src/index.ts:909"]
+      },
+      {
+        "legacy": "store/manage",
+        "legacyLiteralName": "门店管理",
+        "actuallyGuards": ["/api/stores/current"],
+        "mapsTo": ["store/manage"],
+        "doesNotGrant": [],
+        "evidence": ["backend/src/index.ts:957"],
+        "note": "语义一致，沿用原码不改名。"
+      },
+      {
+        "legacy": "member/manage",
+        "legacyLiteralName": "成员管理",
+        "actuallyGuards": ["/api/members、/api/members/invitations"],
+        "mapsTo": ["member/manage"],
+        "doesNotGrant": [],
+          "evidence": ["backend/src/index.ts:1147", "backend/src/index.ts:1152"],
+        "note": "语义一致，沿用原码不改名。"
+      },
+      {
+        "legacy": "role/view",
+        "legacyLiteralName": "角色查看",
+        "actuallyGuards": ["GET /api/roles"],
+        "mapsTo": ["role/view"],
+        "doesNotGrant": [],
+          "evidence": ["backend/src/index.ts:1195"],
+        "note": "语义一致，沿用原码不改名。"
+      },
+      {
+        "legacy": "cost/view",
+        "legacyLiteralName": "成本查看",
+        "actuallyGuards": ["字段级：响应中是否返回成本字段（非路由守卫）"],
+        "mapsTo": ["inventory/cost-view"],
+        "doesNotGrant": ["finance/ledger-view", "inventory/margin-view"],
+        "evidence": ["backend/src/index.ts:157", "backend/src/index.ts:503"],
+        "note": "字段级权限，不守卫任何动作。functions 中与 margin/view 并列判断。不得当作「能看成本」就等同于「能看毛利」。"
+      },
+      {
+        "legacy": "margin/view",
+        "legacyLiteralName": "毛利查看",
+        "actuallyGuards": ["字段级：响应中是否返回毛利字段（非路由守卫）"],
+        "mapsTo": ["inventory/margin-view"],
+        "doesNotGrant": ["finance/ledger-view", "inventory/cost-view"],
+        "evidence": ["backend/src/index.ts:157"],
+        "note": "字段级权限，不守卫任何动作。"
+      }
+    ],
+    "wildcardNote": "旧系统 roles 含 owner / admin 时 permissions 为 ['*']（backend/src/index.ts:126）。该行为保留，但 is_owner 与角色名硬编码是宽权限来源，新契约新增的 owner_only 权限码同样只由 '*' 或显式授权获得。"
+  },
+  "openQuestions": [
+    {
+      "id": "Q05",
+      "question": "生产 permissions 表实际有哪些行？",
+      "state": "未核实，本卡不依赖",
+      "why": "本卡决定不接触生产 D1。映射依据改为代码中 requirePermission 的实际守卫资源，该依据已可用且可复核；表行内容只影响「旧门店实际授予了谁」，不影响新权限码集合与新旧映射关系。",
+      "affects": "T03 会话权限装配、T20 数据迁移",
+      "owner": "T20",
+      "movedFrom": "T01b"
+    },
+    {
+      "id": "Q06",
+      "question": "模板权限是否需要独立权限码？",
+      "state": "暂并入报价域",
+      "why": "03 §8 与 04 §5 均未单列模板权限；本卡将 template/view、template/edit 并入 sales/quote-view 与 sales/quote-edit。若后续要求「可改报价但不可改模板」，须新增码并提 contractVersion。",
+      "affects": "T07",
+      "owner": "T07"
+    },
+    {
+      "id": "Q07",
+      "question": "B40 普通价格调整的归属任务与权限码？",
+      "state": "阻塞",
+      "why": "04 §5 末段列为未明确补充动作，但未指定归属任务卡，也未说明作用于商品售价还是报价行。归属未定则权限码无法定。",
+      "affects": "B40 实现、T05 或 T07",
+      "owner": "待指定"
+    },
+    {
+      "id": "Q08",
+      "question": "finance/ledger-view 与 inventory/cost-view、margin/view 的边界？",
+      "state": "已按 03 §8 保守处理",
+      "why": "03 §8 把「查看采购成本 / 毛利 / 完整账本」同列老板专属，但旧系统只有 cost/view 与 margin/view 两个字段级码。本卡将账本单列 owner_only，不继承旧码，宁可多要求权限。若实际业务认为店员应看部分账本，须由老板明确后调整。",
+      "affects": "T12–T15 账本读模型",
+      "owner": "T15"
+    },
+    {
+      "id": "Q09",
+      "question": "存量 sales/order-* 之外的「导出」是否需要独立动作？",
+      "state": "待确认",
+      "why": "03 §8 行 6 提到「导出」属老板专属，05 T15 提到「网页导出数据」。B36 /documents 覆盖单据文件生成，但聚合数据导出（如导出流水表）路径未在 04 §5 给出。",
+      "affects": "T15、T17b",
+      "owner": "T15"
+    }
+  ],
+  "revisions": [
+    {
+      "rev": "BE02-rev1",
+      "date": "2026-09-25",
+      "summary": "B36 补入 GET /documents/:attachmentId 同店鉴权下载；单据生成结果明确落为 document_export Attachment，客户白名单覆盖 SN 与内部备注字段边界。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "只为既有 B36 增加受 document/export 守卫的下载路径和结果说明，不更改动作编号、权限码或既有输入。按当前契约追加修订记录，不提升主版本。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    },
+    {
+      "rev": "T01-rev1",
+      "date": "2026-09-17",
+      "summary": "更正状态机缺口登记：Purchase 移出 gaps（在途为派生值，非存储状态）；ReturnRecord 重述为规格未定义并拆出「贷项状态」未决项；全部缺口补 specBasis 与 origin 分类。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "未变更任何字段名、类型、枚举取值、动作编号或错误码，规范性表面零变化；仅新增非规范性注解。故按 conventions.compatibility.versioning 的意图不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    },
+    {
+      "rev": "MP17-rev1",
+      "date": "2026-09-23",
+      "summary": "authActions 新增 A05 顾客微信登录、A06 顾客登出、A07 顾客会话与认领状态：建立与员工身份完全分离的顾客登录链路，顾客身份不含 memberId。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "只新增 A 系列认证动作，不动任何既有 B 动作取值、权限码、目标对象名与校验规则。A 系列不在 enums.json 的 ActionCode 双向校验范围内，故未改 ActionCode。按 conventions.compatibility.versioning 的意图不提升版本；是否提版由项目负责人裁定。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    }
+  ]}

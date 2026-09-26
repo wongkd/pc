@@ -1,8 +1,8 @@
 /**
  * 网页端导航定义与旧深链映射。
  *
- * V2 将库存、采购到货、回收收件和 SN 台账归为一个「实物流转」工作区；
- * 业务深链保留，员工从配件结果回到同一组实物入口。
+ * V2 将库存、采购到货、回收收件和 SN 台账归为「仓库」工作区；
+ * 业务深链保留，员工从配件结果回到同一组仓库入口。
  *
  * 页面路径依据同目录 `02-ui-specification.md` §2 页面地图。
  * 本文件只描述导航与映射，不含业务权限判定（权限由服务端返回的 profile 决定）。
@@ -28,7 +28,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
   },
   {
     path: '/inventory',
-    label: '实物流转',
+    label: '仓库',
     matchPrefixes: ['/inventory', '/sn', '/purchases', '/suppliers', '/recovery'],
     pageIds: ['P06', 'P07', 'P08', 'P11'],
   },
@@ -106,28 +106,28 @@ export const LEGACY_DEEP_LINK_MAP: LegacyLink[] = [
   {
     legacy: '/inventory',
     handling: 'kept',
-    nav: '实物流转',
+    nav: '仓库',
     pageIds: ['P06'],
     note: '型号与实物列表，按配件台账展示库存及来源流水。',
   },
   {
     legacy: '/sn',
     handling: 'kept',
-    nav: '实物流转',
+    nav: '仓库',
     pageIds: ['P07', 'P14'],
-    note: 'SN 台账仍保留独立深链，在导航上归入实物流转。',
+    note: 'SN 台账仍保留独立深链，在导航上归入仓库。',
   },
   {
     legacy: '/purchases',
     handling: 'kept',
-    nav: '实物流转',
+    nav: '仓库',
     pageIds: ['P08'],
-    note: '采购、到货、付款与取消保留来源单据，深链归入实物流转。',
+    note: '采购、到货、付款与取消保留来源单据，深链归入仓库。',
   },
   {
     legacy: '/suppliers',
     handling: 'placeholder',
-    nav: '实物流转',
+    nav: '仓库',
     pageIds: [],
     note: '规格没有供应商独立页面 ID，暂留占位。',
   },

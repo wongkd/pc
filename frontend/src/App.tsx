@@ -9,6 +9,7 @@ import { CustomersPage } from './components/CustomersPage'
 import { ProductManagementPage } from './components/ProductManagementPage'
 import { SerialNumberPage } from './components/SerialNumberPage'
 import { SystemSettingsPage } from './components/SystemSettingsPage'
+import { TestDataCleanupPage } from './features/admin/TestDataCleanupPage'
 import { clearToken, isLoggedIn, changePassword, fetchCurrentStore, fetchProfile, selectStore } from './utils/api'
 import type { Profile, Store } from './utils/api'
 import { WorkbenchTodayPage } from './features/workbench/WorkbenchTodayPage'
@@ -119,6 +120,7 @@ export default function App() {
           <Route path="/orders/:id" element={<Navigate to="/sales/orders" replace />} />
           <Route path="/customers" element={<CustomersPage />} />
           <Route path="/settings" element={<SystemSettingsPage permissions={profile.permissions} currentStore={currentStore} onStoreChanged={setCurrentStore} />} />
+          <Route path="/settings/data-cleanup" element={<TestDataCleanupPage permissions={profile.permissions} />} />
           <Route path="/inventory" element={<WorkbenchInventoryPage permissions={profile.permissions} />} />
           {/* 旧「商品与库存」页不删，改挂子路径：它是已确认功能，不能因为库存页重建而失去入口。 */}
           <Route path="/inventory/products" element={<ProductManagementPage permissions={profile.permissions} />} />

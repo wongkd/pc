@@ -1,0 +1,144 @@
+{
+  "contractVersion": "v1.1",
+  "frozenBy": "T26a",
+  "frozenAt": "2026-09-26",
+  "status": "frozen",
+  "source": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md §7",
+  "preamble": [
+    "所有金额字段为整数分。每项是有效流水的净和。",
+    "取消或冲销必须有引用，不物理删除。",
+    "收款、应收、折抵、实收、交付销售额分别显示，不混为一列。"
+  ],
+  "fixturesPending": "T01c 产出 v1/fixtures.json，覆盖 06 §2 的 V1–V4 与 03 §7 的五个置换算例，本文件只冻结规则，不携带算例数值。",
+
+  "formulas": [
+    {
+      "id": "salesNetAccruedCents",
+      "definition": "销售净应计金额",
+      "expression": "confirmedTotalCents + approvedIncreaseCents - approvedDecreaseCents - returnCreditCents",
+      "objectFields": ["SaleOrder.totalCents", "SaleOrder.adjustmentCents", "ReturnRecord.creditCents"],
+      "derivedTerms": ["confirmedTotalCents", "approvedIncreaseCents", "approvedDecreaseCents", "returnCreditCents"],
+      "note": "加价与减价调整必须是已批准记录；未批准的调整不进入净应计。"
+    },
+    {
+      "id": "cashNetReceivedCents",
+      "definition": "现金净已收",
+      "expression": "validReceiptsCents - validRefundsCents",
+      "objectFields": ["CashEntry.amountCents", "CashEntry.direction", "Refund.amountCents"],
+      "derivedTerms": ["validReceiptsCents", "validRefundsCents"],
+      "note": "只统计有效流水；被冲销的原笔仍留在净和中，同时计入等额反向记录。"
+    },
+    {
+      "id": "offsetNetCents",
+      "definition": "折抵净额",
+      "expression": "appliedOffsetsCents - reversedOffsetsCents",
+      "objectFields": ["Offset.amountCents", "Offset.state"],
+      "derivedTerms": ["appliedOffsetsCents", "reversedOffsetsCents"],
+      "note": "折抵是非现金事件，不得生成虚构现金收 / 付记录。"
+    },
+    {
+      "id": "salesBalanceCents",
+      "definition": "销售余额",
+      "expression": "salesNetAccruedCents - cashNetReceivedCents - offsetNetCents",
+      "objectFields": ["SaleOrder.balanceCents", "SaleOrder.cashNetCents", "SaleOrder.offsetNetCents"],
+      "derivedTerms": ["salesNetAccruedCents", "cashNetReceivedCents", "offsetNetCents"],
+      "note": "服务端维护并可重算；客户端计算结果不作为权威值。"
+    },
+    {
+      "id": "balanceDirection",
+      "definition": "余额方向",
+      "expression": "salesBalanceCents > 0 → client_due; salesBalanceCents == 0 → settled; salesBalanceCents < 0 → store_due",
+      "objectFields": ["SaleOrder.balanceCents", "SaleOrder.balanceDirection"],
+      "derivedTerms": [],
+      "note": "小于 0 为门店待退，界面不得显示为负尾款。"
+    },
+    {
+      "id": "recoveryPayableRemainingCents",
+      "definition": "回收剩余应付",
+      "expression": "finalAcquisitionCents + lawfulAdjustmentCents - validOffsetsCents - cashNetPaidCents",
+      "objectFields": ["Recovery.finalAcquisitionCents", "Offset.amountCents", "CashEntry.amountCents"],
+      "derivedTerms": ["lawfulAdjustmentCents", "validOffsetsCents", "cashNetPaidCents"],
+      "note": "最终收购以后的变价走调整，不覆盖原价。"
+    },
+    {
+      "id": "offsetAmountCents",
+      "definition": "首版折抵金额",
+      "expression": "min(max(salesBalanceCents, 0), max(recoveryPayableRemainingCents, 0))",
+      "objectFields": ["Offset.amountCents", "SaleOrder.balanceCents", "Recovery.finalAcquisitionCents"],
+      "derivedTerms": ["salesBalanceCents", "recoveryPayableRemainingCents"],
+      "note": "同一回收应付可部分折抵但累计不得超额；双方当前交易主体须相同，不同主体代付首版不支持。"
+    },
+    {
+      "id": "refundableCashCents",
+      "definition": "可现金退款上限",
+      "expression": "min(-salesBalanceCents, refundableCashNetCents)",
+      "objectFields": ["SaleOrder.balanceCents", "Refund.amountCents", "ReturnRecord.creditCents"],
+      "derivedTerms": ["refundableCashNetCents"],
+      "note": "仅在销售余额为负时适用；需要把折抵权益退给客户时先明确关联结算处理，不凭空当原收款退。"
+    },
+    {
+      "id": "collectableCents",
+      "definition": "可收款上限",
+      "expression": "max(salesBalanceCents, 0)",
+      "objectFields": ["SaleOrder.balanceCents", "CashEntry.amountCents"],
+      "derivedTerms": ["salesBalanceCents"],
+      "note": "已有的数据库级防超收触发器继续保留，但它不等于幂等；同载荷重发仍可能形成两笔。"
+    }
+  ],
+
+  "reversalPolicy": {
+    "rule": "原笔保留在净和中 + 新增等额反向有效记录",
+    "forbidden": "一边从净和剔除原笔、一边又计入反向记录（会减两次）",
+    "reference": "原笔带被冲销引用，供显示与防重复",
+    "distinction": "真实退款与纠正误录使用不同动作类型，界面分别标记",
+    "immutability": "已完成的资金、库存和折抵记录不直接改写或删除"
+  },
+
+  "discountAllocation": {
+    "scope": "整单优惠仅分配给有价销售 / 服务行",
+    "customerLine": "客供件默认售价和成本为 0，另列装机服务费",
+    "method": "按各行折前金额占比分配到分，先向下取整，余分按最大余数、再按稳定行 ID 分配",
+    "freeze": "固化分摊结果；退款时不得按现价重新计算",
+    "objectFields": ["SaleLine.discountAllocationCents", "SaleLine.netLineCents", "SaleLine.unitPriceCents"],
+    "invariant": "各行 discountAllocationCents 之和必须等于整单 discountCents"
+  },
+
+  "partialReturn": {
+    "method": "按原行净金额分配到每件，最后一件承担余分",
+    "cap": "累计退货贷项不超过原行净额",
+    "independence": "退货实物可待检、现金退款可稍后，二者独立",
+    "inventory": "库存先进入待检，绝不自动可卖；未收到实物不能凭退款加库存",
+    "objectFields": ["ReturnRecord.creditCents", "ReturnRecord.acceptedQty", "SaleOrder.balanceCents"]
+  },
+
+  "costRules": {
+    "quantityItems": {
+      "method": "移动加权平均",
+      "inbound": "入库累加总数量与总成本分",
+      "outbound": "按出库前平均成本分摊，四舍五入到分，最后一件带走剩余成本",
+      "invariant": "总额守恒"
+    },
+    "serializedAndUsed": {
+      "method": "按实物成本",
+      "composition": "来源实际成本 + 确认整备成本",
+      "example": "U-017 收购 800 元 + 已确认整备材料 80 元 = 880 元"
+    },
+    "unknownCost": "存在未知成本的批次用待核实标志，costKnown=false，不能估成 0",
+    "snapshot": "正式单据、成本、SN、质保、客户承诺保留快照；商品现价不能改历史",
+    "serviceParts": "免费维修备件计维修成本，不再计一次原销售出库",
+    "objectFields": ["StockBalance.totalCostCents", "StockBalance.costKnown", "StockItem.acquisitionCostCents", "StockItem.refurbishmentCostCents", "RefurbishmentCost.amountCents", "RefurbishmentCost.capitalizable"]
+  },
+
+  "grossProfit": {
+    "delivered": "已交付实际毛利 = 净销售收入 - 对应已确认出库成本 - 按规则归属的直接成本",
+    "undelivered": "销售未交付时只显示预计毛利",
+    "adjustment": "退款 / 退货通过关联调整反映，历史快照仍可查",
+    "naming": "毛利不等于净利润，界面不得称为净利润"
+  },
+
+  "preservedFromLegacy": {
+    "trigger": "orders 的防超收触发器与累计款项字段保留并审计",
+    "limitation": "它不等于幂等：原样重复提交同一笔小额收款仍可能形成两笔",
+    "action": "T04 在数据库边界补幂等记录与条件更新，不依赖该触发器作为唯一防线"
+  }
+}

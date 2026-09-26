@@ -426,6 +426,139 @@ export async function writeProduct(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// B46 · 清理没有任何业务引用的商品档案（GET cleanup-candidates / POST delete-unused）
+// 权限由路由层限定为 store/manage。只删除 hardware 主数据；库存、单据、附件和审计记录不级联清理。
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 当前 schema 中所有能把商品 ID / entity_id 当作业务引用的关系。
+ * 硬件主键是全局整数，因此对外键表不按门店过滤；软引用按门店和 opaque entity_id 精确匹配。
+ */
+const PRODUCT_REFERENCE_EXISTS = `
+  EXISTS (SELECT 1 FROM stock_items r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM stock_balances r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM inventory_movements r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM inventory_opening_lines r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM stock_batches r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM inventory_count_lines r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM serial_numbers r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM sale_lines r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM purchase_lines r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM purchase_lines r WHERE r.store_id = h.store_id AND r.product_ref = h.entity_id)
+  OR EXISTS (SELECT 1 FROM purchase_receipt_lines r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM supplier_returns r WHERE r.product_id = h.id)
+  OR EXISTS (SELECT 1 FROM order_items r WHERE r.source_item_id = h.id)
+  OR EXISTS (SELECT 1 FROM quote_lines r WHERE r.store_id = h.store_id AND r.product_ref = h.entity_id)
+  -- 旧版单行报价是未审计 JSON 工作副本；结构未知时 fail closed，避免丢失潜在的商品关联。
+  OR EXISTS (SELECT 1 FROM quotes r
+             WHERE r.store_id = h.store_id OR (r.store_id IS NULL AND r.user_id = h.user_id))
+  OR EXISTS (SELECT 1 FROM attachments r
+             WHERE r.store_id = h.store_id AND r.owner_entity_type = 'Product'
+               AND r.owner_entity_id = h.entity_id)
+`
+
+export interface UnusedProductCandidate {
+  id: string
+  sku: string | null
+  name: string
+  category: string
+  createdAt: string
+}
+
+export async function queryUnusedProducts(db: OperationsDb, storeId: number): Promise<UnusedProductCandidate[]> {
+  const rows = await db
+    .prepare(
+      `SELECT h.entity_id AS id, h.sku, h.name, h.category, h.created_at AS createdAt
+       FROM hardware h
+       WHERE h.store_id = ? AND h.entity_id IS NOT NULL
+         AND COALESCE(h.item_type, 'product') = 'product'
+         AND NOT (${PRODUCT_REFERENCE_EXISTS})
+       ORDER BY h.created_at DESC, h.id DESC
+       LIMIT 100`,
+    )
+    .bind(storeId)
+    .all<UnusedProductCandidate>()
+  return rows.results ?? []
+}
+
+export function planDeleteUnusedProduct(
+  db: OperationsDb,
+  ctx: OperationContext,
+  productRef: string,
+  reason: string,
+): OperationPlan {
+  return {
+    statements: [
+      guardStatement(
+        db,
+        'ENTITY_NOT_FOUND',
+        `NOT EXISTS (SELECT 1 FROM hardware h WHERE h.store_id = ? AND h.entity_id = ?
+                      AND COALESCE(h.item_type, 'product') = 'product')`,
+        ctx.storeId,
+        productRef,
+      ),
+      guardStatement(
+        db,
+        'VALIDATION_ERROR',
+        `EXISTS (SELECT 1 FROM hardware h WHERE h.store_id = ? AND h.entity_id = ?
+                 AND (${PRODUCT_REFERENCE_EXISTS}))`,
+        ctx.storeId,
+        productRef,
+        { diagnostic: 'PRODUCT_HAS_BUSINESS_REFERENCES' },
+      ),
+      db
+        .prepare(
+          `DELETE FROM hardware
+           WHERE id = (
+             SELECT h.id FROM hardware h
+             WHERE h.store_id = ? AND h.entity_id = ?
+               AND COALESCE(h.item_type, 'product') = 'product'
+               AND NOT (${PRODUCT_REFERENCE_EXISTS})
+           )`,
+        )
+        .bind(ctx.storeId, productRef),
+      guardStatement(
+        db,
+        'VALIDATION_ERROR',
+        'EXISTS (SELECT 1 FROM hardware WHERE store_id = ? AND entity_id = ?)',
+        ctx.storeId,
+        productRef,
+      ),
+    ],
+    outcome: {
+      entityType: 'Product',
+      entityId: productRef,
+      summary: `已清理未引用商品「${productRef}」：${reason}`,
+      effects: { productRef, reason, deleted: true },
+    },
+  }
+}
+
+export async function deleteUnusedProduct(
+  db: OperationsDb,
+  ctx: OperationContext,
+  productRef: string,
+  reason: string,
+): Promise<RunResult> {
+  const normalizedReason = reason.trim()
+  if (!productRef.trim() || !normalizedReason || normalizedReason.length > 200) {
+    return {
+      ok: false,
+      requestId: ctx.requestId,
+      code: 'VALIDATION_ERROR',
+      message: '商品编号与清理原因必填，原因最多 200 个字符',
+      retryable: false,
+      httpStatus: 400,
+    }
+  }
+  const resolved: OperationContext = {
+    ...ctx,
+    payloadHash: await hashPayload({ productRef, reason: normalizedReason }),
+  }
+  return runIdempotent(db, resolved, (context) => planDeleteUnusedProduct(db, context, productRef, normalizedReason))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // B13 · 录入期初库存（POST /inventory/openings）
 // 权限：inventory/opening（老板专属；旧 library/edit 的 doesNotGrant 明确不含它）
 //
@@ -500,7 +633,6 @@ export function validateOpeningInput(input: OpeningInput): string | null {
     if (line.costBasis == null) continue
     if (!(OPENING_COST_BASES as readonly string[]).includes(line.costBasis)) return `${at}：成本类型无效`
     const amount = line.unitCostCents
-    const evidence = line.costEvidenceRef?.trim() ?? ''
     if (line.costBasis === 'unknown') {
       if (amount !== undefined && amount !== null) return `${at}：成本未知时金额必须留空，不能填 0`
       if (line.costAssessedAt) return `${at}：成本未知不能填写估值日期`
@@ -508,12 +640,10 @@ export function validateOpeningInput(input: OpeningInput): string | null {
     }
     if (line.costBasis === 'zero_cost') {
       if (amount !== 0) return `${at}：真实零成本必须明确填 0 元`
-      if (!evidence) return `${at}：真实零成本必须填写赠与、捐赠等依据`
       if (line.costAssessedAt) return `${at}：真实零成本不能填写估值日期`
       continue
     }
     if (!Number.isSafeInteger(amount) || (amount as number) <= 0) return `${at}：实际成本和估值都必须为正整数分，零成本请选真实零成本`
-    if (!evidence) return `${at}：实际成本或估值必须填写凭据 / 估值依据`
     if (line.costBasis === 'assessed_estimate') {
       if (!isIsoDate(line.costAssessedAt)) return `${at}：估值必须填写有效的估值日期（YYYY-MM-DD）`
       if (line.costAssessedAt > nowIso().slice(0, 10)) return `${at}：估值日期不能晚于今天`
@@ -834,7 +964,9 @@ export function planOpening(
       entityType: 'StockItem',
       entityId: openingId,
       version: 1,
-      summary: `期初建账 ${input.lines.length} 行 / ${openingQty} 件，实盘凭据：${input.approvedCountRef.trim()}`,
+      summary: requireOpenWindow
+        ? `期初建账 ${input.lines.length} 行 / ${openingQty} 件，实盘凭据：${input.approvedCountRef.trim()}`
+        : `登记现有库存 ${openingQty} 件`,
       effects,
     },
     constraintCodes: {

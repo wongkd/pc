@@ -51,9 +51,9 @@ export function AppShell({
     : location.pathname.startsWith('/sales/quotes')
       ? '装机报价'
       : location.pathname.startsWith('/recovery')
-        ? '实物流转 / 收旧件'
+        ? '仓库 / 收旧件'
         : location.pathname.startsWith('/purchases')
-          ? '实物流转 / 采购到货'
+          ? '仓库 / 采购到货'
           : activeNav?.label ?? '工作空间'
 
   // 沿用旧壳对「系统设置」的可见性判断，不在换壳时放宽既有门槛。
@@ -113,12 +113,10 @@ export function AppShell({
       )}
       <header className="wb-topbar">
         <div className="wb-brand">
-          <span className="wb-brand-mark" aria-hidden="true">
-            PC
-          </span>
+          <img className="wb-brand-mark" src="/assets/xu-wen-erp-avatar.png" alt="" />
           <span className="wb-brand-copy">
             <strong>装一下机</strong>
-            <small>{currentStore?.name ?? '未选择门店'}</small>
+            <small>徐闻闻所未闻科技</small>
           </span>
         </div>
 

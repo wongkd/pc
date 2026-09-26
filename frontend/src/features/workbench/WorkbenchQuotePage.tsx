@@ -371,7 +371,7 @@ function openPrintWindow(detail: QuoteDetailPayload, settings: QuoteSettings): v
   .sign { border-top:1px solid #aeb9c5; padding-top:2mm; }
   footer { display:flex; justify-content:space-between; margin-top:5mm; border-top:1px solid #e5eaf0; padding-top:2mm; color:#8792a0; font-size:7pt; break-inside:avoid; page-break-inside:avoid; }
 </style></head><body>
-<header><div><div class="brand">装一下机 · 电脑配置服务</div><h1>电脑配置报价单</h1><div class="quote-name">${escapeHtml(detail.quote.title)}</div></div><span class="draft">${detail.version.issuedAt ? '正式报价' : '草稿预览'}</span></header>
+<header><div><div class="brand">徐闻闻所未闻科技 · 电脑配置服务</div><h1>电脑配置报价单</h1><div class="quote-name">${escapeHtml(detail.quote.title)}</div></div><span class="draft">${detail.version.issuedAt ? '正式报价' : '草稿预览'}</span></header>
 <div class="meta"><span>报价单号：${escapeHtml(detail.quote.id)}</span><span>报价日期：${escapeHtml(formatDateTime(quoteDate))}</span><span>有效期至：${escapeHtml(formatDateTime(validUntil))}</span></div>
 <div class="customer"><span><strong>客户：</strong>${detail.customer ? escapeHtml(detail.customer.name) : '散客'}</span><span><strong>联系电话：</strong>${detail.customer?.phone ? escapeHtml(detail.customer.phone) : '—'}</span><span><strong>报价版本：</strong>第 ${detail.version.revision} 版</span></div>
 <table>

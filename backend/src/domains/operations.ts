@@ -339,6 +339,8 @@ export function readableDiagnostic(diagnostic: string | null | undefined): strin
   if (!text) return null
 
   const guard = text.match(/D1_ERROR:\s*[A-Z][A-Z0-9_]*\|([A-Z][A-Z0-9_]*):\s*SQLITE_CONSTRAINT/i)?.[1]
+  if (guard === 'DRAFT_QUOTE_NOT_CLEANABLE') return '报价已发出、分享或转成销售单，只能保留记录并按业务流程处理'
+  if (guard === 'PRODUCT_HAS_BUSINESS_REFERENCES') return '商品已有库存、流水、单据或附件引用，请保留档案并停用'
   if (guard === 'SKU_ALREADY_EXISTS') return '本店 SKU 已存在'
   if (guard === 'OPENING_ALREADY_EXISTS') return '该型号已经有库存事实，期初只能建一次'
   if (guard === 'OPENING_WINDOW_NOT_ACTIVE') return '正式期初窗口未开启、已到截止时间或已经关闭'

@@ -2,7 +2,7 @@
 /**
  * 跨端 DTO 生成器（T01c）
  *
- * 用途：从 contracts/v1 单向生成端内枚举与类型，供网页与原生小程序消费同一版本。
+ * 用途：从 contracts/v1.1 单向生成端内枚举与类型，供网页与原生小程序消费同一版本。
  * 运行：node contracts/tools/generate-dto.mjs          写入 contracts/generated/
  *       node contracts/tools/generate-dto.mjs --check  只比对，不写入；有差异则退出码 1
  *
@@ -17,14 +17,14 @@ import { createHash } from 'node:crypto'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const contractsDir = resolve(here, '..')
-const v1Dir = join(contractsDir, 'v1')
+const v1Dir = join(contractsDir, 'v1.1')
 const outputDir = join(contractsDir, 'generated')
 const repoRoot = resolve(contractsDir, '..')
 
 export const GENERATOR_ID = 'contracts/tools/generate-dto.mjs'
 export const GENERATOR_VERSION = '1'
 export const GENERATE_COMMAND = 'node contracts/tools/generate-dto.mjs'
-export const HEADER = '// AUTO-GENERATED FROM contracts/v1 — DO NOT EDIT'
+export const HEADER = '// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT'
 
 const SOURCE_FILES = [
   'conventions.json',
@@ -91,7 +91,7 @@ function buildEnums(enumsDoc) {
   const lines = []
   lines.push(HEADER)
   lines.push(`// 生成命令：${GENERATE_COMMAND}`)
-  lines.push('// 来源：contracts/v1/enums.json；取值唯一来源，两端不得各自新增。')
+  lines.push('// 来源：contracts/v1.1/enums.json；取值唯一来源，两端不得各自新增。')
   lines.push('')
   lines.push('export type ContractId = string')
   lines.push('export type Cents = number')
@@ -186,7 +186,7 @@ function buildObjects(objectsDoc, enumsDoc) {
   const lines = []
   lines.push(HEADER)
   lines.push(`// 生成命令：${GENERATE_COMMAND}`)
-  lines.push('// 来源：contracts/v1/objects.json；字段与 nullable 以契约为准。')
+  lines.push('// 来源：contracts/v1.1/objects.json；字段与 nullable 以契约为准。')
   lines.push('import type {')
   lines.push(`  ${used.join(', ')},`)
   lines.push("} from './enums'")
@@ -198,7 +198,7 @@ function buildActions(actionsDoc, enumsDoc) {
   const lines = []
   lines.push(HEADER)
   lines.push(`// 生成命令：${GENERATE_COMMAND}`)
-  lines.push('// 来源：contracts/v1/actions.json；动作码、路径、权限码的唯一来源。')
+  lines.push('// 来源：contracts/v1.1/actions.json；动作码、路径、权限码的唯一来源。')
   lines.push("import type { ActionCode } from './enums'")
   lines.push('')
   lines.push('export interface ActionOperation {')
@@ -287,7 +287,7 @@ function buildErrors(errorsDoc) {
   const lines = []
   lines.push(HEADER)
   lines.push(`// 生成命令：${GENERATE_COMMAND}`)
-  lines.push('// 来源：contracts/v1/errors.json；程序分支只能依据 code，不得匹配 message 文本。')
+  lines.push('// 来源：contracts/v1.1/errors.json；程序分支只能依据 code，不得匹配 message 文本。')
   lines.push('')
   lines.push('export const ERROR_CODES = {')
   for (const e of errorsDoc.errors) lines.push(`  ${constKey(e.code)}: ${JSON.stringify(e.code)},`)
@@ -317,7 +317,7 @@ function buildMoney(moneyDoc, conventions) {
   const lines = []
   lines.push(HEADER)
   lines.push(`// 生成命令：${GENERATE_COMMAND}`)
-  lines.push('// 来源：contracts/v1/money-rules.json、conventions.json；只导出公式编号与单位口径，不生成计算实现。')
+  lines.push('// 来源：contracts/v1.1/money-rules.json、conventions.json；只导出公式编号与单位口径，不生成计算实现。')
   lines.push("import type { Cents } from './enums'")
   lines.push('')
   lines.push('// 金额一律整数分，禁止浮点；界面按元显示，运算与传输只用分。')
@@ -372,7 +372,7 @@ export function buildArtifacts() {
   }
 
   const generatedFrom = {}
-  for (const file of SOURCE_FILES) generatedFrom[`contracts/v1/${file}`] = sources[file].hash
+  for (const file of SOURCE_FILES) generatedFrom[`contracts/v1.1/${file}`] = sources[file].hash
 
   const artifactHashes = {}
   for (const [name, content] of Object.entries(files)) artifactHashes[name] = sha256(content)
@@ -425,7 +425,7 @@ function checkOnly() {
     console.error(`\n请运行：${GENERATE_COMMAND}`)
     process.exit(1)
   }
-  console.log(`✓ 生成物与 contracts/v1 一致（${Object.keys(files).length} 个文件）`)
+  console.log(`✓ 生成物与 contracts/v1.1 一致（${Object.keys(files).length} 个文件）`)
 }
 
 function write() {
@@ -435,7 +435,7 @@ function write() {
     writeFileSync(join(outputDir, name), content, 'utf8')
     console.log(`  写入 contracts/generated/${name}`)
   }
-  console.log(`\n✓ 已从 contracts/v1 生成 ${Object.keys(files).length} 个文件。生成物禁止手工编辑。`)
+  console.log(`\n✓ 已从 contracts/v1.1 生成 ${Object.keys(files).length} 个文件。生成物禁止手工编辑。`)
 }
 
 const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)

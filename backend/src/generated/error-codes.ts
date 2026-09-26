@@ -1,5 +1,5 @@
 // DO NOT EDIT — 本文件由 backend/scripts/sync-error-codes.mjs 生成。
-// 来源：contracts/v1/errors.json（v1，T01a 冻结，21 个错误码）。
+// 来源：contracts/v1.1/errors.json（v1.1，T26a 冻结，21 个错误码）。
 // 重新生成：node backend/scripts/sync-error-codes.mjs
 // 校验漂移：node backend/scripts/sync-error-codes.mjs --check
 //

@@ -1,0 +1,1415 @@
+{
+  "contractVersion": "v1.1",
+  "artifact": "fixtures",
+  "frozenBy": "T26a",
+  "frozenAt": "2026-09-26",
+  "status": "frozen",
+  "source": "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md §2",
+  "sources": [
+    "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md §2（V1–V4 固定虚构样本）",
+    "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md §7（金额、折抵和退款）",
+    "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md §3、§4、§9",
+    "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md §4、§5、§7",
+    "contracts/v1/money-rules.json（公式口径；本文件只提供数值，不新增规则）",
+    "contracts/v1/objects.json、enums.json、errors.json、actions.json"
+  ],
+  "scopeNote": "本文件冻结 06 §2 的虚构样本、边界输入与预期结果，并声明 DTO 生成流程。样本数值可从 money-rules.json 的公式重算，不新增业务规则；口径缺失处一律登记为 openItems，不由本文件补规则。",
+
+  "rules": [
+    "样本全部为虚构数据，ID 前缀一律 DEMO-；任何样本不得导入生产库。",
+    "本文件只提供数值与期望，不重复定义字段类型。字段类型以 objects.json 为准，枚举取值以 enums.json 为准。",
+    "金额一律整数分。显示层按 conventions.money.display 换算，不在本文件出现元为单位的金额。",
+    "未被规格定义的取值一律写 null，禁止用 0 或空串代替未知（conventions.nullable）。",
+    "逐项核算由 contracts/tools/validate-contracts.mjs 第 12 节机械重算，禁止只在文档里声称「已核对」。",
+    "样本只证明页面读模型与公式口径；写入测试必须另建完整商品 / 预留 / 配置 / 检查 / 金额实体，不能用「V1 已经有待交付状态」跳过业务前置。"
+  ],
+
+  "demoPolicy": {
+    "idPrefix": "DEMO-",
+    "demoDate": "2026-09-17",
+    "demoTimezone": "Asia/Shanghai",
+    "dateRule": "固定演示日期 2026-09-17，测试时注入该日期，不随运行当天悄悄变成过期样本。",
+    "prodBlocked": "样本集合整体不可导入生产；页面在演示模式必须显示演示标识，生产模式禁止回退到样本数据。",
+    "markerCarrier": "演示标识由 ID 前缀承载，不新增协议字段。",
+    "readModelOnly": "V1 只证明页面读模型，不构成任何业务前置条件已满足的证据。"
+  },
+
+  "shapeDefinitions": {
+    "note": "objects.json 把 TaskReadModel.amountSummary / primaryAction 声明为 object 类型、结构未由契约固定。以下定义是本契约对该子结构的首次冻结，归属 T01c；它不修改 objects.json 的规范性表面，也不得被当作用来推翻 objects.json 的依据。",
+    "amountSummary": {
+      "definedBy": "T01c",
+      "fields": {
+        "totalCents": { "type": "cents", "nullable": true },
+        "receivedCents": { "type": "cents", "nullable": true },
+        "offsetCents": { "type": "cents", "nullable": true },
+        "balanceCents": { "type": "cents", "nullable": true },
+        "balanceDirection": { "type": "enum", "enumRef": "BalanceDirection", "nullable": true },
+        "estimateCents": { "type": "cents", "nullable": true },
+        "countsTowardReceivable": { "type": "bool", "nullable": false },
+        "note": { "type": "string", "nullable": true }
+      },
+      "rules": [
+        "countsTowardReceivable=true 时 balanceCents 必须是整数且 balanceDirection 非空。",
+        "countsTowardReceivable=false 时不得用 estimateCents 冒充 balanceCents（03 §8：初估、预计费用不计确定应收）。",
+        "本样本集内无退款与调整，故恒等式为 balanceCents = totalCents - receivedCents - offsetCents。",
+        "estimateCents 只表示未确认的初估，绝不进入 receivable 汇总。"
+      ]
+    },
+    "primaryAction": {
+      "definedBy": "T01c",
+      "fields": {
+        "code": { "type": "enum", "enumRef": "ActionCode", "nullable": false },
+        "label": { "type": "string", "nullable": false },
+        "enabled": { "type": "bool", "nullable": false },
+        "blockers": {
+          "type": "array",
+          "nullable": false,
+          "itemFields": {
+            "code": { "type": "string", "nullable": false, "desc": "必须是 errors.json 中的错误码" },
+            "message": { "type": "string", "nullable": false },
+            "targetPage": { "type": "string", "nullable": true },
+            "targetField": { "type": "string", "nullable": true }
+          }
+        }
+      },
+      "rules": [
+        "code 必须是 ActionCode 枚举值；label 是界面文案，程序分支只能依据 code。",
+        "enabled=false 必须至少有一个 blocker，且 blocker.code 是 errors.json 里存在的错误码（conventions.reading.allowedActions：禁用原因必须可读）。",
+        "code 表示本卡在该事项上的当前主动作，不等于该动作一定能成功（conventions.reading.readIsNotAPromise）。"
+      ]
+    }
+  },
+
+  "datasets": {
+    "V1": {
+      "id": "V1",
+      "title": "视觉与工作台读取样本",
+      "purpose": "用于网页 / 小程序相同 DTO 的展示和只读筛选",
+      "source": "06 §2 V1",
+      "orderNote": "06 的表格顺序是类别展示顺序，不是列表排序结果。列表排序由读模型实现（objects.json TaskReadModel.rules、conventions.pagination.ordering）冻结，本卡不冻结顺序，故声明 order: unspecified。",
+      "order": "unspecified",
+      "generatedAt": "2026-09-17T01:05:00Z",
+      "filters": { "scope": "open", "q": null, "category": null },
+      "tasks": [
+        {
+          "taskId": "DEMO-TASK-001",
+          "entityType": "sale_order",
+          "entityId": "DEMO-SO-003",
+          "entityVersion": 3,
+          "category": "delivery",
+          "title": "装机交付 · 白色设计主机",
+          "customerDisplay": "陈先生",
+          "deviceSummary": "白色设计主机 · 设计用装机",
+          "photoKind": "delivery_evidence",
+          "photoUrl": "demo://photos/DEMO-SO-003.png",
+          "dueAt": "2026-09-17T08:00:00Z",
+          "deadlineText": "今天 16:00 取机",
+          "blockerSummary": "装机检查 2/3 项完成；附件未打包",
+          "amountSummary": {
+            "totalCents": 628000,
+            "receivedCents": 200000,
+            "offsetCents": 0,
+            "balanceCents": 428000,
+            "balanceDirection": "client_due",
+            "estimateCents": null,
+            "countsTowardReceivable": true,
+            "note": null
+          },
+          "primaryAction": {
+            "code": "B10",
+            "label": "办理交付（先核对）",
+            "enabled": false,
+            "blockers": [
+              { "code": "CHECKLIST_INCOMPLETE", "message": "检查项 2/3 完成，附件未打包", "targetPage": "装机检测", "targetField": null }
+            ]
+          },
+          "detailTarget": "/orders/DEMO-SO-003"
+        },
+        {
+          "taskId": "DEMO-TASK-002",
+          "entityType": "sale_order",
+          "entityId": "DEMO-SO-002",
+          "entityVersion": 4,
+          "category": "stock_shortage",
+          "title": "装机缺件 · 缺 SSD 1 件",
+          "customerDisplay": "林女士",
+          "deviceSummary": "游戏主机 · 缺 SSD 1 件",
+          "photoKind": "product_reference",
+          "photoUrl": "demo://photos/DEMO-SO-002.png",
+          "dueAt": "2026-09-17T09:30:00Z",
+          "deadlineText": "预计 17:30 到货（尚未实到）",
+          "blockerSummary": "缺 SSD 1 件，预计 17:30，尚未实到",
+          "amountSummary": {
+            "totalCents": 828000,
+            "receivedCents": 200000,
+            "offsetCents": 0,
+            "balanceCents": 628000,
+            "balanceDirection": "client_due",
+            "estimateCents": null,
+            "countsTowardReceivable": true,
+            "note": null
+          },
+          "primaryAction": {
+            "code": "B15",
+            "label": "核对到货",
+            "enabled": true,
+            "blockers": []
+          },
+          "detailTarget": "/orders/DEMO-SO-002"
+        },
+        {
+          "taskId": "DEMO-TASK-003",
+          "entityType": "service_order",
+          "entityId": "DEMO-RE-008",
+          "entityVersion": 2,
+          "category": "service",
+          "title": "维修 · 显卡间歇黑屏",
+          "customerDisplay": "周先生",
+          "deviceSummary": "客户显卡 · 间歇黑屏",
+          "photoKind": "service_intake",
+          "photoUrl": "demo://photos/DEMO-RE-008.png",
+          "dueAt": null,
+          "deadlineText": "待安排",
+          "blockerSummary": "已接收待检测，未定收费",
+          "amountSummary": {
+            "totalCents": null,
+            "receivedCents": null,
+            "offsetCents": null,
+            "balanceCents": null,
+            "balanceDirection": null,
+            "estimateCents": null,
+            "countsTowardReceivable": false,
+            "note": "费用待确认"
+          },
+          "primaryAction": {
+            "code": "B21",
+            "label": "开始检测",
+            "enabled": true,
+            "blockers": []
+          },
+          "detailTarget": "/after-sales/DEMO-RE-008"
+        },
+        {
+          "taskId": "DEMO-TASK-004",
+          "entityType": "sale_order",
+          "entityId": "DEMO-SO-011",
+          "entityVersion": 2,
+          "category": "delivery",
+          "title": "零售交付 · 办公主机",
+          "customerDisplay": "赵先生",
+          "deviceSummary": "办公主机 · 零售整机",
+          "photoKind": "delivery_evidence",
+          "photoUrl": "demo://photos/DEMO-SO-011.png",
+          "dueAt": "2026-09-17T10:00:00Z",
+          "deadlineText": "今天 18:00",
+          "blockerSummary": null,
+          "amountSummary": {
+            "totalCents": 368000,
+            "receivedCents": 368000,
+            "offsetCents": 0,
+            "balanceCents": 0,
+            "balanceDirection": "settled",
+            "estimateCents": null,
+            "countsTowardReceivable": true,
+            "note": "尾款为 0，仍须确认实物交出"
+          },
+          "primaryAction": {
+            "code": "B10",
+            "label": "办理交付",
+            "enabled": true,
+            "blockers": []
+          },
+          "detailTarget": "/orders/DEMO-SO-011"
+        },
+        {
+          "taskId": "DEMO-TASK-005",
+          "entityType": "service_order",
+          "entityId": "DEMO-RE-006",
+          "entityVersion": 3,
+          "category": "service",
+          "title": "维修 · 主板更换建议",
+          "customerDisplay": "刘女士",
+          "deviceSummary": "笔记本 · 主板更换建议 480 元",
+          "photoKind": "service_intake",
+          "photoUrl": "demo://photos/DEMO-RE-006.png",
+          "dueAt": null,
+          "deadlineText": "待客户确认",
+          "blockerSummary": "主板更换建议 480 元，未获客户确认",
+          "amountSummary": {
+            "totalCents": null,
+            "receivedCents": null,
+            "offsetCents": null,
+            "balanceCents": null,
+            "balanceDirection": null,
+            "estimateCents": 48000,
+            "countsTowardReceivable": false,
+            "note": "预计费用，不计确定应收"
+          },
+          "primaryAction": {
+            "code": "B22",
+            "label": "查看方案",
+            "enabled": true,
+            "blockers": []
+          },
+          "detailTarget": "/after-sales/DEMO-RE-006"
+        },
+        {
+          "taskId": "DEMO-TASK-006",
+          "entityType": "sale_order",
+          "entityId": "DEMO-SO-009",
+          "entityVersion": 2,
+          "category": "stock_shortage",
+          "title": "零售缺件 · 显示器 1 台在途",
+          "customerDisplay": "吴先生",
+          "deviceSummary": "办公套装 · 显示器 1 台在途",
+          "photoKind": "product_reference",
+          "photoUrl": "demo://photos/DEMO-SO-009.png",
+          "dueAt": "2026-09-18T02:00:00Z",
+          "deadlineText": "预计明天到货",
+          "blockerSummary": "显示器 1 台在途，预计明天",
+          "amountSummary": {
+            "totalCents": 424000,
+            "receivedCents": 200000,
+            "offsetCents": 0,
+            "balanceCents": 224000,
+            "balanceDirection": "client_due",
+            "estimateCents": null,
+            "countsTowardReceivable": true,
+            "note": null
+          },
+          "primaryAction": {
+            "code": "B15",
+            "label": "查看缺件",
+            "enabled": true,
+            "blockers": []
+          },
+          "detailTarget": "/orders/DEMO-SO-009"
+        },
+        {
+          "taskId": "DEMO-TASK-007",
+          "entityType": "recovery_order",
+          "entityId": "DEMO-TR-001",
+          "entityVersion": 1,
+          "category": "recovery",
+          "title": "回收 · 旧机暂存待验机",
+          "customerDisplay": "刘先生",
+          "deviceSummary": "旧主机 · 暂存待验机",
+          "photoKind": "recovery_evidence",
+          "photoUrl": "demo://photos/DEMO-TR-001.png",
+          "dueAt": null,
+          "deadlineText": "待安排",
+          "blockerSummary": "旧机暂存待验机，预计 1,500 元，未确认收购",
+          "amountSummary": {
+            "totalCents": null,
+            "receivedCents": null,
+            "offsetCents": null,
+            "balanceCents": null,
+            "balanceDirection": null,
+            "estimateCents": 150000,
+            "countsTowardReceivable": false,
+            "note": "客户所有，不计库存 / 折抵"
+          },
+          "primaryAction": {
+            "code": "B27",
+            "label": "开始验机",
+            "enabled": true,
+            "blockers": []
+          },
+          "detailTarget": "/recovery/DEMO-TR-001"
+        }
+      ],
+      "metrics": {
+        "pendingDelivery": { "label": "待交机", "value": 2, "filterTarget": "/dashboard?category=delivery" },
+        "stockShortage": { "label": "缺货订单", "value": 2, "filterTarget": "/dashboard?category=stock_shortage" },
+        "servicePending": { "label": "维修待办", "value": 2, "filterTarget": "/dashboard?category=service" },
+        "receivable": { "label": "待收款", "valueCents": 1280000, "filterTarget": "/finance?view=receivable" },
+        "taskTotal": { "label": "待办总数", "value": 7, "filterTarget": "/dashboard?scope=open" }
+      },
+      "expected": {
+        "taskTotal": 7,
+        "categoryCounts": { "delivery": 2, "stock_shortage": 2, "service": 2, "recovery": 1 },
+        "receivableCents": 1280000,
+        "receivableFormula": "countsTowardReceivable=true 的 balanceCents 之和",
+        "excludedFromReceivable": [
+          { "entityId": "DEMO-RE-006", "estimateCents": 48000, "reason": "维修初估，未获客户确认，不计确定应收" },
+          { "entityId": "DEMO-TR-001", "estimateCents": 150000, "reason": "回收未确认收购，属客户所有，不计库存 / 折抵 / 应收" },
+          { "entityId": "DEMO-RE-008", "estimateCents": null, "reason": "未定收费，不得用 0 冒充" }
+        ]
+      }
+    },
+
+    "V2": {
+      "id": "V2",
+      "title": "二手循环",
+      "purpose": "回收 → 整备 → 再装机；成本构成与客户输出白名单",
+      "source": "06 §2 V2",
+      "seller": { "ref": "DEMO-CUST-A", "displayName": "卖方甲", "visibility": "internal_only" },
+      "buyer": { "ref": "DEMO-CUST-B", "displayName": "客户乙", "visibility": "customer_shared" },
+      "recovery": {
+        "id": "DEMO-RC-001",
+        "state": "ready_for_sale",
+        "finalAcquisitionCents": 80000,
+        "receivedAt": "2026-09-17T01:20:00Z",
+        "acceptedAt": "2026-09-17T02:00:00Z"
+      },
+      "stockItem": {
+        "assetCode": "U-017",
+        "productRef": "DEMO-PRODUCT-GPU",
+        "condition": "used",
+        "ownership": "store",
+        "availability": "available",
+        "location": "store",
+        "acquisitionRef": "DEMO-RC-001",
+        "acquisitionCostCents": 80000,
+        "refurbishmentCostCents": 8000,
+        "costKnown": true
+      },
+      "refurbishmentCosts": [
+        { "stockItemId": "U-017", "category": "整备材料", "amountCents": 8000, "capitalizable": true },
+        { "stockItemId": "U-017", "category": "杂项工时（不计入可归属成本）", "amountCents": 3000, "capitalizable": false }
+      ],
+      "quotes": [
+        {
+          "id": "DEMO-Q-B1",
+          "title": "客户乙装机方案一",
+          "lines": [
+            { "source": "new", "nameSnapshot": "新品主板", "qty": 1, "unitPriceCents": 120000, "stockItemId": null },
+            { "source": "used", "nameSnapshot": "二手显卡 U-017", "qty": 1, "unitPriceCents": 150000, "stockItemId": "DEMO-ITEM-U017" },
+            { "source": "customer", "nameSnapshot": "客户自带硬盘", "qty": 1, "unitPriceCents": 0, "stockItemId": null, "customerDeviceRef": "DEMO-DEVICE-B1" },
+            { "source": "service", "nameSnapshot": "装机服务费", "qty": 1, "unitPriceCents": 20000, "stockItemId": null }
+          ]
+        },
+        {
+          "id": "DEMO-Q-B2",
+          "title": "客户乙装机方案二",
+          "lines": [
+            { "source": "used", "nameSnapshot": "二手显卡 U-017", "qty": 1, "unitPriceCents": 150000, "stockItemId": "DEMO-ITEM-U017" },
+            { "source": "service", "nameSnapshot": "装机服务费", "qty": 1, "unitPriceCents": 20000, "stockItemId": null }
+          ]
+        }
+      ],
+      "expectations": [
+        "两份报价都引用 U-017，报价阶段不锁货，均可保存为草稿（B01 / B02）。",
+        "仅一单成交成功；另一单 convert 返回 STOCK_CONFLICT，不得部分成功（Reservation 逐件有效唯一 + enums.json SaleTradeState 守卫）。",
+        "交付后该件成本为 88000 分：80000 收购 + 8000 可归属整备；不可归属的 3000 只作为费用记录，不进成本。",
+        "customer 行售价与成本为 0，装机服务另列服务费行（enums.json LineSource.customer）。",
+        "customer_shared 输出不含 sellerRef、原卖方标识、内部成本与内部备注（enums.json DocumentAudience、02 §6 CustomerDocument）。",
+        "来源 / 检测 / 新配置 / 质保 / 原卖方内部记录均可追溯（B28 → B30 → B03 链路上的 effects）。"
+      ],
+      "expectedCostCents": 88000
+    },
+
+    "V3": {
+      "id": "V3",
+      "title": "现金和折抵",
+      "purpose": "03 §7 五个置换算例 + 取消、退款、并发收款与幂等的边界",
+      "source": "06 §2 V3、03 §7",
+      "computeCaseIds": [
+        "TC-01-TRADEIN-NORMAL",
+        "TC-02-TRADEIN-DEPOSIT",
+        "TC-03-TRADEIN-OLD-PRICIER",
+        "TC-04-TRADEIN-DEPOSIT-OLD-PRICIER",
+        "TC-05-TRADEIN-UNINSPECTED",
+        "TC-06-RETURN-1000-300",
+        "TC-07-CANCEL-WITH-DEPOSIT",
+        "TC-08-ASSET-COST-880",
+        "TC-09-DISCOUNT-ALLOC-300",
+        "TC-10-DISCOUNT-ALLOC-100-REMAINDER",
+        "TC-11-DISCOUNT-ALLOC-1CENT",
+        "TC-12-PARTIAL-RETURN-PER-UNIT"
+      ],
+      "behaviorCaseIds": ["BC-01", "BC-02", "BC-03", "BC-04"],
+      "realCashRule": "收款、应收、折抵、实收、交付销售额分别显示；折抵是非现金事件，不得生成虚构现金收 / 付记录（money-rules.json offsetNetCents.note）。"
+    },
+
+    "V4": {
+      "id": "V4",
+      "title": "恶劣输入与权限",
+      "purpose": "边界输入、失败输入与越权输入的期望行为",
+      "source": "06 §2 V4",
+      "boundaryInputIds": [
+        "V4-01", "V4-02", "V4-03", "V4-04", "V4-05", "V4-06", "V4-07", "V4-08", "V4-09",
+        "V4-10", "V4-11", "V4-12", "V4-13", "V4-14", "V4-15", "V4-16", "V4-17"
+      ]
+    },
+
+    "V5": {
+      "id": "V5",
+      "title": "商品、实物与期初库存",
+      "purpose": "T05c：把 T05a 已测通的库存约束落成读模型样本 —— 同型号不同实物、无 SN 二手、客户寄存、未知成本、重复 SN、数量守恒；另附在途不落地与停用商品两种边界",
+      "source": "T05 卡面六项样本；03 §1 R01/R03、03 §4 L84/L86；04 §2 L19-L21、04 §3 L57、04 §5 L98/L99",
+      "order": "unspecified",
+      "orderNote": "与 V1 同：列表排序由读模型实现（conventions.pagination.ordering），本卡不冻结顺序。",
+      "readModelOnly": "V5 只证明库存页面读模型与数量 / 成本口径，不构成任何业务前置条件已满足的证据；写入测试必须另建完整商品、流水与权限实体，不能拿 V5 当业务已发生。",
+      "costVisibilityNote": "04 §3 L57：权限决定 cost 字段是否存在。无成本权限时响应根本不返回成本字段，不是置空为 0；本样本中的成本值只在有成本权限的视图里出现。",
+      "balanceShapeNote": "stock_balances 只有 available / reserved / quarantine 三列，在途与客户保管在结构上无处安放，因此不可能被混算进自有在库量。",
+      "products": [
+        { "productRef": "DEMO-PRODUCT-GPU", "sku": "DEMO-SKU-GPU-4060TI", "name": "影驰 RTX 4060 Ti 金属大师", "category": "显卡", "brand": "影驰", "specs": "8GB GDDR6", "trackingMode": "item", "requiresSn": true, "status": "active", "defaultSalePriceCents": 249900 },
+        { "productRef": "DEMO-PRODUCT-MB", "sku": "DEMO-SKU-MB-B760M", "name": "华硕 TUF B760M-PLUS", "category": "主板", "brand": "华硕", "specs": "DDR5 / LGA1700", "trackingMode": "item", "requiresSn": true, "status": "active", "defaultSalePriceCents": 119900 },
+        { "productRef": "DEMO-PRODUCT-SSD", "sku": "DEMO-SKU-SSD-NV2", "name": "金士顿 NV2 1TB", "category": "存储", "brand": "金士顿", "specs": "NVMe PCIe 4.0", "trackingMode": "quantity", "requiresSn": false, "status": "active", "defaultSalePriceCents": 39900 },
+        { "productRef": "DEMO-PRODUCT-MEM", "sku": "DEMO-SKU-MEM-DDR5", "name": "金百达 DDR5 16GB 6000", "category": "内存", "brand": "金百达", "specs": "16GB / 6000MHz", "trackingMode": "quantity", "requiresSn": false, "status": "disabled", "defaultSalePriceCents": 29900 }
+      ],
+      "stockItems": [
+        { "stockItemId": "DEMO-ITEM-U017", "assetCode": "U-017", "productRef": "DEMO-PRODUCT-GPU", "condition": "used", "snRaw": "SN-GPU-8842-A", "snNormalized": "sngpu8842a", "ownership": "store", "availability": "available", "location": "store", "acquisitionRef": "DEMO-RC-001", "acquisitionCostCents": 80000, "refurbishmentCostCents": 8000, "costKnown": true },
+        { "stockItemId": "DEMO-ITEM-N201", "assetCode": "N-201", "productRef": "DEMO-PRODUCT-GPU", "condition": "new", "snRaw": "SN-GPU-9001-B", "snNormalized": "sngpu9001b", "ownership": "store", "availability": "available", "location": "store", "acquisitionRef": "DEMO-PO-002", "acquisitionCostCents": 198000, "refurbishmentCostCents": null, "costKnown": true },
+        { "stockItemId": "DEMO-ITEM-U032", "assetCode": "U-032", "productRef": "DEMO-PRODUCT-MB", "condition": "used", "snRaw": null, "snNormalized": null, "ownership": "store", "availability": "available", "location": "store", "acquisitionRef": "DEMO-RC-002", "acquisitionCostCents": null, "refurbishmentCostCents": null, "costKnown": false },
+        { "stockItemId": "DEMO-ITEM-N118", "assetCode": "N-118", "productRef": "DEMO-PRODUCT-MB", "condition": "new", "snRaw": "SN-MB-5510-C", "snNormalized": "snmb5510c", "ownership": "store", "availability": "quarantine", "location": "store", "acquisitionRef": "DEMO-PO-002", "acquisitionCostCents": 78000, "refurbishmentCostCents": null, "costKnown": true },
+        { "stockItemId": "DEMO-ITEM-C901", "assetCode": "C-901", "productRef": "DEMO-PRODUCT-GPU", "condition": "used", "snRaw": "SN-GPU-8842-A", "snNormalized": "sngpu8842a", "ownership": "customer", "availability": "customer_custody", "location": "customer", "acquisitionRef": null, "acquisitionCostCents": null, "refurbishmentCostCents": null, "costKnown": false },
+        { "stockItemId": "DEMO-ITEM-T501", "assetCode": "T-501", "productRef": "DEMO-PRODUCT-GPU", "condition": "new", "snRaw": "SN-GPU-9100-E", "snNormalized": "sngpu9100e", "ownership": "store", "availability": "in_transit", "location": "supplier", "acquisitionRef": "DEMO-PO-003", "acquisitionCostCents": 196000, "refurbishmentCostCents": null, "costKnown": true }
+      ],
+      "balances": [
+        { "productRef": "DEMO-PRODUCT-GPU", "locationId": "DEMO-LOC-STORE", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0, "totalCostCents": 286000, "costKnown": true },
+        { "productRef": "DEMO-PRODUCT-MB", "locationId": "DEMO-LOC-STORE", "availableQty": 1, "reservedQty": 0, "quarantineQty": 1, "totalCostCents": null, "costKnown": false },
+        { "productRef": "DEMO-PRODUCT-SSD", "locationId": "DEMO-LOC-STORE", "availableQty": 12, "reservedQty": 3, "quarantineQty": 1, "totalCostCents": 424000, "costKnown": true },
+        { "productRef": "DEMO-PRODUCT-MEM", "locationId": "DEMO-LOC-STORE", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0, "totalCostCents": 43000, "costKnown": true }
+      ],
+      "movements": [
+        { "movementId": "DEMO-MV-001", "productRef": "DEMO-PRODUCT-GPU", "stockItemId": "DEMO-ITEM-U017", "qty": 1, "fromBucket": null, "toBucket": "available", "costCents": 88000, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-002", "productRef": "DEMO-PRODUCT-GPU", "stockItemId": "DEMO-ITEM-N201", "qty": 1, "fromBucket": null, "toBucket": "available", "costCents": 198000, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-003", "productRef": "DEMO-PRODUCT-MB", "stockItemId": "DEMO-ITEM-U032", "qty": 1, "fromBucket": null, "toBucket": "available", "costCents": null, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-004", "productRef": "DEMO-PRODUCT-MB", "stockItemId": "DEMO-ITEM-N118", "qty": 1, "fromBucket": null, "toBucket": "quarantine", "costCents": 78000, "source": "purchase_receipt" },
+        { "movementId": "DEMO-MV-005", "productRef": "DEMO-PRODUCT-SSD", "stockItemId": null, "qty": 15, "fromBucket": null, "toBucket": "available", "costCents": 397500, "source": "opening_balance" },
+        { "movementId": "DEMO-MV-006", "productRef": "DEMO-PRODUCT-SSD", "stockItemId": null, "qty": 3, "fromBucket": "available", "toBucket": "reserved", "costCents": null, "source": "reservation" },
+        { "movementId": "DEMO-MV-007", "productRef": "DEMO-PRODUCT-SSD", "stockItemId": null, "qty": 1, "fromBucket": null, "toBucket": "quarantine", "costCents": 26500, "source": "purchase_receipt" },
+        { "movementId": "DEMO-MV-008", "productRef": "DEMO-PRODUCT-MEM", "stockItemId": null, "qty": 2, "fromBucket": null, "toBucket": "available", "costCents": 43000, "source": "opening_balance" }
+      ],
+      "inTransit": {
+        "purchaseRef": "DEMO-PO-003",
+        "productRef": "DEMO-PRODUCT-GPU",
+        "orderedQty": 1,
+        "receivedQty": 0,
+        "stockItemRef": "DEMO-ITEM-T501",
+        "note": "在途是采购单的派生量，不落 stock_balances；余额三列里没有它的位置。"
+      },
+      "caseIds": ["IV-01", "IV-02", "IV-03", "IV-04", "IV-05", "IV-06", "IV-07", "IV-08"],
+      "cases": [
+        {
+          "id": "IV-01",
+          "title": "同型号不同实物",
+          "claim": "DEMO-PRODUCT-GPU 有 U-017（二手、回收取得）与 N-201（新品、采购取得）两件，编号、SN、来源与成本各不相同；数量栏显示 2，但点开构成必须能分别定位到具体那件。",
+          "expect": { "productRef": "DEMO-PRODUCT-GPU", "itemAssetCodes": ["U-017", "N-201"], "balanceAvailableQty": 2, "distinctAcquisitionRefs": ["DEMO-RC-001", "DEMO-PO-002"], "costCentsByAssetCode": { "U-017": 88000, "N-201": 198000 } },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 86, "quote": "没有厂商 SN 的二手也有内部唯一 stockItemId / assetCode" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-02",
+          "title": "无 SN 二手",
+          "claim": "U-032 是二手主板，没有厂商 SN，但仍有内部唯一编号；snRaw / snNormalized 为 null，assetCode 非空。",
+          "expect": { "stockItemId": "DEMO-ITEM-U032", "assetCode": "U-032", "condition": "used", "snRaw": null, "snNormalized": null, "hasAssetCode": true },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 21, "quote": "二手必有内部编号" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-03",
+          "title": "客户寄存不计入在库",
+          "claim": "C-901 是客户送修暂存的同型号显卡，所有权为客户、可用性为客户保管、位置在客户处；它不计入自有在库量，也不进余额三列。",
+          "expect": { "stockItemId": "DEMO-ITEM-C901", "ownership": "customer", "availability": "customer_custody", "ownOnHandQty": 2, "customerCustodyQty": 1, "countedInOwnOnHand": false },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 13, "quote": "客户暂存、客供、送修均不属于可卖库存" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-04",
+          "title": "未知成本不得写成 0",
+          "claim": "DEMO-PRODUCT-MB 的余额因为 U-032 成本未知，totalCostCents 必须为 null 且 costKnown=false；界面不得渲染成 ¥0.00。",
+          "expect": { "productRef": "DEMO-PRODUCT-MB", "totalCostCents": null, "costKnown": false, "mustNotRenderAsZero": true },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 11, "quote": "未知成本为 null，不是 0" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-05",
+          "title": "重复 SN 不自动合并",
+          "claim": "U-017（店有）与 C-901（客户）的 snNormalized 相同，属两条独立所有权记录，不自动合并；同一所有权下重复 SN 由部分唯一索引拒绝。",
+          "expect": { "duplicateSnNormalized": "sngpu8842a", "storeOwnership": "store", "customerOwnership": "customer", "autoMerged": false, "storeDuplicateRejected": true },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 86, "quote": "重复 SN 进入人工核对，不自动合并所有权记录" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-06",
+          "title": "数量守恒",
+          "claim": "每个 product × bucket 的余额必须等于流水净和（sum(to) − sum(from)）。T05a 口径：to_bucket 桶 +qty、from_bucket 桶 −qty。",
+          "expect": {
+            "recomputedMatchesBalance": true,
+            "byProduct": [
+              { "productRef": "DEMO-PRODUCT-GPU", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0 },
+              { "productRef": "DEMO-PRODUCT-MB", "availableQty": 1, "reservedQty": 0, "quarantineQty": 1 },
+              { "productRef": "DEMO-PRODUCT-SSD", "availableQty": 12, "reservedQty": 3, "quarantineQty": 1 },
+              { "productRef": "DEMO-PRODUCT-MEM", "availableQty": 2, "reservedQty": 0, "quarantineQty": 0 }
+            ]
+          },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 20, "quote": "汇总可重算" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-07",
+          "title": "在途不落地",
+          "claim": "DEMO-PO-003 采购的 T-501 尚未实到，可用性为 in_transit；它在余额三列里没有位置，因此不可能被算进自有在库量。",
+          "expect": { "stockItemId": "DEMO-ITEM-T501", "availability": "in_transit", "ownOnHandQty": 2, "inTransitQty": 1, "inTransitInBalance": false },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 84, "quote": "在途不算在库" }],
+          "owner": "T05c"
+        },
+        {
+          "id": "IV-08",
+          "title": "停用商品保留既有库存",
+          "claim": "DEMO-PRODUCT-MEM 已停用（G-07 语义）：不得再产生新的库存与占用，但既有 2 件库存照常显示、不自动清零。",
+          "expect": { "productRef": "DEMO-PRODUCT-MEM", "status": "disabled", "availableQty": 2, "newStockBlocked": true, "existingStockCleared": false },
+          "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 98, "quote": "关键属性已发生业务后修改需专门规则" }],
+          "owner": "T05c"
+        }
+      ]
+    }
+  },
+
+  "moneyFormulaContract": {
+    "note": "本节的键名是 money-rules.json 公式的 derivedTerms，不是新增公式。validate-contracts.mjs 第 12 节按 money-rules.json 的 expression 重算 computeCases.expected，任何一项对不上即失败。",
+    "terms": [
+      "confirmedTotalCents",
+      "approvedIncreaseCents",
+      "approvedDecreaseCents",
+      "returnCreditCents",
+      "validReceiptsCents",
+      "validRefundsCents",
+      "appliedOffsetsCents",
+      "reversedOffsetsCents",
+      "finalAcquisitionCents",
+      "lawfulAdjustmentCents",
+      "validOffsetsCents",
+      "cashNetPaidCents",
+      "refundableCashNetCents"
+    ],
+    "computed": [
+      "salesNetAccruedCents",
+      "cashNetReceivedCents",
+      "offsetNetCents",
+      "salesBalanceCents",
+      "balanceDirection",
+      "recoveryPayableRemainingCents",
+      "offsetAmountCents",
+      "refundableCashCents",
+      "collectableCents"
+    ],
+    "stageRule": "多阶段算例的 stages 逐阶段独立核算；上一阶段的预期结果作为下一阶段的事实输入，由验证脚本逐阶段重算，不允许只核算最后阶段。",
+    "nullRule": "任一输入为 null 时，依赖它的公式结果必须为 null 并给出原因，禁止用 0 代替（conventions.money.unknownCost、conventions.nullable.rule）。",
+    "otherKinds": {
+      "note": "以下三类算例不套用 9 条金额公式，各有自己的口径来源；输入项在此登记，由验证脚本按类核对。",
+      "assetCost": ["acquisitionCostCents", "refurbishmentCosts", "costKnown"],
+      "assetCostBasis": "money-rules.json costRules.serializedAndUsed（实物成本 = 来源实际成本 + 确认整备成本）",
+      "discountAllocation": ["discountCents", "lines"],
+      "discountAllocationBasis": "money-rules.json discountAllocation.method（含稳定行 ID 与最大余数规则）",
+      "partialReturn": ["netLineCents", "qty", "returnQty"],
+      "partialReturnBasis": "money-rules.json partialReturn.method / cap"
+    }
+  },
+
+  "computeCases": [
+    {
+      "id": "TC-01-TRADEIN-NORMAL",
+      "kind": "tradeIn",
+      "title": "置换 · 正常（无定金）",
+      "source": "03-domain-rules.md §7 置换表第 1 行",
+      "specQuote": "新机 6000 / 旧机最终收购 1500 / 先前定金 0 / 折抵 1500 / 本次现金 收 4,500",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "confirmedTotalCents": 600000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 0,
+            "validReceiptsCents": 0,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": 150000,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 0
+          },
+          "expected": {
+            "salesNetAccruedCents": 600000,
+            "cashNetReceivedCents": 0,
+            "offsetNetCents": 0,
+            "salesBalanceCents": 600000,
+            "balanceDirection": "client_due",
+            "recoveryPayableRemainingCents": 150000,
+            "offsetAmountCents": 150000,
+            "refundableCashCents": 0,
+            "collectableCents": 600000
+          },
+          "scenarioExpected": { "offsetAppliedCents": 150000, "cashCollectCents": 450000, "cashPayCustomerCents": 0 }
+        }
+      ]
+    },
+    {
+      "id": "TC-02-TRADEIN-DEPOSIT",
+      "kind": "tradeIn",
+      "title": "置换 · 已付定金 500",
+      "source": "03-domain-rules.md §7 置换表第 2 行",
+      "specQuote": "新机 6000 / 旧机最终收购 1500 / 先前定金 500 / 折抵 1500 / 本次现金 再收 4,000",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "confirmedTotalCents": 600000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 0,
+            "validReceiptsCents": 50000,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": 150000,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 50000
+          },
+          "expected": {
+            "salesNetAccruedCents": 600000,
+            "cashNetReceivedCents": 50000,
+            "offsetNetCents": 0,
+            "salesBalanceCents": 550000,
+            "balanceDirection": "client_due",
+            "recoveryPayableRemainingCents": 150000,
+            "offsetAmountCents": 150000,
+            "refundableCashCents": 0,
+            "collectableCents": 550000
+          },
+          "scenarioExpected": { "offsetAppliedCents": 150000, "cashCollectCents": 400000, "cashPayCustomerCents": 0 }
+        }
+      ]
+    },
+    {
+      "id": "TC-03-TRADEIN-OLD-PRICIER",
+      "kind": "tradeIn",
+      "title": "置换 · 旧机更贵",
+      "source": "03-domain-rules.md §7 置换表第 3 行",
+      "specQuote": "新机 6000 / 旧机最终收购 7000 / 先前定金 0 / 折抵 6000 / 本次现金 付客户 1,000，记在回收应付",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "confirmedTotalCents": 600000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 0,
+            "validReceiptsCents": 0,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": 700000,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 0
+          },
+          "expected": {
+            "salesNetAccruedCents": 600000,
+            "cashNetReceivedCents": 0,
+            "offsetNetCents": 0,
+            "salesBalanceCents": 600000,
+            "balanceDirection": "client_due",
+            "recoveryPayableRemainingCents": 700000,
+            "offsetAmountCents": 600000,
+            "refundableCashCents": 0,
+            "collectableCents": 600000
+          },
+          "scenarioExpected": { "offsetAppliedCents": 600000, "cashCollectCents": 0, "cashPayCustomerCents": 100000 }
+        }
+      ]
+    },
+    {
+      "id": "TC-04-TRADEIN-DEPOSIT-OLD-PRICIER",
+      "kind": "tradeIn",
+      "title": "置换 · 定金后旧机更贵",
+      "source": "03-domain-rules.md §7 置换表第 4 行",
+      "specQuote": "新机 6000 / 旧机最终收购 7000 / 先前定金 500 / 折抵 5500 / 本次现金 付客户 1,500",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "confirmedTotalCents": 600000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 0,
+            "validReceiptsCents": 50000,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": 700000,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 50000
+          },
+          "expected": {
+            "salesNetAccruedCents": 600000,
+            "cashNetReceivedCents": 50000,
+            "offsetNetCents": 0,
+            "salesBalanceCents": 550000,
+            "balanceDirection": "client_due",
+            "recoveryPayableRemainingCents": 700000,
+            "offsetAmountCents": 550000,
+            "refundableCashCents": 0,
+            "collectableCents": 550000
+          },
+          "scenarioExpected": { "offsetAppliedCents": 550000, "cashCollectCents": 0, "cashPayCustomerCents": 150000 }
+        }
+      ]
+    },
+    {
+      "id": "TC-05-TRADEIN-UNINSPECTED",
+      "kind": "tradeInUninspected",
+      "title": "置换 · 未验机（最终收购价未定）",
+      "source": "03-domain-rules.md §7 置换表第 5 行",
+      "specQuote": "新机 6000 / 旧机预计 1,500 / 先前定金 500 / 折抵 0，尚未生效 / 只显示预计补差，不允许结清",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "confirmedTotalCents": 600000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 0,
+            "validReceiptsCents": 50000,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": null,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 50000
+          },
+          "expected": {
+            "salesNetAccruedCents": 600000,
+            "cashNetReceivedCents": 50000,
+            "offsetNetCents": 0,
+            "salesBalanceCents": 550000,
+            "balanceDirection": "client_due",
+            "recoveryPayableRemainingCents": null,
+            "offsetAmountCents": null,
+            "refundableCashCents": 0,
+            "collectableCents": 550000
+          },
+          "nullReasons": {
+            "recoveryPayableRemainingCents": "finalAcquisitionCents 为 null（未取得所有权、最终价未定），不得估成 0",
+            "offsetAmountCents": "依赖 recoveryPayableRemainingCents 的 min()，上游为 null 时结果必须为 null"
+          },
+          "scenarioExpected": { "offsetAppliedCents": 0, "cashCollectCents": 0, "cashPayCustomerCents": 0, "settleAllowed": false }
+        }
+      ],
+      "unresolved": [
+        {
+          "question": "回收未取得所有权（Recovery.state 未达 acquired）时，recoveryPayableRemainingCents 的契约取值是 null 还是「不适用」的另一种表示？",
+          "state": "规格未定义",
+          "owner": "T14a",
+          "why": "money-rules.json 只定义 finalAcquisitionCents 参与公式，未定义 finalAcquisitionCents 为 null 时的公式结果表示；本契约按 conventions.nullable 与 money.unknownCost 的口径取 null，属推断。"
+        },
+        {
+          "question": "「不允许结清」在前端与后端分别由哪个闸门承载？",
+          "state": "规格只给结论未给承载",
+          "owner": "T08a",
+          "why": "03 §7 只写结果，未说由 allowedActions 阻断、还是由交付闸门（03 §7 六项）承载。"
+        }
+      ]
+    },
+    {
+      "id": "TC-06-RETURN-1000-300",
+      "kind": "return",
+      "title": "成交 1,000、已收 1,000、退货贷项 300、退款 300",
+      "source": "03-domain-rules.md §7 尾段算例",
+      "specQuote": "成交 1,000、已收 1,000、确认退货贷项 300，余额 -300，退款 300 后余额回 0",
+      "stages": [
+        {
+          "id": "before-refund",
+          "terms": {
+            "confirmedTotalCents": 100000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 30000,
+            "validReceiptsCents": 100000,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": null,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 100000
+          },
+          "expected": {
+            "salesNetAccruedCents": 70000,
+            "cashNetReceivedCents": 100000,
+            "offsetNetCents": 0,
+            "salesBalanceCents": -30000,
+            "balanceDirection": "store_due",
+            "recoveryPayableRemainingCents": null,
+            "offsetAmountCents": null,
+            "refundableCashCents": 30000,
+            "collectableCents": 0
+          },
+          "nullReasons": {
+            "recoveryPayableRemainingCents": "本算例不涉及回收，finalAcquisitionCents 为 null 表示不适用",
+            "offsetAmountCents": "无回收应付，折抵不成立；用 null 而非 0 以免被读成「折抵了 0 元」"
+          },
+          "scenarioExpected": { "refundCents": 30000 }
+        },
+        {
+          "id": "after-refund",
+          "terms": {
+            "confirmedTotalCents": 100000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 30000,
+            "validReceiptsCents": 100000,
+            "validRefundsCents": 30000,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": null,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 70000
+          },
+          "expected": {
+            "salesNetAccruedCents": 70000,
+            "cashNetReceivedCents": 70000,
+            "offsetNetCents": 0,
+            "salesBalanceCents": 0,
+            "balanceDirection": "settled",
+            "recoveryPayableRemainingCents": null,
+            "offsetAmountCents": null,
+            "refundableCashCents": 0,
+            "collectableCents": 0
+          },
+          "nullReasons": {
+            "recoveryPayableRemainingCents": "本算例不涉及回收，finalAcquisitionCents 为 null 表示不适用",
+            "offsetAmountCents": "无回收应付，折抵不成立"
+          },
+          "scenarioExpected": { "inventoryDisposition": "quarantine", "autoSellable": false }
+        }
+      ]
+    },
+    {
+      "id": "TC-07-CANCEL-WITH-DEPOSIT",
+      "kind": "cancel",
+      "title": "有预收取消未交付单（预收 500 转应退）",
+      "source": "06 §2 V3「新增取消前预收 500 应退」",
+      "specQuote": "释放占用；预收转为应退，不自动产生现金退款（退款须另走 B18）",
+      "stages": [
+        {
+          "id": "before-cancel",
+          "terms": {
+            "confirmedTotalCents": 50000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": 0,
+            "returnCreditCents": 0,
+            "validReceiptsCents": 50000,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": null,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 50000
+          },
+          "expected": {
+            "salesNetAccruedCents": 50000,
+            "cashNetReceivedCents": 50000,
+            "offsetNetCents": 0,
+            "salesBalanceCents": 0,
+            "balanceDirection": "settled",
+            "recoveryPayableRemainingCents": null,
+            "offsetAmountCents": null,
+            "refundableCashCents": 0,
+            "collectableCents": 0
+          },
+          "nullReasons": {
+            "recoveryPayableRemainingCents": "本算例不涉及回收，finalAcquisitionCents 为 null 表示不适用（conventions.nullable.rule）",
+            "offsetAmountCents": "无回收应付，折抵不成立；用 null 而非 0 以免被读成「折抵了 0 元」"
+          },
+          "scenarioExpected": { "reservationState": "released" }
+        },
+        {
+          "id": "after-cancel",
+          "terms": {
+            "confirmedTotalCents": 50000,
+            "approvedIncreaseCents": 0,
+            "approvedDecreaseCents": null,
+            "returnCreditCents": 0,
+            "validReceiptsCents": 50000,
+            "validRefundsCents": 0,
+            "appliedOffsetsCents": 0,
+            "reversedOffsetsCents": 0,
+            "finalAcquisitionCents": null,
+            "lawfulAdjustmentCents": 0,
+            "validOffsetsCents": 0,
+            "cashNetPaidCents": 0,
+            "refundableCashNetCents": 50000
+          },
+          "expected": {
+            "salesNetAccruedCents": null,
+            "cashNetReceivedCents": 50000,
+            "offsetNetCents": 0,
+            "salesBalanceCents": null,
+            "balanceDirection": null,
+            "recoveryPayableRemainingCents": null,
+            "offsetAmountCents": null,
+            "refundableCashCents": null,
+            "collectableCents": null
+          },
+          "nullReasons": {
+            "approvedDecreaseCents": "取消未交付单后，原确认成交额如何冲销（走已批准减价调整，还是另一种冲销口径）规格未定义，故本算例不假定其数值",
+            "salesNetAccruedCents": "上游 approvedDecreaseCents 未定义",
+            "salesBalanceCents": "上游 salesNetAccruedCents 未定义",
+            "balanceDirection": "上游为 null",
+            "recoveryPayableRemainingCents": "本算例不涉及回收，finalAcquisitionCents 为 null 表示不适用（conventions.nullable.rule）",
+            "offsetAmountCents": "上游 salesBalanceCents 与 recoveryPayableRemainingCents 均为 null，折抵无从计算",
+            "refundableCashCents": "上游 salesBalanceCents 为 null",
+            "collectableCents": "上游 salesBalanceCents 为 null"
+          },
+          "scenarioExpected": {
+            "reservationState": "released",
+            "refundDueCents": 50000,
+            "cashRefundedCents": 0,
+            "refundRequiresAction": "B18"
+          }
+        }
+      ],
+      "unresolved": [
+        {
+          "question": "取消未交付单时，原确认成交额通过哪个口径退出销售净应计？",
+          "state": "规格未定义",
+          "owner": "T08a",
+          "why": "money-rules.json 的 salesNetAccruedCents 只列 approvedIncreaseCents / approvedDecreaseCents / returnCreditCents 三个减项；actions.json B11 只写「释放占用；预收转为应退，不自动产生现金退款」，未说净应计如何变化。本卡不假定其数值，把该阶段的可核实部分（现金未变、应退 500）单列，其余取 null。"
+        }
+      ]
+    },
+    {
+      "id": "TC-08-ASSET-COST-880",
+      "kind": "assetCost",
+      "title": "U-017 成本 = 收购 800 + 可归属整备 80",
+      "source": "03-domain-rules.md §7 成本与毛利；06 §2 V2",
+      "specQuote": "U-017 收购 800 元 + 已确认整备材料 80 元 = 880 元",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "acquisitionCostCents": 80000,
+            "refurbishmentCosts": [
+              { "amountCents": 8000, "capitalizable": true },
+              { "amountCents": 3000, "capitalizable": false }
+            ],
+            "costKnown": true
+          },
+          "expected": { "assetCostCents": 88000, "capitalizableRefurbishmentCents": 8000, "nonCapitalizableCents": 3000 }
+        }
+      ]
+    },
+    {
+      "id": "TC-09-DISCOUNT-ALLOC-300",
+      "kind": "discountAllocation",
+      "title": "整单优惠 300 分分摊到 3 行（可整除）",
+      "source": "contracts/v1/money-rules.json discountAllocation.method（第 100 行）",
+      "specQuote": "按各行折前金额占比分配到分，先向下取整，余分按最大余数、再按稳定行 ID 分配",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "discountCents": 300,
+            "lines": [
+              { "lineId": "L1", "grossCents": 100000 },
+              { "lineId": "L2", "grossCents": 200000 },
+              { "lineId": "L3", "grossCents": 300000 }
+            ]
+          },
+          "expected": {
+            "floorNumerator": { "L1": 30000000, "L2": 60000000, "L3": 90000000 },
+            "floorCents": { "L1": 50, "L2": 100, "L3": 150 },
+            "remainderNumerator": { "L1": 0, "L2": 0, "L3": 0 },
+            "remainderOrder": [],
+            "discountAllocationCents": { "L1": 50, "L2": 100, "L3": 150 },
+            "allocationSumCents": 300
+          }
+        }
+      ]
+    },
+    {
+      "id": "TC-10-DISCOUNT-ALLOC-100-REMAINDER",
+      "kind": "discountAllocation",
+      "title": "整单优惠 100 分分摊到 3 行（产生 2 分余分）",
+      "source": "contracts/v1/money-rules.json discountAllocation.method（第 100 行）",
+      "specQuote": "按各行折前金额占比分配到分，先向下取整，余分按最大余数、再按稳定行 ID 分配",
+      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "discountCents": 100,
+            "lines": [
+              { "lineId": "L1", "grossCents": 100000 },
+              { "lineId": "L2", "grossCents": 200000 },
+              { "lineId": "L3", "grossCents": 299999 }
+            ]
+          },
+          "expected": {
+            "floorNumerator": { "L1": 10000000, "L2": 20000000, "L3": 29999900 },
+            "floorCents": { "L1": 16, "L2": 33, "L3": 49 },
+            "remainderNumerator": { "L1": 400016, "L2": 200033, "L3": 599949 },
+            "remainderOrder": ["L3", "L1", "L2"],
+            "discountAllocationCents": { "L1": 17, "L2": 33, "L3": 50 },
+            "allocationSumCents": 100
+          }
+        }
+      ],
+      "note": "分配用整数运算避免浮点：行分子 = discountCents × grossCents，行分母 = ΣgrossCents = 599999；floor = 分子 ÷ 分母 的整数商，remainderNumerator = 分子 mod 分母。余分按 remainderNumerator 从大到小分配，同值再按稳定行 ID 升序。本算例余 2 分：第三行余数最大先得 1 分，第一行次之再得 1 分。"
+    },
+    {
+      "id": "TC-11-DISCOUNT-ALLOC-1CENT",
+      "kind": "discountAllocation",
+      "title": "整单优惠 1 分分摊到 3 行",
+      "source": "06 §3 A16「优惠 1 分分摊到多行」",
+      "specQuote": "优惠 1 分分摊到多行、部分数量退款 | 稳定分配，合计等于总优惠，累计不超原净额",      "stages": [
+        {
+          "id": "s1",
+          "terms": {
+            "discountCents": 1,
+            "lines": [
+              { "lineId": "L1", "grossCents": 100000 },
+              { "lineId": "L2", "grossCents": 200000 },
+              { "lineId": "L3", "grossCents": 300000 }
+            ]
+          },
+          "expected": {
+            "floorNumerator": { "L1": 100000, "L2": 200000, "L3": 300000 },
+            "floorCents": { "L1": 0, "L2": 0, "L3": 0 },
+            "remainderNumerator": { "L1": 100000, "L2": 200000, "L3": 300000 },
+            "remainderOrder": ["L3", "L2", "L1"],
+            "discountAllocationCents": { "L1": 0, "L2": 0, "L3": 1 },
+            "allocationSumCents": 1
+          }
+        }
+      ]
+    },
+    {
+      "id": "TC-12-PARTIAL-RETURN-PER-UNIT",
+      "kind": "partialReturn",
+      "title": "原行净额 100 元 3 件，按件分配与累计上限",
+      "source": "money-rules.json partialReturn.method / cap",
+      "specQuote": "按原行净金额分配到每件，最后一件承担余分、累计退货贷项不超过原行净额",
+      "stages": [
+        {
+          "id": "return-1-unit",
+          "terms": { "netLineCents": 10000, "qty": 3, "returnQty": 1 },
+          "expected": { "perUnitCents": [3333, 3333, 3334], "creditCents": 3333, "cumulativeCreditCents": 3333, "capCents": 10000 }
+        },
+        {
+          "id": "return-3-units",
+          "terms": { "netLineCents": 10000, "qty": 3, "returnQty": 3 },
+          "expected": { "perUnitCents": [3333, 3333, 3334], "creditCents": 10000, "cumulativeCreditCents": 10000, "capCents": 10000 }
+        }
+      ]
+    }
+  ],
+
+  "behaviorCases": [
+    {
+      "id": "BC-01",
+      "title": "同 requestId 同载荷重发 3 次",
+      "source": "06 §3 A04",
+      "request": { "action": "B08", "path": "/sales/orders/DEMO-SO-003/payments", "requestId": "DEMO-RQ-BC01", "repeats": 3, "samePayload": true },
+      "expect": { "effectsApplied": 1, "resultIdentical": true, "errorCode": null },
+      "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 157, "quote": "同 ID 同载荷返回原结果" }],
+      "owner": "T04"
+    },
+    {
+      "id": "BC-02",
+      "title": "同 requestId 改载荷",
+      "source": "06 §3 A05",
+      "request": { "action": "B08", "path": "/sales/orders/DEMO-SO-003/payments", "requestId": "DEMO-RQ-BC01", "secondPayloadDiffers": true },
+      "expect": { "httpStatus": 409, "errorCode": "IDEMPOTENCY_MISMATCH", "originalResultUnchanged": true },
+      "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 157, "quote": "同 ID 改载荷报冲突" }],
+      "owner": "T04"
+    },
+    {
+      "id": "BC-03",
+      "title": "两端同时收最后 100 元",
+      "source": "06 §2 V3「两端同时收最后 100」、06 §3 A25",
+      "request": { "action": "B08", "path": "/sales/orders/DEMO-SO-DUE100/payments", "concurrent": 2, "amountCentsEach": 10000, "orderBalanceCents": 10000 },
+      "expect": { "succeededCount": 1, "failedCount": 1, "errorCode": "BALANCE_EXCEEDED", "balanceAfterCents": 0 },
+      "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 154, "quote": "数量预留和折抵用条件扣减 / 约束，保证非负和累计不超额" }],
+      "owner": "T04"
+    },
+    {
+      "id": "BC-04",
+      "title": "条件 UPDATE 影响 0 行时必须中止后续流水",
+      "source": "06 §3 A07",
+      "request": { "action": "B08", "path": "/sales/orders/DEMO-SO-003/payments", "forceConditionalUpdateMiss": true },
+      "expect": { "subsequentRowsInserted": 0, "reportsSuccess": false, "errorCode": "BALANCE_EXCEEDED" },
+      "specBasis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 153, "quote": "T04 必须设计能让断言失败主动中止整个批次的数据库机制" }],
+      "owner": "T04"
+    }
+  ],
+
+  "boundaryInputs": [
+    {
+      "id": "V4-01",
+      "group": "长文本",
+      "input": "客户称呼 40 个汉字，超出常规卡片一行",
+      "expect": "按字面保存与返回，不截断、不报错；界面最多两行后省略并保留完整值可查（02 §4 任务行规则）。",
+      "basis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 101, "quote": "长设备名最多两行" }],
+      "owner": "T02c"
+    },
+    {
+      "id": "V4-02",
+      "group": "长文本",
+      "input": "设备名 40 字（含型号、容量、颜色、成色描述）",
+      "expect": "deviceSummary 按字面返回；任务行两行内省略，完整值进详情。",
+      "basis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 101, "quote": "长设备名最多两行" }],
+      "owner": "T02c"
+    },
+    {
+      "id": "V4-03",
+      "group": "长列表",
+      "input": "配置 30 行（装机单）",
+      "expect": "详情页不强塞八行配置；配置进只读配置页，主处理页只给摘要（02 §4）。",
+      "basis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 109, "quote": "点击配置进入只读配置页" }],
+      "owner": "T02c"
+    },
+    {
+      "id": "V4-04",
+      "group": "长标识",
+      "input": "长 SN（超过 40 字符，含连字符与小写）",
+      "expect": "snRaw 保留大小写与符号，snNormalized 用于检索；客户端不得解析 ID 推断主键。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 9, "quote": "所有 ID 对客户端视为不透明字符串" },
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 28, "quote": "金额和编号尽量等宽数字" }
+      ],
+      "owner": "T05a"
+    },
+    {
+      "id": "V4-05",
+      "group": "空值",
+      "input": "空照片（未上传任何证据）",
+      "expect": "允许无图；有文字替代与准确标签，无图仍能查单办事。不得显示伪造占位为真实照片。",
+      "basis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md", "line": 122, "quote": "有文字替代与准确标签；无图仍能查单办事" }],
+      "owner": "T16"
+    },
+    {
+      "id": "V4-06",
+      "group": "失败态",
+      "input": "图片 URL 失效（对象已清理或临时凭证过期）",
+      "expect": "保持占位和设备名称，不影响查单；提交证据必需时提示补传。",
+      "basis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 181, "quote": "图片失败" }],
+      "owner": "T16"
+    },
+    {
+      "id": "V4-07",
+      "group": "未知值",
+      "input": "成本未知（costKnown=false）",
+      "expect": "costCents 必须为 null，不得估成 0；批次带待核实标志，界面显示「待核实」而非 ¥0。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 181, "quote": "存在未知成本的批次用待核实标志，不能估成零。" },
+        { "file": "contracts/v1/conventions.json", "line": 56, "quote": "未知成本为 null 且配 costKnown=false，禁止用 0 代替" }
+      ],
+      "owner": "T05a"
+    },
+    {
+      "id": "V4-08",
+      "group": "金额精度",
+      "input": "金额 128,000.50 元",
+      "expect": "协议层为整数 12800050 分；显示按元换算；出现非整数分即 VALIDATION_ERROR。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 9, "quote": "金额以 Cents 结尾，数量为整数，version 为非负整数" },
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 103, "quote": "不把 ¥128,000.50 缩成极小字号或省略成无法核账的数" }
+      ],
+      "owner": "T02c"
+    },
+    {
+      "id": "V4-09",
+      "group": "零值",
+      "input": "零价服务行（unitPriceCents = 0）",
+      "expect": "0 是有效值，不是未知；服务行计入优惠分摊口径的另一侧（客供件默认 0，另列服务费）。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 173, "quote": "客供件默认售价和成本为 0，另列装机服务费" },
+        { "file": "contracts/v1/conventions.json", "line": 67, "quote": "0 是有效余额，不是未知；未知数量不得以 0 冒充" }
+      ],
+      "owner": "T07a"
+    },
+    {
+      "id": "V4-10",
+      "group": "窄屏",
+      "input": "320px 宽屏幕",
+      "expect": "无整页横向溢出；统计允许两行两列；金额、交期、主动作可读。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md", "line": 108, "quote": "320、375、390、430 宽及真实 iOS / Android" },
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 103, "quote": "不把 ¥128,000.50 缩成极小字号或省略成无法核账的数" }
+      ],
+      "owner": "T02b"
+    },
+    {
+      "id": "V4-11",
+      "group": "无障碍",
+      "input": "系统字体放大",
+      "expect": "重排而不裁掉字段；正常内容可完成操作；不硬保固定条数。",
+      "basis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 99, "quote": "字体放大时以可读性优先，不硬保四条" }],
+      "owner": "T02b"
+    },
+    {
+      "id": "V4-12",
+      "group": "权限",
+      "input": "普通店员请求含成本的响应",
+      "expect": "后端不返回成本 / 毛利字段，不是前端隐藏；界面显示无权限原因，不显示 ¥0 冒充。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 190, "quote": "无权 API 不返回字段" },
+        { "file": "contracts/v1/conventions.json", "line": 133, "quote": "内部成本、毛利、客户隐私不得仅靠前端隐藏；无权 API 不返回字段" }
+      ],
+      "owner": "T03c"
+    },
+    {
+      "id": "V4-13",
+      "group": "越权",
+      "input": "跨店实体 ID（其他门店的订单 / 实物）",
+      "expect": "返回 ENTITY_NOT_FOUND，不泄露其他店实体是否存在。",
+      "basis": [
+        { "file": "contracts/v1/errors.json", "line": 54, "quote": "不存在或不属于当前可见范围" },
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 15, "quote": "后端校验子对象确实属于同店，不能只检查父单" }
+      ],
+      "owner": "T03c"
+    },
+    {
+      "id": "V4-14",
+      "group": "会话",
+      "input": "登录过期 / 会话被撤权",
+      "expect": "清身份缓存与本地受限草稿，引导重新登录；登录后先刷新单据，不自动重放写请求。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md", "line": 171, "quote": "退出、撤权、解绑导致本地受限缓存清除" },
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 179, "quote": "不自动重放写请求" }
+      ],
+      "owner": "T03b"
+    },
+    {
+      "id": "V4-15",
+      "group": "并发",
+      "input": "两端同时改同一单",
+      "expect": "实体 version 不一致时返回 VERSION_CONFLICT；保留草稿并展示最新事实，不自动覆盖。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 202, "quote": "实体 version 不一致时返回冲突；UI 保留草稿，展示最新事实" },
+        { "file": "contracts/v1/conventions.json", "line": 73, "quote": "不匹配返回 409 VERSION_CONFLICT" }
+      ],
+      "owner": "T04c"
+    },
+    {
+      "id": "V4-16",
+      "group": "网络",
+      "input": "离线",
+      "expect": "顶部未连接提示；正式库存与资金操作禁用，不排队偷偷补交；本地草稿可编辑。",
+      "basis": [{ "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 178, "quote": "正式库存和资金操作禁用，不排队偷偷补交" }],
+      "owner": "T18"
+    },
+    {
+      "id": "V4-17",
+      "group": "网络",
+      "input": "写成功后丢响应（结果未知）",
+      "expect": "显示「正在核实是否已保存」，以原 requestId 查询 /operations/:requestId；查明失败才允许新的业务操作，禁止按失败直接重发新 ID。",
+      "basis": [
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md", "line": 200, "quote": "结果未知不等于失败；保存 requestId 后查操作结果，必要时以相同 ID、相同载荷重发" },
+        { "file": "docs/plans/2026-09-17-web-wechat-plan/02-ui-specification.md", "line": 176, "quote": "用原 requestId 查询；查明失败才允许新的业务操作" }
+      ],
+      "owner": "T03b"
+    }
+  ],
+
+  "openItems": [
+    {
+      "id": "F01",
+      "question": "取消未交付单时原确认成交额经哪个口径退出销售净应计？",
+      "state": "规格未定义",
+      "owner": "T08a",
+      "affects": ["TC-07-CANCEL-WITH-DEPOSIT"],
+      "why": "见该算例的 unresolved。本卡只冻结可核实部分（现金未变、应退 500、占用释放、不自动退款）。"
+    },
+    {
+      "id": "F02",
+      "question": "回收未取得所有权时 recoveryPayableRemainingCents 的表示（null 还是另有约定）？",
+      "state": "规格未定义",
+      "owner": "T14a",
+      "affects": ["TC-05-TRADEIN-UNINSPECTED"],
+      "why": "本卡按 conventions.nullable 与 money.unknownCost 取 null，属推断，须 T14a 确认。"
+    },
+    {
+      "id": "F03",
+      "question": "amountSummary / primaryAction 子结构是否应提升为 objects.json 的规范性定义？",
+      "state": "待负责人裁定",
+      "owner": "项目负责人",
+      "affects": ["shapeDefinitions", "dtoGeneration"],
+      "why": "这两个字段在 objects.json 里是 object 类型、结构未定。T01c 为生成 DTO 必须给出结构，故暂冻结在本文件；若要求进入 objects.json 的规范性表面，应新建 contracts/v2 或按 conventions.compatibility.versioning 提版。"
+    },
+    {
+      "id": "F04",
+      "question": "生成物落地目录与接入方式（网页 / 小程序各自的端内目录）",
+      "state": "本卡只产出中立生成物，端内接入由 T02 执行",
+      "owner": "T02a / T02b",
+      "affects": ["dtoGeneration"],
+      "why": "T01c 范围限定为 contracts/ 与文档，不改业务前端目录；小程序项目尚未建立。"
+    },
+    {
+      "id": "F05",
+      "question": "列表排序（逾期 → 今天到期 → 可执行等待最久 → 未来）是否在 V1 冻结具体顺序？",
+      "state": "本卡不冻结",
+      "owner": "T18",
+      "affects": ["datasets.V1"],
+      "why": "06 §2 的表格顺序是类别展示顺序，不是排序结果；排序规则已在 objects.json TaskReadModel.rules 与 conventions.pagination.ordering 声明，具体实现属读模型任务。"
+    }
+  ],
+
+  "dtoGeneration": {
+    "generator": "contracts/tools/generate-dto.mjs",
+    "runCommand": "node contracts/tools/generate-dto.mjs",
+    "checkCommand": "node contracts/tools/generate-dto.mjs --check",
+    "principle": "单向生成：当前 contracts/v1.1 是唯一来源，生成物只读。生成文件不得手工编辑；校验脚本第 12 节重算哈希，任何手改都会失败。",
+    "whyNotSharedPackage": "网页是 React + TypeScript（Vite 打包），小程序是原生 TypeScript 编译，二者模块解析、基础库与构建链不同。共享一个运行时 TS 包会被小程序构建链拒绝，或被迫在端内再引入一层构建。故不共享运行时包，改为从同一份契约单向生成到各端目录：同一版本、同一取值、零手写副本。",
+    "outputDir": "contracts/generated",
+    "outputNote": "T01c 产出中立生成物到 contracts/generated/，供两端在各自任务卡中复制 / 引用。它不是「第二份契约」，只是契约的编译产物。",
+    "targets": [
+      { "id": "web", "label": "电脑网页端", "rootPath": "frontend/src/contracts/generated", "status": "done", "owner": "T02a", "landedNote": "T02a 已落地，由 frontend/scripts/sync-contracts.mjs 写入端内并做三方防漂移。" },
+      { "id": "miniprogram", "label": "微信小程序端", "rootPath": "miniprogram/contracts/generated", "status": "done", "owner": "T02b", "pathNote": "T02b 已建立项目并落地。project.config.json 的 miniprogramRoot 取项目根，故本路径即端内实际消费路径，规划值与实际一致，未改动 rootPath。" }
+    ],
+    "headerRule": "每个生成文件首行必须是 // AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT，并写明生成命令与源文件哈希。",
+    "hashRule": "manifest.json 记录每个契约源文件的 sha256 与每个生成物的 sha256；--check 与校验脚本都重算比对。",
+    "artifacts": [
+      { "file": "enums.ts", "from": ["enums.json"], "content": "每个枚举的 as const 对象与联合类型；库存桶规则、状态机转换表以常量形式导出" },
+      { "file": "objects.ts", "from": ["objects.json"], "content": "每个对象的 interface；nullable 字段加 | null；cents 映射为 number 且注释标注单位为分" },
+      { "file": "actions.ts", "from": ["actions.json"], "content": "动作码常量、业务路径常量、权限码常量、UI 页面引用映射" },
+      { "file": "errors.ts", "from": ["errors.json"], "content": "错误码常量与 HTTP 状态映射" },
+      { "file": "money.ts", "from": ["money-rules.json", "conventions.json"], "content": "公式 id 常量与金额单位类型别名（不含运行时计算实现）" },
+      { "file": "manifest.json", "from": ["contracts/v1.1 全部 JSON", "conventions.json"], "content": "contractVersion、生成时间、源文件哈希、生成物哈希、生成器版本" }
+    ],
+    "notGenerated": [
+      "业务规则实现（公式计算、状态转换守卫、权限判定）不生成，属后端服务与前端读模型的职责。",
+      "fixtures.json 不生成端内文件：样本只在测试与演示环境使用，生产包不得携带。"
+    ],
+    "forbiddenManualEdit": "任何生成物的手工修改会在 validate-contracts.mjs 第 12 节与 generate-dto.mjs --check 中被检出并失败。修改必须改契约源文件后重新生成。"
+  },
+
+  "revisions": [
+    {
+      "rev": "T02b-rev1",
+      "date": "2026-09-17",
+      "summary": "回写 dtoGeneration.targets 两端落地状态：web 与 miniprogram 均由 pending 改为 done，并补 landedNote / pathNote 记录实际落地方式。同时修正生成器：manifest.json 的 targets 原为 contracts/tools/generate-dto.mjs 内硬编码的第二份副本，现改为从本文件读取，使 targets 保持单一来源。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "未变更任何字段名、类型、枚举取值、动作编号、错误码、金额公式或样本数值；两个 rootPath 与规划值一致，未改动。端内生成物路径不变，故按 conventions.compatibility.versioning 的意图不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定（与 OPEN-ITEMS D-B 同一治理问题）。",
+      "verification": "node contracts/tools/validate-contracts.mjs；node contracts/tools/generate-dto.mjs --check；node frontend/scripts/sync-contracts.mjs --check；node miniprogram/scripts/sync-contracts.mjs --check"
+    },
+    {
+      "rev": "T05c",
+      "date": "2026-09-18",
+      "summary": "datasets 末尾新增 V5「商品、实物与期初库存」数据集：4 个商品、6 件实物、4 条余额、8 条流水、1 笔在途，以及 IV-01 ~ IV-08 八项样本用例（同型号不同实物、无 SN 二手、客户寄存、未知成本、重复 SN、数量守恒、在途不落地、停用商品保留既有库存）。纯追加，未修改 V1–V4 任何字段、数值与用例编号。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "与 T02b-rev1 同一治理问题（OPEN-ITEMS D-B）：本次只追加非规范性样本数据，未改变任何字段名、类型、枚举取值、动作编号、错误码或金额公式，故不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定。",
+      "mechanicalCheck": "validate-contracts.mjs 第 12 节新增 V5 专项：数量守恒（余额 = 流水净和，按 to_bucket +qty / from_bucket −qty 口径）、桶内数量非负、自有在库量不含在途与客户保管、costKnown=false 时 totalCostCents 必须为 null、客户保管件不得计入自有在库。",
+      "verification": "node contracts/tools/validate-contracts.mjs；node contracts/tools/generate-dto.mjs；node frontend/scripts/sync-contracts.mjs；node miniprogram/scripts/sync-contracts.mjs"
+    }
+  ]
+}

@@ -35,7 +35,6 @@ import {
   fetchInventory,
   fetchStockItem,
   queryOperationResult,
-  openInventoryOpeningWindow,
   recordOpening,
   createInventoryCount,
   approveInventoryCount,
@@ -43,10 +42,12 @@ import {
   inspectQuarantinedItem,
   recordRefurbishment,
   makeItemAvailable,
+  fetchInventoryActivity,
 } from './inventory-api'
 import type { AttachmentView } from './attachment-api'
 import type {
   InventoryItemRow,
+  InventoryActivityEntry,
   InventoryListPayload,
   InventoryProductRow,
   InventoryTotals,
@@ -59,6 +60,7 @@ import type {
   StockItemDetail,
 } from './inventory-api'
 import '../../styles/workbench.css'
+import './WorkbenchInventoryPage.css'
 
 type AvailabilityFilter = StockBucketValue | 'all'
 type ConditionFilter = StockConditionValue | 'all'
@@ -78,9 +80,57 @@ const CONDITION_FILTERS: Array<{ key: ConditionFilter; label: string }> = [
   { key: 'used', label: '二手' },
 ]
 
+const PRODUCT_CATEGORY_OPTIONS = [
+  'CPU', '主板', '内存', '显卡', '硬盘', '散热器', '电源', '机箱', '风扇',
+  '显示器', '鼠标', '键盘', '耳机', '座椅', '线材',
+] as const
+const CUSTOM_CATEGORY_VALUE = '__custom_category__'
+const WAREHOUSE_OPERATION_LABELS: Record<string, string> = {
+  B12: '商品档案变更',
+  B13: '现有库存登记',
+  B14: '创建采购单',
+  B16: '库存实盘记录或差异批准',
+  B19: '库存实物检验',
+  B30: '整备或上架',
+  B37: '取消采购未到数量',
+  B46: '清理无业务引用商品',
+}
+
 const PAGE_LIMIT = 50
 /** 逐件明细一次最多拉多少件（服务端上限 100）。 */
 const BREAKDOWN_LIMIT = 100
+
+function formatInventoryActivityTime(value: string): string {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit',
+  }).format(date)
+}
+
+function inventoryActivityTitle(item: InventoryActivityEntry): string {
+  if (item.kind === 'movement') {
+    return MOVEMENT_SOURCE_LABELS[item.action as keyof typeof MOVEMENT_SOURCE_LABELS] ?? '库存变动'
+  }
+  return WAREHOUSE_OPERATION_LABELS[item.action] ?? '仓库操作'
+}
+
+function inventoryActivityChange(item: InventoryActivityEntry): string | null {
+  if (item.kind !== 'movement' || item.qty === null) return null
+  const qty = Math.abs(item.qty)
+  const from = item.fromBucket ? BUCKET_LABELS[item.fromBucket as keyof typeof BUCKET_LABELS] : null
+  const to = item.toBucket ? BUCKET_LABELS[item.toBucket as keyof typeof BUCKET_LABELS] : null
+  if (from && to) return `${from} → ${to} · ${qty} 件`
+  if (to) return `${to} +${qty} 件`
+  if (from) return `${from} −${qty} 件`
+  return `${qty} 件`
+}
+
+function inventoryActivityActor(item: InventoryActivityEntry): string {
+  if (item.actorRole === 'system' || item.actorUserId === null) return '系统'
+  return item.actorRole === 'owner' ? '店主' : `员工账号 #${item.actorUserId}`
+}
 
 interface ProductDraft {
   name: string
@@ -91,18 +141,24 @@ interface ProductDraft {
   trackingMode: 'quantity' | 'item'
   requiresSn: boolean
   saleYuan: string
+  initialQty: string
+  initialCondition: StockConditionValue
+  initialCostBasis: OpeningCostBasis
+  initialCostYuan: string
+  initialCostEvidenceRef: string
   status: 'active' | 'disabled'
 }
 
 const EMPTY_PRODUCT: ProductDraft = {
   name: '', sku: '', category: '', brand: '', specs: '',
-  trackingMode: 'quantity', requiresSn: false, saleYuan: '', status: 'active',
+  trackingMode: 'quantity', requiresSn: false, saleYuan: '', initialQty: '0',
+  initialCondition: 'new', initialCostBasis: 'known_actual',
+  initialCostYuan: '', initialCostEvidenceRef: '', status: 'active',
 }
 
 interface OpeningLineDraft {
   key: string
   productRef: string
-  countLineRef: string
   qty: string
   assetCode: string
   snRaw: string
@@ -111,14 +167,13 @@ interface OpeningLineDraft {
   costYuan: string
   costBasis: OpeningCostBasis
   costEvidenceRef: string
-  costAssessedAt: string
 }
 
 function newOpeningLine(productRef = ''): OpeningLineDraft {
   return {
     key: `line-${Math.random().toString(36).slice(2, 10)}`,
-    productRef, countLineRef: '', qty: '1', assetCode: '', snRaw: '', remark: '', condition: 'new', costYuan: '',
-    costBasis: 'unknown', costEvidenceRef: '', costAssessedAt: '',
+    productRef, qty: '1', assetCode: '', snRaw: '', remark: '', condition: 'new', costYuan: '',
+    costBasis: 'known_actual', costEvidenceRef: '',
   }
 }
 
@@ -129,6 +184,16 @@ function yuanToCents(value: string): number | null {
   const number = Number(trimmed)
   if (!Number.isFinite(number) || number < 0) return null
   return Math.round(number * 100)
+}
+
+function openingCostBasis(amountCents: number | null, preference: OpeningCostBasis): OpeningCostBasis {
+  if (amountCents === null) return 'unknown'
+  if (amountCents === 0) return 'zero_cost'
+  return preference === 'assessed_estimate' ? 'assessed_estimate' : 'known_actual'
+}
+
+function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10)
 }
 
 function openingCostText(
@@ -182,6 +247,11 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   const [listError, setListError] = useState('')
   const [unknownWrite, setUnknownWrite] = useState<UnknownWrite | null>(null)
   const [notice, setNotice] = useState('')
+  const [activityOpen, setActivityOpen] = useState(false)
+  const [activityItems, setActivityItems] = useState<InventoryActivityEntry[]>([])
+  const [activityState, setActivityState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [activityError, setActivityError] = useState('')
+  const [activityLoaded, setActivityLoaded] = useState(false)
 
   const [query, setQuery] = useState('')
   const [appliedQuery, setAppliedQuery] = useState('')
@@ -204,8 +274,9 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   const [refurbishment, setRefurbishment] = useState({ category: '', amountYuan: '', capitalizable: true, paymentEntryRef: '', evidenceRef: '' })
   const [saleDraft, setSaleDraft] = useState({ conditionGrade: 'good' as 'brand_new' | 'like_new' | 'excellent' | 'good' | 'fair', saleYuan: '', disclosureNote: '', dataDisposed: false, warrantyTerm: '3' as '3' | '6' | '12' | '24' })
 
-  const [productForm, setProductForm] = useState<{ mode: 'closed' } | { mode: 'create' } | { mode: 'edit'; row: InventoryProductRow }>({ mode: 'closed' })
+  const [productForm, setProductForm] = useState<{ mode: 'closed' } | { mode: 'create'; createdProductId?: string } | { mode: 'edit'; row: InventoryProductRow }>({ mode: 'closed' })
   const [productDraft, setProductDraft] = useState<ProductDraft>(EMPTY_PRODUCT)
+  const [customCategorySelected, setCustomCategorySelected] = useState(false)
   const [savingProduct, setSavingProduct] = useState(false)
   const [productError, setProductError] = useState('')
 
@@ -214,8 +285,6 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   const [openingNote, setOpeningNote] = useState('')
   const [openingLines, setOpeningLines] = useState<OpeningLineDraft[]>([newOpeningLine()])
   const [openingWindow, setOpeningWindow] = useState<OpeningWindowStatus | null>(null)
-  const [openingWindowDays, setOpeningWindowDays] = useState('7')
-  const [openingWindowBusy, setOpeningWindowBusy] = useState(false)
   const [openingOptions, setOpeningOptions] = useState<InventoryProductRow[]>([])
   const [openingOptionsState, setOpeningOptionsState] = useState<'idle' | 'loading' | 'error'>('idle')
   const [savingOpening, setSavingOpening] = useState(false)
@@ -228,6 +297,31 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   const [countDraft, setCountDraft] = useState<{ id: string; version: number } | null>(null)
   const [countError, setCountError] = useState('')
   const [savingCount, setSavingCount] = useState(false)
+
+  const loadActivity = useCallback(async () => {
+    setActivityState('loading')
+    setActivityError('')
+    try {
+      const result = await fetchInventoryActivity()
+      if (!result.ok) {
+        setActivityError(result.message || '操作日志暂时无法读取')
+        setActivityState('error')
+        return
+      }
+      setActivityItems(result.data.items)
+      setActivityLoaded(true)
+      setActivityState('ready')
+    } catch {
+      setActivityError('操作日志暂时无法读取，请稍后重试。')
+      setActivityState('error')
+    }
+  }, [])
+
+  const toggleActivity = () => {
+    const nextOpen = !activityOpen
+    setActivityOpen(nextOpen)
+    if (nextOpen && (!activityLoaded || activityState === 'error')) void loadActivity()
+  }
 
   /** 当前筛选条件用于「保存后重新加载」；依赖写在 reload 的依赖表里，不用 ref 传。 */
   const applyResult = useCallback((result: Awaited<ReturnType<typeof fetchInventory>>) => {
@@ -401,11 +495,13 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
 
   const openProductCreate = () => {
     setProductDraft(EMPTY_PRODUCT)
+    setCustomCategorySelected(false)
     setProductError('')
     setProductForm({ mode: 'create' })
   }
 
   const openProductEdit = (row: InventoryProductRow) => {
+    setCustomCategorySelected(Boolean(row.category) && !PRODUCT_CATEGORY_OPTIONS.includes(row.category as (typeof PRODUCT_CATEGORY_OPTIONS)[number]))
     setProductDraft({
       name: row.name,
       sku: row.sku ?? '',
@@ -415,6 +511,11 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
       trackingMode: row.trackingMode,
       requiresSn: row.requiresSn,
       saleYuan: row.defaultSalePriceCents ? String(row.defaultSalePriceCents / 100) : '',
+      initialQty: '0',
+      initialCondition: 'new',
+      initialCostBasis: 'unknown',
+      initialCostYuan: '',
+      initialCostEvidenceRef: '',
       status: row.status,
     })
     setProductError('')
@@ -424,56 +525,131 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   async function submitProduct(event: FormEvent) {
     event.preventDefault()
     if (productForm.mode === 'closed') return
+    const creating = productForm.mode === 'create'
+    const alreadyCreatedProductId = creating ? productForm.createdProductId ?? null : null
+    const initialQty = creating ? Number(productDraft.initialQty) : 0
+    const hasInitialStock = creating && initialQty > 0
     if (!productDraft.name.trim()) {
       setProductError('商品名称不能为空')
+      return
+    }
+    if (creating && !productDraft.category.trim()) {
+      setProductError(customCategorySelected ? '请填写自定义分类' : '请选择商品分类')
+      return
+    }
+    if (creating && (!productDraft.initialQty.trim() || !Number.isSafeInteger(initialQty) || initialQty < 0)) {
+      setProductError('请填写 0 或更大的整数数量')
+      return
+    }
+    if (creating && productDraft.trackingMode === 'item' && initialQty > 100) {
+      setProductError('逐件商品一次最多填写 100 件，请调整数量。')
       return
     }
     if (productDraft.saleYuan.trim() && yuanToCents(productDraft.saleYuan) === null) {
       setProductError('默认售价必须是不小于 0 的金额')
       return
     }
+    const initialCostCents = productDraft.initialCostYuan.trim() ? yuanToCents(productDraft.initialCostYuan) : null
+    if (creating && productDraft.initialCostYuan.trim() && initialCostCents === null) {
+      setProductError('单件成本填写无效；不知道成本可以留空。')
+      return
+    }
     setSavingProduct(true)
     setProductError('')
     const payload: ProductWritePayload = {
-      productRef: productForm.mode === 'edit' ? productForm.row.id : null,
+      productRef: productForm.mode === 'edit' ? productForm.row.id : alreadyCreatedProductId,
       name: productDraft.name.trim(),
       sku: productDraft.sku.trim() || null,
       category: productDraft.category.trim() || null,
       brand: productDraft.brand.trim() || null,
       specs: productDraft.specs.trim() || null,
-      ...(productForm.mode === 'create' ? { defaultSalePriceCents: toCentsOrZero(productDraft.saleYuan) } : {}),
+      ...(creating ? { defaultSalePriceCents: toCentsOrZero(productDraft.saleYuan) } : {}),
       trackingMode: productDraft.trackingMode,
       requiresSn: productDraft.trackingMode === 'item' ? true : productDraft.requiresSn,
-      status: productDraft.status,
+      status: creating ? 'active' : productDraft.status,
     }
     try {
-      const result = await saveProduct(payload, productForm.mode === 'edit' ? productForm.row.version : null)
-      if (result.ok) {
-        // 先刷新再报成功：反过来会有一瞬间「提示说已保存，表格还是旧数字」，
-        // 用户看不出哪个是真的。顺序换一下就没了。
+      let productId = alreadyCreatedProductId
+      if (!productId) {
+        const result = await saveProduct(payload, productForm.mode === 'edit' ? productForm.row.version : null)
+        if (!result.ok) {
+          if (result.unknownResult) {
+            // 超时 ≠ 失败：先查这次建档结果，避免重复创建同一个商品。
+            setUnknownWrite({ what: '商品保存', requestId: result.requestId })
+            setProductError('请求结果未知：可能已经保存成功。请先点「查询结果」，不要直接重复提交。')
+            return
+          }
+          setProductError(result.code === 'VERSION_CONFLICT'
+            ? '这件商品已被别人改过，请关闭表单重新打开再改。'
+            : result.message)
+          return
+        }
+        productId = result.data.entityId
+        if (!productId) {
+          setProductForm({ mode: 'closed' })
+          await reload()
+          setNotice('商品已建立，但服务端没有返回库存关联编号；请刷新后确认商品，再单独登记库存。')
+          return
+        }
+        if (creating && hasInitialStock) setProductForm({ mode: 'create', createdProductId: productId })
+      }
+
+      if (productForm.mode === 'edit' || !hasInitialStock) {
         setProductForm({ mode: 'closed' })
         await reload()
-        setNotice(productForm.mode === 'edit' ? `商品「${payload.name}」已保存` : `已建立商品「${payload.name}」`)
+        setNotice(productForm.mode === 'edit' ? `商品「${payload.name}」已更新` : `已建立商品「${payload.name}」`)
         return
       }
-      if (result.unknownResult) {
-        // 超时 ≠ 失败：表单不清空，先让用户用同一个 requestId 查结果。
-        setUnknownWrite({ what: '商品保存', requestId: result.requestId })
-        setProductError('请求结果未知：可能已经保存成功。请先点「查询结果」，不要直接重复提交。')
+
+      if (!canRecordOpening) {
+        setProductError('商品已建立，库存还没登记。当前账号没有登记库存权限，请由店主或有权限的负责人处理。')
         return
       }
-      setProductError(result.code === 'VERSION_CONFLICT'
-        ? '这件商品已被别人改过，请关闭表单重新打开再改。'
-        : result.message)
+      if (openingWindow?.mode !== 'formal') {
+        setProductError('商品已建立，库存还没登记。当前环境暂不支持登记现有库存；新进货请走采购到货。')
+        return
+      }
+      if (!productId) {
+        setProductError('商品已经建立，但没有可用的库存关联编号。请刷新库存列表后确认。')
+        return
+      }
+      const itemCount = productDraft.trackingMode === 'item' ? initialQty : 1
+      const initialLines: OpeningLinePayload[] = Array.from({ length: itemCount }, (_, index) => ({
+        approvedCountLineRef: `${productId}-${index + 1}`,
+        productRef: productId as string,
+        qty: productDraft.trackingMode === 'item' ? 1 : initialQty,
+        ...(productDraft.trackingMode === 'item' ? { condition: productDraft.initialCondition } : {}),
+        ...(initialCostCents === null ? {} : { unitCostCents: initialCostCents }),
+        costBasis: openingCostBasis(initialCostCents, productDraft.initialCostBasis),
+        costEvidenceRef: productDraft.initialCostEvidenceRef.trim() || null,
+        costAssessedAt: productDraft.initialCostBasis === 'assessed_estimate' && initialCostCents !== null && initialCostCents > 0
+          ? todayIsoDate()
+          : null,
+      }))
+      const openingResult = await recordOpening({
+        approvedCountRef: `existing-stock-${productId}`,
+        lines: initialLines,
+      })
+      if (openingResult.ok) {
+        setProductForm({ mode: 'closed' })
+        await reload()
+        setNotice(`商品「${payload.name}」已建立，现有库存 ${initialQty} 件已登记。`)
+        return
+      }
+      if (openingResult.unknownResult) {
+        setUnknownWrite({ what: '初始库存录入', requestId: openingResult.requestId })
+        setProductError('商品已建立，但现有库存登记结果未知。先查询结果，不要重复提交。')
+        return
+      }
+      setProductError(`商品已建立，但现有库存尚未登记：${openingResult.message}`)
     } finally {
       setSavingProduct(false)
     }
   }
 
   const openOpening = () => {
-    if (openingWindow?.mode === 'formal' && openingWindow.status !== 'open') return
     if (openingWindow?.mode === 'disabled' || !openingWindow) return
-    setOpeningRef('')
+    setOpeningRef(`existing-stock-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`)
     setOpeningNote('')
     setOpeningLines([newOpeningLine()])
     setOpeningError('')
@@ -487,32 +663,6 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
         setOpeningOptionsState('error')
       }
     })
-  }
-
-  const startFormalOpeningWindow = async () => {
-    const durationDays = Number(openingWindowDays)
-    if (!Number.isInteger(durationDays) || durationDays < 1 || durationDays > 7) {
-      setOpeningError('窗口期限必须为 1 至 7 天。')
-      return
-    }
-    setOpeningWindowBusy(true)
-    setOpeningError('')
-    try {
-      const result = await openInventoryOpeningWindow(durationDays)
-      if (result.ok) {
-        await reload()
-        setNotice(`正式期初窗口已开启 ${durationDays} 天；请先完成实盘核对，再提交期初库存。`)
-        return
-      }
-      if (result.unknownResult) {
-        setUnknownWrite({ what: '开启正式期初窗口', requestId: result.requestId })
-        setOpeningError('请求结果未知：窗口可能已经开启。先查询结果，再刷新库存窗口状态。')
-        return
-      }
-      setOpeningError(result.message)
-    } finally {
-      setOpeningWindowBusy(false)
-    }
   }
 
   const openCount = () => {
@@ -581,21 +731,10 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
   async function submitOpening(event: FormEvent) {
     event.preventDefault()
     const formal = openingWindow?.mode === 'formal'
-    if (!openingRef.trim()) {
-      setOpeningError('请填写人工实盘凭据（例如：实盘 2026-09-19 全场）——这是期初与日常入库的分界线')
-      return
-    }
     const lines: OpeningLinePayload[] = []
-    const countLineRefs = new Set<string>()
     for (const [index, line] of openingLines.entries()) {
       const at = `第 ${index + 1} 行`
       if (!line.productRef) { setOpeningError(`${at}：请选择型号`); return }
-      if (formal) {
-        const countLineRef = line.countLineRef.trim()
-        if (!countLineRef) { setOpeningError(`${at}：请填写盘点明细行引用，避免重复导入`); return }
-        if (countLineRefs.has(countLineRef)) { setOpeningError(`${at}：盘点明细行引用重复`); return }
-        countLineRefs.add(countLineRef)
-      }
       const product = productOf(line.productRef)
       const qty = Number(line.qty)
       if (!Number.isInteger(qty) || qty < 1) { setOpeningError(`${at}：数量必须是正整数`); return }
@@ -607,26 +746,14 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
       }
       const cost = yuanToCents(line.costYuan)
       if (line.costYuan.trim() && cost === null) { setOpeningError(`${at}：单件成本是不小于 0 的金额`); return }
+      const costBasis = openingCostBasis(cost, line.costBasis)
       if (formal) {
-        const evidence = line.costEvidenceRef.trim()
-        if (line.costBasis === 'unknown' && cost !== null) {
-          setOpeningError(`${at}：成本未知时金额必须留空；未知不等于 0 元`); return
-        }
-        if (line.costBasis === 'zero_cost' && cost !== 0) {
-          setOpeningError(`${at}：真实零成本必须明确填 0 元`); return
-        }
-        if ((line.costBasis === 'known_actual' || line.costBasis === 'assessed_estimate') && (cost === null || cost <= 0)) {
-          setOpeningError(`${at}：实际成本或估值必须填写大于 0 的单价；真实零成本请选择对应类型`); return
-        }
-        if (line.costBasis !== 'unknown' && !evidence) {
-          setOpeningError(`${at}：实际成本、估值和真实零成本都必须填写凭据或依据`); return
-        }
-        if (line.costBasis === 'assessed_estimate' && !/^\d{4}-\d{2}-\d{2}$/.test(line.costAssessedAt)) {
-          setOpeningError(`${at}：估值必须填写估值日期`); return
+        if (costBasis === 'assessed_estimate' && (cost === null || cost <= 0)) {
+          setOpeningError(`${at}：估算成本请填写大于 0 的单件金额`); return
         }
       }
       lines.push({
-        ...(formal ? { approvedCountLineRef: line.countLineRef.trim() } : {}),
+        ...(formal ? { approvedCountLineRef: line.key } : {}),
         productRef: line.productRef,
         qty: product?.trackingMode === 'item' ? 1 : qty,
         ...(product?.trackingMode === 'item'
@@ -638,9 +765,9 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
         ...(line.remark.trim() ? { remark: line.remark.trim() } : {}),
         ...(cost === null ? {} : { unitCostCents: cost }),
         ...(formal ? {
-          costBasis: line.costBasis,
+          costBasis,
           costEvidenceRef: line.costEvidenceRef.trim() || null,
-          costAssessedAt: line.costBasis === 'assessed_estimate' ? line.costAssessedAt : null,
+          costAssessedAt: costBasis === 'assessed_estimate' ? todayIsoDate() : null,
         } : {}),
       })
     }
@@ -649,9 +776,9 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
     setOpeningError('')
     try {
       const payload = formal
-        ? { approvedCountRef: openingRef.trim(), note: openingNote.trim() || null, lines }
+        ? { approvedCountRef: openingRef, note: openingNote.trim() || null, lines }
         : {
-            approvedCountRef: openingRef.trim(),
+            approvedCountRef: openingRef,
             costBasis: { kind: allKnown ? 'known' as const : 'unknown' as const },
             note: openingNote.trim() || null,
             lines,
@@ -660,12 +787,12 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
       if (result.ok) {
         setOpeningOpen(false)
         await reload()
-        setNotice(`期初已建账：${result.data.summary || `${lines.length} 行`}`)
+        setNotice(`现有库存已登记：${result.data.summary || `${lines.length} 行`}`)
         return
       }
       if (result.unknownResult) {
-        setUnknownWrite({ what: '期初录入', requestId: result.requestId })
-        setOpeningError('请求结果未知：可能已经建账。请先点「查询结果」，不要直接重复提交。')
+        setUnknownWrite({ what: '现有库存登记', requestId: result.requestId })
+        setOpeningError('请求结果未知：可能已经登记成功。请先点「查询结果」，不要直接重复提交。')
         return
       }
       setOpeningError(result.message)
@@ -678,7 +805,30 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
     if (!unknownWrite?.requestId) return
     const status = await queryOperationResult(unknownWrite.requestId)
     if (status.status === 'succeeded') {
-      setNotice(`${unknownWrite.what}：后台确认这笔已经记账，列表已刷新。`)
+      if (unknownWrite.what === '商品保存') {
+        const needsInitialStock = productForm.mode === 'create' && Number(productDraft.initialQty) > 0
+        if (needsInitialStock) {
+          if (status.resultRef) {
+            setProductForm({ mode: 'create', createdProductId: status.resultRef })
+            setProductError('商品已建立；继续登记店里已有的库存。')
+            setNotice('商品已建立，库存还没有登记。')
+          } else {
+            setProductForm({ mode: 'closed' })
+            setProductError('')
+            setNotice('商品已建立，但未返回商品编号，初始库存未入账。请刷新后确认商品，再办理库存登记。')
+          }
+        } else {
+          setProductForm({ mode: 'closed' })
+          setProductError('')
+          setNotice(`${unknownWrite.what}：后台确认这笔已经记账，列表已刷新。`)
+        }
+      } else if (unknownWrite.what === '初始库存录入') {
+        setProductForm({ mode: 'closed' })
+        setProductError('')
+        setNotice('现有库存已登记，列表已刷新。')
+      } else {
+        setNotice(`${unknownWrite.what}：后台确认这笔已经记账，列表已刷新。`)
+      }
       setUnknownWrite(null)
       await reload()
       return
@@ -689,52 +839,64 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
     }
     if (status.status === 'unknown') {
       setNotice(`${unknownWrite.what}：后台查不到这个请求编号，可以重新提交。`)
+      if (unknownWrite.what === '商品保存') {
+        setProductError('后台未找到建档记录，确认商品资料后可以重新提交。')
+      } else if (unknownWrite.what === '初始库存录入') {
+        setProductError('后台未找到库存登记记录；商品已建立，核对数量和成本后可以重新提交。')
+      }
       setUnknownWrite(null)
       return
+    }
+    if (status.status === 'failed') {
+      if (unknownWrite.what === '商品保存') {
+        setProductError(`商品保存没有成功：${status.message || status.code || '原因未知'}`)
+      } else if (unknownWrite.what === '初始库存录入') {
+        setProductError(`商品已建立，但库存登记没有成功：${status.message || status.code || '原因未知'}`)
+      }
     }
     setNotice(`${unknownWrite.what}：这次没有成功（${status.code ?? '原因未知'}）。`)
   }
 
   const list = rows ?? []
+  const productWriteUnknown = unknownWrite?.what === '商品保存' || unknownWrite?.what === '初始库存录入'
+  const productAlreadyCreated = productForm.mode === 'create' && Boolean(productForm.createdProductId)
+  const hasNewStockToRecord = productForm.mode === 'create' && Number(productDraft.initialQty) > 0
+  const productDraftCostCents = productDraft.initialCostYuan.trim() ? yuanToCents(productDraft.initialCostYuan) : null
+  const productFormBusy = savingProduct || productWriteUnknown
+  const closeProductForm = () => {
+    if (productAlreadyCreated) {
+      setNotice('商品已建立，但库存尚未登记；可以稍后从“登记现有库存”补录。')
+    }
+    setProductForm({ mode: 'closed' })
+  }
 
   return (
-    <div className="wb-page">
+    <div className="wb-page wb-inventory-page">
       <header className="wb-page-head">
         <div>
-          <p className="wb-kicker">实物流转</p>
-          <h1>配件台账</h1>
+          <p className="wb-kicker">库存管理</p>
+          <h1>仓库</h1>
           <p className="wb-caption">
-            按具体实物或批次查看本店库存；自有在库量 = 可卖 + 已订 + 待处理，在途与客户保管单列。
+            按型号、单件和批次查看库存。自有在库量由可卖、已订和待处理组成；在途与客户保管单独列出。
           </p>
-          <p className="wb-caption">报价不改库存；成交预留只占可售量，实际交付才出库。采购实收、确认收购和拆件产出按来源入库。</p>
-          <p className="wb-caption">B16 首发只批准不减少账面库存的差异；减库存报损走暂缓中的 B39。</p>
+          <p className="wb-caption">报价不会改库存；成交先预留，确认交付后才出库。采购到货、收旧和拆件按来源入库。</p>
         </div>
         <div className="wb-page-head-actions">
           {canEditProduct ? (
             <button type="button" className="wb-btn" onClick={openProductCreate}>新增商品</button>
           ) : null}
-          {canRecordOpening && openingWindow?.mode === 'preview' ? (
-            <button type="button" className="wb-btn wb-btn--primary" onClick={openOpening}>录入期初库存（隔离预览旧格式）</button>
+          {canRecordOpening && openingWindow?.mode === 'formal' ? (
+            <button type="button" className="wb-btn wb-btn--primary" onClick={openOpening}>登记现有库存</button>
+          ) : canRecordOpening && openingWindow?.mode === 'preview' ? (
+            <button type="button" className="wb-btn wb-btn--primary" onClick={openOpening}>试录现有库存（隔离预览）</button>
           ) : null}
-          {canRecordOpening && openingWindow?.mode === 'formal' && openingWindow.status === 'not_started' ? (
-            <div className="wb-form-actions">
-              <label className="wb-field">
-                <span>期初窗口（最多 7 天）</span>
-                <select value={openingWindowDays} onChange={(event) => setOpeningWindowDays(event.target.value)}>
-                  {[1, 2, 3, 4, 5, 6, 7].map((days) => <option key={days} value={days}>{days} 天</option>)}
-                </select>
-              </label>
-              <button type="button" className="wb-btn wb-btn--primary" disabled={openingWindowBusy} onClick={() => void startFormalOpeningWindow()}>
-                {openingWindowBusy ? '正在开启…' : '开启正式期初窗口'}
-              </button>
-            </div>
-          ) : null}
-          {canRecordOpening && openingWindow?.mode === 'formal' && openingWindow.status === 'open' ? (
-            <button type="button" className="wb-btn wb-btn--primary" onClick={openOpening}>录入正式期初库存</button>
-          ) : null}
-          {canCount ? <button type="button" className="wb-btn" onClick={openCount}>录入盘点</button> : null}
+          {canCount ? <button type="button" className="wb-btn" onClick={openCount}>记录实盘数量</button> : null}
         </div>
       </header>
+
+      {canRecordOpening && openingWindow?.mode === 'formal' ? (
+        <p className="wb-form-hint">店里已有的库存可以随时登记；系统启用后的新进货请走“采购到货”。库存登记会自动记下操作人和时间。</p>
+      ) : null}
 
       <section className="wb-item-flow-hub" aria-label="配件收发常用入口">
         <div className="wb-item-flow-hub__heading">
@@ -763,23 +925,11 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
         </div>
       </section>
 
-      {openingWindow?.mode === 'formal' && openingWindow.status === 'open' ? (
-        <p className="wb-inv-notice wb-inv-notice--warn">
-          正式期初窗口已开启，截止 {openingWindow.closesAt ? new Date(openingWindow.closesAt).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) : '—'}。
-          首笔正式经营库存流水或截止时间先到即关闭；关闭后不能重新开启。
-        </p>
-      ) : null}
-      {openingWindow?.mode === 'formal' && openingWindow.status === 'expired' ? (
-        <p className="wb-inv-notice wb-inv-notice--warn">正式期初窗口已到期，期初录入已关闭。漏项不能重开窗口补录。</p>
-      ) : null}
-      {openingWindow?.mode === 'formal' && openingWindow.status === 'closed' ? (
-        <p className="wb-inv-notice wb-inv-notice--warn">正式期初窗口已关闭{openingWindow.closeReason === 'first_business_movement' ? '（首笔正式经营库存流水已发生）' : ''}，不能重新开启。</p>
-      ) : null}
       {openingWindow?.mode === 'preview' ? (
-        <p className="wb-form-hint">隔离预览仅保留旧格式试录，不会建立正式期初窗口或获得正式入账资格。</p>
+        <p className="wb-form-hint">隔离预览只使用演示数据，不会写入正式库存。</p>
       ) : null}
       {openingWindow?.mode === 'disabled' ? (
-        <p className="wb-form-hint">当前环境未启用期初录入。</p>
+        <p className="wb-form-hint">当前环境未启用现有库存登记。</p>
       ) : null}
       {openingError && !openingOpen ? <p className="wb-form-error">{openingError}</p> : null}
 
@@ -790,7 +940,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
         </p>
       ) : null}
 
-      {unknownWrite ? (
+      {unknownWrite && !productWriteUnknown ? (
         <p className="wb-inv-notice wb-inv-notice--warn">
           {unknownWrite.what}的结果未知（请求编号 {unknownWrite.requestId ?? '—'}）。
           <button type="button" className="wb-btn" onClick={() => void checkUnknownResult()}>查询结果</button>
@@ -806,6 +956,62 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
           <span>客户保管 <b className="wb-tabular">{totals.customerCustodyCount}</b> 件（他人财产，不计入在库）</span>
         </div>
       ) : null}
+
+      <section className={`wb-activity-panel${activityOpen ? ' is-open' : ''}`} aria-label="仓库操作日志">
+        <button
+          type="button"
+          className="wb-activity-toggle"
+          aria-expanded={activityOpen}
+          aria-controls="wb-inventory-activity-list"
+          onClick={toggleActivity}
+        >
+          <span className="wb-activity-toggle-copy">
+            <strong>操作日志</strong>
+            <small>全体仓库成员可查看 · 最近 50 条</small>
+          </span>
+          <span className="wb-activity-toggle-state">{activityOpen ? '收起' : '展开'}</span>
+          <span className="wb-activity-chevron" aria-hidden="true" />
+        </button>
+        {activityOpen ? (
+          <div className="wb-activity-content" id="wb-inventory-activity-list" aria-live="polite">
+            {activityState === 'loading' ? <p className="wb-activity-state">正在读取操作日志…</p> : null}
+            {activityState === 'error' ? (
+              <div className="wb-activity-state wb-activity-state--error">
+                <span>{activityError}</span>
+                <button type="button" className="wb-btn" onClick={() => void loadActivity()}>重试</button>
+              </div>
+            ) : null}
+            {activityState === 'ready' && activityItems.length === 0 ? <p className="wb-activity-state">还没有仓库操作记录。</p> : null}
+            {activityState === 'ready' && activityItems.length > 0 ? (
+              <>
+                <ol className="wb-activity-list">
+                  {activityItems.map((item) => {
+                    const change = inventoryActivityChange(item)
+                    return (
+                      <li className={`wb-activity-entry is-${item.kind}`} key={item.id}>
+                        <span className="wb-activity-entry-dot" aria-hidden="true" />
+                        <div className="wb-activity-entry-body">
+                          <div className="wb-activity-entry-head">
+                            <strong>{inventoryActivityTitle(item)}</strong>
+                            <time dateTime={item.occurredAt}>{formatInventoryActivityTime(item.occurredAt)}</time>
+                          </div>
+                          <p>{item.productName || (item.entityType ? `${item.entityType} · ${item.entityId ?? '—'}` : '仓库操作')}</p>
+                          {change ? <span className="wb-activity-change">{change}</span> : null}
+                          <div className="wb-activity-entry-meta">
+                            <span>{inventoryActivityActor(item)}</span>
+                            {item.kind === 'operation' && item.entityId ? <span>记录号 {item.entityId}</span> : null}
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })}
+                </ol>
+                <button type="button" className="wb-activity-refresh" onClick={() => void loadActivity()}>刷新日志</button>
+              </>
+            ) : null}
+          </div>
+        ) : null}
+      </section>
 
       <form
         className="wb-inv-toolbar"
@@ -893,14 +1099,10 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
             {appliedQuery
               ? '换个型号、SKU 或品牌再试，或点「清除筛选」。'
               : openingWindow?.mode === 'formal'
-                ? openingWindow.status === 'not_started'
-                  ? '先建立商品型号，再由老板开启一次正式期初窗口并完成实盘建账。'
-                  : openingWindow.status === 'open'
-                    ? '正式期初窗口已开启；先建立商品型号，再录入本次实盘库存。'
-                    : '正式期初窗口已关闭，不能重开补录。'
+                ? '先建立商品型号；店里已有的库存可以随时登记，新进货请走采购到货。'
                 : openingWindow?.mode === 'preview'
                   ? '先建立商品型号；隔离预览只支持旧格式试录，不会写入正式库存。'
-                  : '先建立商品型号；当前环境未启用期初录入。'}
+                  : '先建立商品型号；当前环境未启用现有库存登记。'}
           </span>
         </div>
       ) : (
@@ -992,7 +1194,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
                                   <span>
                                     来源：
                                     {itemDetail.acquisition
-                                      ? `期初建账 ${itemDetail.acquisition.approvedCountRef}（${itemDetail.acquisition.createdAt}）`
+                                      ? `现有库存登记（${itemDetail.acquisition.createdAt}）`
                                       : '未记来源'}
                                   </span>
                                   <span>
@@ -1093,70 +1295,166 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
           <div className="wb-modal-card">
             <div className="wb-modal-head">
               <h2>{productForm.mode === 'edit' ? `编辑商品 · ${productForm.row.name}` : '新增商品'}</h2>
-              <button type="button" className="wb-btn" onClick={() => setProductForm({ mode: 'closed' })}>关闭</button>
+              <button type="button" className="wb-btn" disabled={productFormBusy} onClick={closeProductForm}>关闭</button>
             </div>
             <form className="wb-form" onSubmit={submitProduct}>
+              <div className="wb-product-core-grid">
               <label className="wb-field">
+                <span>分类</span>
+                <select
+                  name="product-category"
+                  aria-label="分类"
+                  required={productForm.mode === 'create'}
+                  value={customCategorySelected ? CUSTOM_CATEGORY_VALUE : PRODUCT_CATEGORY_OPTIONS.includes(productDraft.category as (typeof PRODUCT_CATEGORY_OPTIONS)[number]) ? productDraft.category : ''}
+                  disabled={productAlreadyCreated || productFormBusy}
+                  onChange={(event) => {
+                    const value = event.target.value
+                    const useCustomCategory = value === CUSTOM_CATEGORY_VALUE
+                    setCustomCategorySelected(useCustomCategory)
+                    setProductDraft({ ...productDraft, category: useCustomCategory ? '' : value })
+                  }}
+                >
+                  <option value="">请选择商品分类</option>
+                  {PRODUCT_CATEGORY_OPTIONS.map((category) => <option key={category} value={category}>{category}</option>)}
+                  <option value={CUSTOM_CATEGORY_VALUE}>其他（自定义）</option>
+                </select>
+              </label>
+              {customCategorySelected ? (
+                <label className="wb-field">
+                  <span>自定义分类</span>
+                  <input name="product-category-custom" aria-label="自定义分类" value={productDraft.category} disabled={productAlreadyCreated || productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, category: event.target.value })} placeholder="填写商品所属类别" />
+                </label>
+              ) : null}
+              <label className="wb-field">
+                <span>品牌</span>
+                <input name="product-brand" value={productDraft.brand} disabled={productAlreadyCreated || productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, brand: event.target.value })} placeholder="如 影驰" />
+              </label>
+              <label className="wb-field wb-product-name">
                 <span>商品名称</span>
-                <input name="product-name" value={productDraft.name} onChange={(event) => setProductDraft({ ...productDraft, name: event.target.value })} placeholder="如 影驰 RTX 4060 Ti 金属大师" />
+                <input name="product-name" value={productDraft.name} disabled={productAlreadyCreated || productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, name: event.target.value })} placeholder="如 影驰 RTX 4060 Ti 金属大师" />
               </label>
               <label className="wb-field">
                 <span>SKU（可留空）</span>
-                <input name="product-sku" value={productDraft.sku} onChange={(event) => setProductDraft({ ...productDraft, sku: event.target.value })} placeholder="如 GPU-4060TI-METAL" />
-              </label>
-              <label className="wb-field">
-                <span>分类</span>
-                <input name="product-category" value={productDraft.category} onChange={(event) => setProductDraft({ ...productDraft, category: event.target.value })} placeholder="如 显卡" />
-              </label>
-              <label className="wb-field">
-                <span>品牌</span>
-                <input name="product-brand" value={productDraft.brand} onChange={(event) => setProductDraft({ ...productDraft, brand: event.target.value })} placeholder="如 影驰" />
+                <input name="product-sku" value={productDraft.sku} disabled={productAlreadyCreated || productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, sku: event.target.value })} placeholder="如 GPU-4060TI-METAL" />
               </label>
               <label className="wb-field">
                 <span>{productForm.mode === 'create' ? '新建商品参考售价（元）' : '当前参考售价（元）'}</span>
-                <input name="product-sale" value={productDraft.saleYuan} onChange={(event) => setProductDraft({ ...productDraft, saleYuan: event.target.value })} placeholder="留空按 0 计" disabled={productForm.mode === 'edit'} />
+                <input name="product-sale" value={productDraft.saleYuan} onChange={(event) => setProductDraft({ ...productDraft, saleYuan: event.target.value })} placeholder="留空按 0 计" disabled={productForm.mode === 'edit' || productAlreadyCreated || productFormBusy} />
                 {productForm.mode === 'edit' ? <p className="wb-form-hint">B40 改价首发暂缓；通用商品编辑不能调整挂牌参考价。</p> : null}
               </label>
               <label className="wb-field">
                 <span>规格说明（可留空）</span>
-                <input name="product-specs" value={productDraft.specs} onChange={(event) => setProductDraft({ ...productDraft, specs: event.target.value })} placeholder="如 8G / GDDR6" />
+                <input name="product-specs" value={productDraft.specs} disabled={productAlreadyCreated || productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, specs: event.target.value })} placeholder="如 8G / GDDR6" />
               </label>
               <label className="wb-field">
                 <span>管理方式</span>
-                <select name="product-tracking" value={productDraft.trackingMode} onChange={(event) => setProductDraft({ ...productDraft, trackingMode: event.target.value as 'quantity' | 'item' })}>
+                <select name="product-tracking" value={productDraft.trackingMode} disabled={productAlreadyCreated || productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, trackingMode: event.target.value as 'quantity' | 'item' })}>
                   <option value="quantity">按数量（散片、线材一类）</option>
                   <option value="item">逐件管理（每件自动生成内部编号）</option>
                 </select>
               </label>
-              <label className="wb-field">
-                <span>状态</span>
-                <select name="product-status" value={productDraft.status} onChange={(event) => setProductDraft({ ...productDraft, status: event.target.value as 'active' | 'disabled' })}>
-                  <option value="active">启用</option>
-                  <option value="disabled">停用</option>
-                </select>
-              </label>
-              <label className="wb-check">
-                <input
-                  name="product-needs-sn"
-                  type="checkbox"
-                  checked={productDraft.trackingMode === 'item' ? true : productDraft.requiresSn}
-                  disabled={productDraft.trackingMode === 'item'}
-                  onChange={(event) => setProductDraft({ ...productDraft, requiresSn: event.target.checked })}
-                />
-                需要逐件追踪（厂家 SN 可选）
-              </label>
+              </div>
+              {productForm.mode === 'create' ? (
+                <>
+                  <label className="wb-field">
+                    <span>店里现有数量</span>
+                    <input name="product-initial-qty" inputMode="numeric" value={productDraft.initialQty} disabled={productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, initialQty: event.target.value })} placeholder="0" />
+                  </label>
+                  <p className="wb-form-hint">填 0 只建立商品。新进货请走“采购到货”；不知道成本就留空，填 0 表示确实没有成本。</p>
+                  {Number(productDraft.initialQty) > 0 ? (
+                    <>
+                      {productDraft.trackingMode === 'item' ? <p className="wb-form-hint">逐件管理会为每件自动生成内部编号。</p> : null}
+                      {productDraft.trackingMode === 'item' ? (
+                        <label className="wb-field">
+                          <span>成色</span>
+                          <select name="product-initial-condition" value={productDraft.initialCondition} disabled={productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, initialCondition: event.target.value as StockConditionValue })}>
+                            <option value="new">新品</option>
+                            <option value="used">二手</option>
+                          </select>
+                        </label>
+                      ) : null}
+                      <label className="wb-field">
+                        <span>单件成本（元，可留空）</span>
+                        <input
+                          name="product-initial-cost"
+                          inputMode="decimal"
+                          value={productDraft.initialCostYuan}
+                          disabled={productFormBusy}
+                          onChange={(event) => {
+                            const initialCostYuan = event.target.value
+                            const cents = initialCostYuan.trim() ? yuanToCents(initialCostYuan) : null
+                            setProductDraft({
+                              ...productDraft,
+                              initialCostYuan,
+                              initialCostBasis: cents === 0 ? 'zero_cost' : cents === null ? 'known_actual' : productDraft.initialCostBasis,
+                            })
+                          }}
+                          placeholder="不知道就留空；确实零成本填 0"
+                        />
+                      </label>
+                      {productDraftCostCents !== null && productDraftCostCents > 0 ? (
+                        <label className="wb-field">
+                          <span>成本类型</span>
+                          <select name="product-initial-cost-kind" value={productDraft.initialCostBasis === 'assessed_estimate' ? 'assessed_estimate' : 'known_actual'} disabled={productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, initialCostBasis: event.target.value as OpeningCostBasis })}>
+                            <option value="known_actual">实际成本</option>
+                            <option value="assessed_estimate">估算成本</option>
+                          </select>
+                        </label>
+                      ) : null}
+                      {productDraft.initialCostYuan.trim() ? (
+                        <label className="wb-field">
+                          <span>成本来源或备注（可留空）</span>
+                          <input name="product-initial-cost-evidence" value={productDraft.initialCostEvidenceRef} disabled={productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, initialCostEvidenceRef: event.target.value })} placeholder="如采购单号、估算说明、赠与" />
+                        </label>
+                      ) : null}
+                      {productDraft.initialCostBasis === 'assessed_estimate' && productDraftCostCents !== null && productDraftCostCents > 0 ? (
+                        <p className="wb-form-hint">估算日期会自动记为今天；成本不确定时留空即可。</p>
+                      ) : null}
+                    </>
+                  ) : null}
+                </>
+              ) : null}
+              {productForm.mode === 'edit' ? (
+                <>
+                  <label className="wb-field">
+                    <span>商品状态</span>
+                    <select name="product-status" value={productDraft.status} disabled={productFormBusy} onChange={(event) => setProductDraft({ ...productDraft, status: event.target.value as 'active' | 'disabled' })}>
+                      <option value="active">启用</option>
+                      <option value="disabled">停用</option>
+                    </select>
+                  </label>
+                  <p className="wb-form-hint">这是商品档案的启用状态；停用不会删除商品档案或历史记录。新建商品默认启用。</p>
+                  <label className="wb-check">
+                    <input
+                      name="product-needs-sn"
+                      type="checkbox"
+                      checked={productDraft.trackingMode === 'item' ? true : productDraft.requiresSn}
+                      disabled={productDraft.trackingMode === 'item' || productFormBusy}
+                      onChange={(event) => setProductDraft({ ...productDraft, requiresSn: event.target.checked })}
+                    />
+                    需要逐件追踪（厂家 SN 可选）
+                  </label>
+                </>
+              ) : null}
 
-              {productError ? <p className="wb-form-error">{productError}</p> : null}
+              {productError ? (
+                <p className="wb-form-error">
+                  {productError}
+                  {productWriteUnknown ? (
+                    <button type="button" className="wb-btn" onClick={() => void checkUnknownResult()}>查询结果</button>
+                  ) : null}
+                </p>
+              ) : null}
               {productForm.mode === 'edit' ? (
                 <p className="wb-form-hint">
                   这件商品当前版本 {productForm.row.version}；保存时会带上它，别人先改了就会拦下来而不是覆盖。
                 </p>
               ) : null}
               <div className="wb-form-actions">
-                <button type="submit" className="wb-btn wb-btn--primary" disabled={savingProduct}>
-                  {savingProduct ? '正在保存…' : productForm.mode === 'edit' ? '保存修改' : '建立商品'}
+                <button type="submit" className="wb-btn wb-btn--primary" disabled={productFormBusy}>
+                  {savingProduct ? (hasNewStockToRecord ? '正在建立并登记…' : '正在保存…') : productForm.mode === 'edit' ? '保存修改' : productAlreadyCreated ? '登记现有库存' : hasNewStockToRecord ? '建立商品并登记库存' : '建立商品'}
                 </button>
-                <button type="button" className="wb-btn" onClick={() => setProductForm({ mode: 'closed' })}>取消</button>
+                <button type="button" className="wb-btn" disabled={productFormBusy} onClick={closeProductForm}>取消</button>
               </div>
             </form>
           </div>
@@ -1164,27 +1462,22 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
       ) : null}
 
       {openingOpen ? (
-        <div className="wb-modal" role="dialog" aria-modal="true" aria-label="录入期初库存">
+        <div className="wb-modal" role="dialog" aria-modal="true" aria-label="登记现有库存">
           <div className="wb-modal-card wb-modal-card--wide">
             <div className="wb-modal-head">
-              <h2>{openingWindow?.mode === 'formal' ? '录入正式期初库存' : '隔离预览试录（旧格式）'}</h2>
+              <h2>{openingWindow?.mode === 'formal' ? '登记现有库存' : '隔离预览试录（旧格式）'}</h2>
               <button type="button" className="wb-btn" onClick={() => setOpeningOpen(false)}>关闭</button>
             </div>
             {openingWindow?.mode === 'formal' ? (
               <p className="wb-form-hint">
-                仅录入门店自有现存库存；每行必须选择实际成本、老板估值、未知或真实零成本。实际成本和真实零成本须留依据；估值须留依据与估值日期；未知成本留空，不按 0 计算。
-                仅本窗口内可提交；首笔正式经营库存流水或截止时间先到即关闭，关闭后漏项不能重开补录。在途采购与未结应付应另行建账。
+                登记店里现在已有的自有库存。数量、成本和备注按实际填写；不知道成本可以留空，确实没有成本才填 0。系统自动生成编号并记录操作人和时间；新进货请走采购到货。
               </p>
             ) : (
               <p className="wb-form-hint">
-                这里只能在隔离环境用旧格式试录，不会开启正式窗口或进入正式库存。旧版“成本已知 / 未知”不能区分实际、估值和真实零成本；填 0 只是旧格式金额，不能证明真实零成本。正式录入请使用正式窗口。
+                隔离预览使用演示格式，不会写入正式库存。
               </p>
             )}
             <form className="wb-form" onSubmit={submitOpening}>
-              <label className="wb-field">
-                <span>人工实盘凭据</span>
-                <input name="opening-ref" value={openingRef} onChange={(event) => setOpeningRef(event.target.value)} placeholder="如 实盘 2026-09-19 全场" />
-              </label>
               <label className="wb-field">
                 <span>备注（可留空）</span>
                 <input name="opening-note" value={openingNote} onChange={(event) => setOpeningNote(event.target.value)} />
@@ -1214,17 +1507,6 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
                           ))}
                         </select>
                       </label>
-                      {openingWindow?.mode === 'formal' ? (
-                        <label className="wb-field">
-                          <span>盘点明细行引用</span>
-                          <input
-                            name="opening-count-line-ref"
-                            value={line.countLineRef}
-                            onChange={(event) => updateLine(line.key, { countLineRef: event.target.value })}
-                            placeholder="如 盘点单 A-01 / 第 12 行"
-                          />
-                        </label>
-                      ) : null}
                       <label className="wb-field">
                         <span>{perItem ? '数量（逐件固定 1）' : '数量'}</span>
                         <input
@@ -1264,70 +1546,37 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
                           <option value="used">二手</option>
                         </select>
                       </label>
-                      {openingWindow?.mode === 'formal' ? (
-                        <>
-                          <label className="wb-field">
-                            <span>成本口径</span>
-                            <select
-                              name="opening-cost-basis"
-                              value={line.costBasis}
-                              onChange={(event) => {
-                                const costBasis = event.target.value as OpeningCostBasis
-                                updateLine(line.key, {
-                                  costBasis,
-                                  costYuan: costBasis === 'unknown' ? '' : costBasis === 'zero_cost' ? '0' : line.costYuan === '0' ? '' : line.costYuan,
-                                  costEvidenceRef: costBasis === 'unknown' ? '' : line.costEvidenceRef,
-                                  costAssessedAt: costBasis === 'assessed_estimate' ? line.costAssessedAt : '',
-                                })
-                              }}
-                            >
-                              <option value="known_actual">实际成本（有单据）</option>
-                              <option value="assessed_estimate">老板估值</option>
-                              <option value="unknown">未知成本</option>
-                              <option value="zero_cost">真实零成本（有依据）</option>
-                            </select>
-                          </label>
-                          {line.costBasis !== 'unknown' ? (
-                            <label className="wb-field">
-                              <span>{line.costBasis === 'zero_cost' ? '单件成本（元，必须为 0）' : '单件成本（元）'}</span>
-                              <input
-                                name="opening-cost"
-                                inputMode="decimal"
-                                value={line.costYuan}
-                                onChange={(event) => updateLine(line.key, { costYuan: event.target.value })}
-                                placeholder={line.costBasis === 'zero_cost' ? '0' : '填写金额'}
-                              />
-                            </label>
-                          ) : <p className="wb-form-hint">成本留空；未知不等于真实零成本，销售毛利不得按 0 计算。</p>}
-                          {line.costBasis !== 'unknown' ? (
-                            <label className="wb-field">
-                              <span>{line.costBasis === 'assessed_estimate' ? '估值依据' : line.costBasis === 'zero_cost' ? '零成本依据' : '成本凭据'}</span>
-                              <input
-                                name="opening-cost-evidence"
-                                value={line.costEvidenceRef}
-                                onChange={(event) => updateLine(line.key, { costEvidenceRef: event.target.value })}
-                                placeholder={line.costBasis === 'zero_cost' ? '如赠与、捐赠凭据' : '如发票号、采购单号或凭据编号'}
-                              />
-                            </label>
-                          ) : null}
-                          {line.costBasis === 'assessed_estimate' ? (
-                            <label className="wb-field">
-                              <span>估值日期</span>
-                              <input name="opening-cost-assessed-at" type="date" value={line.costAssessedAt} onChange={(event) => updateLine(line.key, { costAssessedAt: event.target.value })} />
-                            </label>
-                          ) : null}
-                        </>
-                      ) : (
+                      <label className="wb-field">
+                        <span>单件成本（元，可留空）</span>
+                        <input
+                          name="opening-cost"
+                          inputMode="decimal"
+                          value={line.costYuan}
+                          onChange={(event) => updateLine(line.key, { costYuan: event.target.value })}
+                          placeholder="不知道就留空；确实零成本填 0"
+                        />
+                      </label>
+                      {openingWindow?.mode === 'formal' && yuanToCents(line.costYuan) !== null && (yuanToCents(line.costYuan) ?? 0) > 0 ? (
                         <label className="wb-field">
-                          <span>旧格式单件成本（元，留空 = 未知）</span>
+                          <span>成本类型</span>
+                          <select name="opening-cost-kind" value={line.costBasis === 'assessed_estimate' ? 'assessed_estimate' : 'known_actual'} onChange={(event) => updateLine(line.key, { costBasis: event.target.value as OpeningCostBasis })}>
+                            <option value="known_actual">实际成本</option>
+                            <option value="assessed_estimate">估算成本</option>
+                          </select>
+                        </label>
+                      ) : null}
+                      {openingWindow?.mode === 'formal' && line.costYuan.trim() ? (
+                        <label className="wb-field">
+                          <span>成本来源或备注（可留空）</span>
                           <input
-                            name="opening-cost"
-                            value={line.costYuan}
-                            onChange={(event) => updateLine(line.key, { costYuan: event.target.value })}
-                            placeholder="成本未知"
+                            name="opening-cost-evidence"
+                            value={line.costEvidenceRef}
+                            onChange={(event) => updateLine(line.key, { costEvidenceRef: event.target.value })}
+                            placeholder="如采购单号、估算说明、赠与"
                           />
                         </label>
-                      )}
+                      ) : null}
+                      {openingWindow?.mode === 'formal' ? <p className="wb-form-hint">成本不确定留空，系统不会按 0 元计算；估算日期自动记录为今天。</p> : null}
                       <button
                         type="button"
                         className="wb-btn"
@@ -1339,7 +1588,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
                       {alreadyHasStock ? (
                         <p className="wb-opening-warn">
                           「{product?.name}」已经有库存事实（自有在库 {product?.ownOnHandQty} 件 / 逐件 {product?.storeItemCount} 件）。
-                          期初只能建一次，这一行提交会被拒绝；补货走采购、数量差异走盘点。
+                          现有库存每个商品只登记一次；补货走采购到货，数量差异走实盘调整。
                         </p>
                       ) : null}
                     </div>
@@ -1355,7 +1604,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
 
               <div className="wb-form-actions">
                 <button type="submit" className="wb-btn wb-btn--primary" disabled={savingOpening}>
-                  {savingOpening ? '正在建账…' : '提交期初'}
+                  {savingOpening ? '正在登记…' : '保存库存'}
                 </button>
                 <button type="button" className="wb-btn" onClick={() => setOpeningOpen(false)}>取消</button>
               </div>
@@ -1364,7 +1613,37 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
         </div>
       ) : null}
 
-      {countOpen ? <div className="wb-modal" role="dialog" aria-modal="true" aria-label="录入盘点"><div className="wb-modal-card"><div className="wb-modal-head"><h2>录入盘点</h2><button type="button" className="wb-btn" onClick={() => setCountOpen(false)}>关闭</button></div><p className="wb-form-hint">保存实盘不会直接改库存。B16 首发只批准不减少账面库存的真实盘点差异；减少库存的差异涉及暂缓中的 B39 报损，不得由盘点冲减。</p><label className="wb-field"><span>商品</span><select value={countProductRef} disabled={Boolean(countDraft)} onChange={(e) => setCountProductRef(e.target.value)}>{(rows ?? []).map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label><label className="wb-field"><span>实盘数量</span><input inputMode="numeric" value={countedQty} disabled={Boolean(countDraft)} onChange={(e) => setCountedQty(e.target.value)} /></label><label className="wb-field"><span>备注 / 批准原因</span><input value={countNote} onChange={(e) => setCountNote(e.target.value)} /></label>{countError ? <p className="wb-form-error">{countError}</p> : null}<div className="wb-form-actions">{!countDraft ? <button type="button" className="wb-btn wb-btn--primary" disabled={savingCount} onClick={() => void submitCount()}>{savingCount ? '正在保存…' : '保存实盘'}</button> : canApproveCount ? <button type="button" className="wb-btn wb-btn--primary" disabled={savingCount} onClick={() => void submitCountApproval()}>{savingCount ? '正在批准…' : '批准差异入账'}</button> : <p className="wb-caption">实盘已保存，当前账号没有批准差异权限。</p>}</div></div></div> : null}
+      {countOpen ? (
+        <div className="wb-modal" role="dialog" aria-modal="true" aria-label="记录实盘数量">
+          <div className="wb-modal-card">
+            <div className="wb-modal-head">
+              <h2>记录实盘数量</h2>
+              <button type="button" className="wb-btn" onClick={() => setCountOpen(false)}>关闭</button>
+            </div>
+            <p className="wb-form-hint">把现场实际数到的数量记下来，与系统账面数量对照。保存只记录实盘结果，不会直接改库存；差异要由有批准权限的人确认后才会入账。目前不能通过盘点减少账面库存。</p>
+            <label className="wb-field">
+              <span>商品</span>
+              <select value={countProductRef} disabled={Boolean(countDraft)} onChange={(event) => setCountProductRef(event.target.value)}>
+                {(rows ?? []).map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
+              </select>
+            </label>
+            <label className="wb-field">
+              <span>现场实盘数量</span>
+              <input inputMode="numeric" value={countedQty} disabled={Boolean(countDraft)} onChange={(event) => setCountedQty(event.target.value)} />
+            </label>
+            <label className="wb-field">
+              <span>备注 / 批准原因</span>
+              <input value={countNote} onChange={(event) => setCountNote(event.target.value)} />
+            </label>
+            {countError ? <p className="wb-form-error">{countError}</p> : null}
+            <div className="wb-form-actions">
+              {!countDraft ? <button type="button" className="wb-btn wb-btn--primary" disabled={savingCount} onClick={() => void submitCount()}>{savingCount ? '正在保存…' : '保存实盘记录'}</button>
+                : canApproveCount ? <button type="button" className="wb-btn wb-btn--primary" disabled={savingCount} onClick={() => void submitCountApproval()}>{savingCount ? '正在批准…' : '批准差异入账'}</button>
+                  : <p className="wb-caption">实盘已保存，当前账号没有批准差异权限。</p>}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -4,13 +4,13 @@
   "command": "node contracts/tools/generate-dto.mjs",
   "checkCommand": "node contracts/tools/generate-dto.mjs --check",
   "neutralOutputDir": "contracts/generated",
-  "contractVersion": "v1",
+  "contractVersion": "v1.1",
   "contractsFrozenBy": [
-    "T01a",
-    "T01b",
+    "T26a",
+    "T26a",
     "T01c"
   ],
-  "headerRule": "// AUTO-GENERATED FROM contracts/v1 — DO NOT EDIT",
+  "headerRule": "// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT",
   "editPolicy": "生成物禁止手工编辑；改契约源文件后重新生成。validate-contracts.mjs 第 12 节重算本清单的哈希。",
   "targets": [
     {
@@ -27,33 +27,33 @@
     }
   ],
   "generatedFrom": {
-    "contracts/v1/conventions.json": "7bb796c30321dd1704daa9b402688d36b3837126c0ab4d5b3c6aaa2b54014468",
-    "contracts/v1/enums.json": "e58b7130606979690e144aa906cfb5ab8ee6a40fee7bb5e187900acb70ec597e",
-    "contracts/v1/objects.json": "223a29497a02c064ecb96cbaebf631f18353d00493846e0b97fe605071b37841",
-    "contracts/v1/errors.json": "528da1185ea9b855caae3dc7cc5efaa464aae508f5a233c156262215a25c0ecd",
-    "contracts/v1/money-rules.json": "40909ace82363a4e4715ac5d044160b92dfd9346a180425f41e7a72e264aa595",
-    "contracts/v1/actions.json": "372cc2da1145197f6179356b2fee986262f07cb1e50ca1458eaad25968506828"
+    "contracts/v1.1/conventions.json": "9bbae68993a679ad3723daae33e5cc1c3c7df3b33ecae10581a4d7dbf4461d7f",
+    "contracts/v1.1/enums.json": "d67afeb612e80d38a2b7b3a9cd3b166653444f0de2d68b39507c69ddd6a0efe8",
+    "contracts/v1.1/objects.json": "cf663ff9f3dc114696930291fef58f80988480b5166f39f898dec84645d8df04",
+    "contracts/v1.1/errors.json": "f25eecbd8253bf7a1d029a688a03ae2dd56dc490eda040da111487291adf38b1",
+    "contracts/v1.1/money-rules.json": "4bc06d76f0b53226db8411608a2acc175289547d0fef060531aabc3ee674da7d",
+    "contracts/v1.1/actions.json": "661e854ee89fc5bdaa9c840cadc14c18a1b17b581de16ce0a7ceca844171b718"
   },
   "artifacts": [
     {
       "file": "actions.ts",
-      "sha256": "df628de2d50c76cb0bbe121d584bdc342c8e671d2b31170dd77fb47bf6c3e73a"
+      "sha256": "ed7911bb0fef68fd2570905e03e867bbf17cfa190dd18af8071a961612e942d0"
     },
     {
       "file": "enums.ts",
-      "sha256": "1b22d8d1f2d4c5a9e9544c59a066c0028b0a87f68dc7b9d0b2c3fc637154f81c"
+      "sha256": "ff06ebcbe9f3cc3c5ec743dfa3cd548b31ab24bf4194ec6e52257d33a6d76770"
     },
     {
       "file": "errors.ts",
-      "sha256": "18531bb6f5c19935d97e9663c0917cff814beb69257ce21978cb59717bfa6a8c"
+      "sha256": "9d470d601c4b852e826e8de127736c75efec46f1c68ac0a79f8405ff674814b1"
     },
     {
       "file": "money.ts",
-      "sha256": "f0be71b5c0d9705778a20a652f50b58bd305e7005e8c43079ba226554e0a7388"
+      "sha256": "348061a6af11d0f176edb32a2e0b38d55261b0e93e6e6916218cf9757ad7b21b"
     },
     {
       "file": "objects.ts",
-      "sha256": "2b9affa9765b1d920c61013c55c50e6b6d467c1f35a6e4a729424c23236ff9ef"
+      "sha256": "cce9bfcd4b6400d5bb178fe1b019b599dbed2b8e0d66bb41075a7594c247ceae"
     }
   ],
   "selfHashNote": "manifest.json 与 artifacts 的 sha256 均指文件正文（不含 manifest 自身哈希）。"

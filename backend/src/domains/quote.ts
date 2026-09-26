@@ -1095,6 +1095,86 @@ export interface QuoteListFilter {
   limit?: number | null
 }
 
+const DRAFT_QUOTE_CLEANUP_ELIGIBILITY = `EXISTS (
+  SELECT 1 FROM quote_headers h
+  WHERE h.store_id = ? AND h.id = ? AND h.current_revision = 0
+    AND EXISTS (SELECT 1 FROM quote_versions v WHERE v.store_id = h.store_id AND v.quote_id = h.id)
+    AND NOT EXISTS (
+      SELECT 1 FROM quote_versions v
+      WHERE v.store_id = h.store_id AND v.quote_id = h.id
+        AND (v.status <> 'draft' OR v.issued_at IS NOT NULL)
+    )
+    AND NOT EXISTS (SELECT 1 FROM quote_shares s WHERE s.store_id = h.store_id AND s.quote_id = h.id)
+    AND NOT EXISTS (SELECT 1 FROM sale_orders so WHERE so.store_id = h.store_id AND so.quote_id = h.id)
+)`
+
+/** B45：只允许管理员清理未发出、未分享、未转单的报价草稿。 */
+export function planDeleteDraftQuote(db: OperationsDb, ctx: OperationContext, quoteId: string, reason: string): OperationPlan {
+  return {
+    statements: [
+      guardStatement(
+        db,
+        'ENTITY_NOT_FOUND',
+        'NOT EXISTS (SELECT 1 FROM quote_headers WHERE store_id = ? AND id = ?)',
+        ctx.storeId,
+        quoteId,
+      ),
+      guardStatement(
+        db,
+        'VALIDATION_ERROR',
+        `NOT ${DRAFT_QUOTE_CLEANUP_ELIGIBILITY}`,
+        ctx.storeId,
+        quoteId,
+        { diagnostic: 'DRAFT_QUOTE_NOT_CLEANABLE' },
+      ),
+      db
+        .prepare(
+          `DELETE FROM quote_headers
+           WHERE store_id = ? AND id = ? AND current_revision = 0
+             AND NOT EXISTS (
+               SELECT 1 FROM quote_versions v
+               WHERE v.store_id = quote_headers.store_id AND v.quote_id = quote_headers.id
+                 AND (v.status <> 'draft' OR v.issued_at IS NOT NULL)
+             )
+             AND EXISTS (SELECT 1 FROM quote_versions v WHERE v.store_id = quote_headers.store_id AND v.quote_id = quote_headers.id)
+             AND NOT EXISTS (SELECT 1 FROM quote_shares s WHERE s.store_id = quote_headers.store_id AND s.quote_id = quote_headers.id)
+             AND NOT EXISTS (SELECT 1 FROM sale_orders so WHERE so.store_id = quote_headers.store_id AND so.quote_id = quote_headers.id)`
+        )
+        .bind(ctx.storeId, quoteId),
+      // 删除语句仍带全部条件；此断言让并发改变导致的 0 行删除整体回滚，不能把未删除记成成功。
+      guardStatement(
+        db,
+        'VALIDATION_ERROR',
+        'EXISTS (SELECT 1 FROM quote_headers WHERE store_id = ? AND id = ?)',
+        ctx.storeId,
+        quoteId,
+      ),
+    ],
+    outcome: {
+      entityType: 'Quote',
+      entityId: quoteId,
+      summary: `已清理未发出报价草稿：${reason}`,
+      effects: { deleted: true },
+    },
+  }
+}
+
+export async function deleteDraftQuote(
+  db: OperationsDb,
+  ctx: OperationContext,
+  quoteId: string,
+  reason: string,
+): Promise<RunResult> {
+  const normalizedReason = reason.trim()
+  if (!normalizedReason || normalizedReason.length > 200) {
+    return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: '请填写不超过 200 字的清理原因', retryable: false, httpStatus: 400 }
+  }
+
+  const payloadHash = await hashPayload({ quoteId, reason: normalizedReason })
+  const operationContext = { ...ctx, payloadHash }
+  return runIdempotent(db, operationContext, (context) => planDeleteDraftQuote(db, context, quoteId, normalizedReason))
+}
+
 /** 逾期是「超过 validUntil」的自动判定（enums.json QuoteStatus 里该转换的 action 为 null）。 */
 function statusView(status: string, validUntil: string | null): { status: QuoteStatusValue; expired: boolean; expiringSoon: boolean } {
   const value = status as QuoteStatusValue

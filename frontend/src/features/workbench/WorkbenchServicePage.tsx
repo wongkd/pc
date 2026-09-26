@@ -35,6 +35,7 @@ import type {
   ServiceState,
 } from './service-api'
 import '../../styles/workbench.css'
+import './WorkbenchServicePage.css'
 
 const STATE_LABELS: Record<string, string> = {
   received: '已接修',
@@ -357,9 +358,11 @@ export function WorkbenchServicePage({ permissions }: { permissions: string[] })
     finishWrite(result, '收款已登记')
   }, [detail, finishWrite])
 
+  const hasActiveServiceFilter = Boolean(appliedDeviceQuery) || stateFilter !== 'all'
+
   if (!canView) {
     return (
-      <div className="wb-page wb-sales-page">
+      <div className="wb-page wb-sales-page wb-service-page">
         <div className="wb-page-head">
           <div>
             <p className="wb-kicker">售后维修</p>
@@ -374,7 +377,7 @@ export function WorkbenchServicePage({ permissions }: { permissions: string[] })
   }
 
   return (
-    <div className="wb-page wb-sales-page">
+    <div className="wb-page wb-sales-page wb-service-page">
       {view === 'list' ? (
         <>
           <div className="wb-page-head">
@@ -396,47 +399,51 @@ export function WorkbenchServicePage({ permissions }: { permissions: string[] })
           {notice ? <p className={`wb-inv-notice${notice.kind === 'warn' ? ' wb-inv-notice--warn' : ''}`}>{notice.text}</p> : null}
           {actionError && !showIntake ? <p className="wb-inv-notice wb-inv-notice--warn">{actionError}</p> : null}
 
-          <div className="wb-inv-toolbar">
-            <div className="wb-filter-row">
-              <form className="wb-inv-toolbar" onSubmit={(event) => { event.preventDefault(); setAppliedDeviceQuery(deviceQuery.trim()); setListState('loading') }}>
-                <input className="wb-inv-search" value={deviceQuery} onChange={(event) => setDeviceQuery(event.target.value)} placeholder="查设备编号、厂家 SN 或工单" aria-label="查询维修设备编号" />
-                <button type="submit" className="wb-btn">查询</button>
-                {appliedDeviceQuery ? <button type="button" className="wb-btn" onClick={() => { setDeviceQuery(''); setAppliedDeviceQuery(''); setListState('loading') }}>清除</button> : null}
-              </form>
-            </div>
-            <div className="wb-filter-row">
-              <button type="button" className={`wb-btn${stateFilter === 'all' ? ' wb-btn--primary' : ''}`} onClick={() => { setListState('loading'); setStateFilter('all') }}>
-                全部
-              </button>
-              {ALL_STATES.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={`wb-btn${stateFilter === s ? ' wb-btn--primary' : ''}`}
-                  onClick={() => { setListState('loading'); setStateFilter(s) }}
-                >
-                  {STATE_LABELS[s] ?? s}
+          <section className="wb-service-toolbar" aria-label="维修工单筛选">
+            <form className="wb-service-search" onSubmit={(event) => { event.preventDefault(); setAppliedDeviceQuery(deviceQuery.trim()); setListState('loading') }}>
+              <input className="wb-inv-search" value={deviceQuery} onChange={(event) => setDeviceQuery(event.target.value)} placeholder="查设备编号、厂家 SN 或工单" aria-label="查询维修设备编号" />
+              <button type="submit" className="wb-btn">查询</button>
+              {appliedDeviceQuery ? <button type="button" className="wb-btn" onClick={() => { setDeviceQuery(''); setAppliedDeviceQuery(''); setListState('loading') }}>清除</button> : null}
+            </form>
+            <div className="wb-service-status" role="group" aria-label="按工单状态筛选">
+              <span className="wb-service-status-label">工单状态</span>
+              <div className="wb-filter-row">
+                <button type="button" aria-pressed={stateFilter === 'all'} className={`wb-btn${stateFilter === 'all' ? ' wb-btn--primary' : ''}`} onClick={() => { setListState('loading'); setStateFilter('all') }}>
+                  全部
                 </button>
-              ))}
+                {ALL_STATES.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    aria-pressed={stateFilter === s}
+                    className={`wb-btn${stateFilter === s ? ' wb-btn--primary' : ''}`}
+                    onClick={() => { setListState('loading'); setStateFilter(s) }}
+                  >
+                    {STATE_LABELS[s] ?? s}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          </section>
 
           {showIntake ? (
-            <div className="wb-inv-toolbar wb-form">
+            <section className="wb-service-intake">
               <fieldset>
                 <legend>接修登记</legend>
-                <label className="wb-field"><span>客户称呼</span><input value={intake.customerName} onChange={(e) => setIntake({ ...intake, customerName: e.target.value })} placeholder="散客必填，如 陈先生" /></label>
-                <label className="wb-field"><span>厂家 SN（可选，可扫码）</span><input value={intake.manufacturerSn} onChange={(e) => setIntake({ ...intake, manufacturerSn: e.target.value })} placeholder="留空也会自动生成内部设备编号" /></label>
-                <label className="wb-field"><span>故障描述</span><input value={intake.symptom} onChange={(e) => setIntake({ ...intake, symptom: e.target.value })} placeholder="客户描述的故障现象" /></label>
-                <label className="wb-field"><span>随附配件（逗号分隔）</span><input value={intake.accessories} onChange={(e) => setIntake({ ...intake, accessories: e.target.value })} placeholder="充电器、鼠标…" /></label>
-                <label className="wb-field"><span>外观备注</span><input value={intake.appearance} onChange={(e) => setIntake({ ...intake, appearance: e.target.value })} placeholder="划痕、磕碰…" /></label>
+                <div className="wb-service-intake-grid">
+                  <label className="wb-field"><span>客户称呼</span><input value={intake.customerName} onChange={(e) => setIntake({ ...intake, customerName: e.target.value })} placeholder="散客必填，如 陈先生" /></label>
+                  <label className="wb-field"><span>厂家 SN（可选，可扫码）</span><input value={intake.manufacturerSn} onChange={(e) => setIntake({ ...intake, manufacturerSn: e.target.value })} placeholder="留空也会自动生成内部设备编号" /></label>
+                  <label className="wb-field wb-service-intake-wide"><span>故障描述</span><input value={intake.symptom} onChange={(e) => setIntake({ ...intake, symptom: e.target.value })} placeholder="客户描述的故障现象" /></label>
+                  <label className="wb-field"><span>随附配件（逗号分隔）</span><input value={intake.accessories} onChange={(e) => setIntake({ ...intake, accessories: e.target.value })} placeholder="充电器、鼠标…" /></label>
+                  <label className="wb-field"><span>外观备注</span><input value={intake.appearance} onChange={(e) => setIntake({ ...intake, appearance: e.target.value })} placeholder="划痕、磕碰…" /></label>
+                </div>
                 {actionError ? <p className="wb-inv-notice wb-inv-notice--warn">{actionError}</p> : null}
                 <div className="wb-form-actions">
                   <button type="button" className="wb-btn wb-btn--primary" disabled={busy} onClick={() => void submitIntake()}>确认接修</button>
                   <button type="button" className="wb-btn" disabled={busy} onClick={() => { setShowIntake(false); setActionError('') }}>取消</button>
                 </div>
               </fieldset>
-            </div>
+            </section>
           ) : null}
 
           {listState === 'loading' ? <p className="wb-inv-state">正在加载维修工单…</p> : null}
@@ -447,7 +454,27 @@ export function WorkbenchServicePage({ permissions }: { permissions: string[] })
             </div>
           ) : null}
           {listState === 'ready' && orders && orders.orders.length === 0 ? (
-            <p className="wb-inv-state">还没有维修工单。点「接修登记」登记第一台送修设备。</p>
+            <div className="wb-inv-state wb-service-empty" role="status" aria-live="polite">
+              <div className="wb-service-empty-copy">
+                <strong>{hasActiveServiceFilter ? '没有符合条件的维修工单' : '还没有维修工单'}</strong>
+                <p>
+                  {hasActiveServiceFilter
+                    ? '试着调整设备编号或工单状态筛选。'
+                    : canEdit
+                      ? '登记第一台送修设备，后续进度和收款都在工单中跟进。'
+                      : '当前没有维修工单，请联系具备售后编辑权限的员工登记。'}
+                </p>
+              </div>
+              {hasActiveServiceFilter ? (
+                <button type="button" className="wb-btn" onClick={() => { setDeviceQuery(''); setAppliedDeviceQuery(''); setStateFilter('all'); setListState('loading') }}>
+                  清除筛选
+                </button>
+              ) : canEdit && !showIntake ? (
+                <button type="button" className="wb-btn wb-btn--primary" onClick={() => { setShowIntake(true); setActionError('') }}>
+                  开始接修登记
+                </button>
+              ) : null}
+            </div>
           ) : null}
           {listState === 'ready' && orders && orders.orders.length > 0 ? (
             <div className="wb-quote-table-scroll">

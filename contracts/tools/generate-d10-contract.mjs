@@ -15,7 +15,7 @@ const outputs = [
 const checkOnly = process.argv.includes('--check')
 
 const doc = JSON.parse(readFileSync(sourcePath, 'utf8'))
-if (doc.contractVersion !== 'v2' || doc.inherits !== 'v1') throw new Error('D10 扩展必须为继承 v1 的 v2 契约')
+if (doc.contractVersion !== 'v2' || doc.inherits !== 'v1.1') throw new Error('D10 扩展必须为继承 v1.1 的 v2 契约')
 const expectedBases = ['known_actual', 'assessed_estimate', 'unknown', 'zero_cost']
 const costBases = doc.types.find((type) => type.name === 'OpeningCostBasis')?.values
 if (JSON.stringify(costBases) !== JSON.stringify(expectedBases)) throw new Error('D10 四类成本必须逐项保持已冻结顺序与名称')

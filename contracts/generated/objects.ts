@@ -1,6 +1,6 @@
-// AUTO-GENERATED FROM contracts/v1 — DO NOT EDIT
+// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT
 // 生成命令：node contracts/tools/generate-dto.mjs
-// 来源：contracts/v1/objects.json；字段与 nullable 以契约为准。
+// 来源：contracts/v1.1/objects.json；字段与 nullable 以契约为准。
 import type {
   ContractId, Cents, Instant, CalendarDate, JsonValue, JsonObject, ActiveStatus, TrackingMode, StockCondition, ConditionGrade, OwnershipType, LocationKind, StockBucket, QuoteStatus, SaleTradeState, SaleFulfillmentState, SaleKind, LineSource, ReservationStatus, BalanceDirection, RecoveryState, ServiceState, WarrantyDecision, WarrantyTerm, InspectionDisposition, ChecklistResult, CashDirection, CashMethod, CashVerificationState, OffsetState, FinancialDisposition, CreditState, PaymentPurpose, AttachmentPurpose, AttachmentUploadState, AttachmentVisibility, OperationStatus, EntityType, TaskCategory, InventoryMovementSource, CounterpartyKind, ActionCode, CustomerClaimStatus, CustomerClaimMethod, CustomerSourceChannel,
 } from './enums'

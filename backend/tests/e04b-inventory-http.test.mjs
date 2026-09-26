@@ -197,6 +197,21 @@ test('非法筛选参数被拒，不静默忽略', async () => {
   assert.equal((await json(await a.get('/api/v2/inventory?limit=abc'))).status, 400)
 })
 
+test('仓库操作日志对库存可见成员开放，并按门店隔离且不返回成本', async () => {
+  const visible = await json(await viewOnlyClerk.get('/api/v2/inventory/activity'))
+  assert.equal(visible.status, 200)
+  assert.ok(visible.body.data.items.length > 0)
+  assert.ok(visible.body.data.items.some((item) => item.action === 'B12' && item.kind === 'operation'))
+  assert.ok(visible.body.data.items.every((item) => !('costCents' in item) && !('unitCostCents' in item)))
+
+  const denied = await json(await clerk.get('/api/v2/inventory/activity'))
+  assert.equal(denied.status, 403)
+
+  const otherStore = await json(await b.get('/api/v2/inventory/activity'))
+  assert.equal(otherStore.status, 200)
+  assert.deepEqual(otherStore.body.data.items, [])
+})
+
 test('实物详情按 ID 可查；跨店与不存在一律 404 且不泄露', async () => {
   const item = await json(await a.post('/api/v2/inventory/openings', {
     approvedCountRef: '实盘 2026-09-19 逐件',
@@ -480,7 +495,7 @@ test('不支持的方法与不存在的 v2 路径都返回契约错误，不静�
   assert.equal(unknownPath.body.error.code, 'ENTITY_NOT_FOUND')
 })
 
-test('旧 /api 路由未被新模块接管', async () => {
+test('旧商品兼容路由仍保留，通用改价受限，library 路由已退役', async () => {
   const legacy = await json(await a.get('/api/products?page=1&pageSize=1'))
   assert.equal(legacy.status, 200, '旧商品接口必须照旧可用')
   assert.ok('items' in legacy.body)
@@ -491,10 +506,11 @@ test('旧 /api 路由未被新模块接管', async () => {
   assert.match(v1Edit.body.error, /B40.*通用编辑/)
 
   const library = await json(await a.get('/api/library'))
-  assert.equal(library.status, 200)
+  assert.equal(library.status, 410)
+  assert.equal(library.body.error, '此旧版接口已下线')
   const legacyEdit = await json(await a.put(`/api/library/${product.id}`, { price: 0.01 }))
-  assert.equal(legacyEdit.status, 409, JSON.stringify(legacyEdit.body))
-  assert.match(legacyEdit.body.error, /B40.*通用编辑/)
+  assert.equal(legacyEdit.status, 410)
+  assert.equal(legacyEdit.body.error, '此旧版接口已下线')
   const storedPrice = await db.prepare('SELECT default_price_cents FROM hardware WHERE id = ?').bind(product.id).first()
   assert.equal(storedPrice.default_price_cents, originalPrice.default_price_cents)
 })

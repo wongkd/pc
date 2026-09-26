@@ -1,6 +1,6 @@
-// AUTO-GENERATED FROM contracts/v1 — DO NOT EDIT
+// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT
 // 生成命令：node contracts/tools/generate-dto.mjs
-// 来源：contracts/v1/money-rules.json、conventions.json；只导出公式编号与单位口径，不生成计算实现。
+// 来源：contracts/v1.1/money-rules.json、conventions.json；只导出公式编号与单位口径，不生成计算实现。
 import type { Cents } from './enums'
 
 // 金额一律整数分，禁止浮点；界面按元显示，运算与传输只用分。
