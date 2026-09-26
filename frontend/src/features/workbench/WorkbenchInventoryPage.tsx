@@ -231,6 +231,7 @@ function granted(permissions: string[], code: string, legacy: string[] = []): bo
 }
 
 export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryPageProps) {
+  const canManageStore = permissions.includes('*') || permissions.includes('store/manage')
   const canEditProduct = granted(permissions, 'inventory/product-edit', ['library/edit'])
   const canRecordOpening = granted(permissions, 'inventory/opening')
   const canCount = granted(permissions, 'inventory/count', ['library/edit'])
@@ -891,6 +892,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
             <button type="button" className="wb-btn wb-btn--primary" onClick={openOpening}>试录现有库存（隔离预览）</button>
           ) : null}
           {canCount ? <button type="button" className="wb-btn" onClick={openCount}>记录实盘数量</button> : null}
+          {canManageStore ? <a className="wb-btn" href="/settings/data-cleanup#unused-products">清理无引用商品</a> : null}
         </div>
       </header>
 
@@ -1495,96 +1497,102 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
                   const alreadyHasStock = Boolean(product && (product.storeItemCount > 0 || product.ownOnHandQty > 0))
                   return (
                     <div className="wb-opening-line" key={line.key}>
-                      <span className="wb-opening-index">{index + 1}</span>
-                      <label className="wb-field">
-                        <span>型号</span>
-                        <select name="opening-product" value={line.productRef} onChange={(event) => updateLine(line.key, { productRef: event.target.value })}>
-                          <option value="">请选择型号</option>
-                          {openingOptions.map((option) => (
-                            <option key={option.id} value={option.id}>
-                              {option.name}{option.sku ? `（${option.sku}）` : ''} · {TRACKING_LABELS[option.trackingMode]}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className="wb-field">
-                        <span>{perItem ? '数量（逐件固定 1）' : '数量'}</span>
-                        <input
-                          name="opening-qty"
-                          inputMode="numeric"
-                          value={perItem ? '1' : line.qty}
-                          disabled={perItem}
-                          onChange={(event) => updateLine(line.key, { qty: event.target.value })}
-                        />
-                      </label>
-                      <label className="wb-field">
-                        <span>{perItem ? '内部编号' : '批次编号'}</span>
-                        <input value="提交后自动生成" readOnly />
-                      </label>
-                      <label className="wb-field">
-                        <span>厂家 SN（可选，可扫码）</span>
-                        <input
-                          name="opening-sn"
-                          value={line.snRaw}
-                          disabled={!perItem}
-                          onChange={(event) => updateLine(line.key, { snRaw: event.target.value })}
-                        />
-                      </label>
-                      <label className="wb-field">
-                        <span>备注</span>
-                        <input value={line.remark} onChange={(event) => updateLine(line.key, { remark: event.target.value })} placeholder="可选" />
-                      </label>
-                      <label className="wb-field">
-                        <span>成色</span>
-                        <select
-                          name="opening-condition"
-                          value={line.condition}
-                          disabled={!perItem}
-                          onChange={(event) => updateLine(line.key, { condition: event.target.value as StockConditionValue })}
+                      <div className="wb-opening-line-head">
+                        <span className="wb-opening-index">第 {index + 1} 行</span>
+                        <button
+                          type="button"
+                          className="wb-btn"
+                          aria-label={`删除第 ${index + 1} 行库存登记`}
+                          title={openingLines.length === 1 ? '至少保留一行' : undefined}
+                          disabled={openingLines.length === 1}
+                          onClick={() => setOpeningLines((current) => current.filter((item) => item.key !== line.key))}
                         >
-                          <option value="new">新品</option>
-                          <option value="used">二手</option>
-                        </select>
-                      </label>
-                      <label className="wb-field">
-                        <span>单件成本（元，可留空）</span>
-                        <input
-                          name="opening-cost"
-                          inputMode="decimal"
-                          value={line.costYuan}
-                          onChange={(event) => updateLine(line.key, { costYuan: event.target.value })}
-                          placeholder="不知道就留空；确实零成本填 0"
-                        />
-                      </label>
-                      {openingWindow?.mode === 'formal' && yuanToCents(line.costYuan) !== null && (yuanToCents(line.costYuan) ?? 0) > 0 ? (
+                          删除本行
+                        </button>
+                      </div>
+                      <div className="wb-opening-line-fields">
                         <label className="wb-field">
-                          <span>成本类型</span>
-                          <select name="opening-cost-kind" value={line.costBasis === 'assessed_estimate' ? 'assessed_estimate' : 'known_actual'} onChange={(event) => updateLine(line.key, { costBasis: event.target.value as OpeningCostBasis })}>
-                            <option value="known_actual">实际成本</option>
-                            <option value="assessed_estimate">估算成本</option>
+                          <span>型号</span>
+                          <select name="opening-product" value={line.productRef} onChange={(event) => updateLine(line.key, { productRef: event.target.value })}>
+                            <option value="">请选择型号</option>
+                            {openingOptions.map((option) => (
+                              <option key={option.id} value={option.id}>
+                                {option.name}{option.sku ? `（${option.sku}）` : ''} · {TRACKING_LABELS[option.trackingMode]}
+                              </option>
+                            ))}
                           </select>
                         </label>
-                      ) : null}
-                      {openingWindow?.mode === 'formal' && line.costYuan.trim() ? (
                         <label className="wb-field">
-                          <span>成本来源或备注（可留空）</span>
+                          <span>{perItem ? '数量（逐件固定 1）' : '数量'}</span>
                           <input
-                            name="opening-cost-evidence"
-                            value={line.costEvidenceRef}
-                            onChange={(event) => updateLine(line.key, { costEvidenceRef: event.target.value })}
-                            placeholder="如采购单号、估算说明、赠与"
+                            name="opening-qty"
+                            inputMode="numeric"
+                            value={perItem ? '1' : line.qty}
+                            disabled={perItem}
+                            onChange={(event) => updateLine(line.key, { qty: event.target.value })}
                           />
                         </label>
-                      ) : null}
-                      {openingWindow?.mode === 'formal' ? <p className="wb-form-hint">成本不确定留空，系统不会按 0 元计算；估算日期自动记录为今天。</p> : null}
-                      <button
-                        type="button"
-                        className="wb-btn"
-                        disabled={openingLines.length === 1}
-                        onClick={() => setOpeningLines((current) => current.filter((item) => item.key !== line.key))}
-                      >
-                        删除本行
-                      </button>
+                        <label className="wb-field">
+                          <span>{perItem ? '内部编号' : '批次编号'}</span>
+                          <input value="提交后自动生成" readOnly />
+                        </label>
+                        <label className="wb-field">
+                          <span>厂家 SN（可选，可扫码）</span>
+                          <input
+                            name="opening-sn"
+                            value={line.snRaw}
+                            disabled={!perItem}
+                            onChange={(event) => updateLine(line.key, { snRaw: event.target.value })}
+                          />
+                        </label>
+                        <label className="wb-field">
+                          <span>备注</span>
+                          <input value={line.remark} onChange={(event) => updateLine(line.key, { remark: event.target.value })} placeholder="可选" />
+                        </label>
+                        <label className="wb-field">
+                          <span>成色</span>
+                          <select
+                            name="opening-condition"
+                            value={line.condition}
+                            disabled={!perItem}
+                            onChange={(event) => updateLine(line.key, { condition: event.target.value as StockConditionValue })}
+                          >
+                            <option value="new">新品</option>
+                            <option value="used">二手</option>
+                          </select>
+                        </label>
+                        <label className="wb-field">
+                          <span>单件成本（元，可留空）</span>
+                          <input
+                            name="opening-cost"
+                            inputMode="decimal"
+                            value={line.costYuan}
+                            onChange={(event) => updateLine(line.key, { costYuan: event.target.value })}
+                            placeholder="不知道就留空；确实零成本填 0"
+                          />
+                        </label>
+                        {openingWindow?.mode === 'formal' && yuanToCents(line.costYuan) !== null && (yuanToCents(line.costYuan) ?? 0) > 0 ? (
+                          <label className="wb-field">
+                            <span>成本类型</span>
+                            <select name="opening-cost-kind" value={line.costBasis === 'assessed_estimate' ? 'assessed_estimate' : 'known_actual'} onChange={(event) => updateLine(line.key, { costBasis: event.target.value as OpeningCostBasis })}>
+                              <option value="known_actual">实际成本</option>
+                              <option value="assessed_estimate">估算成本</option>
+                            </select>
+                          </label>
+                        ) : null}
+                        {openingWindow?.mode === 'formal' && line.costYuan.trim() ? (
+                          <label className="wb-field">
+                            <span>成本来源或备注（可留空）</span>
+                            <input
+                              name="opening-cost-evidence"
+                              value={line.costEvidenceRef}
+                              onChange={(event) => updateLine(line.key, { costEvidenceRef: event.target.value })}
+                              placeholder="如采购单号、估算说明、赠与"
+                            />
+                          </label>
+                        ) : null}
+                      </div>
+                      {openingWindow?.mode === 'formal' ? <p className="wb-form-hint wb-opening-line-hint">成本不确定留空，系统不会按 0 元计算；估算日期自动记录为今天。</p> : null}
                       {alreadyHasStock ? (
                         <p className="wb-opening-warn">
                           「{product?.name}」已经有库存事实（自有在库 {product?.ownOnHandQty} 件 / 逐件 {product?.storeItemCount} 件）。

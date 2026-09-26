@@ -286,7 +286,7 @@
   grid-column: 1 / -1;
 }
 
-.wb-inventory-page .wb-modal-card {
+.wb-inventory-page .wb-modal-card:not(.wb-modal-card--wide) {
   max-width: 760px;
   padding: 28px;
 }

@@ -418,6 +418,7 @@ interface UnknownWrite {
 export default function WorkbenchQuotePage({ permissions, onConverted }: { permissions: string[]; onConverted?: () => void }) {
   const canEdit = hasAny(permissions, EDIT_CODES)
   const canView = hasAny(permissions, VIEW_CODES)
+  const canManageStore = hasAny(permissions, ['store/manage'])
 
   const [view, setView] = useState<PageView>('list')
   const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter | 'all'>('all')
@@ -1421,6 +1422,7 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
           </p>
         </div>
         <div className="wb-page-head-actions">
+          {canManageStore ? <a className="wb-btn" href="/settings/data-cleanup#quote-drafts">删除未发出报价</a> : null}
           {canEdit ? (
             <button type="button" className="wb-btn wb-btn--primary" onClick={startCreate}>
               新建装机报价

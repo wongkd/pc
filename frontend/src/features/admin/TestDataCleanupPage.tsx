@@ -47,6 +47,11 @@ export function TestDataCleanupPage({ permissions }: { permissions: string[] }) 
     if (canManageStore) void reload()
   }, [canManageStore, reload])
 
+  useEffect(() => {
+    const targetId = window.location.hash.slice(1)
+    if (targetId) document.getElementById(targetId)?.scrollIntoView({ block: 'start' })
+  }, [])
+
   const deletableQuotes = useMemo(() => quotes.filter(canDeleteDraft), [quotes])
   const protectedQuotes = quotes.length - deletableQuotes.length
 
@@ -122,7 +127,7 @@ export function TestDataCleanupPage({ permissions }: { permissions: string[] }) 
   }
 
   if (!canManageStore) {
-    return <main className="wb-page cleanup-page"><h1>测试数据清理</h1><p className="wb-inv-state wb-inv-state--error">此页面仅对门店管理员开放。</p></main>
+    return <main className="wb-page cleanup-page"><h1>清理草稿与空商品档案</h1><p className="wb-inv-state wb-inv-state--error">此页面仅对门店管理员开放。</p></main>
   }
 
   return (
@@ -130,8 +135,8 @@ export function TestDataCleanupPage({ permissions }: { permissions: string[] }) 
       <header className="wb-page-head">
         <div>
           <p className="wb-kicker">管理员工具</p>
-          <h1>测试数据清理</h1>
-          <p className="wb-caption">可以删除没有业务影响的报价草稿和空商品档案。库存实物、资金、顾客交接与历史单据保留并按业务流程更正。</p>
+          <h1>清理草稿与空商品档案</h1>
+          <p className="wb-caption">这里只能删除未发出的报价草稿和没有业务引用的商品档案。库存实物、资金、顾客交接与历史单据保留并按业务流程更正。</p>
         </div>
         <div className="wb-page-head-actions">
           <button type="button" className="wb-btn" onClick={() => void reload()} disabled={loadState === 'loading'}>刷新</button>
@@ -147,7 +152,7 @@ export function TestDataCleanupPage({ permissions }: { permissions: string[] }) 
         </div>
       ) : null}
 
-      <section className="cleanup-section">
+      <section className="cleanup-section" id="quote-drafts">
         <div className="cleanup-section-head">
           <div><h2>未发出报价草稿</h2><p>可以删除 {deletableQuotes.length} 份{protectedQuotes ? `；另有 ${protectedQuotes} 份因曾发出或分享而保留` : ''}。</p><span className="cleanup-protected">仅列新版报价；旧版报价工作副本的 data 结构尚未核实，暂不纳入清理。</span></div>
           <Link className="wb-btn" to="/sales/quotes">打开报价列表</Link>
@@ -177,7 +182,7 @@ export function TestDataCleanupPage({ permissions }: { permissions: string[] }) 
         ) : null}
       </section>
 
-      <section className="cleanup-section">
+      <section className="cleanup-section" id="unused-products">
         <div className="cleanup-section-head">
           <div><h2>未被引用的商品档案</h2><p>可以删除 {products.length} 条。只移除商品主档，不删库存、单据、流水、附件或审计记录。</p></div>
           <Link className="wb-btn" to="/inventory/products">打开商品管理</Link>
