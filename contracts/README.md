@@ -6,7 +6,7 @@
 
 ## 1. 目录职责
 
-2026-09-28 新增独立 [商城增量契约](v2/catalog.json)：商品展示、上下架、公开字段白名单与图片尺寸。运行 `node contracts/tools/generate-catalog-contract.mjs` 同步三端，`--check` 检查漂移；迁移0034尚未部署。
+2026-09-28 新增独立 [商城增量契约](v2/catalog.json)：商品展示、上下架、公开字段白名单与图片尺寸。运行 `node contracts/tools/generate-catalog-contract.mjs` 同步三端，`--check` 检查漂移；生产迁移0034已应用。
 
 | 路径 | 内容 | 冻结卡 |
 |---|---|---|
