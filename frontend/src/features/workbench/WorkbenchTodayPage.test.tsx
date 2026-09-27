@@ -57,7 +57,7 @@ describe('AppShell 主导航与常用页面', () => {
     const labels = within(nav)
       .getAllByRole('link')
       .map((link) => link.textContent)
-    expect(labels).toEqual(['今天', '开单', '仓库', '售后', '账本', '装机报价', '客户台账'])
+    expect(labels).toEqual(['今天', '开单', '仓库', '售后', '商品', '账本', '装机报价', '客户台账'])
   })
 
   it('当前页所在导航高亮，且只有一项', () => {

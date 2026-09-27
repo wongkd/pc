@@ -14,6 +14,7 @@
 | 二手配件仓库 / 库存 / 采购 | frontend/src/features/workbench/InventoryPartsWorkspace.tsx、WorkbenchInventoryPage.tsx、WorkbenchQuotePage.tsx、WorkbenchPurchasePage.tsx、WorkbenchRecoveryPage.tsx；backend/src/domains/inventory.ts、purchase.ts、recovery.ts | InventoryPartsWorkspace / WorkbenchQuote / WorkbenchPurchase / WorkbenchRecovery tests；u01-inventory-read / u02-stock-backfill-http / e07 / e11 |
 | 维修 / 回收 / 抵用 / 财务 | backend/src/domains/service.ts、recovery.ts、tradein.ts、finance.ts；同名 v2 路由 | e10 / e11 / e12 与验收卡 |
 | 附件 | backend/src/domains/attachment.ts、storage.ts；routes/attach-v2.ts | f1-attachments.test.mjs |
+| 小程序商城商品 / 图片裁切 | frontend/src/features/catalog；backend/src/routes/catalog.ts；miniprogram/services/customer/catalog.ts；contracts/v2/catalog.json | CatalogPage、catalog-http、catalog-runtime；generate-catalog-contract.mjs --check |
 | 今天页读模型 | backend/src/domains/workbench.ts、routes/workbench-v2.ts；frontend/src/features/workbench/workbench-api.ts | r02-workbench.test.mjs、WorkbenchTodayPage.test.tsx |
 | 顾客微信端 | miniprogram/app.json、pages/home/shop/community/mine、features | miniprogram tests / check-pages / check-classes / typecheck |
 | 跨端协议 | contracts/v1；读 contracts/README.md 与 F0 卡后再修改 | 重生成 → 两端同步 → 契约门禁 |

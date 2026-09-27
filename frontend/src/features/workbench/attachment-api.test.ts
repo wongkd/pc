@@ -8,6 +8,13 @@ const testFile = { size: 8, type: 'image/png' } as File
 afterEach(() => vi.unstubAllGlobals())
 
 describe('attachment upload retry', () => {
+  it('HTTP 环境缺少 randomUUID 时仍可创建上传会话', () => {
+    vi.stubGlobal('crypto', {})
+    const first = createAttachmentUploadSession(testFile, 'stock_item', 'item-1')
+    const second = createAttachmentUploadSession(testFile, 'stock_item', 'item-1')
+    expect(first.intentRequestId).toMatch(/^req_/)
+    expect(first.intentRequestId).not.toBe(second.intentRequestId)
+  })
   it('intent response lost: retries with the same requestId and reuses the created intent', async () => {
     const calls: Array<{ url: string; init?: RequestInit }> = []
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {

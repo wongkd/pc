@@ -33,6 +33,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = [
     pageIds: ['P06', 'P07', 'P08', 'P11'],
   },
   { path: '/after-sales', label: '售后', matchPrefixes: ['/after-sales'], pageIds: ['P09', 'P10'] },
+  { path: '/products', label: '商品', matchPrefixes: ['/products'], pageIds: [] },
   { path: '/finance', label: '账本', matchPrefixes: ['/finance'], pageIds: ['P12'] },
 ]
 

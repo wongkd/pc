@@ -1,4 +1,5 @@
 import { inventoryClient } from './inventory-api'
+import { defaultRequestId } from '../../api/core'
 
 export interface AttachmentView {
   id: string
@@ -36,7 +37,7 @@ export class AttachmentUploadError extends Error {
 }
 
 function requestId(): string {
-  return `req_${crypto.randomUUID()}`
+  return defaultRequestId()
 }
 
 async function send<T>(url: string, method: string, body?: BodyInit, contentType?: string): Promise<T> {

@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, useMemo, useState, type ComponentType, type ReactNode } from 'react'
+import { Component, Suspense, lazy, useState, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react'
 
 /**
  * 业务页面按需加载的薄封装（2026-09-26 P01）。
@@ -16,6 +16,14 @@ import { Component, Suspense, lazy, useMemo, useState, type ComponentType, type 
  *      否则新页面顶着的还是上一页的错误，与「可以去别的页面继续」那句话自相矛盾。
  */
 export type LazyPageLoader<P extends object> = () => Promise<{ default: ComponentType<P> }>
+
+// Router 使用 transition 切页，挂起的渲染可被丢弃，useMemo 并不保证 lazy 身份稳定。
+// 必须在渲染之外按加载器缓存，否则重复创建 lazy → 新 Promise → 再挂起，只有刷新才能进入。
+const pages = new WeakMap<object, unknown>()
+function getPage<P extends object>(load: LazyPageLoader<P>): LazyExoticComponent<ComponentType<P>> {
+  if (!pages.has(load)) pages.set(load, lazy(load))
+  return pages.get(load) as LazyExoticComponent<ComponentType<P>>
+}
 
 interface BoundaryProps {
   attempt: number
@@ -109,13 +117,13 @@ interface LazyRouteProps<P extends object> {
 export function LazyRoute<P extends object>({ load, label, props, onReload }: LazyRouteProps<P>) {
   const [attempt, setAttempt] = useState(0)
   // load 必须是模块级常量。每次渲染都新建函数会让 lazy 拿到新的组件类型，页面被反复卸载重建。
-  const Page = useMemo(() => lazy(load), [load, attempt])
+  const Page = getPage(load)
   const reload = onReload ?? (() => window.location.reload())
   return (
     <PageLoadBoundary
       attempt={attempt}
       loadKey={load}
-      onRetry={() => setAttempt((count) => count + 1)}
+      onRetry={() => { pages.delete(load); setAttempt((count) => count + 1) }}
       onReload={reload}
     >
       <Suspense fallback={<div className="settings-state">正在加载{label}…</div>}>

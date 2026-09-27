@@ -13,12 +13,13 @@ import { LazyRoute } from './lazy-route'
 const chunk = vi.hoisted(() => ({ attempts: 0, failing: true }))
 
 /** 必须写成模块级常量：LazyRoute 依赖加载器的引用稳定。 */
-const loadPage = () => {
+const createPageLoader = () => () => {
   chunk.attempts += 1
   return chunk.failing
     ? Promise.reject(new TypeError('Failed to fetch dynamically imported module: /assets/page-abc.js'))
     : Promise.resolve({ default: () => <h1>业务页面</h1> })
 }
+let loadPage = createPageLoader()
 
 /** 页面自身渲染报错的加载器：没有网络失败的特征文案。 */
 const loadBrokenPage = () => Promise.reject(new Error('结算行缺少数量'))
@@ -26,12 +27,35 @@ const loadBrokenPage = () => Promise.reject(new Error('结算行缺少数量'))
 const reload = vi.fn()
 
 beforeEach(() => {
+  loadPage = createPageLoader()
   chunk.attempts = 0
   chunk.failing = true
   reload.mockClear()
 })
 
 afterEach(cleanup)
+
+it('连续切换已加载的业务页无需刷新，加载器每页只执行一次', async () => {
+  const first = vi.fn(() => Promise.resolve({ default: () => <h1>第一个模块</h1> }))
+  const second = vi.fn(() => Promise.resolve({ default: () => <h1>第二个模块</h1> }))
+  function Navigation() {
+    const navigate = useNavigate()
+    return <><button onClick={() => navigate('/second')}>切换模块</button>
+      <button onClick={() => navigate('/first')}>返回模块</button>
+      <Routes>
+        <Route path="/first" element={<LazyRoute load={first} label="第一" props={{}} />} />
+        <Route path="/second" element={<LazyRoute load={second} label="第二" props={{}} />} />
+      </Routes></>
+  }
+  render(<MemoryRouter initialEntries={['/first']}><Navigation /></MemoryRouter>)
+  await screen.findByRole('heading', { name: '第一个模块' })
+  fireEvent.click(screen.getByText('切换模块'))
+  await screen.findByRole('heading', { name: '第二个模块' })
+  fireEvent.click(screen.getByText('返回模块'))
+  await screen.findByRole('heading', { name: '第一个模块' })
+  expect(first).toHaveBeenCalledTimes(1)
+  expect(second).toHaveBeenCalledTimes(1)
+})
 
 describe('业务分包加载失败', () => {
   it('给出可读原因，并且只给真正有效的恢复入口（整页重载），不自动重试', async () => {

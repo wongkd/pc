@@ -15,6 +15,7 @@
     "jspdf": "^4.2.1",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
+    "react-image-crop": "^11.1.2",
     "react-router-dom": "7.13.1",
     "xlsx": "^0.18.5"
   },

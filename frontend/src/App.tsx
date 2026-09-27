@@ -40,6 +40,7 @@ const loadInventoryPage = () =>
 const loadCustomersPage = () => import('./components/CustomersPage').then((m) => ({ default: m.CustomersPage }))
 const loadProductsPage = () =>
   import('./components/ProductManagementPage').then((m) => ({ default: m.ProductManagementPage }))
+const loadCatalogPage = () => import('./features/catalog/CatalogPage').then(m => ({ default: m.CatalogPage }))
 const loadSerialNumberPage = () =>
   import('./components/SerialNumberPage').then((m) => ({ default: m.SerialNumberPage }))
 const loadSettingsPage = () =>
@@ -144,6 +145,7 @@ export default function App() {
           <Route path="/settings" element={<LazyRoute load={loadSettingsPage} label="系统设置" props={{ permissions: profile.permissions, currentStore: currentStore, onStoreChanged: setCurrentStore }} />} />
           <Route path="/settings/data-cleanup" element={<LazyRoute load={loadDataCleanupPage} label="测试数据清理" props={{ permissions: profile.permissions }} />} />
           <Route path="/inventory" element={<LazyRoute load={loadInventoryPage} label="仓库" props={{ permissions: profile.permissions }} />} />
+          <Route path="/products" element={<LazyRoute load={loadCatalogPage} label="商品管理" props={{ permissions: profile.permissions }} />} />
           {/* 旧「商品与库存」页不删，改挂子路径：它是已确认功能，不能因为库存页重建而失去入口。 */}
           <Route path="/inventory/products" element={<LazyRoute load={loadProductsPage} label="商品管理" props={{ permissions: profile.permissions }} />} />
           <Route path="/sn" element={<LazyRoute load={loadSerialNumberPage} label="序列号台账" props={{}} />} />

@@ -10,7 +10,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { deviceShortName } from '../features/display-text.ts'
-import { DEMO_TASKS } from '../features/demo-data.ts'
+import { readFileSync } from 'node:fs'
+// 店员演示运行模块已经退役；保留纯显示规则，以冻结契约样本直接验证。
+const DEMO_TASKS = JSON.parse(readFileSync(new URL('../../contracts/v1/fixtures.json', import.meta.url), 'utf8')).datasets.V1.tasks
 
 test('deviceShortName 取「·」之前那段', () => {
   assert.equal(deviceShortName('白色设计主机 · 设计用装机'), '白色设计主机')

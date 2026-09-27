@@ -1,4 +1,4 @@
-import { signJWT, verifyJWT } from './domains/session'
+import { signJWT, verifyJWT } from './domains/session'; import { routeCatalog, routePublicCatalog } from './routes/catalog'
 import { requiredStorageFailure } from './domains/storage'
 import { routeInventoryV2 } from './routes/inventory-v2'
 import { CUSTOMER_READ_CODES, CUSTOMER_WRITE_CODES } from './domains/access'
@@ -1713,7 +1713,7 @@ export default {
       if (['/api/search', '/api/pdd/detail', '/api/normalize', '/api/dashboard/todos'].includes(path) || ['/api/library', '/api/templates', '/api/quotes'].some((route) => path.startsWith(route)) || /^\/api\/orders(?:\/\d+(?:\/(?:payments|status))?)?$/.test(path)) return cors(json({ error: '此旧版接口已下线' }, 410), origin) // Remove old quote, order, library and demo tools.
       if (path.startsWith('/api/auth')) return cors(await handleAuth(req, env), origin)
 
-      // Rate-limited public routes
+      const publicCatalog = await routePublicCatalog(req, env); if (publicCatalog) return cors(publicCatalog, origin)
       const clientIp = req.headers.get('CF-Connecting-IP') || req.headers.get('X-Forwarded-For') || 'unknown'
 
       // Search (public, 60/min per IP)
@@ -1739,7 +1739,7 @@ export default {
       const authResult = await auth(req, env)
       if (authResult instanceof Response) return cors(authResult, origin)
 
-      // Normalize (DeepSeek expensive, 20/min per user)
+      const catalogResponse = await routeCatalog(req, env, authResult); if (catalogResponse) return cors(catalogResponse, origin)
       if (path === '/api/normalize') {
         if (!rateLimit(`normalize:${authResult.userId}`, 20, 60000)) return cors(json({ error: 'AI 请求太频繁，请稍后重试' }, 429), origin)
         return cors(await handleNormalize(req, env), origin)

@@ -206,6 +206,9 @@ check('金额规则未引入浮点单位', !/[\d.]+\s*元\b/.test(JSON.stringify
 // ── 8. 旧表映射 ─────────────────────────────────────────────────────────
 const actionVocab = legacyDoc.actionVocabulary
 const mappedTables = new Set()
+// 新商城契约按独立增量版本登记，不回写冻结的 v1.2。
+const catalogContract = JSON.parse(readFileSync(join(contractsDir, 'v2/catalog.json'), 'utf8'))
+for (const table of catalogContract.tables) mappedTables.add(table)
 for (const entry of legacyDoc.tables) {
   mappedTables.add(entry.table)
   check(`映射 ${entry.table} 使用合法动作`, actionVocab.includes(entry.action), `action=${entry.action}`)

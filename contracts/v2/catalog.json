@@ -1,0 +1,32 @@
+{
+  "contractVersion": "v2.catalog.1",
+  "description": "商城展示商品独立于库存型号和实物。价格为整数分；上下架不动库存、不承诺可售数量。",
+  "tables": ["catalog_products", "catalog_images", "catalog_events"],
+  "permissions": { "read": "library/view", "write": "library/edit" },
+  "routes": {
+    "staffList": "GET /api/v2/catalog/products?page=1",
+    "staffSave": "PUT /api/v2/catalog/products/:id (expectedVersion; 0=create; identical mutationId replays)",
+    "staffImage": "POST /api/v2/catalog/images (image/png; max 2 MiB)",
+    "staffImageRead": "GET /api/v2/catalog/images/:id",
+    "publicList": "GET /api/public/catalog/:storeId?page=1&category=整机|配件",
+    "publicImage": "GET /api/public/catalog/:storeId/images/:id (only referenced by published product)"
+  },
+  "imagePresets": {
+    "cover": { "label": "商品列表图", "width": 710, "height": 500 },
+    "hero": { "label": "商城主推图", "width": 572, "height": 500 }
+  },
+  "types": {
+    "CatalogProduct": {
+      "id": "string", "title": "string", "category": "'整机' | '配件'", "description": "string", "priceCents": "number",
+      "coverImageId": "string | null", "heroImageId": "string | null", "status": "'draft' | 'published' | 'unpublished'", "version": "number"
+    },
+    "CatalogWrite": {
+      "product": "CatalogProduct", "expectedVersion": "number", "mutationId": "string"
+    },
+    "PublicCatalogProduct": {
+      "id": "string", "title": "string", "category": "'整机' | '配件'", "description": "string", "priceCents": "number", "coverUrl": "string", "heroUrl": "string | null"
+    },
+    "CatalogImage": { "id": "string", "storagePersistent": "boolean" }
+  },
+  "rules": ["店铺和权限由服务端核验", "仅显式上架商品可公开读取；图片按当前上架引用授权，禁止公开业务附件", "每页20条，page为正整数，最大10000", "文本按纯文本显示；金额0至100000000分", "草稿允许无图；上架要求有效列表图", "id与mutationId由客户端生成并在未知结果重试时保持", "相同mutationId但载荷不同返回冲突", "更新须匹配expectedVersion，冲突保留输入"]
+}
