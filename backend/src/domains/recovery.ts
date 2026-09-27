@@ -558,9 +558,9 @@ export function planAcquireRecovery(
         .prepare(
           `INSERT INTO stock_items
              (id, store_id, product_id, asset_code, condition, sn_raw, sn_normalized, remark,
-              ownership, availability, location, acquisition_ref,
+              ownership, availability, inspection_status, location, acquisition_ref,
               acquisition_cost_cents, cost_known, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', 'quarantine', 'store', ?, ?, 1, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', 'quarantine', 'pending', 'store', ?, ?, 1, ?)`,
         )
         .bind(
           stockItemId,
@@ -821,9 +821,9 @@ export function planTeardownRecovery(
         .prepare(
           `INSERT INTO stock_items
              (id, store_id, product_id, asset_code, condition, sn_raw, sn_normalized, remark,
-              ownership, availability, location, acquisition_ref,
+              ownership, availability, inspection_status, location, acquisition_ref,
               acquisition_cost_cents, cost_known, created_by)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', 'quarantine', 'store', ?, ?, 1, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', 'quarantine', 'pending', 'store', ?, ?, 1, ?)`,
         )
         .bind(
           stockItemId,

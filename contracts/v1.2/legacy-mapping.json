@@ -1,0 +1,1165 @@
+{
+  "contractVersion": "v1.2",
+  "frozenBy": "U02",
+  "frozenAt": "2026-09-27",
+  "status": "frozen",
+  "revisionNote": "D10 / E04（2026-09-25）在 tables 末尾登记 0030 新增的 inventory_opening_windows；它是正式期初窗口内部支撑表，v2 OpeningWindowStatus 是接口状态形状而非独立持久化对象，targetObjects 留空。sources 补入 0028–0030；0029 只扩展既有 customers.source_channel，Customer.sourceChannel 已在 v1 对象内。本次没有改变 v1 动作或实体语义，不提升 contractVersion。此前记录：AS02（2026-09-24）在 tables 末尾追加 1 条登记：stock_batches（0027_auto_serials_and_batches.sql），它是数量件收货批次表（BT 前缀批次号由服务端生成、received_qty 只记入库数量、source_ref 指向期初单或收货单、source_line_ref 指向收货行），无旧表对应，action 取 keep；sources 同步补入该迁移文件。契约 objects.json 尚无 StockBatch 对象，targetObjects 留空并在 notes 写明这属「有表无对象」的真实缺口，补对象是契约修订不在此卡范围；同一迁移给 stock_items 补 remark、给 customer_device_custody 补 manufacturer_sn 两列，是既有表的结构扩展，契约 StockItem / CustomerDevice 暂无这两个字段，是否补属规范面改动，另开卡决定。本次未新增或修改任何既有 action 取值、主数组动作、目标对象名与校验规则，故不提升 contractVersion。此前记录：MP17（2026-09-23）在 tables 末尾追加 1 条登记：customer_wechat_identities（0026_customer_wechat_identity.sql），它是顾客微信身份表（appid + openid 定位一名顾客、customer_id 指向 customers.id、claim_status/claim_method 记录认领方式与状态、session_version 让旧顾客会话失效），无旧表对应，action 取 keep；sources 同步补入该迁移文件。objects.json 新增 CustomerIdentity（tables 取本表）与 CustomerSession（无表，登记进 objectsWithoutLegacyTable）；enums.json 新增 CustomerClaimStatus（unclaimed/claimed/rejected）与 CustomerClaimMethod（wechat-phone/clerk-confirm，**刻意不含顾客自填手机号**）；errors.json 新增 CUSTOMER_CODE_INVALID（401）、CUSTOMER_IDENTITY_REVOKED（401）、CUSTOMER_CLAIM_REQUIRED（403）；actions.json 的 authActions 新增 A05 顾客微信登录、A06 顾客登出、A07 顾客会话与认领状态（A 系列不在 ActionCode 双向校验范围内，故未动 enums 的 ActionCode）。⚠️ 与 0008 的 wechat_identity_bindings 严格分离：那张表绑 store_members（内部成员），本表是顾客主体，不引用 store_members、不产生门店权限。本次未新增或修改任何既有 action 取值、主数组动作、目标对象名与校验规则，故不提升 contractVersion。此前记录：B30（2026-09-22）在 tables 末尾追加 1 条登记：refurbishment_costs（0025_refurbishment_costs.sql），它是 B30 整备与上架的成本明细表（逐件记录整备花费与 capitalizable 费用归属，**不写 cash_entries** —— 整备成本计入件可归属成本，交付只确认一次成本快照，不新增一笔「采购」现金），无旧表对应，action 取 keep；同一迁移给 stock_items 补 5 个上架门槛列（condition_grade / sale_price_cents / disclosure_note / data_disposed / warranty_term），故 sources 同步补入该迁移文件。objects.json 的 RefurbishmentCost.tables 由 [] 改为 [\"refurbishment_costs\"]，并把它从 objectsWithoutLegacyTable 移出。enums.json 新增 ConditionGrade（五档逐件成色）与 WarrantyTerm（质保月数）、objects.json 的 StockItem 补 5 个字段 —— 补齐的是 B30（本就是 frozen 正式动作）在契约里**悬空引用**的名字：ConditionGrade / WarrantyTerm 既不存在、也未登记在 pendingEnums，属契约内部不一致，本次一并销案。未新增或修改任何既有 action 取值、目标对象名与校验规则，故不提升 contractVersion。此前记录：F3（2026-09-22）在 tables 末尾追加 1 条登记：purchase_cancellations（0023_purchase_cancellations.sql），它是 B37 取消采购的事件流水（不改写 qty_ordered，采购恒等式 ordered = received + rejected + cancelled + pending 由本表与到货明细派生），无旧表对应，action 取 keep；sources 同步补入该迁移文件。B37（取消采购）由 supplementaryActions 的 reserved 提升为正式动作（actions.json 主数组 ＋ enums.json ActionCode 同步补入 B37），路径 /inventory/purchases/:id/cancel 与权限 inventory/purchase-cancel 沿用旧登记值，未另起新名；errors.json 同步补入 PURCHASE_CANCEL_EXCEEDED（422）与 PURCHASE_PAYMENT_CONFLICT（409）两个新错误码。本表不参与采购付款的应付基数以外的任何金额计算：B33 付款按「未取消数量 × 约定单位成本」求和。未新增或修改任何既有 action 取值、目标对象名与校验规则，故不提升 contractVersion。此前记录：F1（2026-09-22）在 tables 末尾追加 1 条登记：attachments（0022_attachments.sql），无旧表对应，action 取 keep；sources 同步补入该迁移文件。objects.json 的 Attachment.tables 由 [] 改为 [\"attachments\"]，并把它从 objectsWithoutLegacyTable 移出。enums.json 补入 stateMachines.AttachmentUploadState 转换表（pending→uploaded→attached、pending→failed、pending/uploaded→orphaned）。actions.json 的 B35.stateMachine 由 null 改为 AttachmentUploadState，operations 补入 PUT /attachments/upload-intents/:id/blob 作为文件字节通道（04 §5 原本只规定签发凭证与完成确认两个端点，字节通道留白），stateMachineGaps 中 Attachment 那条销案并转入 notAGap 留痕。未新增或修改任何既有 action 取值、目标对象名与校验规则，故不提升 contractVersion。此前记录：E11（2026-09-22）在 tables 末尾追加 1 条登记：inventory_movements__new（0018_inventory_movement_sources.sql），它是 0018 重建 inventory_movements 时的中转表，迁移结束后不再存在，targetObjects 仍挂 InventoryMovement 并在 notes 写明存在理由（SQLite 不能 ALTER CHECK，契约 InventoryMovementSource 16 值 vs 0007 的 14 值）；sources 同步补入 0018 与 0020。本卡不动 actions / enums / objects 的规范面：B33 的 /finance/payments 早已在契约里 frozen（权限 finance/payment、owner_only），本次只是把回收付款这一条实现接上，采购付款仍未实现也不伪造入口。未新增或修改任何 action 取值、目标对象名与校验规则，故不提升 contractVersion。此前记录：E09（2026-09-21）在 tables 末尾追加 3 条非旧表登记：sale_credit_approvals、sale_returns、sale_refunds（0017_sale_refund_credit.sql），均无旧表对应，action 取 keep；sources 同步补入该迁移文件。objects.json 的 ReturnRecord.tables 由 [] 改为 sale_returns 并新增 creditState 字段（CreditState 枚举 pending/approved）、Refund.tables 由 [] 改为 sale_refunds，二者随之从 objectsWithoutLegacyTable 移出。sale_credit_approvals 无独立契约对象（B09 entity=SaleOrder、effects=SaleOrder+AuditEvent），targetObjects 挂 SaleOrder 并在 notes 写明。新增动作 B43（批准退货贷项，加主数组，权限复用 sales/refund 的 owner_only）；enums.json ActionCode 补 B43、inventoryBucketRules 补 sold→quarantine（退货接收 B17）。sale_orders 重建以扩展余额模型（加 return_credit_cents、cash_net_cents 落实为净收现金），属既有表的结构修正，不新增业务表。未新增或修改任何既有 action 取值、目标对象名与校验规则，故不提升 contractVersion。此前记录：E08（2026-09-21）在 tables 末尾追加 2 条非旧表登记：sale_checklists、sale_deliveries（0016_sale_fulfillment.sql），均无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入该迁移文件。objects.json 的 Checklist.tables、TestRecord.tables 由 [] 改为 sale_checklists，Delivery.tables 由 [] 改为 sale_deliveries，三者随之从 objectsWithoutLegacyTable 移出。Checklist 与 TestRecord 形状逐字相同（entityRef / templateVersion / configurationVersion / items / result / performedAt / performedBy），首版由同一张表承载，检查项与检测项在 items_json 里以 kind 区分；要拆成两张表属契约修订，本卡不改契约规范面。Delivery.configurationSnapshotId 首版仍无落地结构（DeviceConfiguration 至今在 objectsWithoutLegacyTable），本卡用 sale_orders.configuration_version 对齐，属登记在案的底座缺口。未新增或修改任何 action 取值、目标对象名与校验规则，故不提升 contractVersion。此前记录：E06/E07（2026-09-21）在 tables 末尾追加 8 条非旧表登记：sale_orders、sale_lines、cash_entries（0013_sales_core.sql）与 purchase_orders、purchase_lines、purchase_receipts、purchase_receipt_lines、supplier_returns（0014_purchase_core.sql），均无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入这两个迁移文件与 0012。objects.json 的 SaleOrder.tables 增列 sale_orders、SaleLine.tables 增列 sale_lines、CashEntry.tables 增列 cash_entries、Purchase.tables 由 [] 改为 purchase_orders/purchase_lines、Receipt.tables 由 [] 改为 purchase_receipts/purchase_receipt_lines、Reservation.tables 由 [] 改为 stock_reservations（该表早在 0007 建好且有登记，本次只补对象侧声明）。Reservation / Purchase / Receipt 随实表补上，按 E02/E04 对 Customer 的同一处理从 objectsWithoutLegacyTable 移出。另 B38（退供）由 supplementaryActions 的 reserved 提升为正式动作（actions.json 主数组 ＋ enums.json ActionCode），路径 /inventory/supplier-returns 与权限 inventory/supplier-return 沿用旧登记值，未另起新名。此前记录：E02/E04（2026-09-19）在 tables 末尾追加 8 条非旧表登记：customers、customer_devices（0010）与 wechat_identity_bindings、wechat_binding_codes（0008）、quote_headers、quote_versions、quote_lines、quote_shares（0009），无旧表对应；后 6 条属 C-01 遗留（契约校验长期因它们报红），sources 同步补入两个迁移文件。quote_shares 在 objects.json 里没有对应对象，属真实契约缺口，targetObjects 留空并已在 notes 写明；wechat_binding_codes 同理（登记在 objectsWithoutLegacyTable）。objects.json 另把 WechatIdentity.tables 改为 [\"wechat_identity_bindings\"]、Quote.tables 增列 quote_headers、QuoteVersion.tables 增列 quote_versions 与 quote_lines。此前记录：E02/E04（2026-09-19）追加 2 条非旧表登记：customers、customer_devices，均来自 0010_customers.sql，无旧表对应；sources 同步补入该迁移文件。objects.json 的 Customer.tables 由 [] 改为 [\"customers\"]，并把它从 objectsWithoutLegacyTable 移出（它已有实表）；CustomerDevice 仍留在该清单，因为 customer_devices 只登记「客户带过哪些机器」，不含契约要求的 custodyLocation / stockItemRef 等保管字段，不能登记为它的实现。未新增或修改任何 action 取值、目标对象名与校验规则，故不提升 contractVersion。此前记录：T05a（2026-09-18）在 tables 末尾追加 6 条非旧表登记：stock_items、stock_balances、inventory_movements、stock_reservations、inventory_openings、inventory_opening_lines，均来自 0007_inventory_core.sql，无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入该迁移文件。hardware 的就地扩展（tracking_mode / requires_sn / specs / version / entity_id）落在其原有 extend 条目语义内，未改该条目的 action 与目标对象。serial_numbers 与 sn_events 的既有登记（split / extend）保持不变，行级映射仍留待 T20。未新增或修改任何 action 取值、目标对象名与校验规则，规范性表面零变化，故不提升 contractVersion。此前记录：T04（2026-09-17）在 tables 末尾追加 4 条非旧表登记：operations、assertion_guards、entity_version_log、operation_failures，均来自 0006_consistency_core.sql，无旧表对应，action 取 keep 表示结构即最终形态；sources 同步补入该迁移文件。未新增或修改任何 action 取值、目标对象名与校验规则，规范性表面零变化，故不提升 contractVersion。此前记录：T01b（2026-09-17）仅更新了 openQuestions 中 Q04 的 owner 与 resolution：权限映射依据改为 backend/src/index.ts 的实际守卫资源，生产表行核实移交 T20。表映射、数据库机制、单位换算等协议内容未改动。",
+  "sources": [
+    "backend/migrations/0000_baseline.sql",
+    "backend/migrations/0001_erp2_stores_members_permissions.sql",
+    "backend/migrations/0002_product_master_data.sql",
+    "backend/migrations/0003_orders.sql",
+    "backend/migrations/0004_sn.sql",
+    "backend/migrations/0005_sn_hardening.sql",
+    "backend/migrations/0006_consistency_core.sql（T04 新增表，非旧结构）",
+    "backend/migrations/0007_inventory_core.sql（T05a 新增库存核心表，非旧结构）",
+    "backend/migrations/0008_wechat_identity.sql（T03a 新增微信身份与绑定码表，非旧结构）",
+    "backend/migrations/0009_quote_core.sql（Q01b 新增报价核心表，非旧结构）",
+    "backend/migrations/0010_customers.sql（E02/E04 新增客户与设备表，非旧结构）",
+    "backend/migrations/0011_quote_customer_fk.sql（E05 重建 quote_headers 以补同店客户外键，非旧结构）",
+    "backend/migrations/0012_quote_confirmed.sql（E05b 重建 quote_versions 以补 confirmed 取值与确认来源列，非旧结构）",
+    "backend/migrations/0013_sales_core.sql（E06 新增销售单与资金流水表，非旧结构）",
+    "backend/migrations/0014_purchase_core.sql（E07 新增采购、到货与退供表，非旧结构）",
+    "backend/migrations/0015_quote_line_ref_and_quantity_reservation.sql（E06/E07 补洞：quote_lines 补商品引用列、重建 stock_reservations 支持数量件占用；均为既有表的结构修正，不新增业务表）",
+    "backend/migrations/0016_sale_fulfillment.sql（E08 新增装机检测单与交付记录表，非旧结构）",
+    "backend/migrations/0017_sale_refund_credit.sql（E09 新增欠款批准、退货、退款表并重建 sale_orders 扩展余额，非旧结构）",
+    "backend/migrations/0018_inventory_movement_sources.sql（E11 补齐流水来源枚举：重建 inventory_movements 到契约 16 值，不新增业务表）",
+    "backend/migrations/0019_service_core.sql（E10 新增维修工单、客户设备保管、配置版本、换件记录表，非旧结构）",
+    "backend/migrations/0020_recovery.sql（E10 新增回收单、回收明细、拆件记录表，非旧结构）",
+    "backend/migrations/0021_tradein.sql（E12 新增抵用折抵表，非旧结构）",
+    "backend/migrations/0022_attachments.sql（F1 新增附件上传意图与附件表，非旧结构）",
+    "backend/migrations/0023_purchase_cancellations.sql（F3 新增采购取消事件表，非旧结构）",
+    "backend/migrations/0024_inventory_counts.sql（B16 新增盘点草稿与盘点行表，非旧结构）",
+    "backend/migrations/0025_refurbishment_costs.sql（B30 新增整备成本明细表；同时给 stock_items 补 5 个上架门槛列，非旧结构）",
+    "backend/migrations/0026_customer_wechat_identity.sql（MP17 新增顾客微信身份表，与 0008 的员工微信绑定是两条独立链路，非旧结构）",
+    "backend/migrations/0027_auto_serials_and_batches.sql（AS02 新增数量件批次表；同时给 stock_items 补 remark、customer_device_custody 补 manufacturer_sn 两列，非旧结构）",
+    "backend/migrations/0028_document_export_attachments.sql（B36 扩展 attachments 用途与版本唯一键）",
+    "backend/migrations/0029_customer_source_channel.sql（E04 给既有 customers 增加可选来源字段）",
+    "backend/migrations/0030_d10_formal_openings.sql（D10 增加正式期初窗口与四类成本字段）",
+    "backend/migrations/0032_stock_inspection_and_backfills.sql（U02 增加当前检测状态、追加事件与补录批次）",
+    "backend/src/index.ts（实际 SQL 用法核对，2026-09-17）"
+  ],
+  "methodNote": "本映射依据实际迁移文件与实际代码用法编制，不依据旧回执或口头描述。标记为 unverified 的项必须在下游任务中核实后才能依赖。",
+  "actionVocabulary": ["keep", "extend", "split", "deprecated", "unmapped"],
+  "actionMeaning": {
+    "keep": "结构继续使用，不改语义",
+    "extend": "在原表上增量加字段或约束，历史行保持可读",
+    "split": "一个旧表拆为多个新对象，需要行级解析与映射",
+    "deprecated": "不再写入，保留数据待核实后再决定归档或清理",
+    "unmapped": "不再进入新模型，旧接口按兼容任务单独处理"
+  },
+
+  "tables": [
+    {
+      "table": "users",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": ["Session"],
+      "action": "keep",
+      "codeUsage": "登录身份、token_version 撤权机制仍在使用",
+      "notes": [
+        "现有登录为邮箱 + 密码；小程序侧不接入该注册流程。",
+        "auth context 的 createdBy 语义应指向 memberId，不是 users.id；两者不能混用。",
+        "「注册即老板」的旧流程不得被微信登录复用。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "hardware",
+      "definedIn": "0000_baseline.sql，扩展于 0002 与 0004",
+      "targetObjects": ["Product"],
+      "action": "extend",
+      "codeUsage": "商品 CRUD、批量导入、报价源数据；权限码为 library/view 与 library/edit",
+      "notes": [
+        "0002 已加入 sku、item_type、is_serialized、is_salable、is_purchasable、default_price_cents 等 ERP 列，映射基础已存在。",
+        "price（REAL，元）与 default_price_cents（整数分）在当前代码中双写：INSERT/UPDATE 时写 price = defaultPrice / 100。",
+        "sku 由 'LEGACY-' || id 生成或随机生成，非厂商编码。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "library",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": [],
+      "action": "deprecated",
+      "codeUsage": "核对结果：backend/src/index.ts 中没有任何 SQL 语句读写 library 表；'library' 仅作为权限码与路由名出现，实际读写目标为 hardware",
+      "notes": [
+        "该表与 hardware 结构几乎完全重复（同列名、同索引模式）。",
+        "不得直接删除：是否有历史数据未核实，且旧回执可能引用过它。",
+        "若确认无数据，在 T20 迁移任务中归档或清理，本卡只记录事实。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "quotes",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": ["Quote", "QuoteVersion"],
+      "action": "split",
+      "codeUsage": "handleQuote 始终 SELECT ... ORDER BY updated_at DESC LIMIT 1 后 UPDATE 同一行；data 为 JSON blob",
+      "notes": [
+        "核对结论：现有报价是「单一工作副本」模型，只保留最新一份，没有版本序列。",
+        "因此不能把旧行直接当成 QuoteVersion 序列，也不能假设历史客户版本仍存在。",
+        "data blob 内部是否含客户端历史版本，需在 T07 前实际取样核实。",
+        "单位：blob 内若为元级 unitPrice，需经旧元→分适配器。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "templates",
+      "definedIn": "0000_baseline.sql",
+      "targetObjects": [],
+      "action": "unmapped",
+      "codeUsage": "/api/templates CRUD，data 为 JSON blob；权限码 template/view、template/edit",
+      "notes": [
+        "04 §2 未定义模板对象，新契约暂不覆盖。",
+        "旧接口按兼容任务保留；T07 需明确模板归属，不得让两端自行取名。"
+      ],
+      "status": "pending",
+      "risk": "medium"
+    },
+    {
+      "table": "stores",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "storeId 来自 JWT 的 sid，服务端强制校验成员资格",
+      "notes": ["首版单店，但后端仍检查 storeId，不因单店而省略校验。"],
+      "status": "ok"
+    },
+    {
+      "table": "store_members",
+      "definedIn": "0001",
+      "targetObjects": ["WechatIdentity", "Session"],
+      "action": "keep",
+      "codeUsage": "loadAuthContext 校验 store_members.status='active'；is_owner 参与权限计算",
+      "notes": [
+        "微信身份绑定的是 memberId，不是 userId；同一 user 在多店的成员 ID 不同。",
+        "撤权后两端旧会话都必须失效。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "roles",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "extend",
+      "codeUsage": "loadAuthContext 中 roles 含 'owner' 或 'admin' 时权限为 ['*']",
+      "notes": [
+        "角色名 owner / admin 被硬编码为全权，属宽权限来源。",
+        "旧宽权限不得自动获得退款、欠款放行、折抵等新能力；权限→action 映射由 T01b 冻结。"
+      ],
+      "status": "ok",
+      "risk": "medium"
+    },
+    {
+      "table": "permissions",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "extend",
+      "codeUsage": "代码中实际使用的权限码共 11 个：library/view、library/edit、quote/view、quote/edit、template/view、template/edit、store/manage、member/manage、role/view、cost/view、margin/view",
+      "notes": [
+        "权限码与所守卫的资源不一致：library/* 实际守卫 hardware 商品接口。",
+        "T01b 映射必须以实际守卫资源为准，不能按权限码字面名推断。",
+        "权限表无种子数据迁移，实际行内容未核实。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "role_permissions",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "loadAuthContext 联表得出 permissions 数组",
+      "notes": ["与 member_roles、roles 一起构成三重校验中的 permission 段。"],
+      "status": "ok"
+    },
+    {
+      "table": "member_roles",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "同上",
+      "notes": [],
+      "status": "ok"
+    },
+    {
+      "table": "member_invites",
+      "definedIn": "0001",
+      "targetObjects": [],
+      "action": "extend",
+      "codeUsage": "邮箱邀请，状态 pending/accepted/revoked/expired，有 token 与 expires_at",
+      "notes": [
+        "新方案用电脑端生成一次性绑定码，与邮箱邀请不是同一机制。",
+        "沿用该表的过期 / 状态思路，但绑定码需另建表并只存摘要、限尝试次数。",
+        "是否保留邮箱邀请并存，由 T03 决定。"
+      ],
+      "status": "pending"
+    },
+    {
+      "table": "audit_logs",
+      "definedIn": "0001",
+      "targetObjects": ["AuditEvent"],
+      "action": "extend",
+      "codeUsage": "auditStatement / auditLastInsertStatement 写入；details 为自由 JSON",
+      "notes": [
+        "details 内容不受约束，可能含敏感字段；脱敏策略需在 T19 明确。",
+        "审计是脱敏诊断，不能把失败审计当成功账务。"
+      ],
+      "status": "ok",
+      "risk": "medium"
+    },
+    {
+      "table": "product_categories",
+      "definedIn": "0002",
+      "targetObjects": ["Product"],
+      "action": "keep",
+      "codeUsage": "hardware.category_id 引用；导入时按名称查找或创建",
+      "notes": ["LEGACY- 前缀自动生成的分类 code 需在 T20 核对是否可读。"],
+      "status": "ok"
+    },
+    {
+      "table": "product_brands",
+      "definedIn": "0002",
+      "targetObjects": ["Product"],
+      "action": "keep",
+      "codeUsage": "hardware.brand_id 引用，normalized_name 唯一",
+      "notes": [],
+      "status": "ok"
+    },
+    {
+      "table": "orders",
+      "definedIn": "0003",
+      "targetObjects": ["SaleOrder", "Delivery"],
+      "action": "extend",
+      "codeUsage": "创建订单、直接改履约状态、收款；quote_snapshot 存报价快照",
+      "notes": [
+        "无 version 列：新模型必须补，历史单默认只读。",
+        "fulfillment_status 取值集为 pending_purchase/preparing/pending_delivery/delivered/cancelled，与新枚举 wait_stock 系列不是同一套，需逐值映射。",
+        "payment_status 与 received_amount_cents 由触发器维护；新模型不再把它当权威，改为从流水计算，但字段保留用于对账。",
+        "旧直接改履约状态的写入口对迁入 v2 的单据必须禁止或改调同一动作服务。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "order_items",
+      "definedIn": "0003",
+      "targetObjects": ["SaleLine"],
+      "action": "extend",
+      "codeUsage": "订单行，source_item_id 指向 hardware.id",
+      "notes": [
+        "没有 source 列：新品 / 二手 / 客供 / 服务无法区分，只有 item_type='service' 可推出服务行。",
+        "存量行的二手与客供来源需人工核对，不得默认判为新品并据此计算库存与成本。",
+        "unit_price_cents 已是整数分，无需单位换算。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "order_payments",
+      "definedIn": "0003",
+      "targetObjects": ["CashEntry"],
+      "action": "extend",
+      "codeUsage": "收款记录，配合两个触发器维护订单累计金额与支付状态",
+      "notes": [
+        "无 requestId、无 reversalOf、无 direction：全部为收款方向，无退款与冲销引用。",
+        "幂等缺口：同载荷重复提交仍可能形成两笔，T04 必须在数据库边界补幂等记录。",
+        "amount_cents 已为整数分。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "serial_numbers",
+      "definedIn": "0004",
+      "targetObjects": ["StockItem"],
+      "action": "split",
+      "codeUsage": "SN 台账，状态 in_stock/reserved/picked/delivered/in_service/returned_to_supplier/scrapped",
+      "notes": [
+        "只覆盖有 SN 的实物；无 SN 二手与数量件不在其中，新模型需补 assetCode 与数量件路径。",
+        "current_customer_name / current_customer_phone 是当前值，不是所有权历史，不能直接覆盖成永久归属记录。",
+        "purchase_cost_cents 默认 0，无法区分「成本为 0」与「成本未知」，迁移时必须走人工核对。",
+        "in_service 状态在新模型中对应 location=external 且 bucket=quarantine，需明确规则后再迁。"
+      ],
+      "status": "unverified",
+      "risk": "high"
+    },
+    {
+      "table": "sn_events",
+      "definedIn": "0004",
+      "targetObjects": ["InventoryMovement", "AuditEvent"],
+      "action": "extend",
+      "codeUsage": "append-only 事件时间线，event_type 10 种",
+      "notes": [
+        "event_type 与 InventoryMovementSource 不是同一套词，需逐值映射后再作为库存流水使用。",
+        "uq_sn_events_inbound_once 保证每 SN 只有一条 inbound，迁移时不得重造第二条。"
+      ],
+      "status": "pending"
+    },
+    {
+      "table": "order_item_sn",
+      "definedIn": "0004，硬化于 0005",
+      "targetObjects": ["Reservation", "Delivery"],
+      "action": "extend",
+      "codeUsage": "订单行与 SN 的绑定，软删除用 unbound_at",
+      "notes": [
+        "uq_order_item_sn_effective_sn 保证同一 SN 只有一条有效绑定，映射为逐件预留的唯一性基础。",
+        "order_item_sn_before_insert_hardening 校验同店、商品匹配与订购数量，保留并审计，不重复实现同一规则。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "operations",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "关键写动作的幂等记录，落地 04 §7；UNIQUE (store_id, request_id) 本身就是幂等断言",
+      "notes": [
+        "新增表，不映射任何旧结构；旧写入口如需接入必须走同一动作服务。",
+        "只登记成功动作；失败由 operation_failures 单独承载，两者不得互相替代。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "assertion_guards",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "通用断言守卫：把「条件更新影响 0 行」变成硬错误；触发器 assertion_guards_abort 携带契约错误码中止整批",
+      "notes": [
+        "静息状态必须为空；出现任何一行都说明守卫被触发，不能当正常数据处理。",
+        "不是业务表，不得被查询接口暴露，也不得进入任何客户输出。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "entity_version_log",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "乐观锁的版本推进日志；主键 (entity_type, entity_id, version) 使并发推进只有一个胜者",
+      "notes": [
+        "旧 orders 没有 version 列，故旧单不能直接充当新版本模型。",
+        "业务表可保留冗余 version 列便于读取，但版本历史以本表为准。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "operation_failures",
+      "definedIn": "0006_consistency_core.sql（T04 新增，无旧表对应）",
+      "targetObjects": ["Operation"],
+      "action": "keep",
+      "codeUsage": "失败动作的脱敏诊断，在失败批次之外单独写入",
+      "notes": [
+        "表名即语义：绝不能被读作「动作成功」的证据。",
+        "只存诊断摘要，禁止写 token、原始请求体或完整客户载荷。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_items",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应；serial_numbers 仍标为 split，行级映射留待 T20）",
+      "targetObjects": ["StockItem"],
+      "action": "keep",
+      "codeUsage": "逐件实物：内部编号 assetCode、成色、SN 原始值与规范化值、所有权、可用性、位置、成本与成本是否已知",
+      "notes": [
+        "新建表而不是就地改 serial_numbers：旧表只有一个 status 轴，装不下 ownership / availability / location 三轴（04 §2 L21）。",
+        "旧 serial_numbers 的行不自动搬入。库存只来自采购入库、期初实盘、回收取得与退货接收。",
+        "同一实物的有效占用由 stock_reservations 的部分唯一索引保证，不靠应用层层判断。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_balances",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["StockBalance"],
+      "action": "keep",
+      "codeUsage": "型号 × 位置的数量余额；只由 inventory_movements 的触发器写入，应用层不直接改这三列",
+      "notes": [
+        "表里只有 available / reserved / quarantine 三列，在途与客户保管没有位置可放，因此结构上不可能被混算（03 §4 L84）。",
+        "三列各有 CHECK >= 0：扣成负数会让整个批次回滚，而不是静默截断。",
+        "「余额 = 流水净和」是跨表聚合，CHECK 无法表达；改为唯一写入路径 + 可重算对账（见 backend/src/domains/inventory.ts 的 reconcileProductBalance）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_movements",
+      "definedIn": "0007_inventory_core.sql（T05a 新增；sn_events 仍标为 extend，新表承载数量件与逐件两条路径）",
+      "targetObjects": ["InventoryMovement"],
+      "action": "keep",
+      "codeUsage": "库存流水：有符号 qty、from / to 桶、来源标识、冲销引用、发生时间与 requestId",
+      "notes": [
+        "新建表而不是就地扩展 sn_events：旧表 sn_id 为 NOT NULL（0004_sn.sql L48），数量件（无 SN）的流水无处安放。",
+        "qty 与 from / to 桶的组合语义（qty 作用在哪个桶）契约未规定，由 T05a 定并已记入验证文档的口径说明。",
+        "所有改变库存的动作都必须写这里；建实物而不写流水会让实物游离在余额之外，可用 findStockItemsWithoutMovements 对账发现。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_reservations",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["Reservation"],
+      "action": "keep",
+      "codeUsage": "逐件实物的占用；部分唯一索引 uq_stock_reservations_active_item 保证同一实物同一时刻最多一条 active",
+      "notes": [
+        "T05a 只建形状与约束；真正写占用的动作属 B05，归 T08。",
+        "order_ref / line_ref 是不透明引用：SaleOrder 尚未建表，因此不做外键。",
+        "qty 恒为 1（03 §3 L50：序列化 / 二手实物行数量为 1）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_openings",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["StockItem", "InventoryMovement", "StockBalance"],
+      "action": "keep",
+      "codeUsage": "期初单头：人工确认的实盘凭据 approved_count_ref、成本口径说明、操作人与 requestId",
+      "notes": [
+        "这不是 B16 的盘点单（其状态枚举 CountState 仍未定义，见 enums.json pendingEnums），只是让「有人数过」成为落库事实的审计载体。",
+        "B13 必须携带 approvedCountRef；没有它就无法建立期初。",
+        "历史 SN 表的行数永远不能当作期初：代码中不存在任何从 serial_numbers 计数搬运的路径。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_opening_lines",
+      "definedIn": "0007_inventory_core.sql（T05a 新增，无旧表对应）",
+      "targetObjects": ["StockItem"],
+      "action": "keep",
+      "codeUsage": "期初逐行明细：数量、成色、内部编号、单件成本与成本是否已知",
+      "notes": [
+        "unit_cost_cents 与 cost_known 成对约束：未知成本必须为 NULL，不得写成 0。",
+        "逐件行与 stock_items 一一对应；数量件行的 stock_item_id 为空。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "customers",
+      "definedIn": "0010_customers.sql（E02/E04 新增，无旧表对应）",
+      "targetObjects": ["Customer"],
+      "action": "keep",
+      "codeUsage": "门店自有的客户档案；/api/customers 的读写对象，订单按 customer_phone 归集到它；source_channel 记录员工选择的客户来源",
+      "notes": [
+        "覆盖契约 Customer 的 displayName（name）、phone、remarkInternal（remark）和可选 sourceChannel；contactNote 未单独成列，备注一并放 remark。",
+        "0029_customer_source_channel.sql 给既有 customers 增加 source_channel，空串表示兼容旧档案或暂未记录；接口把空串回为 null。",
+        "来源只允许 walk_in、phone、wechat、referral、mini_program、other 六类；来源留空不阻止建档或报价。",
+        "status / created_by / updated_by / 时间戳是 ERP 附加列，契约对象未声明，不属于协议字段。",
+        "契约规则「散客允许最少信息」决定了唯一性只能是部分唯一索引：idx_customers_store_phone 带 WHERE phone <> ''。若写成表级 UNIQUE(store_id, phone)，同店第二条无电话散客会撞约束。",
+        "买卖方角色不在本表表达（契约要求角色由单据关系承载），本表只是主体档案。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "customer_devices",
+      "definedIn": "0010_customers.sql（E02/E04 新增，无旧表对应）",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "「这个客户带过哪些机器来」的轻量登记：label / serial_number / remark",
+      "notes": [
+        "⚠️ 这不是契约的 CustomerDevice。契约对象要求 ownerCustomerId、deviceCode、originalOrderId、currentConfigurationId、custodyLocation、stockItemRef，本表一个都没有 —— 它不表达客户财产的保管归属，也不进库存账。",
+        "targetObjects 故意留空：登记为「已映射到某个对象」会让人以为客户财产的 custodyLocation 已经落实。",
+        "因此 CustomerDevice 继续留在 objectsWithoutLegacyTable；送修/客供件的保管归属在 E10（维修）另建表。",
+        "删除客户档案时会级联删除本表行（ON DELETE CASCADE）；客户档案只归档不删除，故该级联目前不构成数据风险。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "wechat_identity_bindings",
+      "definedIn": "0008_wechat_identity.sql（T03a 新增，无旧表对应）",
+      "targetObjects": ["WechatIdentity"],
+      "action": "keep",
+      "codeUsage": "微信 openid 绑定到门店成员；同一 (appid, openid) 唯一，同一成员同时只有一条 active",
+      "notes": [
+        "覆盖契约 WechatIdentity 的 appId / openid / memberId / revokedAt；sessionVersion 与 lastSeenAt 尚未实现。",
+        "契约规则「openid 不是业务 token」由本表体现：表里不含任何会话密钥列。",
+        "撤销用 status=revoked 而不是删行，历史绑定关系保留。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "wechat_binding_codes",
+      "definedIn": "0008_wechat_identity.sql（T03a 新增，无旧表对应）",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "员工绑定码：存摘要、限尝试次数、有过期时间，绑定成功后置 consumed",
+      "notes": [
+        "契约没有对应对象，登记在 objectsWithoutLegacyTable 的「绑定码表（T03 定义）」；故 targetObjects 留空。",
+        "code_hash 唯一 + idx_wx_binding_codes_member_pending 部分唯一索引：同一成员同时只能有一个待用码。",
+        "attempt_count / max_attempts 只是数据层计数；G-19 要求入口限流，不能把这两列当完整防护。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "quote_headers",
+      "definedIn": "0009_quote_core.sql（Q01b 新增，无旧表对应）",
+      "targetObjects": ["Quote"],
+      "action": "keep",
+      "codeUsage": "新版报价聚合头；主键是 TEXT 的业务 ID，不是自增（T04 要求动作结果不依赖自增键）",
+      "notes": [
+        "customer_id 已在 0011 补上**同店复合外键** `(store_id, customer_id) -> customers(store_id, id)`（G-Q01-CUSTOMER 由此关闭）：0009 没写外键是因为当时 customers 表还不存在；E04 建表后，由 0011 重建本表补上。**0009 本身一行未改。**",
+        "为什么用复合外键而不是普通的 customer_id 外键：普通外键只能证明「这个客户 id 存在」，拦不住 A 店的报价单挂到 B 店客户身上；而本系统每条读路径都按 store_id 过滤，那种数据会在两边的界面上各显示成一种错。",
+        "与旧 quotes 表并存：旧表是单行工作副本，本表是聚合头。两者不得对同一笔新版报价同时记账。",
+        "⚠️ 尚无 HTTP 路由（Q-08），界面拿不到。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "quote_versions",
+      "definedIn": "0009_quote_core.sql（Q01b 新增，无旧表对应）",
+      "targetObjects": ["QuoteVersion"],
+      "action": "keep",
+      "codeUsage": "报价版本；主键 (quote_id, revision)，发出后不可覆盖",
+      "notes": [
+        "金额恒等式由 CHECK 强制：total = subtotal − discount 且 discount ≤ subtotal。",
+        "terms_snapshot 承载定金比例、顾客预算、质保与送货条款，不建独立列。",
+        "续期 / 过期 / 关闭的转换尚未定义，已登记为状态机缺口。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "quote_lines",
+      "definedIn": "0009_quote_core.sql（Q01b 新增，无旧表对应）",
+      "targetObjects": ["QuoteVersion"],
+      "action": "keep",
+      "codeUsage": "报价明细行；line_total_cents 必须等于 unit_price_cents × qty（CHECK + 触发器双层）",
+      "notes": [
+        "source 取值 new / used / customer / service，对应新品、二手、客供件与维修，客供件不记自有成本。",
+        "position 显式排序，不靠插入顺序。",
+        "本表是 QuoteVersion.lines[] 的落库形态，故与 quote_versions 同指 QuoteVersion。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "quote_shares",
+      "definedIn": "0009_quote_core.sql（Q01b 新增，无旧表对应）",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "分享凭证：锁定到具体 revision，存 token 摘要，有独立失效时间",
+      "notes": [
+        "⚠️ 契约 objects.json 里**没有**分享凭证对象，本表在契约层无归属 —— 这是真实缺口，不是登记遗漏；targetObjects 故意留空。",
+        "签发 / 校验 / 过期判定尚未实现（Q-09），依赖顾客身份（T03a）。表里有行不等于已授权。",
+        "凭证失效（链接打不开）与版本过期（价格不作数）是两件事，两者独立。",
+        "E05 已实现「发出时签发凭证」（token 摘要入表、明文只在一次响应里出现）；**校验与过期判定仍未实现**（Q-09），依赖顾客端身份那一刀。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "quote_headers__v11",
+      "definedIn": "0011_quote_customer_fk.sql（E05 重建表的过渡表名）",
+      "targetObjects": ["Quote"],
+      "action": "unmapped",
+      "codeUsage": "不存在于任何运行期代码：迁移内建为临时表，拷入旧数据后 DROP 原表、RENAME 为 quote_headers，随即消失",
+      "notes": [
+        "登记它的唯一原因是重建流程本身：SQLite / D1 不支持 ALTER TABLE ADD CONSTRAINT，给 quote_headers 补外键只能「建新表 → 拷数据 → 换名」。",
+        "迁移结束后这个名字不再存在，本条不代表任何新增业务表。",
+        "之所以仍写进映射，是为了让「迁移文件里出现的表名都有登记」这条校验继续如实覆盖，而不是把它藏起来绕过校验。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "quote_versions__v12",
+      "definedIn": "0012_quote_confirmed.sql（E05b 重建表的过渡表名）",
+      "targetObjects": ["QuoteVersion"],
+      "action": "unmapped",
+      "codeUsage": "不存在于任何运行期代码：迁移内建为临时表，拷入旧数据后 DROP 原表、RENAME 为 quote_versions，随即消失",
+      "notes": [
+        "重建原因：SQLite / D1 不支持 ALTER TABLE 改 CHECK 约束，给 quote_versions.status 补 'confirmed' 取值并新增 confirmed_at / confirmed_source 两列，只能「建新表 → 拷数据 → 换名」。",
+        "与 0011 同一前提：0009–0011 未应用到任何远端环境，quote_versions 在所有环境里都是空表（迁移先于演示数据执行），子表 quote_lines / quote_shares 无行可违反外键。",
+        "迁移结束后这个名字不再存在，本条不代表任何新增业务表。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_orders",
+      "definedIn": "0013_sales_core.sql（E06 新增，无旧表对应）",
+      "targetObjects": ["SaleOrder"],
+      "action": "keep",
+      "codeUsage": "新版销售单头：报价成交固化、交易状态 draft/confirmed/cancelled、履约阶段、余额与版本",
+      "notes": [
+        "与旧 orders 并存而非替换：旧 orders 无 version 列、履约状态取值集与新枚举不同（见 orders 条目），历史单默认只读。",
+        "customer_snapshot 存成交当时快照：客户改名不改历史单据。",
+        "转账余额字段（cash_net / offset_net / balance）由有效流水维护，不从下拉框写入。",
+        "order_no 由服务端生成（日期 + 序列），UNIQUE(store_id, order_no)。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_lines",
+      "definedIn": "0013_sales_core.sql（E06 新增，无旧表对应）",
+      "targetObjects": ["SaleLine"],
+      "action": "keep",
+      "codeUsage": "销售行：来源 new/used/customer/service、数量、单价与净额，成交时从报价行固化",
+      "notes": [
+        "source 是四类来源的唯一落点，旧 order_items 无该列（见 order_items 条目）。",
+        "二手行必须带 stock_item_id（逐件实物）；客供件默认售价 0 且不计自有成本。",
+        "net_line_cents = unit_price_cents × qty − discount_allocation_cents，由 CHECK 兜住非负。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "cash_entries",
+      "definedIn": "0013_sales_core.sql（E06 新增，无旧表对应）",
+      "targetObjects": ["CashEntry"],
+      "action": "keep",
+      "codeUsage": "资金流水：方向 in/out、人工核对状态、可关联被冲销分录；销售收款写这里",
+      "notes": [
+        "旧 order_payments 只有收款方向、无 requestId、无 reversalOf（见该条目）。新表补上这三项后再承担销售收款写入。",
+        "verification_state 只表示人工对账，不代表支付平台确认到账（enums.json CashVerificationState）。",
+        "同订单同 requestId 只落一条：幂等由 operations 记录保证，本表另有 UNIQUE(store_id, request_id) 兜底。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "purchase_orders",
+      "definedIn": "0014_purchase_core.sql（E07 新增，无旧表对应）",
+      "targetObjects": ["Purchase"],
+      "action": "keep",
+      "codeUsage": "采购单头：供应商文本（快捷供应商不建档）、预计到货、来源销售单",
+      "notes": [
+        "刻意**不设** status 列：objects.json Purchase.notStored 已写明采购进度由 ordered/received/cancelled 三个计数器派生，存储状态会产生第二真相来源。",
+        "快捷供应商 = supplier_name 文本快照 + supplier_ref 可空，不需要先在供应商模块建档（objects.json Purchase.supplierNote）。",
+        "sale_order_id 关联缺件来源订单，可空（散采不挂单）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "purchase_lines",
+      "definedIn": "0014_purchase_core.sql（E07 新增，无旧表对应）",
+      "targetObjects": ["Purchase"],
+      "action": "keep",
+      "codeUsage": "采购行：订购数量、约定单件成本与成本是否已知",
+      "notes": [
+        "qty_ordered 是订购量，实收 / 拒收 / 取消量存在 purchase_receipt_lines 与取消记录里，本表不改写。",
+        "unit_cost_cents 与 cost_known 成对约束：未知成本必须为 NULL，不得写成 0（与 inventory_opening_lines 同一口径）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "purchase_receipts",
+      "definedIn": "0014_purchase_core.sql（E07 新增，无旧表对应）",
+      "targetObjects": ["Receipt"],
+      "action": "keep",
+      "codeUsage": "到货验收单头：一次到货一条，可挂采购单或作为快速采购（两者至少给一个）",
+      "notes": [
+        "部分到货分次建单，每次各有 requestId（objects.json Receipt.rules 第 1 条）。",
+        "快速采购（quick_purchase_note）同样保留来源与成本，不因为「现买现入」就丢掉溯源。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "purchase_receipt_lines",
+      "definedIn": "0014_purchase_core.sql（E07 新增，无旧表对应）",
+      "targetObjects": ["Receipt"],
+      "action": "keep",
+      "codeUsage": "到货明细：实收量、拒收量、处置去向、单件成本；合格件在此关联新建的 stock_item",
+      "notes": [
+        "inspection_disposition 决定这批货进哪个桶：available 才可卖，return_to_supplier / scrapped 不增加可用量。",
+        "拒收数量计入采购恒等式的「已拒收 / 取消」一侧，因此不留下在途假象。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "supplier_returns",
+      "definedIn": "0014_purchase_core.sql（E07 新增，无旧表对应）",
+      "targetObjects": ["InventoryMovement", "StockItem"],
+      "action": "keep",
+      "codeUsage": "退供事件（B38）：把已进过账的自有件退给供应商，记录原因与来源采购单",
+      "notes": [
+        "契约里没有独立的退供单对象，本表作为 InventoryMovement 的来源事件载体登记（objects.json Purchase.rules：退供另有关联退供单）。",
+        "只减少自有在库（available 或 quarantine → retired），绝不增加可用量，也不冒充采购到货。",
+        "拒收发生在 B15 验收当时（实物从未进过自有在库）；本表处理的是已经进过账、事后决定退回的部分。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "purchase_cancellations",
+      "definedIn": "0023_purchase_cancellations.sql（F3 新增，无旧表对应）",
+      "targetObjects": ["Purchase"],
+      "action": "keep",
+      "codeUsage": "取消采购事件（B37）：逐采购行记录取消数量与原因，不改写 purchase_lines.qty_ordered",
+      "notes": [
+        "契约里没有独立的取消单对象（B37 的 effects 只有 Purchase），本表作为 Purchase 的处置事件流水登记，与 sale_credit_approvals 挂 SaleOrder 是同一处理。",
+        "采购恒等式 ordered = received + rejected + cancelled + pending 由本表与 purchase_receipt_lines 共同派生；取消只减小 pending，从不改写订购量，历史永远可回溯。",
+        "已到货（received）与已拒收（rejected）数量不属于可取消范围——即使事后退供（B38）也不回到可取消。UNIQUE(store_id, request_id, purchase_line_id) 保证同一次请求对同一行只落一条。",
+        "存在净付款时不允许取消（PURCHASE_PAYMENT_CONFLICT 409）：本首版不把采购付款冲销并入取消动作，避免出现「钱付了、货取消了」的悬空。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_reservations__v15",
+      "definedIn": "0015_quote_line_ref_and_quantity_reservation.sql（E06/E07 补洞重建表的过渡表名）",
+      "targetObjects": ["Reservation"],
+      "action": "unmapped",
+      "codeUsage": "不存在于任何运行期代码：迁移内建为临时表，拷入旧数据后 DROP 原表、RENAME 为 stock_reservations，随即消失",
+      "notes": [
+        "重建原因：SQLite / D1 不支持 ALTER TABLE 改 CHECK 约束，0007 把 stock_reservations.stock_item_id 写成 NOT NULL、qty 写死 CHECK (qty = 1)，只支持逐件占用。要支持契约 Reservation.quantityBucketRef（数量件占用）只能「建新表 → 拷数据 → 换名」，与 0011 / 0012 同一流程。",
+        "逐件唯一断言从原表整体唯一改为只约束逐件行（WHERE status='active' AND stock_item_id IS NOT NULL），数量件行没有 stock_item_id，不受它约束。",
+        "迁移结束后这个名字不再存在，本条不代表任何新增业务表。",
+        "之所以仍写进映射，是为了让「迁移文件里出现的表名都有登记」这条校验继续如实覆盖，而不是把它藏起来绕过校验。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_checklists",
+      "definedIn": "0016_sale_fulfillment.sql（E08 新增，无旧表对应）",
+      "targetObjects": ["Checklist", "TestRecord"],
+      "action": "keep",
+      "codeUsage": "装机检测单：一次提交一行，按 sale_order_id + checklist_version 递增；items_json 存检查项与检测项（元素带 kind 区分），result 由检查项派生",
+      "notes": [
+        "Checklist 与 TestRecord 在 objects.json 里字段形状逐字相同，首版由本表一并承载；拆成两张同构表只会让「这次装机做了哪些项」变成两次查询。",
+        "唯一键是 (store_id, sale_order_id, checklist_version) 而不是「配置版本唯一」：检测不通过 → 回 waiting_stock → 重新备料 → 再检测，这一轮可能没有换件、configuration_version 不变，按配置版本唯一会把「再测一次」这条正常路径堵死。",
+        "items 的元素形状契约未定义（Checklist.fields.items 只有 array 类型），本表不因此绕过契约另立协议；要正式定义元素结构属契约修订。",
+        "检查单只记事实，不写库存：检测不通过时「隔离故障件 + 释放该件预留 + 重新形成缺口」由 B07 的 batch 完成（orders 状态回 waiting_stock、reservation 置 released、stock_item 转 quarantine），本表不承担库存副作用。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_deliveries",
+      "definedIn": "0016_sale_fulfillment.sql（E08 新增，无旧表对应）",
+      "targetObjects": ["Delivery"],
+      "action": "keep",
+      "codeUsage": "交付记录：一张订单最多一行，记录交付时的配置版本、检查单版本、交付备注与资金处置，并固化逐件成本快照",
+      "notes": [
+        "UNIQUE (store_id, sale_order_id) 就是 objects.json Delivery.rules 第 1 条「一张首版订单最多一条有效整体交付」这条断言本身，不靠应用层 if。",
+        "financial_disposition = 'credit_approved' 需要 credit_approval_id：B09（批准欠款交付）尚未实现，所以本卡不会写出欠款交付行 —— 枚举与约束先立在这里，B09 落地时自然生效，不需要再改表。",
+        "cost_snapshot_json 只存交付当时的逐件成本，未知成本写 null + costKnown=false（R01：未知成本不填 0）；售价与毛利口径归账本卡（E13），本表不掺和。",
+        "契约 Delivery.configurationSnapshotId 首版无落地结构（objects.json 的 DeviceConfiguration 至今在 objectsWithoutLegacyTable）；本表以 configuration_version 对齐，并在快照里留同一个值，不假装配置版本对象存在。",
+        "退货后重新交付（E09）需要在本表补状态列；本迁移不预埋，已登记为 E09 的范围。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_credit_approvals",
+      "definedIn": "0017_sale_refund_credit.sql（E09 新增，无旧表对应）",
+      "targetObjects": ["SaleOrder"],
+      "action": "keep",
+      "codeUsage": "欠款交付批准记录（B09）：老板批准欠款时固化余额快照、到期日、原因与审批人；B10 交付时以 credit_approval_id 引用并校验",
+      "notes": [
+        "契约里没有独立的欠款批准对象：B09 的 entity 是 SaleOrder、effects 是 SaleOrder + AuditEvent；本表承载「批准」这条事实，targetObjects 挂 SaleOrder。",
+        "批准记录是「老板在某时点批准的当时余额与条件」的快照，不改写、不删除；到期日由 B09 输入，仅作提醒线索，系统不据此自动扣款或自动取消（03 §8）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_returns",
+      "definedIn": "0017_sale_refund_credit.sql（E09 新增，无旧表对应）",
+      "targetObjects": ["ReturnRecord"],
+      "action": "keep",
+      "codeUsage": "退货单（B17）：原单、行分配、接收实物、贷项金额与审批状态；实物收货进入待检，贷项经 B43 批准后生效",
+      "notes": [
+        "贷项状态 credit_state（pending / approved）落在本表：B17 登记退货时为 pending，B43 批准后转 approved 才计入应退（栋哥 2026-09-21 拍板「贷项要老板审批」）。",
+        "实物接收由 stock_items.availability（sold → quarantine）+ 库存流水承载，不设在本表（objects.json ReturnRecord.factMapping）。",
+        "累计退货贷项不得超过原行净额（money-rules partialReturn.cap）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_refunds",
+      "definedIn": "0017_sale_refund_credit.sql（E09 新增，无旧表对应）",
+      "targetObjects": ["Refund"],
+      "action": "keep",
+      "codeUsage": "现金退款单（B18）：金额、方式、发生时间、关联退货/调整与原因；退款写 direction=out 的 cash_entry 并冲减订单净收现金",
+      "notes": [
+        "退款本身不触发入库（objects.json Refund.rules）；退多少钱由 B18 校验上限（min(-余额, 现金净收)）。",
+        "真实退款（B18）与纠正误录（B34 反冲）分属不同动作与权限（sales/refund vs finance/reverse），界面分别标记。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "sale_orders__v17",
+      "definedIn": "0017_sale_refund_credit.sql（E09 重建 sale_orders 的过渡表名）",
+      "targetObjects": ["SaleOrder"],
+      "action": "unmapped",
+      "codeUsage": "不存在于任何运行期代码：迁移内建为临时表，拷入旧数据后 DROP 原表、RENAME 为 sale_orders，随即消失",
+      "notes": [
+        "重建原因：SQLite / D1 不支持 ALTER TABLE 改 CHECK 约束，要扩展余额模型（加 return_credit_cents、balance 恒等式纳入退货贷项）只能「建新表 → 拷数据 → 换名」，与 0011 / 0012 / 0015 同一流程。",
+        "迁移结束后这个名字不再存在，本条不代表任何新增业务表；写入映射只为让「迁移文件里出现的表名都有登记」这条校验继续如实覆盖。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "recovery_orders",
+      "definedIn": "0020_recovery.sql（E10 新增，无旧表对应）",
+      "targetObjects": ["Recovery"],
+      "action": "keep",
+      "codeUsage": "回收单头：卖方快照/客户引用、状态机 RecoveryState、估价版本、最终价、应付/已付（B26/B27/B28/B29/B44/B33）",
+      "notes": [
+        "所有权边界：B26 登记为 customer_custody 暂存，B28 取得所有权后才转 store/quarantine 并落成本（objects.json Recovery.rules）。",
+        "应付恒等式 payable_cents = final_acquisition_cents − paid_cents；抵用（tradein）属刀二，本表只承载现金付款路径。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "recovery_items",
+      "definedIn": "0020_recovery.sql（E10 新增，无旧表对应）",
+      "targetObjects": ["Recovery"],
+      "action": "keep",
+      "codeUsage": "回收单实物行：每个暂存物关联 stock_item_id，承载逐件估价（B27）与取得成本（B28）",
+      "notes": [
+        "实物本身是 stock_items（B26 建 customer_custody，B28 转 store/quarantine），本表只承载回收单对每个实物的估价与成本。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "recovery_teardowns",
+      "definedIn": "0020_recovery.sql（E10 新增，无旧表对应）",
+      "targetObjects": ["RecoveryTeardown"],
+      "action": "keep",
+      "codeUsage": "拆件记录（B44）：源整机退役、产出件新建待检、损耗单列报废；守恒约束强制产出成本 + 损耗 = 源成本",
+      "notes": [
+        "栋哥 2026-09-21 拍板「损耗单列报废」：损耗走 scrap 流水，不摊进产出件。",
+        "产出件进 quarantine，交由 B19（0018）判定后上架。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "trade_ins",
+      "definedIn": "0021_tradein.sql（E12 新增，无旧表对应）",
+      "targetObjects": ["Offset"],
+      "action": "keep",
+      "codeUsage": "置换关联（B31）：一张销售单 ↔ 一张回收单的抵用关系；同一对 (sale_order_id, recovery_id) 唯一",
+      "notes": [
+        "契约里没有独立的 TradeIn 对象：B31 的 entity 是 Offset，Offset.tradeInId 引用本表，targetObjects 挂 Offset。",
+        "双方交易主体须相同（sale_orders.customer_id = recovery_orders.seller_customer_id），不同主体代付首版不支持（OWNERSHIP_INVALID）。",
+        "state 首版只用 active；closed 预留给后续语义（如销售单取消导致关联关闭）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "offsets",
+      "definedIn": "0021_tradein.sql（E12 新增，无旧表对应）",
+      "targetObjects": ["Offset"],
+      "action": "keep",
+      "codeUsage": "折抵凭据（B31/B32）：一次折抵一条 applied；撤销时新增 state='reversed' 的笔（reversal_of 指向原笔）",
+      "notes": [
+        "折抵是非现金事件：不写 cash_entries，不生成虚构现金收 / 付（money-rules offsetNetCents note）。",
+        "有效折抵 = SUM(applied) − SUM(reversed)；回收剩余应付 = recovery_orders.payable_cents − 有效折抵（找零 / 继续折抵的上限）。",
+        "部分唯一索引 idx_offsets_reversal_unique 保证每条 applied 至多被撤销一次，防止「减两次」（money-rules reversalPolicy.forbidden）。",
+        "撤销折抵不自动归还实物（enums.json OffsetState）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "customer_device_custody",
+      "definedIn": "0019_service_core.sql（E10 新增，无旧表对应）",
+      "targetObjects": ["CustomerDevice"],
+      "action": "keep",
+      "codeUsage": "客户设备的保管归属：ownerCustomerId、deviceCode、originalOrderId、currentConfigurationId、custodyLocation、stockItemRef；不计自有库存",
+      "notes": [
+        "与 0010 的 customer_devices（label/serial_number/remark 轻量登记）不是同一张表：那张表 targetObjects 留空，本表才是契约 CustomerDevice 的落点。",
+        "custodyLocation 取 LocationKind（store/customer/external/supplier）；接修（B20）时落店，外送返厂（B24）时切 external。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "service_orders",
+      "definedIn": "0019_service_core.sql（E10 新增，无旧表对应）",
+      "targetObjects": ["ServiceOrder"],
+      "action": "keep",
+      "codeUsage": "维修工单：接修（B20）建立，检测方案（B21）、方案确认（B22）、换件（B23）、外送（B24）、复测归还（B25）、收款（B41）在其上流转",
+      "notes": [
+        "状态机 ServiceState（received→…→returned），余额由收款（B41，direction=in 的 cash_entry）与已确认收费（confirmed_charge_cents）派生。",
+        "归还闸门：balance_cents > 0 时不得归还（B25 守卫），首版不做欠款归还。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "device_configurations",
+      "definedIn": "0019_service_core.sql（E10 新增，无旧表对应）",
+      "targetObjects": ["DeviceConfiguration"],
+      "action": "keep",
+      "codeUsage": "设备配置版本：换件（B23）后生成新版本，原配置快照保留不覆盖",
+      "notes": [
+        "关联 deviceId、revision、components、changeRef；换件事件（device_changes）指向这里的新旧版本。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "device_changes",
+      "definedIn": "0019_service_core.sql（E10 新增，无旧表对应）",
+      "targetObjects": ["DeviceChange"],
+      "action": "keep",
+      "codeUsage": "换件 / 改配置事件：同时关联旧件、新件、工单、配置版本、备件成本、收费 / 免费原因与旧件去向",
+      "notes": [
+        "B23 换件时写入：oldComponentRef、newStockItem、qty、oldItemDisposition、approvedProposalVersion；旧件去向（oldItemDisposition）取 StockBucket。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_movements__new",
+      "definedIn": "0018_inventory_movement_sources.sql（E11 补齐流水来源枚举时的重建中转表，非旧结构）",
+      "targetObjects": ["InventoryMovement"],
+      "action": "keep",
+      "codeUsage": "0018 重建 inventory_movements 的中转表：建新表 → 逐列搬数据 → DROP 旧表 → RENAME 成 inventory_movements；迁移结束后这张表不再存在",
+      "notes": [
+        "存在的唯一理由：SQLite 不能 ALTER CHECK，而契约 enums.json InventoryMovementSource 有 16 个值、0007 只列了 14 个（缺 recovery_acquisition 与 inspection_release）。",
+        "重建会连带删掉 inventory_movements_apply_balance 触发器（SQLite DROP TABLE 会删该表触发器），迁移末尾已原样重建；漏了 stock_balances 就再也不更新。",
+        "0018 这个文件曾在仓库里缺失（0019/0020 的头注释都在引用它），E11 收尾时实测回收链路一写流水就撞 CHECK 失败，才补上。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "attachments",
+      "definedIn": "0022_attachments.sql（F1 新增，无旧表对应）",
+      "targetObjects": ["Attachment"],
+      "action": "keep",
+      "codeUsage": "附件上传意图与附件行的唯一落点：object_key / upload_state / purpose / visibility / content_type / byte_size / sha256 / expires_at（保留期）",
+      "notes": [
+        "契约 objects.json 的 Attachment.tables 由 [] 改为 [\"attachments\"]，并把它从 objectsWithoutLegacyTable 移出。",
+        "对象存储与 D1 不构成同一事务：本表只存元数据与状态，字节在对象存储；先上传验证后关联，孤立上传靠 expires_at 与引用检查清理（04 §7 第 9 条）。",
+        "upload_state 取值来自 enums.json AttachmentUploadState；F1 同时在 enums.json 补上该状态机的转换表，原 stateMachineGaps 中 Attachment 那条随之销案。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_counts",
+      "definedIn": "0024_inventory_counts.sql（B16 新增，无旧表对应）",
+      "targetObjects": ["InventoryMovement"],
+      "action": "keep",
+      "codeUsage": "盘点单表头（B16）：status（draft/approved）、as_of 截止时点、scope_note 范围说明、批准理由/批准人/批准时间、版本与两个 requestId",
+      "notes": [
+        "契约 B16 的 effects 只有 InventoryMovement / StockBalance / AuditEvent，**没有独立「盘点单」对象**；legacy-mapping 的 objectsWithoutLegacyTable 里一直挂着「盘点单（T06c 定义，枚举待补）」。本表与 inventory_count_lines 作为 InventoryMovement 的**支撑事件表**登记，与 purchase_cancellations 挂 Purchase、sale_credit_approvals 挂 SaleOrder 是同一处理，**不新增契约对象**。",
+        "保存实盘不直接改库存（02 §5）：本表只存草稿与实盘事实，一条 inventory_movements 都不写；差异要等 approve 才生成 source='count_adjustment' 的流水。",
+        "CHECK 写单向蕴含（status='approved' ⇒ 理由/批准人/批准时间齐备），不写 (A)=(B) 双向等价 —— F1 实测双向等价会把正常的中间态行判非法。",
+        "version 参与乐观锁（批准可带 expectedVersion），推进走 entity_version_log（entity_type='inventory_count'）。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_count_lines",
+      "definedIn": "0024_inventory_counts.sql（B16 新增，无旧表对应）",
+      "targetObjects": ["InventoryMovement"],
+      "action": "keep",
+      "codeUsage": "盘点行（B16）：锁存账面 book_qty + 人工实盘 counted_qty + 批准后回填的差异流水 adjustment_movement_id",
+      "notes": [
+        "book_qty 是**录入那一刻锁存的账面**，不是批准时重算的。批准前逐行核对账面是否仍等于锁存值：已变则报 VERSION_CONFLICT 要求重盘，避免把截止点之后发生的正常出入库吞进调整额（03 §7 的截止序号对齐）。",
+        "刻意**不存 diff 列**：差异完全由 (counted_qty - book_qty) 派生，落库只会多出一个可以撒谎的字段；差异在批准时现算并由 count_adjustment 流水留痕。",
+        "UNIQUE(count_id, product_id)：同一商品在一次盘点里只能有一行，否则同一次差异会被调整两遍。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "refurbishment_costs",
+      "definedIn": "0025_refurbishment_costs.sql（B30 新增，无旧表对应）",
+      "targetObjects": ["RefurbishmentCost"],
+      "action": "keep",
+      "codeUsage": "整备成本明细（B30）：逐件记录整备花费、是否计入该件可归属成本（capitalizable）、费用归属与付款凭据；同一迁移另给 stock_items 补 5 个上架门槛列",
+      "notes": [
+        "契约 RefurbishmentCost.tables 由空数组改为 [\"refurbishment_costs\"]，随后从 objectsWithoutLegacyTable 移出 —— 它现在有实表了。",
+        "成本口径（03 §7 / fixtures 的 880 = 800 收购 + 80 可归属整备）：整备成本计入该件可归属成本，交付只确认一次成本快照，**不因此新增一笔「采购」现金**；所以本表只记成本明细，不写 cash_entries。",
+        "capitalizable 与 payment_entry_ref 分列：费用归属（这笔钱算不算这台机器的成本）和实际付款（钱付了没有、一次付款可能覆盖多笔整备）不是同一件事；合成一列会让同一笔钱被计两次成本。",
+        "上架门槛七项里此前无处可落的 5 项落在 stock_items 的新列上（condition_grade / sale_price_cents / disclosure_note / data_disposed / warranty_term），**一律允许 NULL** —— 未经整备上架的件（新品、期初件、B44 拆件产出待检件）本来就没有这些事实，用默认值冒充「已填」会让门槛形同虚设。",
+        "SQLite 的 ALTER TABLE ADD COLUMN 不支持带表级约束，故这 5 列的取值合法性由领域层校验（condition_grade ∈ ConditionGrade、data_disposed ∈ {0,1}、sale_price_cents > 0），不在库里写 CHECK；这与 0018 重建表（因为不能 ALTER CHECK）是同一类限制的不同处理。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "customer_wechat_identities",
+      "definedIn": "0026_customer_wechat_identity.sql（MP17 新增，无旧表对应）",
+      "targetObjects": ["CustomerIdentity"],
+      "action": "keep",
+      "codeUsage": "顾客微信身份（A05 顾客登录 / A07 会话与认领状态）：appid + openid 定位一名顾客，customer_id 指向 customers.id，claim_* 记录认领方式与状态，session_version 用于让该顾客的旧会话失效",
+      "notes": [
+        "与 0008 的 wechat_identity_bindings 是**两条独立链路**：那张表是员工把微信绑到 store_members 账号，本表是顾客主体，不引用 store_members、不产生任何门店权限。",
+        "唯一键取 (appid, openid) 即**单店绑定** —— openid 只在小程序内唯一，故一名顾客在当前小程序里只对应一条记录；多门店需求出现时须先升契约版本再改唯一键。",
+        "认领禁止仅凭顾客自填手机号（可冒领他人档案）：claim_method 的 CHECK 只放行 wechat-phone 与 clerk-confirm 两种取值。",
+        "claim_status=claimed 时必须有 customer_id 与 claim_method，用**单向蕴含**的 CHECK 表达，不写等价式 —— 等价式会把「已建身份、尚未认领」这一合法中间态判为非法。",
+        "契约 CustomerIdentity.tables 直接取本表；CustomerSession 无表（会话由签名凭证承载），登记在 objectsWithoutLegacyTable。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "stock_batches",
+      "definedIn": "0027_auto_serials_and_batches.sql（AS02 新增，无旧表对应）",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "数量件收货批次（期初库存 B01 与采购到货 B32 的数量件分支）：一行 = 一次收货里同一商品的一批，batch_code 由服务端按 BT-<门店>-<上海日期>-<随机后缀> 生成，received_qty 只记入库数量，source_ref 指向期初单或收货单、source_line_ref 指向对应收货行；员工库存页按批次号、备注、商品名检索",
+      "notes": [
+        "契约目前没有 StockBatch 对象（objects.json 无对应条目），本表属「有表无对象」的真实缺口，targetObjects 留空并在此留痕；补对象是契约修订，不在本次登记范围内。",
+        "两个唯一键各管一件事：(store_id, batch_code) 保证批次号门店唯一；(store_id, source_line_ref) 保证同一收货行不能重复建批。后者是幂等的数据库兜底，应用层仍必须先查操作结果再决定是否重试。",
+        "received_qty 只表达**入库**数量：当前库存流水没有按批次扣减归属，本表不能用于推算批次余量，也不能把批次当作逐件实物计进 stock_items。批次余量归属属 AS 后续范围，未实现前任何「批次剩余量」展示都是伪造。",
+        "received_qty 的 CHECK 只写 > 0（单向约束）：零数量、负数收货没有合法业务含义，不允许靠插入零行表达取消。",
+        "同一迁移给 stock_items 补 remark、给 customer_device_custody 补 manufacturer_sn 两列，都是既有表的结构扩展，不新建业务表；契约 StockItem / CustomerDevice 对象暂无这两个字段，是否补属规范面改动，另开卡决定。",
+        "本表首版只服务内部员工查询：顾客侧不暴露内部编号与批次号，标签打印与历史 SN 映射未实施。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_opening_windows",
+      "definedIn": "0030_d10_formal_openings.sql（D10 新增，无旧表对应）",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "正式期初窗口状态：记录每店的开启、截止与关闭时间、操作人及防重 requestId。",
+      "notes": [
+        "v2 的 OpeningWindowStatus 是窗口状态的接口形状，不是独立持久化对象；此表是正式期初流程的内部支撑状态，不增加 v1 targetObjects。",
+        "store_id 主键限制每店至多一个窗口，request_id 唯一约束防止重复开启；首笔正式业务库存流水由触发器自动关窗。",
+        "窗口只能由 Owner 发起 open_window 命令；预览模式不会开启正式窗口。"
+      ],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_movements__new",
+      "definedIn": "0032_stock_inspection_and_backfills.sql（U02 扩展流水来源时的重建中转表，非旧结构）",
+      "targetObjects": ["InventoryMovement"],
+      "action": "keep",
+      "codeUsage": "迁移中用于保留既有流水并增加 stock_backfill 来源；迁移完成后删除中转表并恢复余额触发器。",
+      "notes": ["只在迁移内短暂存在，逐列复制旧流水，不承载运行时业务记录。"],
+      "status": "ok"
+    },
+    {
+      "table": "stock_inspection_events",
+      "definedIn": "0032_stock_inspection_and_backfills.sql（U02 新增，无旧表对应）",
+      "targetObjects": ["StockInspectionEvent"],
+      "action": "keep",
+      "codeUsage": "逐件检测与返修事件的追加式事实表；当前投影另存 stock_items.inspection_status。",
+      "notes": ["历史实物只迁移为 unrecorded，不从 availability 或 inspection_ref 回填事件。", "数据库触发器禁止更新与删除事件。"],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_stock_backfills",
+      "definedIn": "0032_stock_inspection_and_backfills.sql（U02 新增，无旧表对应）",
+      "targetObjects": ["StockBackfill"],
+      "action": "keep",
+      "codeUsage": "B47 补录批次头，按门店 batch_ref 唯一，记录 requestId、载荷摘要、操作者与时间。",
+      "notes": ["B13 不读取此表，因此旧 B13 的两条重复登记守卫保持原样。"],
+      "status": "ok"
+    },
+    {
+      "table": "inventory_stock_backfill_lines",
+      "definedIn": "0032_stock_inspection_and_backfills.sql（U02 新增，无旧表对应）",
+      "targetObjects": ["StockBackfillLine"],
+      "action": "keep",
+      "codeUsage": "B47 每行保存稳定 lineRef、商品、trackingMode、数量及生成的批次 / 实物引用。",
+      "notes": ["同批次 lineRef 唯一；没有 SN 的相似件不自动合并。"],
+      "status": "ok"
+    }
+  ],
+
+  "preservedDatabaseMechanisms": [
+    {
+      "name": "order_payments_before_insert",
+      "type": "trigger",
+      "keeps": true,
+      "limitation": "在数据库层阻止超收，但不阻止同载荷重复提交形成两笔",
+      "action": "保留；T04 另建幂等记录与条件更新，不以它作为唯一防线"
+    },
+    {
+      "name": "order_payments_after_insert",
+      "type": "trigger",
+      "keeps": true,
+      "limitation": "直接累加 received_amount_cents，无 requestId 去重",
+      "action": "保留用于对账；新模型以流水净和为准，二者必须一致"
+    },
+    {
+      "name": "uq_order_item_sn_effective_sn",
+      "type": "unique index",
+      "keeps": true,
+      "limitation": "仅覆盖 SN 实物，不覆盖数量件预留",
+      "action": "保留；新模型补齐非 SN 实物与数量预留的约束"
+    },
+    {
+      "name": "uq_sn_events_inbound_once",
+      "type": "unique index",
+      "keeps": true,
+      "limitation": "只约束 inbound 事件",
+      "action": "保留"
+    },
+    {
+      "name": "order_item_sn_before_insert_hardening",
+      "type": "trigger",
+      "keeps": true,
+      "limitation": "依赖 order_items.source_item_id 非空",
+      "action": "保留；注意 source_item_id 为空的存量行会被该触发器拒绝"
+    }
+  ],
+
+  "unitConversions": [
+    {
+      "from": "hardware.price（REAL，元）",
+      "to": "Product.defaultSalePriceCents（整数分）",
+      "method": "乘 100 后取整",
+      "currentState": "代码已双写（price = defaultPrice / 100），适配器应以 cents 列为准",
+      "risk": "非整数元或历史脏数据会产生精度差"
+    },
+    {
+      "from": "quotes.data 内的行价格（元）",
+      "to": "QuoteVersion.lines[].unitPriceCents",
+      "method": "专用适配器转换，非法 / 超精度 / 缺失标异常",
+      "currentState": "未核实 blob 实际结构",
+      "risk": "同一字段随调用方变化单位是明确禁止项"
+    },
+    {
+      "from": "order_items.unit_price_cents / line_total_cents",
+      "to": "SaleLine.unitPriceCents / netLineCents",
+      "method": "无需换算，已是整数分",
+      "currentState": "已一致",
+      "risk": "无"
+    },
+    {
+      "from": "order_payments.amount_cents / orders.total_amount_cents",
+      "to": "CashEntry.amountCents / SaleOrder.totalCents",
+      "method": "无需换算，已是整数分",
+      "currentState": "已一致",
+      "risk": "无"
+    },
+    {
+      "from": "serial_numbers.purchase_cost_cents",
+      "to": "StockItem.acquisitionCostCents",
+      "method": "不得直接搬运",
+      "currentState": "默认 0，无法区分免费与未知",
+      "risk": "直接搬运会把未知成本变成 0 成本"
+    }
+  ],
+
+  "objectsWithoutLegacyTable": [
+    "Recovery",
+    "RecoveryTeardown",
+    "Operation",
+    "Session",
+    "CustomerSession",
+    "绑定码表（T03 定义）",
+    "盘点单（T06c 定义，枚举待补）"
+  ],
+
+  "openQuestions": [
+    {
+      "id": "Q01",
+      "question": "生产 D1 实际已应用哪些迁移？0004 / 0005 是否已执行？",
+      "why": "本卡无 D1 访问权限；历史记录只确认 0000–0003 已登记，0004 与 0005（2026-07-23 创建）是否生效未核实。",
+      "affects": "T04、T20；未核实前不得按「全部已应用」设计增量迁移。",
+      "owner": "T20"
+    },
+    {
+      "id": "Q02",
+      "question": "library 表是否有历史数据？",
+      "why": "代码零引用，但删除前必须确认数据情况。",
+      "affects": "T20 归档策略",
+      "owner": "T20"
+    },
+    {
+      "id": "Q03",
+      "question": "quotes.data blob 的实际结构与是否含历史版本？",
+      "why": "代码只保留单行最新副本，无法从表结构推断版本能力。",
+      "affects": "T07 报价版本模型是否可行",
+      "owner": "T07"
+    },
+    {
+      "id": "Q04",
+      "question": "permissions 表实际有哪些行，与代码中 11 个权限码是否一致？",
+      "why": "无种子迁移；表行内容决定「旧门店实际授予了谁」。",
+      "resolution": "T01b 决定不接触生产 D1，改为按 backend/src/index.ts 中 requirePermission 的实际守卫资源完成映射。该依据不依赖表行内容，映射已冻结为 contracts/v1/actions.json 的 legacyPermissionMap，并可由校验脚本按源码逐条复核。表行内容的用途因此缩小为「T20 迁移时确认旧门店授权现状」，不再阻塞权限映射。",
+      "affects": "T20 数据迁移；不再阻塞 T03 会话权限装配",
+      "owner": "T20",
+      "movedFrom": "T01b"
+    },
+    {
+      "id": "Q05",
+      "question": "顾客微信身份是否需要跨门店共用一份档案？",
+      "why": "MP17 按当前「个体工商户单店」的现实取单店绑定：唯一键 (appid, openid)，一名顾客在一个小程序里只对应一条 CustomerIdentity。openid 本身只在小程序内唯一，跨店共用需要额外的归属选择与会话内的「当前门店」，属另一套授权模型。",
+      "affects": "A05 顾客登录与 CustomerIdentity 的唯一键；若将来开分店，须升契约版本并把顾客会话改成带当前门店",
+      "owner": "项目负责人"
+    }
+  ]
+}

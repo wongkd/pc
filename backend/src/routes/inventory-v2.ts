@@ -10,7 +10,8 @@
  * 要求它们全部出现在 legacyPermissionMap 里。新码走本文件，旧校验不受影响。
  *
  * 承接 v1 库存动作；D10 正式期初和库存成本读字段由 contracts/v2/inventory-opening.json 增量定义。
- *   · R06  GET  /inventory                 权限 inventory/view        —— 型号汇总与逐件实物
+ *   · R06  GET  /inventory                 权限 inventory/view        —— 兼容型号汇总与原读模型
+ *   · U01  GET  /inventory/stock-items     权限 inventory/view        —— 跨型号逐件在库分页与全量统计
  *   · R07  GET  /inventory/items/:id       权限 inventory/item-view   —— 实物详情、占用、来源、流水
  *   · B12  POST /inventory/products        权限 inventory/product-edit
  *   · B13  POST /inventory/openings        权限 inventory/opening（老板专属，旧 library/edit 不授予）
@@ -25,28 +26,36 @@
 
 import {
   INSPECTION_RELEASE_BUCKETS,
+  INVENTORY_ON_HAND_BUCKETS,
   INVENTORY_PERMISSIONS,
+  INSPECTION_STATUSES,
   STOCK_BUCKETS,
   approveCount,
   createCount,
   createOpening,
+  createStockBackfill,
   deleteUnusedProduct,
   inspectStockItem,
+  reworkStockItem,
   makeItemAvailable,
   OPENING_COST_BASES,
   openOpeningWindow,
   recordRefurbishment,
   queryInventory,
+  queryInventoryStockItems,
   queryOpeningWindow,
   queryStockItem,
   queryUnusedProducts,
+  InventoryStockItemCursorError,
   writeProduct,
   type CountApproveInput,
   type CountInput,
   type CountLineInput,
   type InspectionReleaseBucket,
   type InspectionInput,
+  type InspectionReworkInput,
   type InspectionResult,
+  type InventoryOnHandBucket,
   type OpeningInput,
   type OpeningCostBasis,
   type OpeningLineInput,
@@ -55,6 +64,8 @@ import {
   type RefurbishmentInput,
   type StockBucket,
   type StockCondition,
+  type StockBackfillInput,
+  type StockBackfillLineInput,
 } from '../domains/inventory'
 import { findErrorDefinition } from '../generated/error-codes'
 import { appendReadableDiagnostic, queryOperation } from '../domains/operations'
@@ -80,6 +91,8 @@ const ITEM_PATH = /^\/api\/v2\/inventory\/items\/(.+)$/
 // B19 待检件判定。必须比 ITEM_PATH 先匹配：ITEM_PATH 的 (.+) 会贪婪吞掉结尾的 `/inspection`，
 // 若不先判断，`/inventory/items/x/inspection` 会被当成实物 id「x/inspection」走 GET 详情。
 const INSPECTION_PATH = /^\/api\/v2\/inventory\/items\/(.+)\/inspection$/
+const INSPECTION_REWORK_PATH = /^\/api\/v2\/inventory\/items\/([^/]+)\/inspection\/rework$/
+const STOCK_BACKFILLS_PATH = `${PREFIX}/inventory/backfills`
 const REFURBISHMENT_PATH = /^\/api\/v2\/inventory\/items\/([^/]+)\/refurbishments$/
 const MAKE_AVAILABLE_PATH = /^\/api\/v2\/inventory\/items\/([^/]+)\/make-available$/
 // B16 盘点：批准路径比录入路径更具体，先判断。两者都在 /inventory 前缀下，
@@ -145,6 +158,7 @@ const LEGACY_EQUIVALENT: Record<string, readonly string[]> = {
   [INVENTORY_PERMISSIONS.productView]: ['library/view'],
   [INVENTORY_PERMISSIONS.productEdit]: ['library/edit'],
   [INVENTORY_PERMISSIONS.inspection]: ['library/edit'],
+  [INVENTORY_PERMISSIONS.stockBackfill]: ['library/edit'],
   [INVENTORY_PERMISSIONS.refurbish]: ['library/edit'],
   // B16 盘点录入：契约 legacySource=library/edit（grantPolicy=default）。
   // ⚠️ 批准（inventory/count-approve）**刻意不在本表**：它 legacySource=null、grantPolicy=owner_only，
@@ -353,7 +367,7 @@ function parseFormalOpeningInput(body: Record<string, unknown>): { input: Openin
   }
 }
 
-/** B19 入参。disposition 只认 available / retired；evidence 缺省视为空数组。 */
+/** B19 入参；evidence 缺省视为空数组。 */
 function parseInspectionInput(body: Record<string, unknown>): { input: InspectionInput | null; problem: string | null } {
   const result = body.result
   if (result !== 'pass' && result !== 'fail') return { input: null, problem: 'result 只能是 pass 或 fail' }
@@ -363,7 +377,7 @@ function parseInspectionInput(body: Record<string, unknown>): { input: Inspectio
 
   const disposition = body.disposition
   if (!(INSPECTION_RELEASE_BUCKETS as readonly string[]).includes(disposition as string)) {
-    return { input: null, problem: `disposition 只能是 ${INSPECTION_RELEASE_BUCKETS.join(' 或 ')}：待检件只能放回可卖或报废离店` }
+    return { input: null, problem: `disposition 只能是 ${INSPECTION_RELEASE_BUCKETS.join(' 或 ')}` }
   }
 
   const expectedVersion = asInt(body.expectedVersion)
@@ -393,6 +407,53 @@ function parseInspectionInput(body: Record<string, unknown>): { input: Inspectio
     },
     problem: null,
   }
+}
+
+function parseInspectionReworkInput(body: Record<string, unknown>): { input: InspectionReworkInput | null; problem: string | null } {
+  const findings = asText(body.findings)
+  const expectedVersion = asInt(body.expectedVersion)
+  if (!findings) return { input: null, problem: '返修说明不能为空' }
+  if (expectedVersion === null || expectedVersion < 1) return { input: null, problem: 'expectedVersion 必须是正整数' }
+  return { input: { findings, expectedVersion, occurredAt: asText(body.occurredAt) }, problem: null }
+}
+
+function parseStockBackfillInput(body: Record<string, unknown>): { input: StockBackfillInput | null; problem: string | null } {
+  const batchRef = asText(body.batchRef)
+  if (!batchRef) return { input: null, problem: 'batchRef 不能为空' }
+  if (!Array.isArray(body.lines) || body.lines.length === 0) return { input: null, problem: '补录至少需要一行' }
+  const lines: StockBackfillLineInput[] = []
+  for (const [index, raw] of body.lines.entries()) {
+    const at = `第 ${index + 1} 行`
+    if (!raw || typeof raw !== 'object') return { input: null, problem: `${at}：行数据无效` }
+    const line = raw as Record<string, unknown>
+    const lineRef = asText(line.lineRef)
+    const productRef = asText(line.productRef)
+    const qty = asInt(line.qty)
+    const costBasis = line.costBasis
+    const condition = line.condition
+    if (!lineRef) return { input: null, problem: `${at}：缺少稳定 lineRef` }
+    if (!productRef) return { input: null, problem: `${at}：缺少型号` }
+    if (qty === null || qty < 1) return { input: null, problem: `${at}：数量必须是正整数` }
+    if (condition !== undefined && condition !== null && condition !== 'new' && condition !== 'used') return { input: null, problem: `${at}：成色只能是 new 或 used` }
+    if (typeof costBasis !== 'string' || !(OPENING_COST_BASES as readonly string[]).includes(costBasis)) return { input: null, problem: `${at}：必须明确选择实际成本、估值、未知或真实零成本` }
+    let unitCostCents: number | null = null
+    if (line.unitCostCents !== undefined && line.unitCostCents !== null) {
+      if (typeof line.unitCostCents !== 'number' || !Number.isSafeInteger(line.unitCostCents) || line.unitCostCents < 0) return { input: null, problem: `${at}：成本必须为非负整数分` }
+      unitCostCents = line.unitCostCents
+    }
+    lines.push({
+      lineRef, productRef, qty,
+      condition: condition as StockCondition | undefined,
+      assetCode: asText(line.assetCode) ?? undefined,
+      snRaw: asText(line.snRaw),
+      remark: asText(line.remark),
+      costBasis: costBasis as StockBackfillLineInput['costBasis'],
+      unitCostCents,
+      costEvidenceRef: asText(line.costEvidenceRef),
+      costAssessedAt: asText(line.costAssessedAt),
+    })
+  }
+  return { input: { batchRef, note: asText(body.note), occurredAt: asText(body.occurredAt), lines }, problem: null }
 }
 
   function parseRefurbishmentInput(body: Record<string, unknown>): { input: RefurbishmentInput | null; problem: string | null } {
@@ -547,6 +608,72 @@ async function handleInventoryRead(req: Request, env: InventoryRouteEnv, context
     },
     null,
   )
+}
+
+/** U01：按类别 / 型号或实物编号读取逐件实物与数量型号，并返回全量分类与库存桶统计。 */
+async function handleInventoryStockItemsRead(req: Request, env: InventoryRouteEnv, context: InventoryRouteContext): Promise<Response> {
+  const denied = requireGrant(context, INVENTORY_PERMISSIONS.view)
+  if (denied) return denied
+
+  const url = new URL(req.url)
+  const categoryRaw = url.searchParams.get('category')
+  if (categoryRaw !== null && categoryRaw.length > 120) {
+    return fail('VALIDATION_ERROR', 'category 不能超过 120 个字符', 400)
+  }
+  const qRaw = url.searchParams.get('q') ?? ''
+  if (qRaw.length > 200) return fail('VALIDATION_ERROR', 'q 不能超过 200 个字符', 400)
+
+  const condition = url.searchParams.get('condition')
+  if (condition && condition !== 'new' && condition !== 'used') {
+    return fail('VALIDATION_ERROR', 'condition 只能是 new 或 used', 400)
+  }
+  const availabilityRaw = url.searchParams.get('availability')
+  if (availabilityRaw && !(INVENTORY_ON_HAND_BUCKETS as readonly string[]).includes(availabilityRaw)) {
+    return fail('VALIDATION_ERROR', 'availability 只能是 available、reserved 或 quarantine', 400)
+  }
+  const inspectionStatusRaw = url.searchParams.get('inspectionStatus')
+  if (inspectionStatusRaw && !(INSPECTION_STATUSES as readonly string[]).includes(inspectionStatusRaw)) {
+    return fail('VALIDATION_ERROR', 'inspectionStatus 取值无效', 400)
+  }
+
+  const limitRaw = url.searchParams.get('limit')
+  let limit: number | null = null
+  if (limitRaw !== null && limitRaw !== '') {
+    if (!/^\d+$/.test(limitRaw) || Number(limitRaw) < 1) {
+      return fail('VALIDATION_ERROR', 'limit 必须是正整数', 400)
+    }
+    limit = Number(limitRaw)
+  }
+  const cursor = url.searchParams.get('cursor')
+  if (cursor && cursor.length > 2048) return fail('VALIDATION_ERROR', 'cursor 无效，请从第一页重新读取', 400)
+  const quantityCursor = url.searchParams.get('quantityCursor')
+  if (quantityCursor && quantityCursor.length > 2048) {
+    return fail('VALIDATION_ERROR', 'quantityCursor 无效，请从第一页重新读取', 400)
+  }
+
+  try {
+    const result = await queryInventoryStockItems(
+      env.DB,
+      context.storeId,
+      {
+        q: qRaw,
+        category: categoryRaw,
+        condition: (condition as StockCondition | null) ?? null,
+        availability: (availabilityRaw as InventoryOnHandBucket | null) ?? null,
+        inspectionStatus: (inspectionStatusRaw as typeof INSPECTION_STATUSES[number] | null) ?? null,
+        limit,
+        cursor,
+        quantityCursor,
+      },
+      { includeCost: canViewCost(context) },
+    )
+    return ok(result, null)
+  } catch (error) {
+    if (error instanceof InventoryStockItemCursorError) {
+      return fail('VALIDATION_ERROR', error.message, 400)
+    }
+    throw error
+  }
 }
 
 /** 仓库日志：已入账的库存流水 + 商品、期初、盘点、整备等关键操作。 */
@@ -839,6 +966,48 @@ async function handleInspectionWrite(
   return fail(result.code, message, result.httpStatus, { requestId: result.requestId, currentVersion: result.currentVersion })
 }
 
+async function handleInspectionReworkWrite(req: Request, env: InventoryRouteEnv, context: InventoryRouteContext, rawId: string): Promise<Response> {
+  const denied = requireGrant(context, INVENTORY_PERMISSIONS.inspection)
+  if (denied) return denied
+  let stockItemId: string
+  try { stockItemId = decodeURIComponent(rawId) } catch { return fail('VALIDATION_ERROR', '实物编号无法解析', 400) }
+  let body: Record<string, unknown>
+  try { body = (await req.json()) as Record<string, unknown> } catch { return fail('VALIDATION_ERROR', '请求体不是合法 JSON', 400) }
+  const requestId = requireRequestId(body, req)
+  if (!requestId) return fail('VALIDATION_ERROR', '缺少 requestId，或与 Idempotency-Key 头不一致', 400)
+  const { input, problem } = parseInspectionReworkInput(body)
+  if (!input) return fail('VALIDATION_ERROR', problem ?? '返修数据无效', 400, { requestId })
+  const result = await reworkStockItem(env.DB, { storeId: context.storeId, actorUserId: context.userId, requestId, action: 'B48', payloadHash: '' }, stockItemId, input)
+  if (result.ok) {
+    const outcome = result.outcome
+    return ok({ operationId: result.requestId, entityId: outcome.entityId ?? null, entityVersion: outcome.version ?? null,
+      state: null, effects: outcome.effects ?? {}, summary: outcome.summary ?? '' }, result.requestId)
+  }
+  const diagnostic = 'diagnostic' in result ? result.diagnostic : undefined
+  return fail(result.code, appendReadableDiagnostic(result.message, diagnostic), result.httpStatus,
+    { requestId: result.requestId, currentVersion: result.currentVersion })
+}
+
+async function handleStockBackfillWrite(req: Request, env: InventoryRouteEnv, context: InventoryRouteContext): Promise<Response> {
+  const denied = requireGrant(context, INVENTORY_PERMISSIONS.stockBackfill)
+  if (denied) return denied
+  let body: Record<string, unknown>
+  try { body = (await req.json()) as Record<string, unknown> } catch { return fail('VALIDATION_ERROR', '请求体不是合法 JSON', 400) }
+  const requestId = requireRequestId(body, req)
+  if (!requestId) return fail('VALIDATION_ERROR', '缺少 requestId，或与 Idempotency-Key 头不一致', 400)
+  const { input, problem } = parseStockBackfillInput(body)
+  if (!input) return fail('VALIDATION_ERROR', problem ?? '补录数据无效', 400, { requestId })
+  const result = await createStockBackfill(env.DB, { storeId: context.storeId, actorUserId: context.userId, requestId, action: 'B47', payloadHash: '' }, input)
+  if (result.ok) {
+    const outcome = result.outcome
+    return ok({ operationId: result.requestId, entityId: outcome.entityId ?? null, entityVersion: outcome.version ?? null,
+      state: null, effects: outcome.effects ?? {}, summary: outcome.summary ?? '' }, result.requestId)
+  }
+  const diagnostic = 'diagnostic' in result ? result.diagnostic : undefined
+  return fail(result.code, appendReadableDiagnostic(result.message, diagnostic), result.httpStatus,
+    { requestId: result.requestId })
+}
+
 function b30WriteResponse(result: WriteSuccess | WriteFailure): Response {
   if (result.ok) {
     const outcome = result.outcome as { entityId?: string; version?: number; summary?: string; effects?: Record<string, unknown> }
@@ -1063,6 +1232,16 @@ export async function routeInventoryV2(req: Request, env: InventoryRouteEnv, con
     return handleInventoryRead(req, env, context)
   }
 
+  if (path === `${PREFIX}/inventory/stock-items`) {
+    if (req.method !== 'GET') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleInventoryStockItemsRead(req, env, context)
+  }
+
+  if (path === STOCK_BACKFILLS_PATH) {
+    if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleStockBackfillWrite(req, env, context)
+  }
+
   if (path === PRODUCT_CLEANUP_CANDIDATES_PATH) {
     if (req.method !== 'GET') return fail('VALIDATION_ERROR', '该方法不支持', 405)
     return handleUnusedProductCandidates(env, context)
@@ -1074,7 +1253,7 @@ export async function routeInventoryV2(req: Request, env: InventoryRouteEnv, con
     return handleUnusedProductDelete(req, env, context, deleteUnusedProductMatch[1])
   }
 
-  // B30/B19 子路径必须排在实物详情之前：ITEM_PATH 的 (.+) 会贪婪吞掉子路径。
+  // B30/B19/B48 子路径必须排在实物详情之前：ITEM_PATH 的 (.+) 会贪婪吞掉子路径。
   const refurbishmentMatch = REFURBISHMENT_PATH.exec(path)
   if (refurbishmentMatch) {
     if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
@@ -1084,6 +1263,11 @@ export async function routeInventoryV2(req: Request, env: InventoryRouteEnv, con
   if (makeAvailableMatch) {
     if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
     return handleMakeAvailableWrite(req, env, context, makeAvailableMatch[1])
+  }
+  const reworkInspectionMatch = INSPECTION_REWORK_PATH.exec(path)
+  if (reworkInspectionMatch) {
+    if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleInspectionReworkWrite(req, env, context, reworkInspectionMatch[1])
   }
   const inspectionMatch = INSPECTION_PATH.exec(path)
   if (inspectionMatch) {

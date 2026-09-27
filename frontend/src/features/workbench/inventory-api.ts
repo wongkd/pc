@@ -16,7 +16,18 @@
 import { createWebApiClient } from '../../api/client.ts'
 import type { ApiResult } from '../../api/core.ts'
 import type { InventoryMovementSource } from '../../contracts/generated/enums'
-import type { FormalOpeningLineInput, InventoryActivityListPayload, OpeningCostBasis, OpeningWindowStatus } from '../../contracts/v2/generated/inventory-opening'
+import type {
+  FormalOpeningLineInput,
+  InventoryActivityListPayload,
+  InventoryStockItemPagePayload,
+  InventoryStockItemReadFilters,
+  InventoryStockItemSourceRecord,
+  InspectionReworkInput,
+  InspectionStatus,
+  OpeningCostBasis,
+  OpeningWindowStatus,
+  StockBackfillInput,
+} from '../../contracts/v2/generated/inventory-opening'
 export type { InventoryActivityEntry, OpeningCostBasis, OpeningWindowStatus } from '../../contracts/v2/generated/inventory-opening'
 
 /** 页面共用一个客户端：会话、待确认动作、超时口径都只有一份。 */
@@ -67,6 +78,7 @@ export interface InventoryItemRow {
   snNormalized: string | null
   ownership: 'store' | 'customer' | 'vendor'
   availability: StockBucketValue
+  inspectionStatus: InspectionStatus
   location: 'store' | 'customer' | 'external' | 'supplier'
   activeReservationRef: string | null
   acquisitionCostCents?: number | null
@@ -135,6 +147,30 @@ export function fetchInventory(filters: InventoryFilters = {}): Promise<ApiResul
   })
 }
 
+/** U01：读取逐件实物与数量型号；各自游标绑定门店 / 筛选，统计由服务端按完整结果集计算。 */
+export type InventoryStockItemFilters = Partial<Omit<InventoryStockItemReadFilters, 'limit' | 'cursor' | 'quantityCursor'>> & {
+  limit?: number
+  cursor?: string
+  quantityCursor?: string
+}
+
+export function fetchInventoryStockItems(
+  filters: InventoryStockItemFilters = {},
+): Promise<ApiResult<InventoryStockItemPagePayload>> {
+  return inventoryClient.client.read<InventoryStockItemPagePayload>('/inventory/stock-items', {
+    params: {
+      q: filters.q,
+      category: filters.category,
+      condition: filters.condition,
+      availability: filters.availability,
+      inspectionStatus: filters.inspectionStatus,
+      limit: filters.limit,
+      cursor: filters.cursor,
+      quantityCursor: filters.quantityCursor,
+    },
+  })
+}
+
 /** 仓库操作日志：只读、按当前门店隔离，所有可查看库存的成员共享。 */
 export function fetchInventoryActivity(): Promise<ApiResult<InventoryActivityListPayload>> {
   return inventoryClient.client.read<InventoryActivityListPayload>('/inventory/activity')
@@ -144,6 +180,22 @@ export function fetchInventoryActivity(): Promise<ApiResult<InventoryActivityLis
 export interface StockItemDetail {
   item: InventoryItemRow
   attachments: import('./attachment-api').AttachmentView[]
+  inspectionEvents: Array<{
+    id: string
+    eventType: 'inspection' | 'rework'
+    fromStatus: InspectionStatus
+    toStatus: InspectionStatus
+    result: 'pass' | 'fail' | null
+    findings: string
+    evidence: string[]
+    occurredAt: string
+    recordedAt: string
+    actorId: number
+    requestId: string
+    stockItemVersion: number
+  }>
+  backfill: { id: string; batchRef: string; lineRef: string; recordedAt: string } | null
+  sourceRecord: InventoryStockItemSourceRecord | null
   recoveryState: string | null
   refurbishmentCosts?: Array<{
     id: string
@@ -260,11 +312,74 @@ export function inspectQuarantinedItem(input: {
   result: 'pass' | 'fail'
   findings: string
   evidence?: string[]
-  disposition: 'available' | 'retired'
+  disposition: 'available' | 'quarantine' | 'retired'
 }): Promise<ApiResult<WriteOutcome>> {
   return inventoryClient.client.write<WriteOutcome>(`/inventory/items/${encodeURIComponent(input.itemId)}/inspection`, {
     action: 'B19', entityId: input.itemId, expectedVersion: input.expectedVersion,
     payload: { result: input.result, findings: input.findings, evidence: input.evidence ?? [], disposition: input.disposition },
+  })
+}
+
+export interface StockBackfillReferences {
+  batchRef: string
+  lineRefs: string[]
+}
+
+const STOCK_BACKFILL_REF_PREFIX = 'pc-quote:v2:stock-backfill-refs:'
+
+function newStableRef(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  return `bf_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 14)}`
+}
+
+/** 构造补录明细时先保存批次与行身份；页面草稿应一并保存返回值。 */
+export function createStockBackfillReferences(lineCount: number): StockBackfillReferences {
+  if (!Number.isInteger(lineCount) || lineCount < 1 || lineCount > 50) throw new Error('补录明细必须为 1 至 50 行')
+  const refs = { batchRef: newStableRef(), lineRefs: Array.from({ length: lineCount }, () => newStableRef()) }
+  inventoryClient.session.storage.setItem(`${STOCK_BACKFILL_REF_PREFIX}${refs.batchRef}`, JSON.stringify(refs))
+  return refs
+}
+
+function persistStockBackfillReferences(input: StockBackfillInput): string | null {
+  const key = `${STOCK_BACKFILL_REF_PREFIX}${input.batchRef}`
+  const refs: StockBackfillReferences = { batchRef: input.batchRef, lineRefs: input.lines.map((line) => line.lineRef) }
+  try {
+    const existing = inventoryClient.session.storage.getItem(key)
+    if (existing) {
+      const saved = JSON.parse(existing) as StockBackfillReferences
+      if (saved.batchRef !== refs.batchRef || JSON.stringify(saved.lineRefs) !== JSON.stringify(refs.lineRefs)) {
+        return '此补录批次已保存另一组行引用，请恢复原草稿后重试'
+      }
+    }
+    inventoryClient.session.storage.setItem(key, JSON.stringify(refs))
+    return null
+  } catch {
+    return '无法在本机保存补录批次编号；为避免重复入库，请稍后重试'
+  }
+}
+
+function localWriteFailure<T>(message: string): ApiResult<T> {
+  return { ok: false, unknownResult: false, code: 'LOCAL_STORAGE_UNAVAILABLE', message, status: null,
+    fieldErrors: null, currentVersion: null, retryable: false, operationId: null, requestId: null, actions: [] }
+}
+
+/** B47：提交前持久化 batchRef / lineRef；结果未知或失败时保留引用供同批重试。 */
+export async function writeStockBackfill(input: StockBackfillInput): Promise<ApiResult<WriteOutcome>> {
+  const storageProblem = persistStockBackfillReferences(input)
+  if (storageProblem) return localWriteFailure(storageProblem)
+  const result = await inventoryClient.client.write<WriteOutcome>('/inventory/backfills', {
+    action: 'B47', entityId: input.batchRef, payload: { ...input },
+  })
+  if (result.ok) {
+    try { inventoryClient.session.storage.removeItem(`${STOCK_BACKFILL_REF_PREFIX}${input.batchRef}`) } catch { /* 成功结果不应被本地清理失败改写 */ }
+  }
+  return result
+}
+
+/** B48 只登记返修完成事实；实物留在 quarantine，之后须重新走 B19。 */
+export function recordInspectionRework(itemId: string, input: InspectionReworkInput): Promise<ApiResult<WriteOutcome>> {
+  return inventoryClient.client.write<WriteOutcome>(`/inventory/items/${encodeURIComponent(itemId)}/inspection/rework`, {
+    action: 'B48', entityId: itemId, expectedVersion: input.expectedVersion, payload: { ...input },
   })
 }
 

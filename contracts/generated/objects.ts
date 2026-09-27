@@ -1,8 +1,8 @@
-// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT
+// AUTO-GENERATED FROM contracts/v1.2 — DO NOT EDIT
 // 生成命令：node contracts/tools/generate-dto.mjs
-// 来源：contracts/v1.1/objects.json；字段与 nullable 以契约为准。
+// 来源：contracts/v1.2/objects.json；字段与 nullable 以契约为准。
 import type {
-  ContractId, Cents, Instant, CalendarDate, JsonValue, JsonObject, ActiveStatus, TrackingMode, StockCondition, ConditionGrade, OwnershipType, LocationKind, StockBucket, QuoteStatus, SaleTradeState, SaleFulfillmentState, SaleKind, LineSource, ReservationStatus, BalanceDirection, RecoveryState, ServiceState, WarrantyDecision, WarrantyTerm, InspectionDisposition, ChecklistResult, CashDirection, CashMethod, CashVerificationState, OffsetState, FinancialDisposition, CreditState, PaymentPurpose, AttachmentPurpose, AttachmentUploadState, AttachmentVisibility, OperationStatus, EntityType, TaskCategory, InventoryMovementSource, CounterpartyKind, ActionCode, CustomerClaimStatus, CustomerClaimMethod, CustomerSourceChannel,
+  ContractId, Cents, Instant, CalendarDate, JsonValue, JsonObject, ActiveStatus, TrackingMode, StockCondition, InspectionStatus, InspectionEventType, ConditionGrade, OwnershipType, LocationKind, StockBucket, QuoteStatus, SaleTradeState, SaleFulfillmentState, SaleKind, LineSource, ReservationStatus, BalanceDirection, RecoveryState, ServiceState, WarrantyDecision, WarrantyTerm, InspectionResult, InspectionDisposition, ChecklistResult, CashDirection, CashMethod, CashVerificationState, OffsetState, FinancialDisposition, CreditState, PaymentPurpose, AttachmentPurpose, AttachmentUploadState, AttachmentVisibility, OperationStatus, EntityType, TaskCategory, InventoryMovementSource, CounterpartyKind, ActionCode, CustomerClaimStatus, CustomerClaimMethod, CustomerSourceChannel,
 } from './enums'
 
 // 持久对象默认另含 CommonFields；正式事件类对象另含 EventFields 的相关子集。
@@ -59,6 +59,7 @@ export interface StockItem {
   snNormalized: string | null // 规范化检索值
   ownership: OwnershipType
   availability: StockBucket
+  inspectionStatus: InspectionStatus // 当前检测投影；旧记录为 unrecorded（历史未记录），不得按库存桶或旧 inspection_ref 推断
   location: LocationKind
   acquisitionRef: ContractId | null
   acquisitionCostCents: Cents | null // 单位：分
@@ -71,6 +72,44 @@ export interface StockItem {
   disclosureNote: string | null // 已知缺陷披露的自由文本（B30 上架门槛之一）。会写进顾客报价单，不含成本与卖方信息
   dataDisposed: boolean | null // 存储设备客户数据已处置确认（B30 上架门槛之一）。法规要求，必须显式确认，不得默认通过
   warrantyTerm: WarrantyTerm | null // 本店质保月数（B30 上架门槛之一）
+}
+
+/** 逐件检测与返修的追加式事件 */
+export interface StockInspectionEvent {
+  stockItemId: ContractId
+  eventType: InspectionEventType
+  fromStatus: InspectionStatus
+  toStatus: InspectionStatus
+  result: InspectionResult | null
+  findings: string
+  evidence: JsonValue[]
+  occurredAt: Instant
+  recordedAt: Instant
+  actorId: ContractId
+  requestId: string
+  stockItemVersion: number
+}
+
+/** 同型号分批库存补录批次 */
+export interface StockBackfill {
+  batchRef: string
+  note: string | null
+  requestId: string
+  payloadHash: string
+  occurredAt: Instant
+  recordedAt: Instant
+  actorId: ContractId
+}
+
+/** 补录批次明细及稳定行引用 */
+export interface StockBackfillLine {
+  backfillId: ContractId
+  lineRef: string
+  productId: ContractId
+  trackingMode: TrackingMode
+  qty: number
+  stockItemId: ContractId | null
+  stockBatchId: ContractId | null
 }
 
 /** 客户 / 卖方 */

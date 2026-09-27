@@ -91,10 +91,14 @@ export interface CustomerDetail extends CustomerListItem { devices: CustomerDevi
 export interface CustomerInput { name: string; phone?: string; email?: string; address?: string; remark?: string; sourceChannel?: CustomerSourceChannel | ''; status?: CustomerListItem['status'] }
 export interface CustomerDeviceInput { label: string; serialNumber?: string; remark?: string }
 
-export async function fetchCustomers(query = ''): Promise<CustomerListItem[]> {
+export interface CustomerListPage { items: CustomerListItem[]; nextCursor: string | null }
+
+export async function fetchCustomers(query = '', cursor?: string): Promise<CustomerListPage> {
+  const params = new URLSearchParams({ limit: '50' })
   const keyword = query.trim()
-  const data = await request<{ items: CustomerListItem[] }>(`/api/customers${keyword ? `?q=${encodeURIComponent(keyword)}` : ''}`)
-  return data.items
+  if (keyword) params.set('q', keyword)
+  if (cursor) params.set('cursor', cursor)
+  return request<CustomerListPage>(`/api/customers?${params.toString()}`)
 }
 export function fetchCustomer(id: number) { return request<CustomerDetail>(`/api/customers/${id}`) }
 export function createCustomer(input: CustomerInput) { return request<{ ok: true; id: number }>('/api/customers', { method: 'POST', body: JSON.stringify(input) }) }

@@ -17,8 +17,9 @@
 
 import { createWebApiClient } from '../../api/client.ts'
 import type { ApiResult } from '../../api/core.ts'
-import { fetchInventory } from './inventory-api.ts'
+import { fetchInventory, fetchInventoryStockItems } from './inventory-api.ts'
 import type { InventoryItemRow, InventoryProductRow } from './inventory-api.ts'
+import type { InventoryStockItemPagePayload } from '../../contracts/v2/generated/inventory-opening'
 
 export type { InventoryItemRow, InventoryProductRow }
 
@@ -285,10 +286,10 @@ export interface CustomerDeviceOption {
   serialNumber: string
 }
 
-/** 客户下拉（旧客户接口，E04 的主数据）。 */
-export async function fetchCustomerOptions(q: string = ''): Promise<ApiResult<{ items: CustomerOption[] }>> {
-  return legacyClient.client.read<{ items: CustomerOption[] }>('/api/customers', {
-    params: { q: q || undefined },
+/** 客户下拉（旧客户接口，E04 的主数据）；游标用于逐页搜索长名单。 */
+export async function fetchCustomerOptions(q: string = '', cursor?: string): Promise<ApiResult<{ items: CustomerOption[]; nextCursor: string | null }>> {
+  return legacyClient.client.read<{ items: CustomerOption[]; nextCursor: string | null }>('/api/customers', {
+    params: { q: q || undefined, limit: 50, cursor },
   })
 }
 
@@ -300,8 +301,14 @@ export async function fetchCustomerDevices(customerId: number): Promise<ApiResul
 }
 
 /** 可选二手实物：来自 E04b 的库存读接口（逐件、可用）。需要 inventory/view 权限。 */
-export async function fetchAvailableStockItems(): Promise<ApiResult<{ lotItems: InventoryItemRow[] }>> {
-  return fetchInventory({ availability: 'available', limit: 100 })
+export async function fetchAvailableStockItems(filters: { q?: string; category?: string | null } = {}): Promise<ApiResult<InventoryStockItemPagePayload>> {
+  return fetchInventoryStockItems({
+    q: filters.q ?? '',
+    category: filters.category ?? null,
+    condition: 'used',
+    availability: 'available',
+    limit: 100,
+  })
 }
 
 /**

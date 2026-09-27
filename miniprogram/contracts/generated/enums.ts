@@ -1,6 +1,6 @@
-// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT
+// AUTO-GENERATED FROM contracts/v1.2 — DO NOT EDIT
 // 生成命令：node contracts/tools/generate-dto.mjs
-// 来源：contracts/v1.1/enums.json；取值唯一来源，两端不得各自新增。
+// 来源：contracts/v1.2/enums.json；取值唯一来源，两端不得各自新增。
 
 export type ContractId = string
 export type Cents = number
@@ -40,6 +40,24 @@ export const StockCondition = {
 } as const
 export type StockCondition = (typeof StockCondition)[keyof typeof StockCondition]
 export const StockConditionValues: readonly StockCondition[] = Object.values(StockCondition)
+
+/** 逐件实物当前检测状态；历史数据迁移为 unrecorded（历史未记录），不从库存桶或旧 inspection_ref 推断 */
+export const InspectionStatus = {
+  UNRECORDED: "unrecorded",
+  PENDING: "pending",
+  PASSED: "passed",
+  FAILED: "failed",
+} as const
+export type InspectionStatus = (typeof InspectionStatus)[keyof typeof InspectionStatus]
+export const InspectionStatusValues: readonly InspectionStatus[] = Object.values(InspectionStatus)
+
+/** 追加式检测事件类型；检测判定与返修完成后重新待检分别留痕 */
+export const InspectionEventType = {
+  INSPECTION: "inspection",
+  REWORK: "rework",
+} as const
+export type InspectionEventType = (typeof InspectionEventType)[keyof typeof InspectionEventType]
+export const InspectionEventTypeValues: readonly InspectionEventType[] = Object.values(InspectionEventType)
 
 /** 逐件成色等级（B30 上架门槛七项之一，B30 契约修订补入）：全新 / 95新 / 9成新 / 8成新 / 7成新及以下。与 StockCondition（new/used 粗分）并存 —— 后者是入库分类，本枚举是会写进顾客报价单的细分成色，两者不是同一件事 */
 export const ConditionGrade = {
@@ -395,7 +413,7 @@ export const TaskCategory = {
 export type TaskCategory = (typeof TaskCategory)[keyof typeof TaskCategory]
 export const TaskCategoryValues: readonly TaskCategory[] = Object.values(TaskCategory)
 
-/** 每个库存副作用的唯一来源标识。conversion 对应整机拆件（B44，2026-09-21 E10 起启用）；inspection_release 对应待检件判定通过放回可卖（B19）；未列出的来源必须先补契约再实现 */
+/** 每个库存副作用的唯一来源标识。conversion 对应整机拆件（B44）；inspection_release 对应待检件判定通过放回可卖（B19）；stock_backfill 对应已有库存分批补录（B47）；未列出的来源必须先补契约再实现 */
 export const InventoryMovementSource = {
   PURCHASE_RECEIPT: "purchase_receipt",
   QUICK_PURCHASE: "quick_purchase",
@@ -413,6 +431,7 @@ export const InventoryMovementSource = {
   CONVERSION: "conversion",
   INSPECTION_QUARANTINE: "inspection_quarantine",
   INSPECTION_RELEASE: "inspection_release",
+  STOCK_BACKFILL: "stock_backfill",
 } as const
 export type InventoryMovementSource = (typeof InventoryMovementSource)[keyof typeof InventoryMovementSource]
 export const InventoryMovementSourceValues: readonly InventoryMovementSource[] = Object.values(InventoryMovementSource)
@@ -437,7 +456,7 @@ export const CounterpartyKind = {
 export type CounterpartyKind = (typeof CounterpartyKind)[keyof typeof CounterpartyKind]
 export const CounterpartyKindValues: readonly CounterpartyKind[] = Object.values(CounterpartyKind)
 
-/** 动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B39（报损）、B40（价格调整）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit；B45（清理未发出报价草稿）、B46（清理未引用商品档案）为 2026-09-26 v1.1 契约修订新增，权限 store/manage。 */
+/** 动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B39（报损）、B40（价格调整）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit；B45（清理未发出报价草稿）、B46（清理未引用商品档案）为 2026-09-26 v1.1 契约修订新增，权限 store/manage；B47（同型号库存分批补录）、B48（返修后重新待检）为 2026-09-27 U02 v1.2 契约修订新增。 */
 export const ActionCode = {
   B01: "B01",
   B02: "B02",
@@ -483,6 +502,8 @@ export const ActionCode = {
   B44: "B44",
   B45: "B45",
   B46: "B46",
+  B47: "B47",
+  B48: "B48",
 } as const
 export type ActionCode = (typeof ActionCode)[keyof typeof ActionCode]
 export const ActionCodeValues: readonly ActionCode[] = Object.values(ActionCode)
@@ -597,6 +618,16 @@ export const STATE_MACHINES: Record<string, { initial: string; transitions: Stat
       { from: "uploaded", to: "attached", action: "B35", guard: "完成确认时归属实体校验通过且属于同店，业务记录才可引用" },
       { from: "pending", to: "orphaned", action: null, guard: "超过保留期仍未完成上传，等待清理" },
       { from: "uploaded", to: "orphaned", action: null, guard: "超过保留期仍未关联任何业务实体，等待清理" },
+    ]
+  },
+  "InspectionStatus": {
+    initial: "unrecorded",
+    transitions: [
+      { from: "unrecorded", to: "passed", action: "B19", guard: "门店实物隔离且完成本次检测；通过需有有效证据" },
+      { from: "unrecorded", to: "failed", action: "B19", guard: "门店实物隔离且完成本次检测；失败留在待处理桶" },
+      { from: "pending", to: "passed", action: "B19", guard: "门店实物隔离且完成本次检测；通过需有有效证据" },
+      { from: "pending", to: "failed", action: "B19", guard: "门店实物隔离且完成本次检测；失败不得转可售" },
+      { from: "failed", to: "pending", action: "B48", guard: "返修已完成并填写返修说明；库存仍留在待处理桶" },
     ]
   },
 }

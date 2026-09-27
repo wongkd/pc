@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>仓库与登记 · 交互原型（虚构数据）</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<p class="demo-banner" role="note">
+  <strong>交互原型 · 仅供评审操作顺序</strong>
+  <span>页面上的配件、成本、编号和客户全部是虚构示例，不是任何门店的真实库存。</span>
+  <span>不写数据库、不调接口，刷新即恢复初始数据。</span>
+</p>
+
+<header class="topbar">
+  <h1>仓库</h1>
+  <div class="spacer"></div>
+  <input id="search" class="search" type="search" aria-label="搜索型号、规格或编号"
+         placeholder="搜索型号、规格或内部编号">
+  <button id="btn-register" class="btn btn--primary" type="button">登记配件</button>
+  <div class="menu-wrap">
+    <button id="btn-more" class="btn" type="button" aria-expanded="false" aria-haspopup="menu">更多</button>
+    <div id="more-menu" class="menu" role="menu" hidden></div>
+  </div>
+</header>
+
+<div class="catbar-wrap">
+  <nav id="catbar" class="catbar" aria-label="配件类别"></nav>
+</div>
+
+<div id="filterbar" class="filterbar" role="group" aria-label="库存状态筛选"></div>
+
+<main class="list-wrap">
+  <div id="messages"></div>
+  <div id="list"></div>
+</main>
+
+<section id="copy-compare" class="copy-compare" hidden>
+  <h2>这次改掉的文案（对照）</h2>
+  <p class="hint">旧文案是方案第 5 节点名要删掉或改写的，列在这里供评审核对；正式页面不出现左边这一列。</p>
+  <div id="copy-compare-body"></div>
+</section>
+
+<div id="demo-controls" class="demo-controls" role="group" aria-label="原型演示控制">
+  <span class="label">原型演示用（正式页面没有这些按钮）：</span>
+  <button type="button" data-demo="scenario-1">流程① 登记第一颗 CPU</button>
+  <button type="button" data-demo="scenario-2">流程② 同型号第二件</button>
+  <button type="button" data-demo="scenario-3">流程③ 第二批补录</button>
+  <button type="button" data-demo="scenario-4">流程④ 二手显卡到货</button>
+  <button type="button" data-demo="sim-unknown">模拟：保存结果未知</button>
+  <button type="button" data-demo="sim-partial">模拟：只存了资料没入库</button>
+  <button type="button" data-demo="toggle-cost">成本显示：开</button>
+  <button type="button" data-demo="copy-compare">旧文案对照</button>
+  <button type="button" data-demo="reset">重置演示数据</button>
+</div>
+
+<div id="overlay"></div>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

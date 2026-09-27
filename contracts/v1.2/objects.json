@@ -1,0 +1,849 @@
+{
+  "contractVersion": "v1.2",
+  "frozenBy": "U02",
+  "frozenAt": "2026-09-27",
+  "status": "frozen",
+  "source": "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md §2",
+  "structureNote": "以下是逻辑对象，不意味着每个对象独占一张新表。新表按任务增量建立，不在 v2 旁复制第二套互不相通的 ERP。复用旧表的对象在 tables 中声明，映射细节见 legacy-mapping.json。",
+
+  "commonFields": {
+    "id": { "type": "id", "nullable": false, "desc": "不透明字符串，客户端不得解析主键" },
+    "storeId": { "type": "id", "nullable": false, "desc": "由后端身份派生，忽略客户端传值" },
+    "version": { "type": "int", "nullable": false, "desc": "非负整数，每次有效写入 +1" },
+    "createdAt": { "type": "timestamp", "nullable": false },
+    "updatedAt": { "type": "timestamp", "nullable": false },
+    "createdBy": { "type": "id", "nullable": false, "desc": "成员 ID，不是用户邮箱" }
+  },
+
+  "eventFields": {
+    "occurredAt": { "type": "timestamp", "nullable": false, "desc": "实际业务发生时间，与预约时间分开" },
+    "recordedAt": { "type": "timestamp", "nullable": false, "desc": "记录写入时间" },
+    "actorId": { "type": "id", "nullable": false },
+    "requestId": { "type": "string", "nullable": false },
+    "sourceType": { "type": "enum", "enumRef": "EntityType", "nullable": false },
+    "sourceId": { "type": "id", "nullable": true }
+  },
+
+  "globalRules": [
+    "所有持久对象默认包含 commonFields；正式事件类对象另含 eventFields 的相关子集。",
+    "后端校验子对象确实属于同店，不能只检查父单。",
+    "可选关联写显式 null，不用 0 或空串表示「无」。",
+    "内部成本、供应商、毛利字段仅在有权限的响应中出现，不靠前端隐藏。"
+  ],
+
+  "objects": {
+    "Product": {
+      "tables": ["hardware"],
+      "desc": "型号 / 服务项目主数据",
+      "fields": {
+        "sku": { "type": "string", "nullable": false },
+        "name": { "type": "string", "nullable": false },
+        "category": { "type": "string", "nullable": false },
+        "brand": { "type": "string", "nullable": true },
+        "specs": { "type": "string", "nullable": true },
+        "trackingMode": { "type": "enum", "enumRef": "TrackingMode", "nullable": false },
+        "requiresSn": { "type": "bool", "nullable": false },
+        "status": { "type": "enum", "enumRef": "ActiveStatus", "nullable": false },
+        "defaultSalePriceCents": { "type": "cents", "nullable": false },
+        "warrantyTemplate": { "type": "object", "nullable": true }
+      },
+      "rules": [
+        "复用 hardware 的映射，不直接按同名合并。",
+        "关键属性已发生业务后修改需专门规则，不静默改写历史单据。"
+      ]
+    },
+
+    "StockBalance": {
+      "tables": ["stock_balances"],
+      "desc": "型号 × 位置的数量余额",
+      "fields": {
+        "productId": { "type": "id", "nullable": false },
+        "locationId": { "type": "id", "nullable": false },
+        "availableQty": { "type": "int", "nullable": false },
+        "reservedQty": { "type": "int", "nullable": false },
+        "quarantineQty": { "type": "int", "nullable": false },
+        "totalCostCents": { "type": "cents", "nullable": true },
+        "costKnown": { "type": "bool", "nullable": false }
+      },
+      "rules": [
+        "汇总可重算；不得成为缺少流水的手改数字。",
+        "totalCostCents 在存在未知成本批次时为 null，且 costKnown=false，不得估成 0。"
+      ]
+    },
+
+    "StockItem": {
+      "tables": ["serial_numbers"],
+      "desc": "逐件实物",
+      "fields": {
+        "assetCode": { "type": "string", "nullable": false, "desc": "内部唯一编号；二手必有，即使没有厂商 SN" },
+        "productId": { "type": "id", "nullable": false },
+        "condition": { "type": "enum", "enumRef": "StockCondition", "nullable": false },
+        "snRaw": { "type": "string", "nullable": true, "desc": "原始显示值，保留大小写与符号" },
+        "snNormalized": { "type": "string", "nullable": true, "desc": "规范化检索值" },
+        "ownership": { "type": "enum", "enumRef": "OwnershipType", "nullable": false },
+        "availability": { "type": "enum", "enumRef": "StockBucket", "nullable": false },
+        "inspectionStatus": { "type": "enum", "enumRef": "InspectionStatus", "nullable": false, "desc": "当前检测投影；旧记录为 unrecorded（历史未记录），不得按库存桶或旧 inspection_ref 推断" },
+        "location": { "type": "enum", "enumRef": "LocationKind", "nullable": false },
+        "acquisitionRef": { "type": "id", "nullable": true },
+        "acquisitionCostCents": { "type": "cents", "nullable": true },
+        "refurbishmentCostCents": { "type": "cents", "nullable": true },
+        "costKnown": { "type": "bool", "nullable": false },
+        "inspectionRef": { "type": "id", "nullable": true },
+        "warrantySnapshot": { "type": "object", "nullable": true },
+        "conditionGrade": { "type": "enum", "enumRef": "ConditionGrade", "nullable": true, "desc": "逐件成色等级（B30 上架门槛之一）。整备上架前必须补齐" },
+        "salePriceCents": { "type": "cents", "nullable": true, "desc": "逐件标价（B30 上架门槛之一）。二手件一机一价，故落在件上而非商品上；商品级挂牌价见 Product.defaultSalePriceCents" },
+        "disclosureNote": { "type": "string", "nullable": true, "desc": "已知缺陷披露的自由文本（B30 上架门槛之一）。会写进顾客报价单，不含成本与卖方信息" },
+        "dataDisposed": { "type": "bool", "nullable": true, "desc": "存储设备客户数据已处置确认（B30 上架门槛之一）。法规要求，必须显式确认，不得默认通过" },
+        "warrantyTerm": { "type": "enum", "enumRef": "WarrantyTerm", "nullable": true, "desc": "本店质保月数（B30 上架门槛之一）" }
+      },
+      "rules": [
+        "重复 SN 进入人工核对，不自动合并所有权记录。",
+        "当前状态与完整事件历史并存，不能用一个状态字段代替全部事实。",
+        "检测失败后必须完成返修并追加 B48 事件，再以新 requestId 复检；失败状态不能直接转可售。"
+      ]
+    },
+
+    "StockInspectionEvent": {
+      "tables": ["stock_inspection_events"],
+      "desc": "逐件检测与返修的追加式事件",
+      "fields": {
+        "stockItemId": { "type": "id", "nullable": false },
+        "eventType": { "type": "enum", "enumRef": "InspectionEventType", "nullable": false },
+        "fromStatus": { "type": "enum", "enumRef": "InspectionStatus", "nullable": false },
+        "toStatus": { "type": "enum", "enumRef": "InspectionStatus", "nullable": false },
+        "result": { "type": "enum", "enumRef": "InspectionResult", "nullable": true },
+        "findings": { "type": "string", "nullable": false },
+        "evidence": { "type": "array", "nullable": false },
+        "occurredAt": { "type": "timestamp", "nullable": false },
+        "recordedAt": { "type": "timestamp", "nullable": false },
+        "actorId": { "type": "id", "nullable": false },
+        "requestId": { "type": "string", "nullable": false },
+        "stockItemVersion": { "type": "int", "nullable": false }
+      },
+      "rules": ["事件不可更新或刪除；当前状态投影与事件必须在同一业务操作中推进。", "返修事件不代表检测通过，必须另追加检测事件。"]
+    },
+
+    "StockBackfill": {
+      "tables": ["inventory_stock_backfills"],
+      "desc": "同型号分批库存补录批次",
+      "fields": {
+        "batchRef": { "type": "string", "nullable": false },
+        "note": { "type": "string", "nullable": true },
+        "requestId": { "type": "string", "nullable": false },
+        "payloadHash": { "type": "string", "nullable": false },
+        "occurredAt": { "type": "timestamp", "nullable": false },
+        "recordedAt": { "type": "timestamp", "nullable": false },
+        "actorId": { "type": "id", "nullable": false }
+      },
+      "rules": ["门店内 batchRef 唯一；同一批次换 requestId 不得再次增加库存。", "B13 首次期初守卫保持不变。"]
+    },
+
+    "StockBackfillLine": {
+      "tables": ["inventory_stock_backfill_lines"],
+      "desc": "补录批次明细及稳定行引用",
+      "fields": {
+        "backfillId": { "type": "id", "nullable": false },
+        "lineRef": { "type": "string", "nullable": false },
+        "productId": { "type": "id", "nullable": false },
+        "trackingMode": { "type": "enum", "enumRef": "TrackingMode", "nullable": false },
+        "qty": { "type": "int", "nullable": false },
+        "stockItemId": { "type": "id", "nullable": true },
+        "stockBatchId": { "type": "id", "nullable": true }
+      },
+      "rules": ["同一补录批次内 lineRef 唯一；无 SN 相似件只提示人工复核，不承诺自动判重。"]
+    },
+
+    "Customer": {
+      "tables": ["customers"],
+      "desc": "客户 / 卖方",
+      "fields": {
+        "displayName": { "type": "string", "nullable": false },
+        "phone": { "type": "string", "nullable": true },
+        "contactNote": { "type": "string", "nullable": true },
+        "remarkInternal": { "type": "string", "nullable": true },
+        "sourceChannel": { "type": "enum", "enumRef": "CustomerSourceChannel", "nullable": true }
+      },
+      "rules": [
+        "散客允许最少信息。",
+        "卖方和买方不是同一个可覆盖字段；同一主体在不同单据中的角色由关系表达。",
+        "普通备注不存客户密码等凭据。"
+      ]
+    },
+
+    "CustomerDevice": {
+      "tables": ["customer_device_custody"],
+      "desc": "客户设备",
+      "fields": {
+        "ownerCustomerId": { "type": "id", "nullable": false },
+        "deviceCode": { "type": "string", "nullable": false },
+        "originalOrderId": { "type": "id", "nullable": true, "desc": "外店设备可无原订单" },
+        "currentConfigurationId": { "type": "id", "nullable": true },
+        "custodyLocation": { "type": "enum", "enumRef": "LocationKind", "nullable": false },
+        "stockItemRef": { "type": "id", "nullable": true }
+      },
+      "rules": ["客户财产不进入自有库存汇总。"]
+    },
+
+    "Quote": {
+      "tables": ["quotes", "quote_headers"],
+      "desc": "报价聚合头",
+      "fields": {
+        "customerId": { "type": "id", "nullable": true },
+        "title": { "type": "string", "nullable": false },
+        "currentRevision": { "type": "int", "nullable": false }
+      },
+      "rules": ["多份草稿可引用同一二手件；已失效的引用显示「需替换」，不静默变为同型号其他件。"]
+    },
+
+    "QuoteVersion": {
+      "tables": ["quotes", "templates", "quote_versions", "quote_lines"],
+      "desc": "报价版本，发出后不可覆盖",
+      "fields": {
+        "quoteId": { "type": "id", "nullable": false },
+        "revision": { "type": "int", "nullable": false },
+        "status": { "type": "enum", "enumRef": "QuoteStatus", "nullable": false },
+        "validUntil": { "type": "date", "nullable": true },
+        "lines": { "type": "array", "nullable": false, "desc": "报价行数组，元素为报价行（quote_lines）：position / source / nameSnapshot / specSnapshot / qty / unitPriceCents / lineTotalCents / productRef / stockItemId / customerDeviceRef / warrantySnapshot。productRef 是商品引用（hardware.entity_id），草稿中的临时行可为空；new / used 行**成交（转销售单）前必须能映射到商品**（new 靠 productRef 或已指定实物，used 必须指定实物），否则不得成交 —— 见 rules 第 1 条。" },
+        "discountCents": { "type": "cents", "nullable": false },
+        "termsSnapshot": { "type": "object", "nullable": false },
+        "issuedAt": { "type": "timestamp", "nullable": true },
+        "confirmedAt": { "type": "timestamp", "nullable": true },
+        "confirmedSource": { "type": "string", "nullable": true }
+      },
+      "rules": [
+        "草稿中的临时实物行可未建档；成交前必须映射到商品。",
+        "客供 / 服务不要求店有商品库存，但来源类型必须明确。",
+        "每个序列化 / 二手实物行数量为 1。",
+        "confirmedAt / confirmedSource 仅在 status=confirmed 时有值：确认来源为 miniprogram / wechat / offline（R10）。确认 ≠ 付款、确认不锁库存（R12）；确认后本版本不可再改，要改必须出新版本重新发出并重新确认。"
+      ]
+    },
+
+    "SaleOrder": {
+      "tables": ["orders", "sale_orders"],
+      "desc": "销售单",
+      "fields": {
+        "orderNo": { "type": "string", "nullable": false },
+        "customerSnapshot": { "type": "object", "nullable": false },
+        "quoteVersionId": { "type": "id", "nullable": true },
+        "kind": { "type": "enum", "enumRef": "SaleKind", "nullable": false },
+        "tradeState": { "type": "enum", "enumRef": "SaleTradeState", "nullable": false },
+        "fulfillmentState": { "type": "enum", "enumRef": "SaleFulfillmentState", "nullable": false },
+        "dueAt": { "type": "timestamp", "nullable": true },
+        "configurationVersion": { "type": "int", "nullable": false },
+        "totalCents": { "type": "cents", "nullable": false },
+        "adjustmentCents": { "type": "cents", "nullable": false },
+        "cashNetCents": { "type": "cents", "nullable": false },
+        "offsetNetCents": { "type": "cents", "nullable": false },
+        "balanceCents": { "type": "cents", "nullable": false },
+        "balanceDirection": { "type": "enum", "enumRef": "BalanceDirection", "nullable": false }
+      },
+      "rules": [
+        "资金汇总由有效流水计算 / 维护，含 version。",
+        "确认成交必须写入 confirmedQuoteVersion 指向的版本。",
+        "支付状态不是可编辑下拉框，由流水与余额派生。"
+      ]
+    },
+
+    "SaleLine": {
+      "tables": ["order_items", "sale_lines"],
+      "desc": "销售行",
+      "fields": {
+        "productId": { "type": "id", "nullable": true },
+        "source": { "type": "enum", "enumRef": "LineSource", "nullable": false },
+        "nameSnapshot": { "type": "string", "nullable": false },
+        "qty": { "type": "int", "nullable": false },
+        "unitPriceCents": { "type": "cents", "nullable": false },
+        "discountAllocationCents": { "type": "cents", "nullable": false },
+        "netLineCents": { "type": "cents", "nullable": false },
+        "warrantySnapshot": { "type": "object", "nullable": true },
+        "customerDeviceRef": { "type": "id", "nullable": true }
+      },
+      "rules": [
+        "new / used 成交时需商品映射；used 指定实物。",
+        "customer 客供件默认售价与成本为 0，另列装机服务费。",
+        "已退数量由退货记录累计得出，不在此行直接改写。"
+      ]
+    },
+
+    "Reservation": {
+      "tables": ["stock_reservations"],
+      "desc": "预留 / 占用",
+      "fields": {
+        "orderId": { "type": "id", "nullable": false },
+        "lineId": { "type": "id", "nullable": false },
+        "stockItemId": { "type": "id", "nullable": true, "desc": "逐件占用时必填" },
+        "quantityBucketRef": { "type": "string", "nullable": true, "desc": "数量件占用时必填" },
+        "qty": { "type": "int", "nullable": false },
+        "status": { "type": "enum", "enumRef": "ReservationStatus", "nullable": false },
+        "reason": { "type": "string", "nullable": true }
+      },
+      "rules": [
+        "逐件有效唯一：同一 stockItemId 同一时刻最多一条 active。",
+        "数量件占用总数不得超过可用量。",
+        "历史占用保留，不物理删除。"
+      ]
+    },
+
+    "Purchase": {
+      "tables": ["purchase_orders", "purchase_lines"],
+      "desc": "采购单",
+      "fields": {
+        "supplierRef": { "type": "id", "nullable": true },
+        "supplierNote": { "type": "string", "nullable": true, "desc": "散采说明；不要求先在供应商模块建档" },
+        "purchaseLines": { "type": "array", "nullable": false },
+        "orderedQty": { "type": "int", "nullable": false },
+        "receivedQty": { "type": "int", "nullable": false },
+        "cancelledQty": { "type": "int", "nullable": false },
+        "expectedAt": { "type": "timestamp", "nullable": true }
+      },
+      "rules": [
+        "采购单数量 = 已合格入库 + 已拒收 / 取消数量 + 尚待到货数量；退供另有关联退供单。",
+        "超量到货先修改确认采购量或建立追加采购，不静默增加。",
+        "取消采购属补充动作，编号与契约须先补入再实现。"
+      ],
+      "derivedFields": [
+        {
+          "name": "pendingQty",
+          "label": "在途 / 尚待到货",
+          "formula": "orderedQty - receivedQty - cancelledQty",
+          "basis": "03 §4「采购单数量 = 已合格入库 + 已拒收 / 取消数量 + 尚待到货数量」；04 §3 要求 GET /inventory/purchases 返回「采购、实到、在途、拒收 / 取消」"
+        },
+        {
+          "name": "receiptProgress",
+          "label": "部分到货判定",
+          "formula": "receivedQty > 0 且 pendingQty > 0 → 部分到货；pendingQty = 0 且 receivedQty > 0 → 到货完成；receivedQty = 0 → 尚未到货",
+          "basis": "05 T06b「采购 5 到 3 显示在途 2，不能整单勾完」；06 A11「采购 5 实到 3，重试本次入库，在库只增 3，在途余 2」"
+        }
+      ],
+      "notStored": "本对象不设 status / state 字段，这是规格的有意设计而非遗漏：采购进度由 orderedQty / receivedQty / cancelledQty 三个计数器派生（04 §2 的最低字段列未含状态字段）；验收结论由关联 Receipt.inspectionDisposition 承载。存储状态会与计数器产生第二真相来源，允许两者漂移；派生可保证恒等式始终成立。",
+      "revision": "2026-09-17 T01-rev1 补录。T01a 未记录派生关系，T01b 曾误将其登记为「对象层遗漏」；经核对 03 §4、04 §2/§3、05 T06b、06 A11 后更正。"
+    },
+
+    "Receipt": {
+      "tables": ["purchase_receipts", "purchase_receipt_lines"],
+      "desc": "到货验收（一次到货一条）",
+      "fields": {
+        "purchaseId": { "type": "id", "nullable": true, "desc": "快速采购时可为 null" },
+        "quickPurchaseNote": { "type": "string", "nullable": true },
+        "receiptLines": { "type": "array", "nullable": false },
+        "unitCostCents": { "type": "cents", "nullable": true },
+        "inspectionDisposition": { "type": "enum", "enumRef": "InspectionDisposition", "nullable": false },
+        "receivedAt": { "type": "timestamp", "nullable": false }
+      },
+      "rules": [
+        "部分到货分次 Receipt，每次各有 requestId。",
+        "入库关联采购来源与成本；不能只录 SN 当完整采购。",
+        "到货不自动把货给任意最旧订单。"
+      ]
+    },
+
+    "InventoryMovement": {
+      "tables": ["sn_events"],
+      "desc": "库存流水",
+      "fields": {
+        "productId": { "type": "id", "nullable": false },
+        "stockItemId": { "type": "id", "nullable": true },
+        "qty": { "type": "int", "nullable": false, "desc": "增量，可正可负" },
+        "fromBucket": { "type": "enum", "enumRef": "StockBucket", "nullable": true },
+        "toBucket": { "type": "enum", "enumRef": "StockBucket", "nullable": true },
+        "costCents": { "type": "cents", "nullable": true },
+        "source": { "type": "enum", "enumRef": "InventoryMovementSource", "nullable": false },
+        "reversalOf": { "type": "id", "nullable": true }
+      },
+      "rules": [
+        "每项业务副作用有唯一来源标识，能追溯 / 重算。",
+        "已完成的库存记录不直接改写或删除，使用关联冲销 / 调整记录。"
+      ]
+    },
+
+    "Checklist": {
+      "tables": ["sale_checklists"],
+      "desc": "装机检查单（打包、外观、SN 核对等）",
+      "fields": {
+        "entityRef": { "type": "object", "nullable": false },
+        "templateVersion": { "type": "string", "nullable": false },
+        "configurationVersion": { "type": "int", "nullable": false },
+        "items": { "type": "array", "nullable": false },
+        "result": { "type": "enum", "enumRef": "ChecklistResult", "nullable": false },
+        "performedAt": { "type": "timestamp", "nullable": true },
+        "performedBy": { "type": "id", "nullable": true }
+      },
+      "rules": [
+        "使用时固化模板版本。",
+        "改配置 / 换件让受影响的配置核对与检测项失效；改附件让打包项失效。",
+        "交付前后端验证 configurationVersion 等于当前版本。"
+      ]
+    },
+
+    "TestRecord": {
+      "tables": ["sale_checklists"],
+      "desc": "检测记录（点亮、烤机等）",
+      "fields": {
+        "entityRef": { "type": "object", "nullable": false },
+        "templateVersion": { "type": "string", "nullable": false },
+        "configurationVersion": { "type": "int", "nullable": false },
+        "items": { "type": "array", "nullable": false },
+        "result": { "type": "enum", "enumRef": "ChecklistResult", "nullable": false },
+        "performedAt": { "type": "timestamp", "nullable": true },
+        "performedBy": { "type": "id", "nullable": true }
+      },
+      "rules": ["每项有执行人、执行时间、结果和必要说明；不通过时隔离故障件并重新形成缺口。"]
+    },
+
+    "Delivery": {
+      "tables": ["sale_deliveries"],
+      "desc": "交付记录",
+      "fields": {
+        "orderId": { "type": "id", "nullable": false },
+        "configurationSnapshotId": { "type": "id", "nullable": false },
+        "deliveredAt": { "type": "timestamp", "nullable": false },
+        "receivedByNote": { "type": "string", "nullable": true },
+        "financialDisposition": { "type": "enum", "enumRef": "FinancialDisposition", "nullable": false },
+        "creditApprovalId": { "type": "id", "nullable": true }
+      },
+      "rules": [
+        "一张首版订单最多一条有效整体交付；成本逐行快照。",
+        "交付闸门：订单有效、实物来源解决、预留未失效、需 SN 的行已绑定、检查通过、条款固化、款项结清或老板批准欠款、且未交付过。",
+        "资金成功而交付失败时保留已收记录，重试交付不得再收一次。"
+      ]
+    },
+
+    "Recovery": {
+      "tables": [],
+      "desc": "回收单",
+      "fields": {
+        "sellerRef": { "type": "id", "nullable": false },
+        "items": { "type": "array", "nullable": false },
+        "initialEstimateCents": { "type": "cents", "nullable": true },
+        "offerVersion": { "type": "int", "nullable": true },
+        "finalAcquisitionCents": { "type": "cents", "nullable": true },
+        "receivedAt": { "type": "timestamp", "nullable": true },
+        "acceptedAt": { "type": "timestamp", "nullable": true },
+        "confirmationEvidence": { "type": "id", "nullable": true },
+        "state": { "type": "enum", "enumRef": "RecoveryState", "nullable": false }
+      },
+      "rules": [
+        "一单可含多个独立实物；逐件成本分配之和必须等于总金额。",
+        "所有权在 acquired 且接收确认完成时才转为门店，不能由「已付款」推断。",
+        "允许 acquired 后未付款并形成应付；未取得所有权前不可售。"
+      ]
+    },
+
+    "RefurbishmentCost": {
+      "tables": ["refurbishment_costs"],
+      "desc": "整备成本",
+      "fields": {
+        "stockItemId": { "type": "id", "nullable": false },
+        "category": { "type": "string", "nullable": false },
+        "amountCents": { "type": "cents", "nullable": false },
+        "capitalizable": { "type": "bool", "nullable": false, "desc": "是否计入该件可归属成本" },
+        "paymentEntryRef": { "type": "id", "nullable": true },
+        "evidenceRef": { "type": "id", "nullable": true }
+      },
+      "rules": ["费用归属与实际付款不是同一字段，防止重复计成本。"]
+    },
+
+    "RecoveryTeardown": {
+      "tables": [],
+      "desc": "拆件入库（B44）：回收整机拆成零件，源件退役、产出件新建待检、损耗单列报废",
+      "fields": {
+        "recoveryOrderId": { "type": "id", "nullable": false },
+        "sourceStockItemId": { "type": "id", "nullable": false, "desc": "被拆解的整机实物" },
+        "outputs": { "type": "array", "nullable": false, "desc": "拆出零件：商品引用 + 成色 + 内部编号 + 逐件成本分摊" },
+        "scrapLines": { "type": "array", "nullable": true, "desc": "损耗件：说明 + 金额，单列报废不摊进产出件" },
+        "occurredAt": { "type": "timestamp", "nullable": false }
+      },
+      "rules": [
+        "产出件成本之和 + 损耗金额 = 源整机取得成本，差额为零才放行（守恒）。",
+        "源整机退役（retired），产出件新建进待检（quarantine），损耗走报废（scrap）流水。",
+        "拆件不改变回收单应付，只改变库存形态。"
+      ]
+    },
+
+    "ServiceOrder": {
+      "tables": ["service_orders"],
+      "desc": "维修工单",
+      "fields": {
+        "customerId": { "type": "id", "nullable": true },
+        "deviceId": { "type": "id", "nullable": false },
+        "symptom": { "type": "string", "nullable": false, "desc": "客户描述，与内部诊断分开" },
+        "intakeSnapshot": { "type": "object", "nullable": false },
+        "state": { "type": "enum", "enumRef": "ServiceState", "nullable": false },
+        "proposalVersion": { "type": "int", "nullable": true },
+        "confirmedChargeCents": { "type": "cents", "nullable": true },
+        "warrantyDecision": { "type": "enum", "enumRef": "WarrantyDecision", "nullable": true },
+        "dueAt": { "type": "timestamp", "nullable": true }
+      },
+      "rules": [
+        "未确认费用不进入应收；保存未定费用不形成应收。",
+        "外店设备可无原订单；不伪造销售单，不加自有库存。",
+        "免费保内也要记录承担方。"
+      ]
+    },
+
+    "DeviceConfiguration": {
+      "tables": ["device_configurations"],
+      "desc": "设备配置版本",
+      "fields": {
+        "deviceId": { "type": "id", "nullable": false },
+        "revision": { "type": "int", "nullable": false },
+        "components": { "type": "array", "nullable": false },
+        "effectiveAt": { "type": "timestamp", "nullable": false },
+        "changeRef": { "type": "id", "nullable": true }
+      },
+      "rules": ["保留原交付快照与每次换件，不覆盖历史。"]
+    },
+
+    "DeviceChange": {
+      "tables": ["device_changes"],
+      "desc": "换件 / 改配置事件",
+      "fields": {
+        "deviceId": { "type": "id", "nullable": false },
+        "fromRevision": { "type": "int", "nullable": false },
+        "toRevision": { "type": "int", "nullable": false },
+        "components": { "type": "array", "nullable": false },
+        "effectiveAt": { "type": "timestamp", "nullable": false },
+        "changeRef": { "type": "id", "nullable": true }
+      },
+      "rules": ["同时关联旧件、新件、工单、配置版本、备件成本、收费 / 免费原因与旧件去向。"]
+    },
+
+    "ReturnRecord": {
+      "tables": ["sale_returns"],
+      "desc": "退货接收与贷项",
+      "fields": {
+        "originalOrderId": { "type": "id", "nullable": false },
+        "lineAllocations": { "type": "array", "nullable": false, "desc": "原行 / 数量 / 实物分配" },
+        "stockItemIds": { "type": "array", "nullable": false },
+        "reason": { "type": "string", "nullable": false },
+        "acceptedQty": { "type": "int", "nullable": false },
+        "creditCents": { "type": "cents", "nullable": false },
+        "creditState": { "type": "enum", "enumRef": "CreditState", "nullable": false },
+        "refundEntryRef": { "type": "id", "nullable": true }
+      },
+      "rules": [
+        "实物接收、贷项、现金退款各有独立状态与引用。",
+        "累计退货贷项不超过原行净额；已退数量由本记录累计。",
+        "未收到实物不能凭退款增加库存。"
+      ],
+      "factMapping": [
+        {
+          "fact": "实物接收",
+          "stateCarrier": "StockItem.availability / 库存桶（收货后进入待检 quarantine，不自动可卖）",
+          "refField": "stockItemIds",
+          "verdict": "已核实：03 §4「销售退回接收 → 在库与待处理增加，验收实物后」；03 §7「库存先进入待检，绝不自动可卖」"
+        },
+        {
+          "fact": "现金退款",
+          "stateCarrier": "Refund 单据（独立对象，资金方式、发生时间、冲销各自记录）",
+          "refField": "refundEntryRef",
+          "verdict": "已核实：Refund 对象独立存在，本字段为其引用；03 §7「现金退款可稍后」"
+        },
+        {
+          "fact": "贷项",
+          "stateCarrier": "ReturnRecord.creditState（pending → approved，老板审批）",
+          "refField": "creditCents / lineAllocations",
+          "verdict": "已核实（2026-09-21 E09 栋哥拍板）：退货产生的应退贷项须老板审批才生效。creditState 由 pending（待审批）经 B43 批准转为 approved（生效，计入应退）；B18 退款只能对 approved 贷项执行。"
+        }
+      ],
+      "notStored": "本对象只在「贷项」上设单一 creditState 字段（pending / approved，老板审批生效）；实物接收与现金退款仍由关联对象各自承接状态（StockItem.availability 与 Refund）。不设整单总状态，是因为三者进度独立（03 §7「退货实物可待检，现金退款可稍后；二者独立」），一个总状态会掩盖差异。",
+      "revision": "2026-09-17 T01-rev1 补录。T01b 曾误将其登记为「对象层遗漏 / high」；经核对 04 §2 字段列实无状态字段、三个状态由关联对象承接后更正为规格未定义（贷项一项仍待决）。2026-09-21 E09 把贷项一项落地：tables 由 [] 补 sale_returns，新增 creditState 字段（CreditState 枚举 pending/approved）。"
+    },
+
+    "Refund": {
+      "tables": ["sale_refunds"],
+      "desc": "现金退款",
+      "fields": {
+        "originalOrderId": { "type": "id", "nullable": false },
+        "returnRef": { "type": "id", "nullable": true },
+        "adjustmentRef": { "type": "id", "nullable": true },
+        "amountCents": { "type": "cents", "nullable": false },
+        "method": { "type": "enum", "enumRef": "CashMethod", "nullable": false },
+        "occurredAt": { "type": "timestamp", "nullable": false },
+        "reason": { "type": "string", "nullable": false }
+      },
+      "rules": [
+        "可现金退款上限为负销售余额与该单可退现金净额中的较小值。",
+        "退款本身不触发入库；不自动处理实物。",
+        "真实退款与纠正误录使用不同动作类型，界面分别标记。"
+      ]
+    },
+
+    "CashEntry": {
+      "tables": ["order_payments", "cash_entries"],
+      "desc": "资金流水",
+      "fields": {
+        "direction": { "type": "enum", "enumRef": "CashDirection", "nullable": false },
+        "amountCents": { "type": "cents", "nullable": false },
+        "method": { "type": "enum", "enumRef": "CashMethod", "nullable": false },
+        "counterpartyRef": { "type": "object", "nullable": false },
+        "counterpartyKind": { "type": "enum", "enumRef": "CounterpartyKind", "nullable": false },
+        "allocation": { "type": "object", "nullable": false, "desc": "订单 / 采购 / 回收 / 维修分摊" },
+        "purpose": { "type": "enum", "enumRef": "PaymentPurpose", "nullable": false },
+        "occurredAt": { "type": "timestamp", "nullable": false },
+        "verifiedAt": { "type": "timestamp", "nullable": true },
+        "verificationState": { "type": "enum", "enumRef": "CashVerificationState", "nullable": false },
+        "reversalOf": { "type": "id", "nullable": true }
+      },
+      "rules": [
+        "一笔实际资金一条记录，不能又在账本手录一份。",
+        "登记微信收款只表示人工记录，可另标待对账 / 已核对。",
+        "已完成的资金记录不直接改写或删除，使用关联冲销。"
+      ]
+    },
+
+    "Offset": {
+      "tables": ["offsets"],
+      "desc": "置换折抵（非现金事件）",
+      "fields": {
+        "tradeInId": { "type": "id", "nullable": false },
+        "saleOrderId": { "type": "id", "nullable": false },
+        "recoveryId": { "type": "id", "nullable": false },
+        "amountCents": { "type": "cents", "nullable": false },
+        "state": { "type": "enum", "enumRef": "OffsetState", "nullable": false },
+        "reversalOf": { "type": "id", "nullable": true }
+      },
+      "rules": [
+        "首版折抵金额 = min(销售当前正余额, 回收当前正应付)。",
+        "一次折抵同时冲减双方义务，并关联同一 tradeInId；不可生成虚构现金收 / 付。",
+        "同一回收应付可部分折抵但累计不得超额；撤销折抵不自动归还实物。"
+      ]
+    },
+
+    "Attachment": {
+      "tables": ["attachments"],
+      "desc": "附件（照片 / 文件 / 生成单据）",
+      "fields": {
+        "ownerEntityRef": { "type": "object", "nullable": false },
+        "purpose": { "type": "enum", "enumRef": "AttachmentPurpose", "nullable": false },
+        "objectKey": { "type": "string", "nullable": false },
+        "contentType": { "type": "string", "nullable": false },
+        "byteSize": { "type": "int", "nullable": false },
+        "width": { "type": "int", "nullable": true },
+        "height": { "type": "int", "nullable": true },
+        "sha256": { "type": "string", "nullable": true },
+        "uploadState": { "type": "enum", "enumRef": "AttachmentUploadState", "nullable": false },
+        "visibility": { "type": "enum", "enumRef": "AttachmentVisibility", "nullable": false }
+      },
+      "rules": [
+        "业务记录只关联上传完成的文件；不存公开永久访问地址。",
+        "孤立上传需明确保留期与引用检查。",
+        "单张客户端压缩后目标不超过 2MB、每单常规不超过 12 张（产品预算，不是平台上限）。"
+      ]
+    },
+
+    "Operation": {
+      "tables": [],
+      "desc": "关键动作的幂等与结果查询记录",
+      "fields": {
+        "requestId": { "type": "string", "nullable": false },
+        "actorId": { "type": "id", "nullable": false },
+        "storeId": { "type": "id", "nullable": false },
+        "action": { "type": "enum", "enumRef": "ActionCode", "nullable": false },
+        "entityRef": { "type": "object", "nullable": false },
+        "payloadHash": { "type": "string", "nullable": false },
+        "status": { "type": "enum", "enumRef": "OperationStatus", "nullable": false },
+        "resultRef": { "type": "id", "nullable": true },
+        "resultVersion": { "type": "int", "nullable": true },
+        "errorCode": { "type": "string", "nullable": true }
+      },
+      "rules": [
+        "幂等键按门店 + requestId 唯一，记录动作、身份与载荷摘要。",
+        "同 ID 同载荷返回原结果；同 ID 改载荷报冲突。",
+        "不是客户端内存标志；成功凭据随单据保留，不能短时间过期后再次执行原动作。"
+      ]
+    },
+
+    "AuditEvent": {
+      "tables": ["audit_logs"],
+      "desc": "审计事件",
+      "fields": {
+        "entityRef": { "type": "object", "nullable": false },
+        "action": { "type": "string", "nullable": false },
+        "beforeSummary": { "type": "object", "nullable": true },
+        "afterSummary": { "type": "object", "nullable": true },
+        "reason": { "type": "string", "nullable": true },
+        "actorId": { "type": "id", "nullable": false },
+        "occurredAt": { "type": "timestamp", "nullable": false }
+      },
+      "rules": ["脱敏，不能写 token、客户密码或原始大请求。"]
+    },
+
+    "WechatIdentity": {
+      "tables": ["wechat_identity_bindings"],
+      "desc": "微信身份绑定",
+      "fields": {
+        "appId": { "type": "string", "nullable": false },
+        "openid": { "type": "string", "nullable": false },
+        "memberId": { "type": "id", "nullable": false },
+        "sessionVersion": { "type": "int", "nullable": false },
+        "revokedAt": { "type": "timestamp", "nullable": true },
+        "lastSeenAt": { "type": "timestamp", "nullable": true }
+      },
+      "rules": [
+        "微信标识绑定内部成员，不自动拥有门店权限。",
+        "openid 不是业务 token；AppSecret 与 session_key 仅后端持有，不下发、不写日志。",
+        "绑定码短期有效、只可使用一次，数据库存摘要并限尝试次数。"
+      ]
+    },
+
+    "Session": {
+      "tables": [],
+      "desc": "登录会话",
+      "fields": {
+        "memberId": { "type": "id", "nullable": false },
+        "sessionVersion": { "type": "int", "nullable": false },
+        "issuedAt": { "type": "timestamp", "nullable": false },
+        "expiresAt": { "type": "timestamp", "nullable": false },
+        "revokedAt": { "type": "timestamp", "nullable": true }
+      },
+      "rules": ["撤权后两个端的旧会话都须失效；复用现有 token_version 机制前先测试适配。"]
+    },
+
+    "CustomerIdentity": {
+      "tables": ["customer_wechat_identities"],
+      "desc": "顾客微信身份（与内部成员的 WechatIdentity 是两条独立链路）",
+      "fields": {
+        "appId": { "type": "string", "nullable": false },
+        "openid": { "type": "string", "nullable": false },
+        "storeId": { "type": "id", "nullable": false },
+        "customerId": { "type": "id", "nullable": true, "desc": "认领成功后指向 customers.id；未认领为 null" },
+        "claimStatus": { "type": "enum", "enumRef": "CustomerClaimStatus", "nullable": false },
+        "claimMethod": { "type": "enum", "enumRef": "CustomerClaimMethod", "nullable": true },
+        "sessionVersion": { "type": "int", "nullable": false, "desc": "递增即让该顾客的全部旧会话失效" },
+        "boundAt": { "type": "timestamp", "nullable": false },
+        "revokedAt": { "type": "timestamp", "nullable": true },
+        "lastSeenAt": { "type": "timestamp", "nullable": true }
+      },
+      "rules": [
+        "顾客不是内部成员：本对象不得携带 memberId，也不得据此获得任何门店权限。",
+        "openid 是相对小程序的标识，不跨 appId；AppSecret 与 session_key 仅后端持有，不下发、不写日志。",
+        "旧客户档案的认领禁止仅凭顾客自填手机号；只接受微信验证手机号（wechat-phone）或店员确认（clerk-confirm）。",
+        "当前为单店绑定：同一 (appId, openid) 只存在一条记录。多门店需求出现时须升契约版本。"
+      ]
+    },
+
+    "CustomerSession": {
+      "tables": [],
+      "desc": "顾客登录会话（与员工 Session 分离）",
+      "fields": {
+        "customerId": { "type": "id", "nullable": false },
+        "identityId": { "type": "id", "nullable": false, "desc": "指向 CustomerIdentity；身份解绑即会话失效" },
+        "sessionVersion": { "type": "int", "nullable": false },
+        "issuedAt": { "type": "timestamp", "nullable": false },
+        "expiresAt": { "type": "timestamp", "nullable": false, "desc": "默认 30 天，活动即续期" },
+        "revokedAt": { "type": "timestamp", "nullable": true }
+      },
+      "rules": [
+        "载荷只含顾客标识，不含 memberId；员工 token 与顾客 token 不得互相通过校验。",
+        "默认有效期 30 天，活动即续期；会话版本递增或身份撤销后旧会话全部失效。",
+        "未登录顾客只可读匿名公开范围，私人数据一律 401。"
+      ]
+    },
+
+    "TaskReadModel": {
+      "tables": [],
+      "desc": "待办读模型，由业务单据派生，不另存一份可随意修改的任务状态",
+      "fields": {
+        "taskId": { "type": "id", "nullable": false },
+        "entityType": { "type": "enum", "enumRef": "EntityType", "nullable": false },
+        "entityId": { "type": "id", "nullable": false },
+        "entityVersion": { "type": "int", "nullable": false },
+        "category": { "type": "enum", "enumRef": "TaskCategory", "nullable": false },
+        "title": { "type": "string", "nullable": false },
+        "customerDisplay": { "type": "string", "nullable": true },
+        "deviceSummary": { "type": "string", "nullable": true },
+        "photoKind": { "type": "enum", "enumRef": "AttachmentPurpose", "nullable": true },
+        "photoUrl": { "type": "string", "nullable": true },
+        "dueAt": { "type": "timestamp", "nullable": true },
+        "deadlineText": { "type": "string", "nullable": true },
+        "blockerSummary": { "type": "string", "nullable": true },
+        "amountSummary": { "type": "object", "nullable": true },
+        "primaryAction": { "type": "object", "nullable": false },
+        "detailTarget": { "type": "string", "nullable": false }
+      },
+      "rules": [
+        "主键为 entityType + entityId；一个销售单 / 工单 / 回收单默认只有一条当前主待办。",
+        "卡点优先于后续动作：缺 SSD 的单归「缺货」，不同时作为「可交付」重复出现。",
+        "维修待客户确认仍可查到，但主动作是「查看方案 / 记录确认」，不伪装为可开工。",
+        "未知交期排在同组已知交期之后，显示「待安排」。",
+        "排序：逾期 → 今天到期 → 当前可执行且等待最久 → 未来事项。"
+      ]
+    }
+  },
+
+  "workbenchMetrics": {
+    "pendingDelivery": {
+      "label": "待交机",
+      "definition": "未取消且未交付、实物齐备、到交付阶段的销售单数",
+      "target": "对应销售待办"
+    },
+    "stockShortage": {
+      "label": "缺货订单",
+      "definition": "未取消且未交付、至少一行未满足实际预留数量的销售单数",
+      "target": "缺件与到货入口"
+    },
+    "servicePending": {
+      "label": "维修待办",
+      "definition": "未归还、未关闭的维修工单数，含待客户 / 返厂中的跟进事项",
+      "target": "维修列表"
+    },
+    "receivable": {
+      "label": "待收款",
+      "definition": "已确认销售及已确认维修收费的正余额合计，不含草稿、初估、回收应付",
+      "target": "应收明细，可含已交付赊账单"
+    },
+    "taskTotal": {
+      "label": "待办总数",
+      "definition": "当前作用范围内的不同主待办条数",
+      "target": "全部事项"
+    },
+    "notes": [
+      "统计默认覆盖本店未结事项；「今天」是工作入口，不意味着只统计今天新建。",
+      "分类数字不要求相加等于待办总数；待收款可以与缺货交付重合。",
+      "一个已交付但欠款的订单继续成为「待收款」事项。",
+      "各数字含 filterTarget，点击后可跳到对应过滤视图。"
+    ]
+  },
+  "revisions": [
+    {
+      "rev": "BE02-rev1",
+      "date": "2026-09-25",
+      "summary": "Attachment 描述扩展为支持生成单据文件；字段结构沿用现有 Attachment。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "不新增或改写 Attachment 字段，只记录已有附件对象承载服务端生成文件。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    },
+    {
+      "rev": "T01-rev1",
+      "date": "2026-09-17",
+      "summary": "更正状态机缺口登记：Purchase 移出 gaps（在途为派生值，非存储状态）；ReturnRecord 重述为规格未定义并拆出「贷项状态」未决项；全部缺口补 specBasis 与 origin 分类。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "未变更任何字段名、类型、枚举取值、动作编号或错误码，规范性表面零变化；仅新增非规范性注解。故按 conventions.compatibility.versioning 的意图不提升版本，留此修订痕迹备查；是否提版由项目负责人裁定。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    },
+    {
+      "rev": "B30-rev1",
+      "date": "2026-09-22",
+      "summary": "B30 整备与上架落地所需的两处契约补齐：① enums.json 新增 ConditionGrade（五档逐件成色）与 WarrantyTerm（质保月数）—— B30 的 inputs 一直引用这两个名字，但二者既不存在也未登记在 pendingEnums，属契约内部不一致；② StockItem 补 5 个上架门槛字段（conditionGrade / salePriceCents / disclosureNote / dataDisposed / warrantyTerm），并给 RefurbishmentCost 登记支撑表 refurbishment_costs（此前 tables 为空数组）。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "只新增、不改写：不动任何既有字段名、类型、枚举取值、动作编号或错误码，仅补齐 B30（本就已是 frozen 正式动作）在契约里悬空引用的枚举与字段。按 conventions.compatibility.versioning 的意图不提升版本；是否提版由项目负责人裁定。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    },
+    {
+      "rev": "MP17-rev1",
+      "date": "2026-09-23",
+      "summary": "新增 CustomerIdentity（顾客微信身份，tables 取 customer_wechat_identities，**不含 memberId**）与 CustomerSession（顾客登录会话，无表）。二者与既有的 WechatIdentity / Session 是两条独立链路 —— 后者绑 store_members 内部成员。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "只新增对象，不改写任何既有对象的字段名、类型、枚举取值与 nullable。按 conventions.compatibility.versioning 的意图不提升版本；是否提版由项目负责人裁定（原方案只定义「微信标识绑定内部成员」，顾客主体属新定义）。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    },
+    {
+      "rev": "E04-customer-source-rev1",
+      "date": "2026-09-25",
+      "summary": "Customer 新增可选 sourceChannel 和 CustomerSourceChannel 枚举，用于员工记录客户来源；未记录来源不会阻止建档或报价。",
+      "contractVersion": "v1（不变）",
+      "versionNote": "仅增加可选字段及枚举；已有客户默认未记录，不改变客户引用与报价输入。",
+      "verification": "node contracts/tools/validate-contracts.mjs"
+    }
+  ]}

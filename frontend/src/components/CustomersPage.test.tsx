@@ -38,6 +38,7 @@ const rows = [
     orderCount: 0, totalCents: 0, receivedCents: 0,
   },
 ]
+const customerPage = (items: typeof rows, nextCursor: string | null = null) => ({ items, nextCursor })
 
 const detail = {
   ...rows[0],
@@ -58,7 +59,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  vi.mocked(api.fetchCustomers).mockResolvedValue(rows)
+  vi.mocked(api.fetchCustomers).mockResolvedValue(customerPage(rows))
   vi.mocked(api.fetchCustomer).mockResolvedValue(detail)
   vi.mocked(api.createCustomer).mockResolvedValue({ ok: true, id: 3 })
   vi.mocked(api.updateCustomer).mockResolvedValue({ ok: true })
@@ -79,11 +80,11 @@ describe('客户台账列表', () => {
     expect(screen.getByText('¥4,680.00')).toBeTruthy()
     expect(screen.getByText('¥3,000.00')).toBeTruthy()
     expect(screen.getAllByText('未留电话').length).toBeGreaterThan(0)
-    expect(screen.getByText('共 2 位客户')).toBeTruthy()
+    expect(screen.getByText('已加载 2 位客户')).toBeTruthy()
   })
 
   it('没有客户时给出下一步该做什么，而不是空白', async () => {
-    vi.mocked(api.fetchCustomers).mockResolvedValue([])
+    vi.mocked(api.fetchCustomers).mockResolvedValue(customerPage([]))
     renderPage()
     expect(await screen.findByText('还没有客户档案')).toBeTruthy()
     expect(screen.getByText(/点右上角「新增客户」建第一份档案/)).toBeTruthy()
@@ -102,7 +103,19 @@ describe('客户台账列表', () => {
     await screen.findByText('林建国')
     fireEvent.change(screen.getByLabelText('搜索客户'), { target: { value: '陈师傅' } })
     fireEvent.click(screen.getByRole('button', { name: '搜索' }))
-    await waitFor(() => expect(api.fetchCustomers).toHaveBeenLastCalledWith('陈师傅'))
+    await waitFor(() => expect(api.fetchCustomers).toHaveBeenLastCalledWith('陈师傅', undefined))
+  })
+
+  it('客户超过一页时按游标追加下一页', async () => {
+    const nextCustomer = { ...rows[0], id: 3, name: '下一页客户' }
+    vi.mocked(api.fetchCustomers)
+      .mockResolvedValueOnce(customerPage(rows, '2026-09-10 10:00:00|2'))
+      .mockResolvedValueOnce(customerPage([nextCustomer]))
+    renderPage()
+    expect(await screen.findByText('林建国')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '加载更多客户' }))
+    expect(await screen.findByText('下一页客户')).toBeTruthy()
+    expect(api.fetchCustomers).toHaveBeenLastCalledWith('', '2026-09-10 10:00:00|2')
   })
 })
 

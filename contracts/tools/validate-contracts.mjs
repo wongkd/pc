@@ -2,7 +2,7 @@
 /**
  * 契约自洽性校验（T01a + T01b + T01-rev1）
  *
- * 用途：验证 contracts/v1.1 下的协议文件彼此自洽，并且与 backend/migrations 的实际表结构、
+ * 用途：验证 contracts/v1.2 下的协议文件彼此自洽，并且与 backend/migrations 的实际表结构、
  *       backend/src/index.ts 的实际权限守卫、docs/plans 的规格原文对得上。
  * 运行：node contracts/tools/validate-contracts.mjs
  * 退出码：0 = 全部通过；1 = 存在失败项
@@ -18,7 +18,7 @@ import { buildArtifacts, HEADER as GENERATED_HEADER, GENERATE_COMMAND } from './
 
 const here = dirname(fileURLToPath(import.meta.url))
 const contractsDir = resolve(here, '..')
-const v1Dir = join(contractsDir, 'v1.1')
+const v1Dir = join(contractsDir, 'v1.2')
 const repoRoot = resolve(contractsDir, '..')
 const migrationsDir = join(repoRoot, 'backend', 'migrations')
 
@@ -43,7 +43,7 @@ function loadJson(file) {
   try {
     return JSON.parse(raw)
   } catch (error) {
-    failures.push(`JSON 解析失败：v1.1/${file} —— ${error.message}`)
+    failures.push(`JSON 解析失败：v1.2/${file} —— ${error.message}`)
     return null
   }
 }
@@ -81,7 +81,7 @@ const docs = {
   'legacy-mapping.json': legacyDoc
 }
 for (const [file, doc] of Object.entries(docs)) {
-  check(`${file} 声明 contractVersion`, doc.contractVersion === 'v1.1', `实际为 ${doc.contractVersion}`)
+  check(`${file} 声明 contractVersion`, doc.contractVersion === 'v1.2', `实际为 ${doc.contractVersion}`)
   check(`${file} 标记冻结来源`, typeof doc.frozenBy === 'string' && doc.frozenBy.length > 0)
 }
 
@@ -254,7 +254,7 @@ for (const objName of OBJECT_NAMES) {
 }
 
 // ── 10. 动作目录与权限映射（T01b）──────────────────────────────────────
-check('actions.json 声明 contractVersion', actionsDoc.contractVersion === 'v1.1', `实际 ${actionsDoc.contractVersion}`)
+check('actions.json 声明 contractVersion', actionsDoc.contractVersion === 'v1.2', `实际 ${actionsDoc.contractVersion}`)
 check('actions.json 标记冻结来源', typeof actionsDoc.frozenBy === 'string' && actionsDoc.frozenBy.length > 0)
 
 const permCodes = new Set((actionsDoc.permissionModel?.codes ?? []).map((c) => c.code))
@@ -536,17 +536,17 @@ if (specLines) {
 const fixturesPath = join(v1Dir, 'fixtures.json')
 let fixturesDoc = null
 if (!existsSync(fixturesPath)) {
-  failures.push('contracts/v1.1/fixtures.json 不存在 —— T01c 的样本与算例未产出')
+  failures.push('contracts/v1.2/fixtures.json 不存在 —— T01c 的样本与算例未产出')
 } else {
   try {
     fixturesDoc = JSON.parse(readFileSync(fixturesPath, 'utf8'))
   } catch (error) {
-    failures.push(`JSON 解析失败：v1.1/fixtures.json —— ${error.message}`)
+    failures.push(`JSON 解析失败：v1.2/fixtures.json —— ${error.message}`)
   }
 }
 
 let fixtureCheckCount = 0
-if (fixturesDoc) {  check('fixtures.json 声明 contractVersion', fixturesDoc.contractVersion === 'v1.1', `实际为 ${fixturesDoc.contractVersion}`)
+if (fixturesDoc) {  check('fixtures.json 声明 contractVersion', fixturesDoc.contractVersion === 'v1.2', `实际为 ${fixturesDoc.contractVersion}`)
   check('fixtures.json 标记冻结来源', typeof fixturesDoc.frozenBy === 'string' && fixturesDoc.frozenBy.length > 0)
 
   // 12.1 子结构定义
@@ -1041,7 +1041,7 @@ if (fixturesDoc) {  check('fixtures.json 声明 contractVersion', fixturesDoc.co
       check(`生成物 ${a.file} 声明来源`, Array.isArray(a.from) && a.from.length > 0)
       for (const src of a.from ?? []) {
         check(`生成物 ${a.file} 的来源 ${src} 存在`,
-          src === 'contracts/v1.1 全部 JSON' || existsSync(join(v1Dir, src)), `契约中无 ${src}`)
+          src === 'contracts/v1.2 全部 JSON' || existsSync(join(v1Dir, src)), `契约中无 ${src}`)
       }
     }
     check('声明生成物禁止手工编辑', typeof dto.forbiddenManualEdit === 'string' && dto.forbiddenManualEdit.length > 0)
@@ -1086,7 +1086,7 @@ if (fixturesDoc) {  check('fixtures.json 声明 contractVersion', fixturesDoc.co
 }
 
 // ── 输出 ────────────────────────────────────────────────────────────────
-console.log('契约自洽性校验 · contractVersion v1.1')
+console.log('契约自洽性校验 · contractVersion v1.2')
 console.log('─'.repeat(64))
 console.log(`枚举 ${ENUM_NAMES.length} 个 / 取值 ${enumValueCount} 项`)
 console.log(`对象 ${OBJECT_NAMES.length} 个 / 字段 ${fieldCount} 个（其中枚举引用 ${enumRefCount} 个）`)

@@ -220,6 +220,33 @@ test('搜索按姓名或手机号命中，空结果返回空数组', async () =>
   assert.deepEqual(none.body.items, [])
 })
 
+test('客户列表游标分页不重不漏，订单汇总走正确的门店手机号口径', async () => {
+  const prefix = `游标回归-${Date.now()}`
+  const names = [`${prefix}-甲`, `${prefix}-乙`, `${prefix}-丙`]
+  for (let i = 0; i < names.length; i += 1) {
+    const result = await json(await a.post('/api/customers', {
+      name: names[i],
+      phone: i === 0 ? '13990000001' : '',
+    }))
+    assert.equal(result.status, 201)
+  }
+  await seedOrder({ orderNo: `${prefix}-A`, phone: '13990000001', totalCents: 12500, receivedCents: 5000 })
+  await seedOrder({ storeId: 2, orderNo: `${prefix}-B`, phone: '13990000001', totalCents: 999999 })
+
+  const first = await json(await a.get(`/api/customers?q=${encodeURIComponent(prefix)}&limit=2`))
+  assert.equal(first.body.items.length, 2)
+  assert.ok(first.body.nextCursor)
+  const second = await json(await a.get(`/api/customers?q=${encodeURIComponent(prefix)}&limit=2&cursor=${encodeURIComponent(first.body.nextCursor)}`))
+  assert.equal(second.body.items.length, 1)
+  assert.equal(second.body.nextCursor, null)
+  assert.equal(new Set([...first.body.items, ...second.body.items].map((row) => row.id)).size, 3)
+
+  const orderSummary = await json(await a.get(`/api/customers?q=${encodeURIComponent(names[0])}`))
+  assert.equal(orderSummary.body.items[0].orderCount, 1)
+  assert.equal(orderSummary.body.items[0].totalCents, 12500)
+  assert.equal(orderSummary.body.items[0].receivedCents, 5000)
+})
+
 test('写动作留下审计记录，可追溯到操作人与客户', async () => {
   const created = await json(await a.post('/api/customers', { name: '审计客户', phone: '13400000004' }))
   await a.post(`/api/customers/${created.body.id}/devices`, { label: '审计设备' })

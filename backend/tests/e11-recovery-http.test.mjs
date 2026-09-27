@@ -310,6 +310,11 @@ test('B28 取得所有权：逐件成本之和必须等于最终价，收购后�
   assert.equal(item.cost_known, 1)
   assert.equal(item.acquisition_ref, orderId)
 
+  const stockDetail = await json(await a.get(`/api/v2/inventory/items/${encodeURIComponent(stockItemId)}`))
+  assert.equal(stockDetail.status, 200, JSON.stringify(stockDetail.body))
+  assert.equal(stockDetail.body.data.sourceRecord.kind, 'recovery_order')
+  assert.equal(stockDetail.body.data.sourceRecord.recordId, orderId, '回收取得的实物可回查原回收单')
+
   const movement = await db.prepare(
     `SELECT source, to_bucket, cost_cents FROM inventory_movements WHERE store_id = 1 AND stock_item_id = ?`,
   ).bind(stockItemId).first()
@@ -464,6 +469,12 @@ test('B44 拆件：守恒校验、源件退役、产出件进待检、损耗单�
   assert.equal(outputs.results[0].availability, 'quarantine')
   assert.equal(outputs.results[0].acquisition_cost_cents, 40_000)
   assert.equal(outputs.results[1].acquisition_cost_cents, 50_000)
+  for (const output of outputs.results) {
+    const outputDetail = await json(await a.get(`/api/v2/inventory/items/${encodeURIComponent(output.id)}`))
+    assert.equal(outputDetail.status, 200, JSON.stringify(outputDetail.body))
+    assert.equal(outputDetail.body.data.sourceRecord.kind, 'recovery_order')
+    assert.equal(outputDetail.body.data.sourceRecord.recordId, orderId, '拆件产出可回查源回收单')
+  }
 
   // 损耗：单列报废流水，不建实物。
   const scrap = await db.prepare(

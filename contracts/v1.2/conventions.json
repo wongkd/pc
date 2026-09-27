@@ -1,0 +1,165 @@
+{
+  "contractVersion": "v1.2",
+  "frozenBy": "T26a",
+  "frozenAt": "2026-09-26",
+  "status": "frozen",
+  "sources": [
+    "docs/plans/2026-09-17-web-wechat-plan/03-domain-rules.md",
+    "docs/plans/2026-09-17-web-wechat-plan/04-data-and-api.md",
+    "docs/plans/2026-09-17-web-wechat-plan/06-acceptance-and-handoff.md"
+  ],
+  "scopeNote": "本文件冻结跨端通用约定。动作路径与请求载荷由 T01b 冻结，虚构样本与生成物由 T01c 冻结；本文件不包含二者。",
+
+  "api": {
+    "prefix": "/api/v2",
+    "legacyPrefix": "/api",
+    "legacyRule": "旧 /api 读写保留到兼容任务完成；同一张新订单不得同时使用旧收款接口与新结算接口记账；新单禁止通过旧 /status 类入口绕过库存、检查与收款闸门。",
+    "pathFreeze": "本文件不冻结具体路径；T01b 冻结后路径才可被两端引用。"
+  },
+
+  "types": {
+    "id": "不透明标识字符串，客户端不得解析、递增假设或据此推断数据库主键",
+    "string": "UTF-8 文本",
+    "int": "整数",
+    "cents": "整数分，人民币；禁止浮点",
+    "bool": "布尔",
+    "enum": "取值必须来自 enums.json 对应枚举",
+    "timestamp": "ISO 8601 UTC 瞬时，带 Z 后缀",
+    "date": "YYYY-MM-DD 纯日历日",
+    "object": "嵌套对象，结构由本契约其它条目定义",
+    "array": "数组",
+    "json": "结构未由契约固定，仅用于历史快照归档字段"
+  },
+
+  "naming": {
+    "protocol": "camelCase",
+    "database": "snake_case",
+    "rule": "两端不得直接消费数据库行，字段名转换由适配层完成。",
+    "moneySuffix": "Cents",
+    "instantSuffix": "At",
+    "dateSuffix": "Date"
+  },
+
+  "id": {
+    "wireType": "string",
+    "opaque": true,
+    "dbType": "INTEGER PRIMARY KEY AUTOINCREMENT（现有表）",
+    "policy": "新表沿用整数主键，协议层序列化为字符串；跨端传递一律为 string。单号（如 orderNo）是业务展示值，不是主键。"
+  },
+
+  "money": {
+    "unit": "cent",
+    "currency": "CNY",
+    "symbol": "¥",
+    "type": "int",
+    "floatForbidden": true,
+    "unknownCost": "未知成本为 null 且配 costKnown=false，禁止用 0 代替",
+    "rounding": "仅在明确定义的切分点四舍五入到分；总额必须守恒，余分由末位承担",
+    "display": "界面按元显示，运算与传输只用分",
+    "serverAuthority": "金额结果以服务端重算为准"
+  },
+
+  "quantity": {
+    "balanceType": "int",
+    "balanceRange": "非负",
+    "movementType": "int",
+    "movementRange": "可正可负，表示增量",
+    "zeroPolicy": "0 是有效余额，不是未知；未知数量不得以 0 冒充"
+  },
+
+  "version": {
+    "type": "int",
+    "range": "非负",
+    "policy": "每次有效写入 +1；写动作必须携带 expectedVersion，不匹配返回 409 VERSION_CONFLICT",
+    "authority": "版本前提由服务端与数据库边界校验，客户端提前比对只用于提示"
+  },
+
+  "time": {
+    "instantFormat": "ISO 8601 UTC，形如 2026-09-17T12:00:00Z",
+    "calendarDateFormat": "YYYY-MM-DD",
+    "storageRule": "SQLite TEXT 存 UTC；禁止 datetime('now','localtime') 参与业务判定",
+    "businessTimezone": "Asia/Shanghai",
+    "businessDay": "门店日历日 00:00–24:00（Asia/Shanghai）",
+    "separateFacts": ["dueAt 预约 / 交期", "occurredAt 实际业务时间", "recordedAt 创建记录时间", "serverTime 服务器响应时间"],
+    "ordering": "服务器时间决定版本与事件顺序"
+  },
+
+  "nullable": {
+    "rule": "每个字段显式声明 nullable；null 表示未知或不适用，禁止用 0、''、'0' 代替未知",
+    "unknownCost": "costKnown=false 时 costCents 必须为 null",
+    "missingRelation": "可选关联写显式 null，不用 0 表示「无」",
+    "emptyVsUnknown": "空字符串表示「确实为空」，与 unknown 区分"
+  },
+
+  "pagination": {
+    "style": "cursor",
+    "cursorType": "string",
+    "cursorOpaque": true,
+    "defaultLimit": 20,
+    "maxLimit": 100,
+    "ordering": "统一稳定排序：逾期 → 今天到期 → 可执行且等待最久 → 未来事项；同组按到期时间、创建时间、ID",
+    "filtersEcho": "响应 filters 回显本次实际生效条件",
+    "snapshot": "工作台读数据在同一读取快照形成，响应含 generatedAt；分页不得改变汇总口径",
+    "noTotalByDefault": "total 仅在界面需要展示总数时返回，避免全表计数"
+  },
+
+  "envelope": {
+    "success": {
+      "data": "对象、数组或列表包装",
+      "meta": ["requestId", "serverTime", "contractVersion"]
+    },
+    "list": ["items", "nextCursor", "hasMore", "total", "filters"],
+    "error": {
+      "error": ["code", "message", "fieldErrors", "currentVersion", "retryable", "operationId"],
+      "meta": ["requestId", "serverTime", "contractVersion"],
+      "messageRule": "message 是中文说明，仅用于展示；程序分支只能依据 code，不得匹配 message 文本"
+    },
+    "async": "资金 / 库存异步查询期间返回 202 + pending，不得先显示完成；首版业务尽量同步事务完成"
+  },
+
+  "write": {
+    "required": ["requestId", "expectedVersion（已有实体时）", "业务字段"],
+    "requestIdOrigin": "客户端在用户确认一个动作时生成并保留；结果未知时以同 ID、同载荷重发",
+    "idempotencyHeader": "requestId 可同时放 Idempotency-Key 头；两处都存在时必须相同",
+    "identityRule": "门店与操作人由会话取得；客户端传入的 storeId / actorId 被忽略或拒绝",
+    "serverRecalc": "金额结果全部服务端重算；serverCalculated 汇总不接受客户端覆盖",
+    "successData": ["operationId", "entityId", "entityVersion", "state", "effects", "summary", "allowedActions"],
+    "effectIds": "effects 携带本次实际产生的 receipt / reservation / delivery / entry 等关联 ID"
+  },
+
+  "reading": {
+    "allowedActions": "每项含 code、label、enabled、blockers；blocker 含 code、message、targetField / targetPage，禁用原因必须可读",
+    "readIsNotAPromise": "GET 返回的许可不保证稍后 POST 成功；POST 仍读最新状态校验",
+    "noHiddenSecurity": "内部成本、毛利、客户隐私不得仅靠前端隐藏；无权 API 不返回字段"
+  },
+
+  "compatibility": {
+    "legacyUnits": {
+      "hardware.price": "REAL 元 → defaultSalePriceCents 分，由专用适配器转换",
+      "quotes.data.unitPrice": "元 → unitPriceCents 分",
+      "rule": "非法、超精度、缺失一律标异常；不得让同一字段随调用方变化单位",
+      "test": "旧元→分适配需独立测试（T07a 执行，本契约提供依据）"
+    },
+    "legacyStatusBypass": "旧直接改履约状态的写入口，对迁入 v2 的单据必须禁止或改为调用同一动作服务",
+    "legacyReadOnly": "历史单默认只读；需继续处理的旧单先映射到新规则、核对期初应收 / 库存 / 预留，再开放写入",
+    "legacyTimestamp": "旧表 datetime('now') 为 UTC 文本，与本契约一致，可直接沿用",
+    "versioning": "契约变更必须提升 contractVersion 并新增版本目录；已冻结文件不原地改写",
+    "generated": "T01c 起端内枚举与 DTO 由本目录生成，禁止手改生成物；若共享 TypeScript 无法被小程序直接编译，改为单向生成到端内目录",
+    "doubleWrite": "迁移期不得让新旧两套表在同一动作中重复累计；重复累计风险见 legacy-mapping.json 的 risk 字段"
+  },
+
+  "authorization": {
+    "tripleCheck": "服务端按 action + permission + entityState 三重校验",
+    "clientRoleDistrust": "不直接相信客户端角色名",
+    "noWidening": "旧宽权限不得自动获得退款、欠款、折抵等新能力",
+    "permissionMappingOwner": "旧权限 → 新 action 映射由 T01b 冻结"
+  },
+
+  "forbiddenInventing": [
+    "负库存",
+    "自动质保判定",
+    "自动超收或静默赊账",
+    "把人工登记的微信 / 支付宝收款称为支付平台到账",
+    "用前端状态或假数据把失败包装成成功"
+  ]
+}

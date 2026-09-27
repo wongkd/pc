@@ -125,6 +125,6 @@ describe('标签表（两端必须一致，由跨端门禁比对）', () => {
     expect(LOCATION_LABELS).toEqual({ store: '店内', customer: '客户处', external: '外部', supplier: '供应商处' })
     expect(TRACKING_LABELS).toEqual({ item: '逐件管理', quantity: '按数量' })
     expect(STATUS_LABELS).toEqual({ active: '启用', disabled: '已停用' })
-    expect(Object.keys(MOVEMENT_SOURCE_LABELS)).toHaveLength(16)
+    expect(Object.keys(MOVEMENT_SOURCE_LABELS)).toHaveLength(17)
   })
 })

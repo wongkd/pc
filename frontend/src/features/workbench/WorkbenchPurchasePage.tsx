@@ -13,9 +13,10 @@
  *     成本未知就留空，不写 0。
  *   · 退供只能从可取或待处理库存出发，已成交占用的件不能退 —— 那会拆掉别的订单的货。
  */
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { formatYuan } from './inventory-view'
+import './WorkbenchPurchasePage.css'
 import {
   createPurchase,
   cancelPurchase,
@@ -85,12 +86,35 @@ type View = 'list' | 'detail' | 'create'
 /** 新建采购时的一行。 */
 interface DraftLine {
   productRef: string
+  productLabel?: string
   qtyOrdered: string
   costYuan: string
 }
 
 export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }) {
-  const sourceOrderNo = new URLSearchParams(window.location.search).get('sourceOrderNo')?.trim() ?? ''
+  const searchParams = new URLSearchParams(window.location.search)
+  const sourceOrderNo = searchParams.get('sourceOrderNo')?.trim() ?? ''
+  const linkedPurchaseId = searchParams.get('purchaseId')?.trim() ?? ''
+  const prefilledProductRef = searchParams.get('productRef')?.trim() ?? ''
+  const prefilledProductLabel = searchParams.get('productLabel')?.trim() ?? ''
+  const requestedPrefillQty = Number(searchParams.get('qty'))
+  const prefilledQtyOrdered = Number.isInteger(requestedPrefillQty) && requestedPrefillQty > 0 ? String(requestedPrefillQty) : '1'
+  const prefilledCostYuan = searchParams.get('costYuan')?.trim() ?? ''
+  const prefilledReceiptCondition = searchParams.get('receiptCondition') === 'new' ? 'new' : 'used'
+  const prefilledReceiptSerials = (() => {
+    try {
+      const value = searchParams.get('receiptSerials')
+      if (!value) return []
+      const parsed: unknown = JSON.parse(value)
+      return Array.isArray(parsed) && parsed.length <= 50
+        ? parsed.map((item) => typeof item === 'string' ? item : '')
+        : []
+    } catch { return [] }
+  })()
+  const prefilledReceiptBatchRemark = searchParams.get('receiptBatchRemark') ?? ''
+  const prefilledReceiptItemRemark = searchParams.get('receiptItemRemark') ?? ''
+  const startNewPurchase = searchParams.get('new') === '1'
+  const openedLinkedRecord = useRef<string | null>(null)
   const [view, setView] = useState<View>('list')
   const [list, setList] = useState<PurchaseListPayload | null>(null)
   const [detail, setDetail] = useState<PurchaseDetailPayload | null>(null)
@@ -108,16 +132,17 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
   const [supplierName, setSupplierName] = useState('')
   const [supplierNote, setSupplierNote] = useState('')
   const [expectedAt, setExpectedAt] = useState('')
-  const [draftLines, setDraftLines] = useState<DraftLine[]>([{ productRef: '', qtyOrdered: '1', costYuan: '' }])
+  const [draftLines, setDraftLines] = useState<DraftLine[]>([{ productRef: prefilledProductRef, productLabel: prefilledProductLabel, qtyOrdered: prefilledQtyOrdered, costYuan: prefilledCostYuan }])
 
   // 到货
   const [receiptLineId, setReceiptLineId] = useState('')
   const [receiptQty, setReceiptQty] = useState('')
   const [receiptRejected, setReceiptRejected] = useState('0')
   const [receiptDisposition, setReceiptDisposition] = useState<InspectionDisposition>('available')
-  const [receiptItems, setReceiptItems] = useState('')
-  const [receiptBatchRemark, setReceiptBatchRemark] = useState('')
-  const [receiptItemRemark, setReceiptItemRemark] = useState('')
+  const [receiptCondition, setReceiptCondition] = useState<'new' | 'used'>(prefilledReceiptCondition)
+  const [receiptItems, setReceiptItems] = useState(prefilledReceiptSerials.join('\n'))
+  const [receiptBatchRemark, setReceiptBatchRemark] = useState(prefilledReceiptBatchRemark)
+  const [receiptItemRemark, setReceiptItemRemark] = useState(prefilledReceiptItemRemark)
 
   // 退供
   const [returnLineId, setReturnLineId] = useState('')
@@ -186,6 +211,22 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
     setDetailState('error')
     setActionError(result.message)
   }, [])
+
+  useEffect(() => {
+    if (!canView) return
+    let active = true
+    void Promise.resolve().then(() => {
+      if (!active) return
+      if (linkedPurchaseId && openedLinkedRecord.current !== linkedPurchaseId) {
+        openedLinkedRecord.current = linkedPurchaseId
+        void openDetail(linkedPurchaseId)
+      } else if (!linkedPurchaseId && canCreate && (startNewPurchase || prefilledProductRef) && openedLinkedRecord.current !== 'new-purchase') {
+        openedLinkedRecord.current = 'new-purchase'
+        setView('create')
+      }
+    })
+    return () => { active = false }
+  }, [canView, canCreate, linkedPurchaseId, startNewPurchase, prefilledProductRef, openDetail])
 
   // ⚠️ effect 里必须把 setState 放在 .then 回调中（`react-hooks/set-state-in-effect`）。
   useEffect(() => {
@@ -355,6 +396,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
           qtyReceived: qty,
           qtyRejected: rejected,
           disposition: receiptDisposition,
+          condition: receiptCondition,
           items,
           batchRemark: receiptBatchRemark.trim() || null,
         }],
@@ -369,7 +411,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
       await openDetail(detail.purchase.id)
       setNotice({ kind: 'ok', text: done.summary || '已登记到货' })
     }
-  }, [detail, receiptLineId, receiptQty, receiptRejected, receiptDisposition, receiptItems, receiptBatchRemark, receiptItemRemark, runWrite, loadList, scope, keyword, openDetail])
+  }, [detail, receiptLineId, receiptQty, receiptRejected, receiptDisposition, receiptCondition, receiptItems, receiptBatchRemark, receiptItemRemark, runWrite, loadList, scope, keyword, openDetail])
 
   const handleReturn = useCallback(async () => {
     if (!detail || !returnLineId) return
@@ -600,15 +642,26 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
           <fieldset>
             <legend>采购明细</legend>
             {draftLines.map((line, index) => (
-              <div className="wb-quote-line" key={index}>
-                <label className="wb-field">
-                  <span>商品</span>
-                  <input
-                    value={line.productRef}
-                    placeholder="商品 ID（库存里的商品编号）"
-                    onChange={(event) => setDraftLines((current) => current.map((row, i) => (i === index ? { ...row, productRef: event.target.value } : row)))}
-                  />
-                </label>
+              <div className={`wb-quote-line${line.productLabel ? ' wb-quote-line--prefilled-product' : ''}`} key={index}>
+                {line.productLabel ? (
+                  <div className="wb-field wb-purchase-product-field">
+                    <span>商品</span>
+                    <div className="wb-purchase-prefilled-product">
+                      <strong>{line.productLabel}</strong>
+                      <input type="hidden" value={line.productRef} readOnly />
+                      <button type="button" className="wb-btn" onClick={() => setDraftLines((current) => current.map((row, i) => (i === index ? { ...row, productRef: '', productLabel: undefined } : row)))}>更换商品</button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="wb-field">
+                    <span>商品</span>
+                    <input
+                      value={line.productRef}
+                      placeholder="商品 ID（库存里的商品编号）"
+                      onChange={(event) => setDraftLines((current) => current.map((row, i) => (i === index ? { ...row, productRef: event.target.value, productLabel: undefined } : row)))}
+                    />
+                  </label>
+                )}
                 <label className="wb-field">
                   <span>数量</span>
                   <input
@@ -737,6 +790,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
                           <li key={line.id}>
                             {line.nameSnapshot || `第 ${line.position + 1} 行`}：实到 {line.qtyReceived} / 拒收 {line.qtyRejected} ·{' '}
                             {DISPOSITION_LABELS[line.disposition as InspectionDisposition] ?? line.disposition}
+                            {line.stockItemId ? <a href={'/inventory?itemId=' + encodeURIComponent(line.stockItemId)}> · 在仓库查看实物</a> : null}
                             {line.assetCode ? ` · 编号 ${line.assetCode}` : ''}
                             {line.costKnown ? ` · 成本 ${formatYuan(line.unitCostCents ?? 0)}` : ' · 成本未知'}
                           </li>
@@ -834,6 +888,13 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
                         {Object.entries(DISPOSITION_LABELS).map(([value, label]) => (
                           <option key={value} value={value}>{label}</option>
                         ))}
+                      </select>
+                    </label>
+                    <label className="wb-field">
+                      <span>本次实到成色</span>
+                      <select value={receiptCondition} onChange={(event) => setReceiptCondition(event.target.value as 'new' | 'used')}>
+                        <option value="used">二手</option>
+                        <option value="new">新品</option>
                       </select>
                     </label>
                     <label className="wb-field">

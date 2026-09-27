@@ -60,6 +60,7 @@ import type {
   StockConditionValue,
   StockItemDetail,
 } from './inventory-api'
+import { InventoryPartsWorkspace } from './InventoryPartsWorkspace'
 import '../../styles/workbench.css'
 import './WorkbenchInventoryPage.css'
 
@@ -224,6 +225,7 @@ interface UnknownWrite {
 export interface WorkbenchInventoryPageProps {
   /** 会话权限码。只用于提前隐藏按钮，真正的判定在服务端（04 §3）。 */
   permissions?: string[]
+  onBackToParts?: () => void
 }
 
 function granted(permissions: string[], code: string, legacy: string[] = []): boolean {
@@ -231,7 +233,7 @@ function granted(permissions: string[], code: string, legacy: string[] = []): bo
   return legacy.some((item) => permissions.includes(item))
 }
 
-export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryPageProps) {
+export function WorkbenchInventoryToolsPage({ permissions = [], onBackToParts }: WorkbenchInventoryPageProps) {
   const canManageStore = permissions.includes('*') || permissions.includes('store/manage')
   const canEditProduct = granted(permissions, 'inventory/product-edit', ['library/edit'])
   const canRecordOpening = granted(permissions, 'inventory/opening')
@@ -973,6 +975,7 @@ export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryP
           <p className="wb-caption">报价不会改库存；成交先预留，确认交付后才出库。采购到货、收旧和拆件按来源入库。</p>
         </div>
         <div className="wb-page-head-actions">
+          {onBackToParts ? <button type="button" className="wb-btn" onClick={onBackToParts}>返回配件仓库</button> : null}
           {canEditProduct ? (
             <button type="button" className="wb-btn" onClick={openProductCreate}>新增商品</button>
           ) : null}
@@ -1797,6 +1800,15 @@ function SideBuckets({ items, canViewCost }: { items: InventoryItemRow[]; canVie
         )
       })}
     </>
+  )
+}
+
+export function WorkbenchInventoryPage({ permissions = [] }: WorkbenchInventoryPageProps) {
+  const [showTools, setShowTools] = useState(false)
+  return showTools ? (
+    <WorkbenchInventoryToolsPage permissions={permissions} onBackToParts={() => setShowTools(false)} />
+  ) : (
+    <InventoryPartsWorkspace permissions={permissions} onMoreTools={() => setShowTools(true)} />
   )
 }
 

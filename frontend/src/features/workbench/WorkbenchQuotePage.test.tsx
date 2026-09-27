@@ -44,15 +44,28 @@ vi.mock('./quote-api', () => ({
 
 import WorkbenchQuotePage from './WorkbenchQuotePage'
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  window.history.replaceState(null, '', '/')
+})
 beforeEach(() => {
   vi.clearAllMocks()
-  mocks.fetchCustomerOptions.mockResolvedValue(okPayload({ items: [{ id: 7, name: '张三', phone: '13800000001' }] }))
+  mocks.fetchCustomerOptions.mockResolvedValue(okPayload({ items: [{ id: 7, name: '张三', phone: '13800000001' }], nextCursor: null }))
   mocks.fetchCustomerDevices.mockResolvedValue(
     okPayload({ id: 7, name: '张三', phone: '13800000001', devices: [{ id: 3, label: '顾客的旧主机', serialNumber: 'SN-DEV-1' }] }),
   )
   mocks.fetchAvailableStockItems.mockResolvedValue(
-    okPayload({ lotItems: [{ id: 'si-1', assetCode: 'AC-1', productName: '二手显卡' }] }),
+    okPayload({
+      items: [{
+        id: 'si-1', version: 1, productId: 'p-gpu-1', productName: '二手显卡', category: '显卡', brand: '华硕', sku: null,
+        assetCode: 'AC-1', remark: '', condition: 'used', availability: 'available', inspectionStatus: 'passed',
+      }],
+      quantityProducts: [],
+      filters: { category: null, q: '', condition: 'used', availability: 'available', inspectionStatus: null, limit: 100 },
+      totals: { itemCount: 1, quantityTrackedQty: 0, ownOnHandQty: 1, availableQty: 1, reservedQty: 0, quarantineQty: 0 },
+      categoryCounts: [{ category: '显卡', itemCount: 1, quantityTrackedQty: 0, totalQty: 1 }],
+      availabilityCounts: [], inspectionCounts: [], nextCursor: null, hasMore: false, quantityNextCursor: null, quantityHasMore: false,
+    }),
   )
   mocks.fetchProductOptions.mockResolvedValue(
     okPayload({
@@ -242,6 +255,24 @@ describe('报价列表', () => {
 })
 
 describe('新建报价', () => {
+  it('客户名单按服务端搜索，并可继续加载匹配客户', async () => {
+    mocks.fetchQuotes.mockResolvedValue(listPayload([]))
+    render(<WorkbenchQuotePage permissions={['*']} />)
+    await waitFor(() => screen.getByRole('button', { name: '新建装机报价' }))
+    fireEvent.click(screen.getByRole('button', { name: '新建装机报价' }))
+    await waitFor(() => expect(mocks.fetchCustomerOptions).toHaveBeenCalledTimes(1))
+
+    mocks.fetchCustomerOptions
+      .mockResolvedValueOnce(okPayload({ items: [{ id: 8, name: '赵师傅', phone: '13900000008' }], nextCursor: '2026-09-10 10:00:00|8' }))
+      .mockResolvedValueOnce(okPayload({ items: [{ id: 9, name: '赵女士', phone: '13900000009' }], nextCursor: null }))
+    fireEvent.change(screen.getByLabelText('搜索客户名单'), { target: { value: '赵' } })
+    fireEvent.click(screen.getByRole('button', { name: '搜索客户' }))
+    expect(await screen.findByRole('option', { name: '赵师傅 · 13900000008' })).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: '加载更多匹配客户' }))
+    expect(await screen.findByRole('option', { name: '赵女士 · 13900000009' })).toBeTruthy()
+    expect(mocks.fetchCustomerOptions).toHaveBeenLastCalledWith('赵', '2026-09-10 10:00:00|8')
+  })
+
   it('金额按元输入、按整数分提交；客供件单价锁 0', async () => {
     mocks.fetchQuotes.mockResolvedValue(listPayload([]))
     mocks.createQuoteDraft.mockResolvedValue(
@@ -352,6 +383,33 @@ describe('新建报价', () => {
 
     expect(await screen.findByText(/二手件要指定具体实物/)).toBeTruthy()
     expect(mocks.createQuoteDraft).not.toHaveBeenCalled()
+  })
+
+  it('报价二手选件逐件显示类别、内部编号、成色和检测状态', async () => {
+    mocks.fetchQuotes.mockResolvedValue(listPayload([]))
+    render(<WorkbenchQuotePage permissions={['*']} />)
+
+    await waitFor(() => expect(screen.getByRole('button', { name: '新建装机报价' })).toBeTruthy())
+    fireEvent.click(screen.getByRole('button', { name: '新建装机报价' }))
+    fireEvent.change(screen.getByLabelText('第 1 行来源'), { target: { value: 'used' } })
+
+    const stockSelect = await screen.findByLabelText('第 1 行实物') as HTMLSelectElement
+    expect(stockSelect.textContent).toContain('显卡 · 二手显卡 · AC-1 · 二手 · 已检测')
+    fireEvent.change(stockSelect, { target: { value: 'si-1' } })
+    expect(stockSelect.value).toBe('si-1')
+  })
+
+  it('从仓库进入时自动带入并选中指定的二手实物', async () => {
+    mocks.fetchQuotes.mockResolvedValue(listPayload([]))
+    window.history.replaceState(null, '', '/sales/quotes?stockItemId=si-1&stockCode=AC-1')
+
+    render(<WorkbenchQuotePage permissions={['*']} />)
+
+    const stockSelect = await screen.findByLabelText('第 1 行实物') as HTMLSelectElement
+    await waitFor(() => expect(stockSelect.value).toBe('si-1'))
+    expect(mocks.fetchAvailableStockItems).toHaveBeenCalledWith({ q: 'AC-1' })
+    expect(stockSelect.textContent).toContain('显卡 · 二手显卡 · AC-1')
+    expect(window.location.search).toBe('')
   })
 
   it('打开既有报价改版时只还原服务端两行，不添加模板槽', async () => {

@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 /**
- * T02a · 把 contracts/v1.1 的生成物落到网页端内目录，并防止三处漂移。
+ * T02a · 把 contracts/v1.2 的生成物落到网页端内目录，并防止三处漂移。
  *
  *   node frontend/scripts/sync-contracts.mjs          写入端内目录（幂等）
  *   node frontend/scripts/sync-contracts.mjs --check  只比对，不写入；有差异退出码 1
  *
- * 三方一致性：contracts/v1.1（唯一来源） → contracts/generated（中立生成物，T01c）
+ * 三方一致性：contracts/v1.2（唯一来源） → contracts/generated（中立生成物，T01c）
  *          → frontend/src/contracts/generated（端内消费副本，T02a）
  *
  * 端内副本不是第二份契约，只是同一份编译产物。任何一方被手工修改都会被本脚本检出。
- * 目标路径由 contracts/v1.1/fixtures.json 的 dtoGeneration.targets[id=web] 冻结。
+ * 目标路径由 contracts/v1.2/fixtures.json 的 dtoGeneration.targets[id=web] 冻结。
  */
 import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
@@ -45,7 +45,7 @@ function die(lines) {
 
 // ── 1. 冻结路径自检 ─────────────────────────────────────────────────────
 const { files } = buildArtifacts()
-const fixtures = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'v1.1', 'fixtures.json'), 'utf8'))
+const fixtures = JSON.parse(readFileSync(join(repoRoot, 'contracts', 'v1.2', 'fixtures.json'), 'utf8'))
 const webTarget = (fixtures.dtoGeneration?.targets ?? []).find((t) => t.id === 'web')
 if (!webTarget) die(['契约 dtoGeneration.targets 中找不到 id=web 的目标'])
 if (webTarget.rootPath !== FROZEN_TARGET) {
@@ -93,4 +93,4 @@ if (neutral) {
 }
 
 if (failures.length) die(['端内生成物与契约不一致：', ...failures])
-console.log(`✓ 端内生成物与 contracts/v1.1 一致（${names.length} 个文件，目标 ${FROZEN_TARGET}）`)
+console.log(`✓ 端内生成物与 contracts/v1.2 一致（${names.length} 个文件，目标 ${FROZEN_TARGET}）`)

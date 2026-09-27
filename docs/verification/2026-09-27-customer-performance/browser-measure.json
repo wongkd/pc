@@ -1,0 +1,2602 @@
+{
+  "label": "customer-fix-current-warehouse-cold-cache",
+  "generatedAt": "2026-09-27T06:23:08.806Z",
+  "base": "http://127.0.0.1:4173",
+  "scenarios": {
+    "slowNetwork": {
+      "note": "Network.emulateNetworkConditions，latency 150ms，单客户端",
+      "profiles": [
+        {
+          "name": "1Mbps",
+          "downloadThroughput": 125000,
+          "uploadThroughput": 125000,
+          "login": {
+            "visibleMs": 17586.39999999851,
+            "fcp": 3852,
+            "network": {
+              "requests": 34,
+              "bytes": 2147610,
+              "js": {
+                "count": 31,
+                "bytes": 2111330
+              },
+              "css": {
+                "count": 0,
+                "bytes": 0
+              },
+              "document": {
+                "count": 1,
+                "bytes": 1104
+              },
+              "images": {
+                "count": 1,
+                "bytes": 25385
+              },
+              "api": {
+                "count": 0,
+                "bytes": 0
+              },
+              "items": [
+                {
+                  "file": "/",
+                  "type": "Document",
+                  "status": 200,
+                  "bytes": 1104,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/main.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 2309,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 38613,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/App.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 41745,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 6517,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 10883,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/lazy-route.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 16945,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/workspaces.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 2271,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/AppShell.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 33977,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@react-refresh",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 112187,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/LoginPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 12358,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/ModulePlaceholderPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 5000,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/utils/api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 30421,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/index.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 64670,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/erp-polish.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 41980,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/navigation.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 13117,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/theme.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 3446,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@vite/client",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 205101,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchTodayPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 92126,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/vite/dist/client/env.mjs",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 3768,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/appShell.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 8597,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/motion.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 1477,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/workbench-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 4745,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/StateGraphic.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 6728,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/client.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 7881,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/workbench.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 39986,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/session.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 9908,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/error-behavior.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 22059,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/core.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 48073,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-router-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 388208,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 14940,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom_client.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 821294,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/assets/xu-wen-erp-avatar-96.png",
+                  "type": "Image",
+                  "status": 200,
+                  "bytes": 25385,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/favicon.svg",
+                  "type": "Other",
+                  "status": 200,
+                  "bytes": 9791,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                }
+              ]
+            }
+          },
+          "dashboard": {
+            "visibleMs": 1929.2000000029802,
+            "fcp": 1536,
+            "network": {
+              "requests": 39,
+              "bytes": 9590,
+              "js": {
+                "count": 31,
+                "bytes": 4475
+              },
+              "css": {
+                "count": 0,
+                "bytes": 0
+              },
+              "document": {
+                "count": 1,
+                "bytes": 1104
+              },
+              "images": {
+                "count": 1,
+                "bytes": 127
+              },
+              "api": {
+                "count": 6,
+                "bytes": 3884
+              },
+              "items": [
+                {
+                  "file": "/dashboard",
+                  "type": "Document",
+                  "status": 200,
+                  "bytes": 1104,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@vite/client",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/main.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom_client.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-router-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@react-refresh",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/vite/dist/client/env.mjs",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/App.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/AppShell.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/lazy-route.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/workspaces.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/LoginPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/ModulePlaceholderPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/utils/api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchTodayPage.tsx",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/index.css",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/erp-polish.css",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/navigation.ts",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/appShell.css",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/theme.css",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/workbench.css",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/motion.css",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/StateGraphic.tsx",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/workbench-api.ts",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/client.ts",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/core.ts",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/error-behavior.ts",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/session.ts",
+                  "type": "Script",
+                  "status": 304,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/assets/xu-wen-erp-avatar-96.png",
+                  "type": "Image",
+                  "status": 200,
+                  "bytes": 127,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/workbench?scope=open&limit=100",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 994,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/workbench?scope=open&limit=100",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 994,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                }
+              ]
+            }
+          },
+          "inventory": {
+            "visibleMs": 8532,
+            "fcp": 1544,
+            "network": {
+              "requests": 47,
+              "bytes": 693865,
+              "js": {
+                "count": 39,
+                "bytes": 683214
+              },
+              "css": {
+                "count": 0,
+                "bytes": 0
+              },
+              "document": {
+                "count": 1,
+                "bytes": 1104
+              },
+              "images": {
+                "count": 1,
+                "bytes": 127
+              },
+              "api": {
+                "count": 6,
+                "bytes": 9420
+              },
+              "items": [
+                {
+                  "file": "/inventory",
+                  "type": "Document",
+                  "status": 200,
+                  "bytes": 1104,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@vite/client",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/main.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom_client.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-router-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@react-refresh",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/vite/dist/client/env.mjs",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/App.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/lazy-route.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/AppShell.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/workspaces.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/LoginPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/ModulePlaceholderPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/utils/api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchTodayPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/index.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/navigation.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/erp-polish.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/theme.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/appShell.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/workbench.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/motion.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/StateGraphic.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/workbench-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/client.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/core.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/error-behavior.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/session.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/assets/xu-wen-erp-avatar-96.png",
+                  "type": "Image",
+                  "status": 304,
+                  "bytes": 127,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchInventoryPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 352712,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchInventoryPage.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 7855,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/AttachmentPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 13976,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/inventory-view.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 25660,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/inventory-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 34271,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/attachment-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 14339,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/InventoryPartsWorkspace.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 220534,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/InventoryPartsWorkspace.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 9392,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/inventory/stock-items?limit=50",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 3762,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/inventory/stock-items?limit=50",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 3762,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3Mbps",
+          "downloadThroughput": 375000,
+          "uploadThroughput": 125000,
+          "login": {
+            "visibleMs": 6271.19999999553,
+            "fcp": 3860,
+            "network": {
+              "requests": 34,
+              "bytes": 2147610,
+              "js": {
+                "count": 31,
+                "bytes": 2111330
+              },
+              "css": {
+                "count": 0,
+                "bytes": 0
+              },
+              "document": {
+                "count": 1,
+                "bytes": 1104
+              },
+              "images": {
+                "count": 1,
+                "bytes": 25385
+              },
+              "api": {
+                "count": 0,
+                "bytes": 0
+              },
+              "items": [
+                {
+                  "file": "/",
+                  "type": "Document",
+                  "status": 200,
+                  "bytes": 1104,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/main.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 2309,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 38613,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/App.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 41745,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 6517,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 10883,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@react-refresh",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 112187,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/workspaces.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 2271,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/lazy-route.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 16945,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/AppShell.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 33977,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/ModulePlaceholderPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 5000,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/LoginPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 12358,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/utils/api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 30421,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@vite/client",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 205101,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/navigation.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 13117,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/index.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 64670,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/erp-polish.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 41980,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/theme.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 3446,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchTodayPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 92126,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/appShell.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 8597,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/vite/dist/client/env.mjs",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 3768,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/motion.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 1477,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/StateGraphic.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 6728,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/workbench-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 4745,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/client.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 7881,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/workbench.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 39986,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/session.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 9908,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/error-behavior.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 22059,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/core.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 48073,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-router-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 388208,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 14940,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom_client.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 821294,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/assets/xu-wen-erp-avatar-96.png",
+                  "type": "Image",
+                  "status": 200,
+                  "bytes": 25385,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/favicon.svg",
+                  "type": "Other",
+                  "status": 200,
+                  "bytes": 9791,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                }
+              ]
+            }
+          },
+          "dashboard": {
+            "visibleMs": 1823.5,
+            "fcp": 1460,
+            "network": {
+              "requests": 39,
+              "bytes": 9590,
+              "js": {
+                "count": 31,
+                "bytes": 4475
+              },
+              "css": {
+                "count": 0,
+                "bytes": 0
+              },
+              "document": {
+                "count": 1,
+                "bytes": 1104
+              },
+              "images": {
+                "count": 1,
+                "bytes": 127
+              },
+              "api": {
+                "count": 6,
+                "bytes": 3884
+              },
+              "items": [
+                {
+                  "file": "/dashboard",
+                  "type": "Document",
+                  "status": 200,
+                  "bytes": 1104,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/main.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom_client.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-router-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@react-refresh",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@vite/client",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/App.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/vite/dist/client/env.mjs",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/AppShell.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/lazy-route.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/workspaces.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/LoginPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/ModulePlaceholderPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/utils/api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/erp-polish.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/index.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchTodayPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/navigation.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/theme.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/appShell.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/motion.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/workbench.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/StateGraphic.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/workbench-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/client.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/error-behavior.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/session.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/core.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/assets/xu-wen-erp-avatar-96.png",
+                  "type": "Image",
+                  "status": 200,
+                  "bytes": 127,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/workbench?scope=open&limit=100",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 994,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/workbench?scope=open&limit=100",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 994,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                }
+              ]
+            }
+          },
+          "inventory": {
+            "visibleMs": 4552.89999999851,
+            "fcp": 1476,
+            "network": {
+              "requests": 47,
+              "bytes": 693865,
+              "js": {
+                "count": 39,
+                "bytes": 683214
+              },
+              "css": {
+                "count": 0,
+                "bytes": 0
+              },
+              "document": {
+                "count": 1,
+                "bytes": 1104
+              },
+              "images": {
+                "count": 1,
+                "bytes": 127
+              },
+              "api": {
+                "count": 6,
+                "bytes": 9420
+              },
+              "items": [
+                {
+                  "file": "/inventory",
+                  "type": "Document",
+                  "status": 200,
+                  "bytes": 1104,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/main.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom_client.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-router-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/chunk-CO3PsZeE.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/.vite/deps/react-dom.js?v=ff92dc09",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 0,
+                  "contentEncoding": "none",
+                  "cacheControl": "max-age=31536000,immutable",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@react-refresh",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/@vite/client",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/node_modules/vite/dist/client/env.mjs",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/App.tsx?t=1790490138702",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/workspaces.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/lazy-route.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/AppShell.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/LoginPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/components/ModulePlaceholderPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/utils/api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/index.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/erp-polish.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/app/navigation.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchTodayPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/appShell.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/theme.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/motion.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/StateGraphic.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/workbench-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/styles/workbench.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/client.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/session.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/error-behavior.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/api/core.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 179,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/auth/me",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 502,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/stores/current",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 446,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/assets/xu-wen-erp-avatar-96.png",
+                  "type": "Image",
+                  "status": 200,
+                  "bytes": 127,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchInventoryPage.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 352712,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/WorkbenchInventoryPage.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 7855,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/AttachmentPanel.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 13976,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/inventory-view.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 25660,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/inventory-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 34271,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/attachment-api.ts",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 14339,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/InventoryPartsWorkspace.tsx",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 220534,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/src/features/workbench/InventoryPartsWorkspace.css",
+                  "type": "Script",
+                  "status": 200,
+                  "bytes": 9392,
+                  "contentEncoding": "none",
+                  "cacheControl": "no-cache",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/inventory/stock-items?limit=50",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 3762,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                },
+                {
+                  "file": "/api/v2/inventory/stock-items?limit=50",
+                  "type": "Fetch",
+                  "status": 200,
+                  "bytes": 3762,
+                  "contentEncoding": "none",
+                  "cacheControl": "",
+                  "fromCache": false,
+                  "failed": null
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

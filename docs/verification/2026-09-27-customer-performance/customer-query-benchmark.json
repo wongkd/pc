@@ -1,0 +1,91 @@
+{
+  "generatedAt": "2026-09-27T06:27:51.134Z",
+  "environment": "Windows node:sqlite; private copy of synthetic pressure DB; same Worker source via node-host; old query sampled before either new customer-list index",
+  "data": {
+    "customers": 1500,
+    "orders": 4000
+  },
+  "sqlSamples": 5,
+  "oldFullList": {
+    "medianMs": 4699.43,
+    "rows": 1500,
+    "responseBytes": 423596,
+    "samplesMs": [
+      5080.47,
+      5110.91,
+      4699.43,
+      4513.03,
+      4538.56
+    ]
+  },
+  "indexedPage": {
+    "medianMs": 0.42,
+    "rowsFetchedIncludingLookahead": 51,
+    "visibleRows": 50,
+    "responseBytes": 14245,
+    "samplesMs": [
+      0.62,
+      0.46,
+      0.42,
+      0.42,
+      0.42
+    ]
+  },
+  "nodeHostEndpoint": {
+    "samples": [
+      {
+        "ms": 9.799300000002404,
+        "status": 200,
+        "bytes": 14245,
+        "items": 50,
+        "hasMore": true
+      },
+      {
+        "ms": 14.41110000000117,
+        "status": 200,
+        "bytes": 14245,
+        "items": 50,
+        "hasMore": true
+      },
+      {
+        "ms": 2.460299999998824,
+        "status": 200,
+        "bytes": 14245,
+        "items": 50,
+        "hasMore": true
+      },
+      {
+        "ms": 13.558499999999185,
+        "status": 200,
+        "bytes": 14245,
+        "items": 50,
+        "hasMore": true
+      },
+      {
+        "ms": 16.033299999999144,
+        "status": 200,
+        "bytes": 14245,
+        "items": 50,
+        "hasMore": true
+      },
+      {
+        "ms": 7.534300000002986,
+        "status": 200,
+        "bytes": 14245,
+        "items": 50,
+        "hasMore": true
+      }
+    ],
+    "medianMs": 13.56,
+    "allStatus200": true
+  },
+  "explainQueryPlan": [
+    "CO-ROUTINE customer_page",
+    "SEARCH c USING INDEX idx_customers_store_status_updated (store_id=? AND status=?)",
+    "SCAN c",
+    "SEARCH o USING COVERING INDEX idx_orders_store_customer_totals (store_id=? AND customer_phone=?) LEFT-JOIN",
+    "USE TEMP B-TREE FOR GROUP BY",
+    "USE TEMP B-TREE FOR ORDER BY"
+  ],
+  "caveat": "合成旧客户/订单样本上的本机查询证据，不代表 Linux 目标机、共享带宽或生产容量。"
+}

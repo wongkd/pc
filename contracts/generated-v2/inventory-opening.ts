@@ -15,6 +15,12 @@ export type OpeningWindowState = (typeof OPENING_WINDOW_STATES)[number]
 export const OPENING_WINDOW_CLOSE_REASONS = ["first_business_movement"] as const
 export type OpeningWindowCloseReason = (typeof OPENING_WINDOW_CLOSE_REASONS)[number]
 
+export const INVENTORY_ON_HAND_BUCKETS = ["available","reserved","quarantine"] as const
+export type InventoryOnHandBucket = (typeof INVENTORY_ON_HAND_BUCKETS)[number]
+
+export const INSPECTION_STATUSES = ["unrecorded","pending","passed","failed"] as const
+export type InspectionStatus = (typeof INSPECTION_STATUSES)[number]
+
 export interface InventoryActivityEntry {
   id: string
   kind: InventoryActivityKind
@@ -32,6 +38,93 @@ export interface InventoryActivityEntry {
 
 export interface InventoryActivityListPayload {
   items: InventoryActivityEntry[]
+}
+
+export interface InventoryReadMetrics {
+  ownOnHandQty: number
+  quantityTrackedQty: number
+  itemCount: number
+  availableQty: number
+  reservedQty: number
+  quarantineQty: number
+}
+
+export interface InventoryCategoryCount {
+  category: string
+  metrics: InventoryReadMetrics
+}
+
+export interface InventoryAvailabilityCount {
+  availability: InventoryOnHandBucket
+  quantityTrackedQty: number
+  itemCount: number
+  qty: number
+}
+
+export interface InspectionStatusCount {
+  inspectionStatus: InspectionStatus
+  itemCount: number
+}
+
+export interface InventoryStockItemReadFilters {
+  q: string
+  category: string | null
+  condition: 'new' | 'used' | null
+  availability: InventoryOnHandBucket | null
+  inspectionStatus: InspectionStatus | null
+  limit: number
+  cursor: string | null
+  quantityCursor: string | null
+}
+
+export interface InventoryStockItemRow {
+  id: string
+  version: number
+  productId: string
+  productName: string
+  category: string
+  brand: string | null
+  sku: string | null
+  assetCode: string
+  remark: string
+  condition: 'new' | 'used'
+  availability: InventoryOnHandBucket
+  inspectionStatus: InspectionStatus
+  acquisitionCostCents?: number | null
+  assessedEstimateCents?: number | null
+  costKnown?: boolean
+  acquisitionCostBasis?: OpeningCostBasis | null
+  costEvidenceRef?: string | null
+  costAssessedAt?: string | null
+}
+
+export interface InventoryQuantityProductRow {
+  id: string
+  name: string
+  category: string
+  sku: string | null
+  brand: string | null
+  trackingMode: 'quantity'
+  availableQty: number
+  reservedQty: number
+  quarantineQty: number
+  ownOnHandQty: number
+  totalCostCents?: number | null
+  costKnown?: boolean
+}
+
+export interface InventoryStockItemPagePayload {
+  items: InventoryStockItemRow[]
+  quantityProducts: InventoryQuantityProductRow[]
+  filters: InventoryStockItemReadFilters
+  totals: InventoryReadMetrics
+  categoryCounts: InventoryCategoryCount[]
+  availabilityCounts: InventoryAvailabilityCount[]
+  inspectionCounts: InspectionStatusCount[]
+  nextCursor: string | null
+  hasMore: boolean
+  quantityNextCursor: string | null
+  quantityHasMore: boolean
 }
 
 export interface InventoryItemCostMetadata {
@@ -78,6 +171,49 @@ export interface FormalOpeningInput {
   note?: string | null
   occurredAt?: string | null
   lines: FormalOpeningLineInput[]
+}
+
+export interface InspectionInput {
+  result: 'pass' | 'fail'
+  findings: string
+  evidence: string[]
+  disposition: 'available' | 'quarantine' | 'retired'
+  expectedVersion: number
+  occurredAt?: string | null
+}
+
+export interface InspectionReworkInput {
+  findings: string
+  expectedVersion: number
+  occurredAt?: string | null
+}
+
+export interface StockBackfillLineInput {
+  lineRef: string
+  productRef: string
+  qty: number
+  condition?: 'new' | 'used'
+  assetCode?: string
+  snRaw?: string | null
+  remark?: string | null
+  costBasis: OpeningCostBasis
+  unitCostCents?: number | null
+  costEvidenceRef?: string | null
+  costAssessedAt?: string | null
+}
+
+export interface StockBackfillInput {
+  batchRef: string
+  note?: string | null
+  occurredAt?: string | null
+  lines: StockBackfillLineInput[]
+}
+
+export interface InventoryStockItemSourceRecord {
+  kind: 'opening' | 'stock_backfill' | 'purchase_order' | 'quick_purchase' | 'recovery_order' | 'unresolved'
+  recordId: string
+  displayCode: string | null
+  occurredAt: string | null
 }
 
 export interface OpenFormalOpeningWindowCommand {

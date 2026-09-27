@@ -1097,15 +1097,56 @@ async function handleCustomers(req: Request, env: Env, context: AuthContext): Pr
         : { results: [] }
       return json({ ...customer, devices: devices.results, orders: orders.results })
     }
-    const q = new URL(req.url).searchParams.get('q')?.trim() || ''
-    const result = await env.DB.prepare(`SELECT c.id, c.name, c.phone, c.email, c.address, c.remark, NULLIF(c.source_channel, '') AS sourceChannel, c.status,
-        c.created_at AS createdAt, c.updated_at AS updatedAt,
-        CASE WHEN c.phone='' THEN 0 ELSE (SELECT COUNT(*) FROM orders o WHERE o.store_id=c.store_id AND o.customer_phone=c.phone) END AS orderCount,
-        CASE WHEN c.phone='' THEN 0 ELSE (SELECT COALESCE(SUM(o.total_amount_cents),0) FROM orders o WHERE o.store_id=c.store_id AND o.customer_phone=c.phone) END AS totalCents,
-        CASE WHEN c.phone='' THEN 0 ELSE (SELECT COALESCE(SUM(o.received_amount_cents),0) FROM orders o WHERE o.store_id=c.store_id AND o.customer_phone=c.phone) END AS receivedCents
-      FROM customers c WHERE c.store_id=? AND c.status='active' AND (?='' OR c.name LIKE ? OR c.phone LIKE ?)
-      ORDER BY c.updated_at DESC, c.id DESC`).bind(context.storeId, q, `%${q}%`, `%${q}%`).all()
-    return json({ items: result.results })
+    const params = new URL(req.url).searchParams
+    const q = params.get('q')?.trim() || ''
+    const rawLimit = params.get('limit')
+    const parsedLimit = rawLimit === null ? 50 : Number(rawLimit)
+    if (!Number.isInteger(parsedLimit) || parsedLimit < 1) return json({ error: '客户列表条数无效' }, 400)
+    const limit = Math.min(parsedLimit, 100)
+    const cursor = params.get('cursor')
+    let cursorUpdatedAt: string | null = null
+    let cursorId: number | null = null
+    if (cursor !== null) {
+      const splitAt = cursor.lastIndexOf('|')
+      const parsedId = Number(cursor.slice(splitAt + 1))
+      if (splitAt <= 0 || !Number.isSafeInteger(parsedId) || parsedId < 1) {
+        return json({ error: '客户列表游标无效' }, 400)
+      }
+      cursorUpdatedAt = cursor.slice(0, splitAt)
+      cursorId = parsedId
+    }
+
+    // 先按最近更新时间取一页客户，再通过 (store_id, phone) 索引一次性关联该页订单。
+    // 旧查询为每位客户分别扫三遍订单；规模增长时成本接近「客户数 × 订单数」。
+    const result = await env.DB.prepare(`WITH customer_page AS (
+        SELECT c.id, c.store_id, c.name, c.phone, c.email, c.address, c.remark,
+          NULLIF(c.source_channel, '') AS sourceChannel, c.status,
+          c.created_at AS createdAt, c.updated_at AS updatedAt
+        FROM customers c
+        WHERE c.store_id=? AND c.status='active'
+          AND (?='' OR c.name LIKE ? OR c.phone LIKE ?)
+          AND (? IS NULL OR c.updated_at < ? OR (c.updated_at=? AND c.id < ?))
+        ORDER BY c.updated_at DESC, c.id DESC
+        LIMIT ?
+      )
+      SELECT c.id, c.name, c.phone, c.email, c.address, c.remark, c.sourceChannel, c.status,
+        c.createdAt, c.updatedAt,
+        CASE WHEN c.phone='' THEN 0 ELSE COUNT(o.id) END AS orderCount,
+        COALESCE(SUM(o.total_amount_cents), 0) AS totalCents,
+        COALESCE(SUM(o.received_amount_cents), 0) AS receivedCents
+      FROM customer_page c
+      LEFT JOIN orders o ON c.phone<>'' AND o.store_id=c.store_id AND o.customer_phone=c.phone
+      GROUP BY c.id
+      ORDER BY c.updatedAt DESC, c.id DESC`).bind(
+      context.storeId, q, `%${q}%`, `%${q}%`, cursorUpdatedAt,
+      cursorUpdatedAt, cursorUpdatedAt, cursorId, limit + 1,
+    ).all<Record<string, unknown>>()
+    const items = result.results ?? []
+    const hasMore = items.length > limit
+    const pageItems = hasMore ? items.slice(0, limit) : items
+    const last = pageItems.at(-1)
+    const nextCursor = hasMore && last ? `${String(last.updatedAt)}|${Number(last.id)}` : null
+    return json({ items: pageItems, nextCursor })
   }
 
   try {

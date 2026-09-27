@@ -11,7 +11,7 @@
 | 客户台账 | frontend/src/components/CustomersPage.tsx；backend/src/index.ts 的 customers 分支 | CustomersPage.test.tsx、e04-customers.test.mjs |
 | 请求 / 幂等错误 | frontend/src/api、backend/src/domains/operations.ts | 请求层测试、t04 系列 |
 | 报价 / 销售 / 交付 | backend/src/domains/quote.ts、sale.ts、assembly.ts；routes/quote-v2.ts、sales-v2.ts | e05 / e06 / e08 / e09 系列 |
-| 库存 / 采购 | backend/src/domains/inventory.ts、purchase.ts；routes/inventory-v2.ts、purchase-v2.ts | e04b / e07 / b16 / f2 / f3 系列 |
+| 二手配件仓库 / 库存 / 采购 | frontend/src/features/workbench/InventoryPartsWorkspace.tsx、WorkbenchInventoryPage.tsx、WorkbenchQuotePage.tsx、WorkbenchPurchasePage.tsx、WorkbenchRecoveryPage.tsx；backend/src/domains/inventory.ts、purchase.ts、recovery.ts | InventoryPartsWorkspace / WorkbenchQuote / WorkbenchPurchase / WorkbenchRecovery tests；u01-inventory-read / u02-stock-backfill-http / e07 / e11 |
 | 维修 / 回收 / 抵用 / 财务 | backend/src/domains/service.ts、recovery.ts、tradein.ts、finance.ts；同名 v2 路由 | e10 / e11 / e12 与验收卡 |
 | 附件 | backend/src/domains/attachment.ts、storage.ts；routes/attach-v2.ts | f1-attachments.test.mjs |
 | 今天页读模型 | backend/src/domains/workbench.ts、routes/workbench-v2.ts；frontend/src/features/workbench/workbench-api.ts | r02-workbench.test.mjs、WorkbenchTodayPage.test.tsx |

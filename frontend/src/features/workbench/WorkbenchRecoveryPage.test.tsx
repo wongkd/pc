@@ -37,7 +37,10 @@ import { WorkbenchRecoveryPage } from './WorkbenchRecoveryPage'
 
 const ok = <T,>(data: T) => ({ ok: true as const, status: 200, data, meta: { requestId: 'test', serverTime: '', contractVersion: 'v1' } })
 
-afterEach(cleanup)
+afterEach(() => {
+  cleanup()
+  window.history.replaceState({}, '', '/')
+})
 beforeEach(() => {
   vi.clearAllMocks()
   window.history.replaceState({}, '', '/')
@@ -49,6 +52,15 @@ beforeEach(() => {
 })
 
 describe('回收登记的客户主体关联', () => {
+  it('从仓库转入时保留实物描述、SN 与成色说明', async () => {
+    window.history.replaceState({}, '', '/recovery?create=1&draftDescription=显卡%20%C2%B7%20RTX%203060&draftSn=GPU-SN-1&draftNote=%E7%94%B3%E6%8A%A5%E6%88%90%E8%89%B2%EF%BC%9A%E4%BA%8C%E6%89%8B%EF%BC%9B%E9%A3%8E%E6%89%87%E6%AD%A3%E5%B8%B8')
+    render(<WorkbenchRecoveryPage permissions={['*']} />)
+
+    expect((await screen.findByLabelText('实物描述') as HTMLInputElement).value).toBe('显卡 · RTX 3060')
+    expect((screen.getByLabelText('序列号') as HTMLInputElement).value).toBe('GPU-SN-1')
+    expect((screen.getByLabelText('备注') as HTMLInputElement).value).toBe('申报成色：二手；风扇正常')
+  })
+
   it('从工作台单号深链进入时自动打开对应回收单', async () => {
     window.history.replaceState({}, '', '/recovery?orderNo=TR-2026-001')
     mocks.fetchRecoveryOrders.mockResolvedValue(ok({ orders: [{ id: 'rec-1', orderNo: 'TR-2026-001' }] }))

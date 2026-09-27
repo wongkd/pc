@@ -38,7 +38,6 @@ import type {
   CustomerDeviceOption,
   CustomerOption,
   FeedbackSource,
-  InventoryItemRow,
   InventoryProductRow,
   QuoteDetailPayload,
   QuoteDraftPayload,
@@ -48,6 +47,7 @@ import type {
   QuoteStatusFilter,
   QuoteWriteOutcome,
 } from './quote-api'
+import type { InventoryStockItemRow } from '../../contracts/v2/generated/inventory-opening'
 // E06：报价成交（B03）转成销售单后跳到订单处理页，收款与占用在那一边完成。
 import { convertQuote } from './sales-api'
 import { applyQuoteScenario, createPresetLines, hasQuoteLineInput, type QuoteEditorLine, type QuotePresetCategory, type QuoteScenario } from './quote-presets'
@@ -416,6 +416,9 @@ interface UnknownWrite {
  * 渲染测试可以直接把它挂起来测，不必额外包 MemoryRouter。
  */
 export default function WorkbenchQuotePage({ permissions, onConverted }: { permissions: string[]; onConverted?: () => void }) {
+  const routeParams = new URLSearchParams(window.location.search)
+  const requestedStockItemId = routeParams.get('stockItemId')?.trim() ?? ''
+  const requestedStockCode = routeParams.get('stockCode')?.trim() ?? ''
   const canEdit = hasAny(permissions, EDIT_CODES)
   const canView = hasAny(permissions, VIEW_CODES)
   const canManageStore = hasAny(permissions, ['store/manage'])
@@ -474,12 +477,63 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
   }
 
   const [customers, setCustomers] = useState<CustomerOption[]>([])
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [customerSearchBusy, setCustomerSearchBusy] = useState(false)
+  const [customerSearchError, setCustomerSearchError] = useState('')
+  const [customerNextCursor, setCustomerNextCursor] = useState<string | null>(null)
   const [devices, setDevices] = useState<CustomerDeviceOption[]>([])
-  const [stockOptions, setStockOptions] = useState<InventoryItemRow[]>([])
+  const [stockOptions, setStockOptions] = useState<InventoryStockItemRow[]>([])
+  const [stockCategories, setStockCategories] = useState<string[]>([])
+  const [stockSearch, setStockSearch] = useState('')
+  const [stockCategory, setStockCategory] = useState('')
+  const [stockSearchState, setStockSearchState] = useState<'idle' | 'loading' | 'error'>('idle')
+  const [stockSearchError, setStockSearchError] = useState('')
+  const [stockPrefillError, setStockPrefillError] = useState('')
   /** 商品清单：新品行的「关联商品」从这里选（值是 hardware.entity_id，也就是 productRef）。 */
   const [productOptions, setProductOptions] = useState<InventoryProductRow[]>([])
   const [optionsError, setOptionsError] = useState<string | null>(null)
   const optionsLoaded = useRef(false)
+  const stockPrefillHandled = useRef(false)
+
+  const searchAvailableStock = useCallback(async (q = stockSearch, category = stockCategory) => {
+    setStockSearchState('loading')
+    setStockSearchError('')
+    const result = await fetchAvailableStockItems({ q: q.trim(), category: category || null })
+    if (result.ok) {
+      setStockOptions(result.data.items)
+      setStockCategories(result.data.categoryCounts.map((item) => item.category))
+      setStockSearchState('idle')
+      return
+    }
+    setStockSearchState('error')
+    setStockSearchError(result.message || '可售配件读取失败。')
+  }, [stockSearch, stockCategory])
+
+  const searchCustomers = useCallback(async (cursor?: string) => {
+    setCustomerSearchBusy(true)
+    setCustomerSearchError('')
+    try {
+      const result = await fetchCustomerOptions(customerSearch.trim(), cursor)
+      if (result.ok) {
+        setCustomers((previous) => {
+          const selected = previous.find((customer) => String(customer.id) === editor.customerId)
+          const matches = cursor
+            ? [...previous, ...result.data.items.filter((customer) => !previous.some((old) => old.id === customer.id))]
+            : result.data.items
+          return selected && !matches.some((customer) => customer.id === selected.id)
+            ? [selected, ...matches]
+            : matches
+        })
+        setCustomerNextCursor(result.data.nextCursor)
+      } else {
+        setCustomerSearchError(result.message || '客户搜索失败，请重试。')
+      }
+    } catch {
+      setCustomerSearchError('客户搜索失败，请检查网络后重试。')
+    } finally {
+      setCustomerSearchBusy(false)
+    }
+  }, [customerSearch, editor.customerId])
 
   // setState 只出现在 Promise 回调里（react-hooks/set-state-in-effect）
   useEffect(() => {
@@ -514,15 +568,56 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
     }
     if (customerResult.ok) {
       setCustomers(customerResult.data.items)
+      setCustomerNextCursor(customerResult.data.nextCursor)
     } else {
       setOptionsError(`客户名单加载失败：${customerResult.message}`)
     }
     if (stockResult.ok) {
-      setStockOptions(stockResult.data.lotItems)
+      setStockOptions(stockResult.data.items)
+      setStockCategories(stockResult.data.categoryCounts.map((item) => item.category))
     } else {
       setOptionsError((prev) => `${prev ? `${prev}；` : ''}可选二手实物加载失败（需要库存查看权限），二手行请手填实物编号：${stockResult.message}`)
     }
   }, [])
+
+  useEffect(() => {
+    if (!requestedStockItemId || stockPrefillHandled.current) return
+    stockPrefillHandled.current = true
+    const cleanParams = new URLSearchParams(window.location.search)
+    cleanParams.delete('stockItemId')
+    cleanParams.delete('stockCode')
+    window.history.replaceState(null, '', window.location.pathname + (cleanParams.size ? '?' + cleanParams.toString() : '') + window.location.hash)
+    void Promise.resolve().then(async () => {
+      const next = freshEditor()
+      const line = createManualLine()
+      line.source = 'used'
+      line.initialSource = 'used'
+      line.stockItemId = requestedStockItemId
+      next.lines = [line]
+      setEditor(next)
+      setView('edit')
+      await loadOptions()
+      if (!requestedStockCode) {
+        setStockPrefillError('没有可核对的配件编号；请按类别和型号重新查找。')
+        setEditor((current) => ({ ...current, lines: current.lines.map((item) => item.stockItemId === requestedStockItemId ? { ...item, stockItemId: '' } : item) }))
+        return
+      }
+      const result = await fetchAvailableStockItems({ q: requestedStockCode })
+      if (!result.ok) {
+        setStockPrefillError(result.message || '这件配件暂时无法读取；请重新查找后选择。')
+        setEditor((current) => ({ ...current, lines: current.lines.map((item) => item.stockItemId === requestedStockItemId ? { ...item, stockItemId: '' } : item) }))
+        return
+      }
+      const selected = result.data.items.find((item) => item.id === requestedStockItemId)
+      if (!selected) {
+        setStockPrefillError('这件配件目前不能用于报价，请确认库存状态后重新选择。')
+        setEditor((current) => ({ ...current, lines: current.lines.map((item) => item.stockItemId === requestedStockItemId ? { ...item, stockItemId: '' } : item) }))
+        return
+      }
+      setStockOptions((current) => [...current.filter((item) => item.id !== selected.id), selected])
+      setStockCategories((current) => current.includes(selected.category) ? current : [...current, selected.category])
+    })
+  }, [loadOptions, requestedStockCode, requestedStockItemId])
 
   // 选了客户就顺手把设备清单拿回来，客供行的下拉才有的选。
   // 逻辑包在 Promise 回调里：effect 体内不同步 setState（react-hooks/set-state-in-effect）。
@@ -780,7 +875,7 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
             <p className="wb-kicker">报价与销售工作区</p>
             <h1>{editor.quoteId ? `编辑报价（将生成新版本）` : '新建装机报价'}</h1>
             <p className="wb-caption">
-              报价只记录拟售配件，不改库存；转销售单后按实物预留，实际交付才出库。金额按元输入、按分记账；发出后修改会生成新版本，旧版留档。
+              报价只记录拟售配件，不改库存；转销售单后按实物预留，实际交付才出库。报价金额按元填写；发出后修改会生成新版本，旧版留档。
             </p>
           </div>
           <div className="wb-page-head-actions">
@@ -791,6 +886,7 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
         </header>
 
         {notice ? <p className={`wb-inv-notice${notice.kind === 'warn' ? ' wb-inv-notice--warn' : ''}`}>{notice.text}</p> : null}
+        {stockPrefillError ? <p className="wb-form-error" role="alert">{stockPrefillError}</p> : null}
         {unknownWrite ? (
           <div className="wb-inv-notice wb-inv-notice--warn">
             <button type="button" className="wb-btn" onClick={checkUnknownResult} disabled={busy}>
@@ -822,6 +918,23 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
 
           <div className="wb-field">
             <label htmlFor="quote-customer">客户</label>
+            <div className="wb-customer-search">
+              <input
+                aria-label="搜索客户名单"
+                value={customerSearch}
+                onChange={(event) => { setCustomerSearch(event.target.value); setCustomerNextCursor(null) }}
+                onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); void searchCustomers() } }}
+                placeholder="输入姓名或手机号搜索"
+              />
+              <button className="wb-btn" type="button" disabled={customerSearchBusy} onClick={() => void searchCustomers()}>
+                {customerSearchBusy ? '搜索中…' : '搜索客户'}
+              </button>
+            </div>
+            {customerNextCursor ? (
+              <button className="wb-btn wb-customer-search-more" type="button" disabled={customerSearchBusy} onClick={() => void searchCustomers(customerNextCursor)}>
+                {customerSearchBusy ? '正在加载…' : customerSearch.trim() ? '加载更多匹配客户' : '加载更多客户'}
+              </button>
+            ) : null}
             <select
               id="quote-customer"
               value={editor.customerId}
@@ -835,7 +948,8 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
                 </option>
               ))}
             </select>
-            <p className="wb-form-hint">客户在「客户台账」里维护；散客可以先不选。</p>
+            {customerSearchError ? <p className="wb-form-error">{customerSearchError}</p> : null}
+            <p className="wb-form-hint">先显示最近更新的客户；名单较长时按姓名或手机号搜索。客户在「客户台账」里维护；散客可以先不选。</p>
           </div>
 
           <fieldset className="wb-inv-group">
@@ -849,6 +963,26 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
               setEditor((prev) => ({ ...prev, lines: nextLines }))
               setScenario(target)
             }} onAdd={(category) => setEditor((prev) => ({ ...prev, lines: [...prev.lines, createManualLine(category)] }))} /> : null}
+            {editor.lines.some((line) => line.source === 'used') ? (
+              <div className="wb-parts-quote-stock-search">
+                <label className="wb-field">
+                  <span>筛选可选二手配件</span>
+                  <input value={stockSearch} onChange={(event) => setStockSearch(event.target.value)} placeholder="型号、规格、内部编号或厂家编号" />
+                </label>
+                <label className="wb-field">
+                  <span>配件类别</span>
+                  <select value={stockCategory} onChange={(event) => setStockCategory(event.target.value)}>
+                    <option value="">全部类别</option>
+                    {stockCategories.map((item) => <option key={item} value={item}>{item}</option>)}
+                  </select>
+                </label>
+                <button type="button" className="wb-btn" disabled={stockSearchState === 'loading'} onClick={() => void searchAvailableStock()}>
+                  {stockSearchState === 'loading' ? '正在查找…' : '查找可售实物'}
+                </button>
+                <span>{stockOptions.length} 件可选 · 按编号逐件区分</span>
+                {stockSearchState === 'error' ? <p className="wb-form-error">{stockSearchError}</p> : null}
+              </div>
+            ) : null}
             <div className="wb-quote-lines">
               {editor.lines.map((line, index) => (
                 <section key={line.key} className={`wb-quote-line${line.source === 'service' ? ' wb-quote-line--service' : ''}`} aria-label={`第 ${index + 1} 行配置`}>
@@ -954,7 +1088,7 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
                             <option value="">选择实物…</option>
                             {stockOptions.map((item) => (
                               <option key={item.id} value={item.id}>
-                                {item.assetCode} · {item.productName}
+                                {item.category} · {item.productName} · {item.assetCode} · {item.condition === 'used' ? '二手' : '新品'} · {item.inspectionStatus === 'passed' ? '已检测' : item.inspectionStatus === 'pending' ? '待检测' : item.inspectionStatus === 'failed' ? '有问题' : '历史未记录'}
                               </option>
                             ))}
                           </select>

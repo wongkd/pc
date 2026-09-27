@@ -1,0 +1,25 @@
+.app-shell .wb-quote-line--prefilled-product {
+  grid-template-columns: minmax(220px, 2fr) minmax(100px, 1fr) minmax(140px, 1fr) auto;
+}
+
+.wb-purchase-product-field {
+  min-width: 0;
+}
+
+.wb-purchase-prefilled-product {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 42px;
+}
+
+.wb-purchase-prefilled-product strong {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 900px) {
+  .app-shell .wb-quote-line--prefilled-product {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -190,8 +190,15 @@ function RecoveryFlowGuide({ state, itemCount = 0, ownedItemCount = 0 }: {
 }
 
 export function WorkbenchRecoveryPage({ permissions }: { permissions: string[] }) {
-  const workbenchOrderNo = new URLSearchParams(window.location.search).get('orderNo')?.trim() ?? ''
+  const searchParams = new URLSearchParams(window.location.search)
+  const workbenchOrderNo = searchParams.get('orderNo')?.trim() ?? ''
+  const workbenchOrderId = searchParams.get('orderId')?.trim() ?? ''
+  const startRecoveryCreate = searchParams.get('create') === '1'
+  const draftDescription = searchParams.get('draftDescription')?.trim() ?? ''
+  const draftSn = searchParams.get('draftSn')?.trim() ?? ''
+  const draftNote = searchParams.get('draftNote')?.trim() ?? ''
   const openedWorkbenchOrderNo = useRef<string | null>(null)
+  const openedWorkbenchOrderId = useRef<string | null>(null)
   const canView = hasAny(permissions, VIEW_CODES)
   const canEdit = hasAny(permissions, EDIT_CODES)
   const canUploadAttachment = hasAny(permissions, ['attachment/upload', 'library/edit'])
@@ -215,7 +222,7 @@ export function WorkbenchRecoveryPage({ permissions }: { permissions: string[] }
   const [activeAction, setActiveAction] = useState<ActionKey>(null)
 
   // ── 表单 ──
-  const [intake, setIntake] = useState({ sellerCustomerId: '', sellerName: '', sellerPhone: '', description: '', snRaw: '', estimate: '', note: '' })
+  const [intake, setIntake] = useState({ sellerCustomerId: '', sellerName: '', sellerPhone: '', description: draftDescription, snRaw: draftSn, estimate: '', note: draftNote })
   const [customerOptions, setCustomerOptions] = useState<CustomerOption[]>([])
   const [customerOptionsState, setCustomerOptionsState] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
   const [customerOptionsError, setCustomerOptionsError] = useState('')
@@ -290,7 +297,10 @@ export function WorkbenchRecoveryPage({ permissions }: { permissions: string[] }
         setOrders(result.data)
         setListState('ready')
         setListError('')
-        if (workbenchOrderNo && openedWorkbenchOrderNo.current !== workbenchOrderNo) {
+        if (workbenchOrderId && openedWorkbenchOrderId.current !== workbenchOrderId) {
+          openedWorkbenchOrderId.current = workbenchOrderId
+          openDetail(workbenchOrderId)
+        } else if (workbenchOrderNo && openedWorkbenchOrderNo.current !== workbenchOrderNo) {
           const taskOrder = result.data.orders.find((row) => row.orderNo === workbenchOrderNo)
           openedWorkbenchOrderNo.current = workbenchOrderNo
           if (taskOrder) openDetail(taskOrder.id)
@@ -305,7 +315,16 @@ export function WorkbenchRecoveryPage({ permissions }: { permissions: string[] }
       if (result.ok) setProducts(result.data.items)
     })
     return () => { active = false }
-  }, [canView, stateFilter, workbenchOrderNo, openDetail])
+  }, [canView, stateFilter, workbenchOrderNo, workbenchOrderId, openDetail])
+
+  useEffect(() => {
+    if (!canEdit || !startRecoveryCreate) return
+    let active = true
+    void Promise.resolve().then(() => {
+      if (active) openIntake()
+    })
+    return () => { active = false }
+  }, [canEdit, startRecoveryCreate, openIntake])
 
   const reloadDetail = useCallback(() => {
     if (!detail) return
@@ -389,7 +408,7 @@ export function WorkbenchRecoveryPage({ permissions }: { permissions: string[] }
     if (rows.length === 0) { setActionError('至少要填一行收购明细'); return }
     for (const row of rows) {
       if (!row.productRef) { setActionError('每行都要选商品'); return }
-      if (!Number.isInteger(row.costCents) || row.costCents < 0) { setActionError('成本必须是非负整数分'); return }
+      if (!Number.isInteger(row.costCents) || row.costCents < 0) { setActionError('成本不能小于 0，请检查填写金额。'); return }
     }
     const finalAcquisitionCents = rows.reduce((sum, row) => sum + row.costCents, 0)
     setBusy(true); setActionError('')
@@ -469,7 +488,7 @@ export function WorkbenchRecoveryPage({ permissions }: { permissions: string[] }
             <div>
               <p className="wb-kicker">回收与置换</p>
               <h1>回收单</h1>
-              <p className="wb-caption">登记、验机、估价、收购、付款、拆件与归还。所有金额由服务端按整数分结算。</p>
+              <p className="wb-caption">登记、验机、估价、收购、付款、拆件与归还。确认收购前实物仍属于卖方，不会进入本店库存。</p>
             </div>
             <div className="wb-page-head-actions">
               {canEdit ? (
@@ -501,6 +520,7 @@ export function WorkbenchRecoveryPage({ permissions }: { permissions: string[] }
             <div className="wb-inv-toolbar wb-form">
               <fieldset>
                 <legend>登记旧设备（客户暂存，不计库存）</legend>
+                {draftDescription ? <p className="wb-inv-notice">已从仓库登记草稿带入实物描述和可用编号，请核对后补齐卖方信息。收购确认前不会计入库存。</p> : null}
                 <label className="wb-field"><span>关联客户档案</span><select value={intake.sellerCustomerId} disabled={customerOptionsState === 'loading'} onChange={(e) => {
                   const customerId = e.target.value
                   const customer = customerOptions.find((row) => String(row.id) === customerId)
@@ -736,7 +756,7 @@ function RecoveryDetail(props: DetailProps) {
                 <td className="wb-tabular">{item.snRaw || '—'}</td>
                 <td className="wb-tabular">{item.estimatedCents === null ? '—' : formatYuan(item.estimatedCents)}</td>
                 <td className="wb-tabular">{item.acquiredCostCents === null ? '—' : formatYuan(item.acquiredCostCents)}</td>
-                <td className="wb-caption">{item.stockItemId || '未取得所有权'}</td>
+                <td className="wb-caption">{item.stockItemId ? <a href={'/inventory?itemId=' + encodeURIComponent(item.stockItemId)}>{item.stockItemId} · 在仓库查看</a> : '未取得所有权'}</td>
               </tr>
             ))}
           </tbody>
@@ -823,7 +843,7 @@ function RecoveryDetail(props: DetailProps) {
                   props.setAcquireRows(next)
                 }}>
                   <option value="">选择商品…</option>
-                  {products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                  {products.map((p) => (<option key={p.id} value={p.id}>{p.category} · {p.name}</option>))}
                 </select>
                 <span className="wb-caption">内部编号：取得后自动生成</span>
                 <input value={row.snRaw ?? ''} placeholder="厂家 SN（选填，可扫码）" onChange={(e) => {
@@ -900,7 +920,7 @@ function RecoveryDetail(props: DetailProps) {
                   props.setOutputs(next)
                 }}>
                   <option value="">产出商品…</option>
-                  {products.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+                  {products.map((p) => (<option key={p.id} value={p.id}>{p.category} · {p.name}</option>))}
                 </select>
                 <span className="wb-caption">内部编号：入库后自动生成</span>
                 <input value={out.snRaw ?? ''} placeholder="厂家 SN（选填，可扫码）" onChange={(e) => {

@@ -1,4 +1,41 @@
 /* 报价编辑器：字段按填写顺序分组，打印前的数据也能快速核对。 */
+.app-shell .wb-quote-page .wb-parts-quote-stock-search {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 220px) auto auto;
+  align-items: end;
+  gap: 10px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid var(--wb-line);
+  border-radius: var(--wb-radius);
+  background: #fff;
+}
+
+.app-shell .wb-quote-page .wb-parts-quote-stock-search .wb-field {
+  margin: 0;
+}
+
+.app-shell .wb-quote-page .wb-parts-quote-stock-search > span {
+  color: var(--wb-muted);
+  font-size: 12px;
+}
+
+.app-shell .wb-quote-page .wb-parts-quote-stock-search p {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.app-shell .wb-quote-page .wb-customer-search {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.app-shell .wb-quote-page .wb-customer-search input { min-width: 0; }
+.app-shell .wb-quote-page .wb-customer-search-more { margin: 0 0 8px; }
+
 .app-shell .wb-quote-page .wb-quote-editor .wb-quote-lines {
   display: grid;
   gap: 12px;
@@ -168,6 +205,10 @@
 }
 
 @media (max-width: 640px) {
+  .app-shell .wb-quote-page .wb-parts-quote-stock-search {
+    grid-template-columns: 1fr;
+  }
+
   .app-shell .wb-quote-page .wb-quote-editor .wb-quote-line {
     padding: 11px;
   }

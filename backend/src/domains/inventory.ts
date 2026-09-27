@@ -35,9 +35,45 @@ import {
 } from './operations'
 import { generateInternalCode, normalizeManufacturerSn } from './serial-codes'
 import { listAttachedForOwner, type AttachmentView } from './attachment'
-import { OPENING_COST_BASES, type FormalOpeningLineInput, type OpeningCostBasis, type OpeningWindowStatus } from '../generated/inventory-opening-v2'
-export { OPENING_COST_BASES } from '../generated/inventory-opening-v2'
-export type { OpeningCostBasis, OpeningWindowStatus } from '../generated/inventory-opening-v2'
+import {
+  INVENTORY_ON_HAND_BUCKETS,
+  INSPECTION_STATUSES,
+  OPENING_COST_BASES,
+  type FormalOpeningLineInput,
+  type InspectionStatus,
+  type InspectionStatusCount,
+  type InventoryAvailabilityCount,
+  type InventoryCategoryCount,
+  type InventoryOnHandBucket,
+  type InventoryQuantityProductRow,
+  type InventoryReadMetrics,
+  type InventoryStockItemPagePayload,
+  type InventoryStockItemReadFilters,
+  type InventoryStockItemRow,
+  type InventoryStockItemSourceRecord,
+  type OpeningCostBasis,
+  type OpeningWindowStatus,
+  type StockBackfillInput,
+  type StockBackfillLineInput,
+} from '../generated/inventory-opening-v2'
+export { INVENTORY_ON_HAND_BUCKETS, INSPECTION_STATUSES, OPENING_COST_BASES } from '../generated/inventory-opening-v2'
+export type {
+  InventoryAvailabilityCount,
+  InventoryCategoryCount,
+  InventoryOnHandBucket,
+  InspectionStatus,
+  InspectionStatusCount,
+  InventoryQuantityProductRow,
+  InventoryReadMetrics,
+  InventoryStockItemPagePayload,
+  InventoryStockItemReadFilters,
+  InventoryStockItemRow,
+  InventoryStockItemSourceRecord,
+  OpeningCostBasis,
+  OpeningWindowStatus,
+  StockBackfillInput,
+  StockBackfillLineInput,
+} from '../generated/inventory-opening-v2'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 枚举常量：取值必须与 contracts/v1/enums.json 逐字一致，不得在本文件新增取值。
@@ -75,6 +111,7 @@ export const MOVEMENT_SOURCES = [
   'conversion',
   'inspection_quarantine',
   'inspection_release',
+  'stock_backfill',
 ] as const
 export type MovementSource = (typeof MOVEMENT_SOURCES)[number]
 
@@ -95,6 +132,7 @@ export const INVENTORY_PERMISSIONS = {
   costView: 'inventory/cost-view',
   opening: 'inventory/opening',
   inspection: 'inventory/inspection',
+  stockBackfill: 'inventory/stock-backfill',
   /** B16 录入盘点实盘（契约 legacySource = library/edit，grantPolicy=default）。 */
   count: 'inventory/count',
   /**
@@ -842,10 +880,10 @@ export function planOpening(
           .prepare(
             `INSERT INTO stock_items
                (id, store_id, product_id, asset_code, condition, sn_raw, sn_normalized, remark,
-                ownership, availability, location, acquisition_ref,
+                ownership, availability, inspection_status, location, acquisition_ref,
                 acquisition_cost_cents, cost_known, cost_basis, estimated_acquisition_cost_cents,
                 cost_evidence_ref, cost_assessed_at, created_by)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', 'available', 'store', ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', 'quarantine', 'pending', 'store', ?, ?, ?, ?, ?, ?, ?, ?)`,
           )
           .bind(
             stockItemId,
@@ -882,6 +920,7 @@ export function planOpening(
     }
 
     const movementId = `${ctx.requestId}::movement::${index}`
+    const openingBucket = perItem ? 'quarantine' : 'available'
     statements.push(
       db
         .prepare(
@@ -889,7 +928,7 @@ export function planOpening(
              (id, store_id, product_id, stock_item_id, qty, to_bucket, cost_cents, cost_basis,
               estimated_unit_cost_cents,
               source, occurred_at, actor_user_id, request_id)
-           VALUES (?, ?, ?, ?, ?, 'available', ?, ?, ?, 'opening_balance', ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'opening_balance', ?, ?, ?)`,
         )
         .bind(
           movementId,
@@ -897,6 +936,7 @@ export function planOpening(
           product.hardwareId,
           stockItemId,
           line.qty,
+          openingBucket,
           unitCost,
           costBasis,
           estimatedUnitCost,
@@ -1116,6 +1156,192 @@ export async function openOpeningWindow(
   }))
 }
 
+export interface StockBackfillRequestFailure {
+  ok: false
+  requestId: string
+  code: 'VALIDATION_ERROR' | 'ENTITY_NOT_FOUND' | 'IDEMPOTENCY_MISMATCH' | 'SERIAL_MISMATCH' | 'SERVICE_UNAVAILABLE'
+  message: string
+  retryable: boolean
+  httpStatus: number
+}
+
+export function validateStockBackfillInput(input: StockBackfillInput): string | null {
+  if (!input.batchRef?.trim() || input.batchRef.trim().length > 160) return 'batchRef 必须为 1 至 160 个字符'
+  if (input.note != null && (typeof input.note !== 'string' || input.note.length > 500)) return 'note 不能超过 500 个字符'
+  if (!Array.isArray(input.lines) || input.lines.length === 0 || input.lines.length > 50) return '补录明细必须为 1 至 50 行'
+  const refs = new Set<string>()
+  for (const [index, line] of input.lines.entries()) {
+    const at = `第 ${index + 1} 行`
+    if (!line.lineRef?.trim() || line.lineRef.trim().length > 120) return `${at}：lineRef 必须为 1 至 120 个字符`
+    if (refs.has(line.lineRef.trim())) return `${at}：lineRef 重复`
+    refs.add(line.lineRef.trim())
+    if (!line.productRef?.trim()) return `${at}：缺少 productRef`
+    if (!Number.isInteger(line.qty) || line.qty < 1) return `${at}：qty 必须为正整数`
+    if (line.condition != null && line.condition !== 'new' && line.condition !== 'used') return `${at}：condition 取值无效`
+    if (line.assetCode != null && line.assetCode.trim().length > 120) return `${at}：assetCode 不能超过 120 个字符`
+    if (line.snRaw != null && line.snRaw.length > 200) return `${at}：snRaw 不能超过 200 个字符`
+    if (line.remark != null && line.remark.length > 1000) return `${at}：remark 不能超过 1000 个字符`
+    if (!(OPENING_COST_BASES as readonly string[]).includes(line.costBasis)) return `${at}：costBasis 取值无效`
+  }
+  const costProblem = validateOpeningInput({
+    approvedCountRef: 'B47',
+    lines: input.lines.map((line) => ({ ...line, snRaw: line.snRaw ?? undefined, approvedCountLineRef: line.lineRef })),
+  })
+  if (costProblem) return costProblem
+  return null
+}
+
+function planStockBackfill(
+  db: OperationsDb,
+  ctx: OperationContext,
+  input: StockBackfillInput,
+  products: Map<string, ResolvedProduct>,
+): OperationPlan {
+  const backfillId = `${ctx.requestId}::backfill`
+  const occurredAt = input.occurredAt ?? nowIso()
+  const itemIds: string[] = []
+  const batchIds: string[] = []
+  const movementIds: string[] = []
+  const statements: D1PreparedStatement[] = [
+    guardStatement(db, 'IDEMPOTENCY_MISMATCH',
+      `EXISTS (SELECT 1 FROM inventory_stock_backfills WHERE store_id = ? AND batch_ref = ?)`,
+      ctx.storeId, input.batchRef.trim(), { diagnostic: 'STOCK_BACKFILL_BATCH_REF_ALREADY_USED' }),
+    db.prepare(`INSERT INTO inventory_stock_backfills
+      (id, store_id, batch_ref, note, request_id, payload_hash, actor_user_id, occurred_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      .bind(backfillId, ctx.storeId, input.batchRef.trim(), input.note?.trim() || null, ctx.requestId, ctx.payloadHash, ctx.actorUserId, occurredAt),
+  ]
+
+  for (const [index, line] of input.lines.entries()) {
+    const product = products.get(line.productRef) as ResolvedProduct
+    const perItem = product.trackingMode === 'item'
+    const lineRef = line.lineRef.trim()
+    const stockItemId = perItem ? `${ctx.requestId}::item::${index}` : null
+    const stockBatchId = perItem ? null : `${ctx.requestId}::batch::${index}`
+    const itemCondition = perItem ? line.condition as StockCondition : null
+    const assetCode = perItem ? (line.assetCode?.trim() || generateInternalCode('IT', ctx.storeId, occurredAt)) : null
+    const snRaw = perItem ? line.snRaw?.trim() || null : null
+    const snNormalized = normalizeManufacturerSn(snRaw)
+    const costKnown = line.costBasis === 'known_actual' || line.costBasis === 'zero_cost'
+    const unitCost = costKnown ? line.unitCostCents as number : null
+    const estimatedUnitCost = line.costBasis === 'assessed_estimate' ? line.unitCostCents as number : null
+    const movementId = `${ctx.requestId}::movement::${index}`
+    const targetBucket = perItem ? 'quarantine' : 'available'
+
+    statements.push(
+      guardStatement(db, 'ENTITY_NOT_FOUND',
+        `NOT EXISTS (SELECT 1 FROM hardware WHERE store_id = ? AND entity_id = ? AND COALESCE(status, 'active') = 'active' AND tracking_mode = ?)`,
+        ctx.storeId, line.productRef, product.trackingMode, { diagnostic: 'BACKFILL_PRODUCT_OR_TRACKING_MODE_CHANGED' }),
+    )
+
+    if (perItem) {
+      statements.push(
+        guardStatement(db, 'VALIDATION_ERROR', `EXISTS (SELECT 1 FROM stock_items WHERE store_id = ? AND asset_code = ?)`, ctx.storeId, assetCode),
+        guardStatement(db, 'SERIAL_MISMATCH',
+          `EXISTS (SELECT 1 FROM stock_items WHERE store_id = ? AND ownership = 'store' AND availability <> 'retired' AND sn_normalized = ?)`,
+          ctx.storeId, snNormalized),
+        db.prepare(`INSERT INTO stock_items
+          (id, store_id, product_id, asset_code, condition, sn_raw, sn_normalized, remark, ownership, availability,
+           inspection_status, location, acquisition_ref, acquisition_cost_cents, cost_known, cost_basis,
+           estimated_acquisition_cost_cents, cost_evidence_ref, cost_assessed_at, created_by)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', 'quarantine', 'pending', 'store', ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(stockItemId, ctx.storeId, product.hardwareId, assetCode, itemCondition, snRaw, snNormalized,
+            line.remark?.trim() ?? input.note?.trim() ?? '', backfillId, unitCost, costKnown ? 1 : 0, line.costBasis,
+            estimatedUnitCost, line.costEvidenceRef?.trim() || null, line.costAssessedAt ?? null, ctx.actorUserId),
+      )
+      itemIds.push(stockItemId as string)
+    } else {
+      statements.push(
+        db.prepare(`INSERT INTO stock_batches
+          (id, store_id, product_id, batch_code, source_ref, source_line_ref, received_qty, occurred_at, remark,
+           actor_user_id, cost_basis, unit_cost_cents, estimated_unit_cost_cents, cost_evidence_ref, cost_assessed_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+          .bind(stockBatchId, ctx.storeId, product.hardwareId, generateInternalCode('BT', ctx.storeId, occurredAt),
+            backfillId, `${input.batchRef.trim()}::${lineRef}`, line.qty, occurredAt, line.remark?.trim() ?? input.note?.trim() ?? '',
+            ctx.actorUserId, line.costBasis, unitCost, estimatedUnitCost, line.costEvidenceRef?.trim() || null, line.costAssessedAt ?? null),
+      )
+      batchIds.push(stockBatchId as string)
+    }
+
+    statements.push(
+      db.prepare(`INSERT INTO inventory_stock_backfill_lines
+        (id, store_id, backfill_id, line_ref, product_id, tracking_mode, qty, stock_item_id, stock_batch_id,
+         condition, asset_code, sn_raw, remark, cost_basis, unit_cost_cents, estimated_unit_cost_cents,
+         cost_evidence_ref, cost_assessed_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
+        .bind(`${ctx.requestId}::line::${index}`, ctx.storeId, backfillId, lineRef, product.hardwareId,
+          product.trackingMode, line.qty, stockItemId, stockBatchId, itemCondition, assetCode, snRaw,
+          line.remark?.trim() ?? null, line.costBasis, unitCost, estimatedUnitCost,
+          line.costEvidenceRef?.trim() || null, line.costAssessedAt ?? null),
+      db.prepare(`INSERT INTO inventory_movements
+        (id, store_id, product_id, stock_item_id, qty, to_bucket, cost_cents, cost_basis, estimated_unit_cost_cents,
+         source, occurred_at, actor_user_id, request_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'stock_backfill', ?, ?, ?)`)
+        .bind(movementId, ctx.storeId, product.hardwareId, stockItemId, line.qty, targetBucket, unitCost, line.costBasis,
+          estimatedUnitCost, occurredAt, ctx.actorUserId, ctx.requestId),
+    )
+    movementIds.push(movementId)
+  }
+
+  statements.push(db.prepare(`INSERT INTO audit_logs (store_id, actor_user_id, action, entity_type, entity_id, details)
+    VALUES (?, ?, 'stock_backfill', 'StockBackfill', ?, ?)`)
+    .bind(ctx.storeId, ctx.actorUserId, backfillId, JSON.stringify({ batchRef: input.batchRef.trim(), lineCount: input.lines.length, itemIds, batchIds })))
+
+  return {
+    statements,
+    outcome: { entityType: 'StockBackfill', entityId: backfillId, version: 1,
+      summary: `已按原型号补录 ${input.lines.length} 行库存`, effects: { batchRef: input.batchRef.trim(), itemIds, batchIds, movementIds } },
+    constraintCodes: {
+      'inventory_stock_backfills.store_id, inventory_stock_backfills.batch_ref': 'IDEMPOTENCY_MISMATCH',
+      'inventory_stock_backfills.store_id, inventory_stock_backfills.request_id': 'IDEMPOTENCY_MISMATCH',
+      'inventory_stock_backfill_lines.store_id, inventory_stock_backfill_lines.backfill_id, inventory_stock_backfill_lines.line_ref': 'VALIDATION_ERROR',
+      'stock_items.store_id, stock_items.asset_code': 'VALIDATION_ERROR',
+      'stock_items.store_id, stock_items.sn_normalized': 'SERIAL_MISMATCH',
+      'stock_batches.store_id, stock_batches.source_line_ref': 'VALIDATION_ERROR',
+    },
+  }
+}
+
+export async function createStockBackfill(
+  db: OperationsDb,
+  ctx: OperationContext,
+  input: StockBackfillInput,
+): Promise<RunResult | StockBackfillRequestFailure> {
+  const invalid = validateStockBackfillInput(input)
+  if (invalid) return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: invalid, retryable: false, httpStatus: 400 }
+  const resolved: OperationContext = { ...ctx, payloadHash: await hashPayload(input) }
+  const existing = await queryOperation(db, ctx.storeId, ctx.requestId, { action: 'B47', payloadHash: resolved.payloadHash })
+  if (existing.found) {
+    if (existing.mismatch) return { ok: false, requestId: ctx.requestId, code: 'IDEMPOTENCY_MISMATCH', message: '同一 requestId 已用于不同的动作或不同的载荷，已中止；请勿更换 ID 重复提交', retryable: false, httpStatus: 409 }
+    if (existing.status !== 'succeeded') return { ok: false, requestId: ctx.requestId, code: 'SERVICE_UNAVAILABLE', message: '该请求的处理结果尚未确认，请稍后查询', retryable: true, httpStatus: 503 }
+    return { ok: true, reused: true, requestId: ctx.requestId, outcome: existing.outcome ?? {} }
+  }
+  const priorBatch = await db.prepare(`SELECT request_id FROM inventory_stock_backfills WHERE store_id = ? AND batch_ref = ?`)
+    .bind(ctx.storeId, input.batchRef.trim()).first<{ request_id: string }>()
+  if (priorBatch) return { ok: false, requestId: ctx.requestId, code: 'IDEMPOTENCY_MISMATCH', message: '该 batchRef 已用于另一批补录；请先查询原批次，不要换请求编号重复加库存', retryable: false, httpStatus: 409 }
+
+  const products = await loadProducts(db, ctx.storeId, input.lines.map((line) => line.productRef))
+  const missing = input.lines.filter((line) => !products.has(line.productRef))
+  if (missing.length) return { ok: false, requestId: ctx.requestId, code: 'ENTITY_NOT_FOUND', message: `这些型号不存在或不属于本店：${missing.map((line) => line.productRef).join('、')}`, retryable: false, httpStatus: 404 }
+  for (const [index, line] of input.lines.entries()) {
+    const product = products.get(line.productRef) as ResolvedProduct
+    if (product.status !== 'active') return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: `第 ${index + 1} 行：型号已停用，不能补录`, retryable: false, httpStatus: 400 }
+    if (product.trackingMode === 'item') {
+      if (line.qty !== 1) return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: `第 ${index + 1} 行：逐件管理的实物每行必须为 1 件`, retryable: false, httpStatus: 400 }
+      if (line.condition !== 'new' && line.condition !== 'used') return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: `第 ${index + 1} 行：逐件实物必须填写新品或二手`, retryable: false, httpStatus: 400 }
+      if (line.snRaw?.trim()) {
+        const duplicateInInput = input.lines.slice(0, index).some((earlier) =>
+          earlier.productRef === line.productRef && normalizeManufacturerSn(earlier.snRaw) === normalizeManufacturerSn(line.snRaw),
+        )
+        if (duplicateInInput) return { ok: false, requestId: ctx.requestId, code: 'SERIAL_MISMATCH', message: `第 ${index + 1} 行：本批次内 SN 重复`, retryable: false, httpStatus: 409 }
+      }
+    } else if (line.condition || line.assetCode?.trim() || line.snRaw?.trim()) {
+      return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: `第 ${index + 1} 行：数量管理型号不能填写逐件成色、编号或 SN`, retryable: false, httpStatus: 400 }
+    }
+  }
+  return runIdempotent(db, { ...resolved, action: 'B47' }, (operation) => planStockBackfill(db, operation, input, products))
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // B19 · 待检件判定（POST /inventory/items/:id/inspection）
 // 权限：inventory/inspection（旧 library/edit 的映射，actions.json legacyPermissionMap）
@@ -1127,11 +1353,11 @@ export async function openOpeningWindow(
 // 余额守恒不靠本模块自觉：from=quarantine / to=<disp> 的流水经 0007 的余额触发器结算，
 // available 只在 to=available 时 +1；报废那一路只减 quarantine，可卖库存分毫不动。
 //
-// 记录落地（2026-09-22 栋哥裁定「复用 audit_logs」）：
-//   契约 B19 的 effects 只有 StockItem / StockBalance，**没有 Inspection 实体**。
-//   因此检查事实（结果 / 发现 / 证据 / 处置）写 audit_logs（契约 AuditEvent），
-//   stock_items.inspection_ref 回填本次判定的逻辑 id（`<requestId>::inspection`）。
-//   不新建业务表、不改契约 —— 与并行进行的 F1（附件基础）互不触碰单点区。
+// 记录落地（U02 / v1.2）：
+//   当前投影写入 stock_items.inspection_status；结果、发现、证据、操作者、时间、版本与
+//   requestId 追加到 stock_inspection_events；audit_logs 保留业务审计。inspection_ref
+//   继续引用本次判定 id。旧行迁移为 unrecorded（历史未记录），不按旧桶或旧引用回填。
+//   检测失败后只能先由 B48 登记返修完成，再以新 requestId 通过 B19 复检。
 //
 // 证据门槛（2026-09-22 栋哥裁定「放行必须带附件」）：
 //   disposition=available 时，evidence 至少一条，且每条都必须是**服务端已实测**的有效附件：
@@ -1143,15 +1369,14 @@ export const INSPECTION_RESULTS = ['pass', 'fail'] as const
 export type InspectionResult = (typeof INSPECTION_RESULTS)[number]
 
 /**
- * B19 允许的处置去向（落到哪个库存桶）。取自 enums.json inventoryBucketRules.transitions
- * 里 from=quarantine 的两条：待检通过放回可卖，或报废退供离店。
+ * B19 允许的处置去向（落到哪个库存桶）。通过只能进可售；失败留在待处理或按既有处置退役。
  *
  * ⚠️ 别与 purchase.ts 的 INSPECTION_DISPOSITIONS 混淆 —— 那个是契约枚举 InspectionDisposition
  *   （available / quarantine / return_to_supplier / return_to_customer / scrapped），
  *   说的是「这批到货怎么处置」；这里说的是「这件待检实物最终进哪个桶」。
  *   契约 B19 的 inputs 写的是 disposition:StockBucket，本常量就是它的合法子集。
  */
-export const INSPECTION_RELEASE_BUCKETS = ['available', 'retired'] as const
+export const INSPECTION_RELEASE_BUCKETS = ['available', 'quarantine', 'retired'] as const
 export type InspectionReleaseBucket = (typeof INSPECTION_RELEASE_BUCKETS)[number]
 
 export interface InspectionInput {
@@ -1188,6 +1413,7 @@ interface InspectableItem {
   productId: number
   availability: string
   ownership: string
+  inspectionStatus: InspectionStatus
   version: number
 }
 
@@ -1198,8 +1424,10 @@ export function validateInspectionInput(input: InspectionInput): string | null {
     return 'findings 不能为空：判定必须留下可追溯的检测发现'
   }
   if (!(INSPECTION_RELEASE_BUCKETS as readonly string[]).includes(input.disposition)) {
-    return `disposition 只能是 ${INSPECTION_RELEASE_BUCKETS.join(' 或 ')}：待检件只能放回可卖或报废离店`
+    return `disposition 只能是 ${INSPECTION_RELEASE_BUCKETS.join(' 或 ')}：失败件留在待处理、或按既有流程退役`
   }
+  if (input.result === 'pass' && input.disposition !== 'available') return '检测通过必须使用 available 去向'
+  if (input.result === 'fail' && input.disposition === 'available') return '检测失败不能转为可售；请留在待处理或走退役处置'
   if (!Number.isInteger(input.expectedVersion) || input.expectedVersion < 1) {
     return 'expectedVersion 必须是正整数（判定必须基于一个明确的实物版本）'
   }
@@ -1216,9 +1444,9 @@ export function planStockInspection(
 ): OperationPlan {
   const occurredAt = input.occurredAt ?? nowIso()
   const inspectionId = `${ctx.requestId}::inspection`
-  const movementId = `${ctx.requestId}::inspection-mv`
   const nextVersion = item.version + 1
   const toBucket = input.disposition
+  const movementId = toBucket === 'quarantine' ? null : `${ctx.requestId}::inspection-mv`
   const statements: D1PreparedStatement[] = []
 
   // 1. 期望版本硬断言：预读到落库之间可能被人改过，JS 的友好提示不算数。
@@ -1234,46 +1462,53 @@ export function planStockInspection(
     ),
   )
 
-  // 2. 流水：只在实物**仍处于 quarantine** 时落账（条件式 SELECT）。
-  //    已判定过的件（available / retired）命中 0 行 —— 不会重复扣减待处理桶，也不会重复加可卖库存。
-  statements.push(
-    db
-      .prepare(
+  // 2. 失败留在待处理时不产生桶间流水；离开待处理才记库存移动。
+  if (movementId) {
+    statements.push(
+      db.prepare(
         `INSERT INTO inventory_movements
            (id, store_id, product_id, stock_item_id, qty, from_bucket, to_bucket, cost_cents,
             source, occurred_at, actor_user_id, request_id)
-         SELECT ?, si.store_id, si.product_id, si.id, 1, 'quarantine', ?, NULL,
-                'inspection_release', ?, ?, ?
-         FROM stock_items si
-         WHERE si.store_id = ? AND si.id = ? AND si.availability = 'quarantine'`,
-      )
-      .bind(movementId, toBucket, occurredAt, ctx.actorUserId, ctx.requestId, ctx.storeId, item.id),
-  )
+         VALUES (?, ?, ?, ?, 1, 'quarantine', ?, NULL, 'inspection_release', ?, ?, ?)`,
+      ).bind(movementId, ctx.storeId, item.productId, item.id, toBucket, occurredAt, ctx.actorUserId, ctx.requestId),
+    )
+  }
 
-  // 3. 实物状态与检查引用。条件同样带上 availability='quarantine'，
-  //    使「流水落账」与「状态变更」两件事要么都发生、要么都不发生。
+  // 3. 当前投影与追加事件在同一幂等 batch 内推进。
   statements.push(
     db
       .prepare(
         `UPDATE stock_items
-           SET availability = ?, inspection_ref = ?, version = version + 1, updated_at = ?
-         WHERE store_id = ? AND id = ? AND availability = 'quarantine'`,
+           SET availability = ?, inspection_status = ?, inspection_ref = ?, version = version + 1, updated_at = ?
+         WHERE store_id = ? AND id = ? AND availability = 'quarantine'
+           AND inspection_status IN ('unrecorded', 'pending') AND version = ?`,
       )
-      .bind(toBucket, inspectionId, occurredAt, ctx.storeId, item.id),
+      .bind(toBucket, input.result === 'pass' ? 'passed' : 'failed', inspectionId, occurredAt, ctx.storeId, item.id, input.expectedVersion),
   )
 
-  // 4. 硬守卫：流水真的落了账。D1 的 batch 里「条件 UPDATE 影响 0 行」不是错误，
-  //    不自己断言就会静默产生半截账（T04 的整个理由）。命中即说明实物不在待检，
-  //    报 INSPECTION_REQUIRED 而不是让一次无效请求悄悄返回成功。
+  // 4. 条件 UPDATE 影响 0 行不会自动报错，守卫确保状态确实推进后才记事件。
   statements.push(
     guardStatement(
       db,
       'INSPECTION_REQUIRED',
-      `NOT EXISTS (SELECT 1 FROM inventory_movements WHERE store_id = ? AND id = ?)`,
+      `NOT EXISTS (SELECT 1 FROM stock_items WHERE store_id = ? AND id = ? AND version = ? AND inspection_status = ?)`,
       ctx.storeId,
-      movementId,
-      { diagnostic: 'ITEM_NOT_IN_QUARANTINE' },
+      item.id,
+      nextVersion,
+      input.result === 'pass' ? 'passed' : 'failed',
+      { diagnostic: 'ITEM_NOT_IN_QUARANTINE_OR_ALREADY_INSPECTED' },
     ),
+  )
+
+  statements.push(
+    db.prepare(
+      `INSERT INTO stock_inspection_events
+         (id, store_id, stock_item_id, event_type, from_status, to_status, result, findings, evidence_json,
+          occurred_at, actor_user_id, request_id, stock_item_version)
+       VALUES (?, ?, ?, 'inspection', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    ).bind(inspectionId, ctx.storeId, item.id, item.inspectionStatus,
+      input.result === 'pass' ? 'passed' : 'failed', input.result, input.findings.trim(), JSON.stringify(input.evidence),
+      occurredAt, ctx.actorUserId, ctx.requestId, nextVersion),
   )
 
   // 5. 版本日志：乐观锁的真正实现（主键即断言，并发推进只有一个能成功）。
@@ -1304,9 +1539,9 @@ export function planStockInspection(
       ),
   )
 
-  const summary = toBucket === 'available'
-    ? `待检件放行可卖（检测${input.result === 'pass' ? '通过' : '未通过'}），证据 ${input.evidence.length} 条`
-    : `待检件报废离店（检测${input.result === 'pass' ? '通过' : '未通过'}），不计入可卖库存`
+  const summary = input.result === 'pass'
+    ? `待检件检测通过并进入可售，证据 ${input.evidence.length} 条`
+    : toBucket === 'retired' ? '检测未通过，实物按既有处置退役' : '检测未通过，实物留在待处理；返修后须重新检测'
 
   return {
     statements,
@@ -1325,6 +1560,7 @@ export function planStockInspection(
     },
     constraintCodes: {
       'inventory_movements.id': 'SERVICE_UNAVAILABLE',
+      'stock_inspection_events.store_id, stock_inspection_events.request_id': 'SERVICE_UNAVAILABLE',
       'audit_logs.id': 'SERVICE_UNAVAILABLE',
     },
   }
@@ -1337,17 +1573,18 @@ async function loadInspectableItem(
 ): Promise<InspectableItem | null> {
   const row = await db
     .prepare(
-      `SELECT id, product_id, availability, ownership, version
+      `SELECT id, product_id, availability, ownership, inspection_status, version
        FROM stock_items WHERE store_id = ? AND id = ?`,
     )
     .bind(storeId, stockItemId)
-    .first<{ id: string; product_id: number; availability: string; ownership: string; version: number }>()
+    .first<{ id: string; product_id: number; availability: string; ownership: string; inspection_status: InspectionStatus; version: number }>()
   if (!row) return null
   return {
     id: row.id,
     productId: row.product_id,
     availability: row.availability,
     ownership: row.ownership,
+    inspectionStatus: row.inspection_status,
     version: row.version,
   }
 }
@@ -1465,6 +1702,27 @@ export async function inspectStockItem(
     }
   }
 
+  if (item.inspectionStatus === 'failed') {
+    return {
+      ok: false,
+      requestId: ctx.requestId,
+      code: 'INSPECTION_REQUIRED',
+      message: '上次检测未通过；必须先完成返修登记，再重新检测，不能直接改判通过',
+      retryable: false,
+      httpStatus: 422,
+    }
+  }
+  if (item.inspectionStatus === 'passed') {
+    return {
+      ok: false,
+      requestId: ctx.requestId,
+      code: 'INSPECTION_REQUIRED',
+      message: '该实物已有检测通过结论；请先核对当前状态，不能重复判定',
+      retryable: false,
+      httpStatus: 422,
+    }
+  }
+
   // 版本冲突：友好提示（真正的硬断言在 plan 的守卫里）。
   if (item.version !== input.expectedVersion) {
     return {
@@ -1482,7 +1740,7 @@ export async function inspectStockItem(
   //   · 放行可卖：evidence 至少一条 —— 没有证据就是验机门槛未达成，报 INSPECTION_REQUIRED，
   //     而不是字段格式错。它拦的是「没验机就想上架」，不是「填错了字段」。
   //   · 无论放行还是报废，一旦引用了 evidence，就逐条核实是服务端实测过的有效附件（不许拿假 id 充数）。
-  if (input.disposition === 'available' && input.evidence.length === 0) {
+  if (input.result === 'pass' && input.evidence.length === 0) {
     return {
       ok: false,
       requestId: ctx.requestId,
@@ -1500,6 +1758,80 @@ export async function inspectStockItem(
   }
 
   return runIdempotent(db, resolved, (context) => planStockInspection(db, context, input, item))
+}
+
+export interface InspectionReworkInput {
+  findings: string
+  expectedVersion: number
+  occurredAt?: string | null
+}
+
+export function validateInspectionReworkInput(input: InspectionReworkInput): string | null {
+  if (typeof input.findings !== 'string' || !input.findings.trim()) return '返修说明不能为空'
+  if (!Number.isInteger(input.expectedVersion) || input.expectedVersion < 1) return 'expectedVersion 必须是正整数'
+  return null
+}
+
+function planInspectionRework(
+  db: OperationsDb,
+  ctx: OperationContext,
+  item: InspectableItem,
+  input: InspectionReworkInput,
+): OperationPlan {
+  const occurredAt = input.occurredAt ?? nowIso()
+  const eventId = `${ctx.requestId}::rework`
+  const nextVersion = item.version + 1
+  const statements: D1PreparedStatement[] = [
+    guardStatement(db, 'VERSION_CONFLICT',
+      `NOT EXISTS (SELECT 1 FROM stock_items WHERE store_id = ? AND id = ? AND version = ? AND availability = 'quarantine' AND inspection_status = 'failed')`,
+      ctx.storeId, item.id, input.expectedVersion, { diagnostic: 'REWORK_STATE_OR_VERSION_MISMATCH' }),
+    db.prepare(`UPDATE stock_items SET inspection_status = 'pending', version = version + 1, updated_at = ?
+      WHERE store_id = ? AND id = ? AND version = ? AND availability = 'quarantine' AND inspection_status = 'failed'`)
+      .bind(occurredAt, ctx.storeId, item.id, input.expectedVersion),
+    guardStatement(db, 'INSPECTION_REQUIRED',
+      `NOT EXISTS (SELECT 1 FROM stock_items WHERE store_id = ? AND id = ? AND version = ? AND inspection_status = 'pending')`,
+      ctx.storeId, item.id, nextVersion, { diagnostic: 'REWORK_STATE_NOT_UPDATED' }),
+    db.prepare(`INSERT INTO stock_inspection_events
+      (id, store_id, stock_item_id, event_type, from_status, to_status, result, findings, evidence_json,
+       occurred_at, actor_user_id, request_id, stock_item_version)
+      VALUES (?, ?, ?, 'rework', 'failed', 'pending', NULL, ?, '[]', ?, ?, ?, ?)`)
+      .bind(eventId, ctx.storeId, item.id, input.findings.trim(), occurredAt, ctx.actorUserId, ctx.requestId, nextVersion),
+    bumpVersionStatement(db, ctx, 'StockItem', item.id, nextVersion),
+    db.prepare(`INSERT INTO audit_logs (store_id, actor_user_id, action, entity_type, entity_id, details)
+      VALUES (?, ?, 'stock_inspection_rework', 'StockItem', ?, ?)`)
+      .bind(ctx.storeId, ctx.actorUserId, item.id, JSON.stringify({ eventId, fromStatus: 'failed', toStatus: 'pending', findings: input.findings.trim(), expectedVersion: input.expectedVersion, version: nextVersion })),
+  ]
+  return {
+    statements,
+    outcome: { entityType: 'StockItem', entityId: item.id, version: nextVersion,
+      summary: '已登记返修完成，实物仍待复检', effects: { inspectionEventId: eventId, fromStatus: 'failed', toStatus: 'pending', availability: 'quarantine' } },
+    constraintCodes: { 'stock_inspection_events.store_id, stock_inspection_events.request_id': 'SERVICE_UNAVAILABLE' },
+  }
+}
+
+export async function reworkStockItem(
+  db: OperationsDb,
+  ctx: OperationContext,
+  stockItemId: string,
+  input: InspectionReworkInput,
+): Promise<RunResult | InspectionRequestFailure> {
+  const invalid = validateInspectionReworkInput(input)
+  if (invalid) return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: invalid, retryable: false, httpStatus: 400 }
+  const resolved: OperationContext = { ...ctx, payloadHash: await hashPayload(input) }
+  const existing = await queryOperation(db, ctx.storeId, ctx.requestId, { action: ctx.action, payloadHash: resolved.payloadHash })
+  if (existing.found) {
+    if (existing.mismatch) return { ok: false, requestId: ctx.requestId, code: 'IDEMPOTENCY_MISMATCH', message: '同一 requestId 已用于不同的动作或不同的载荷，已中止；请勿更换 ID 重复提交', retryable: false, httpStatus: 409 }
+    if (existing.status !== 'succeeded') return { ok: false, requestId: ctx.requestId, code: 'SERVICE_UNAVAILABLE', message: '该请求的处理结果尚未确认，请稍后查询', retryable: true, httpStatus: 503 }
+    return { ok: true, reused: true, requestId: ctx.requestId, outcome: existing.outcome ?? {} }
+  }
+  const item = await loadInspectableItem(db, ctx.storeId, stockItemId)
+  if (!item) return { ok: false, requestId: ctx.requestId, code: 'ENTITY_NOT_FOUND', message: '实物不存在或不属于当前门店', retryable: false, httpStatus: 404 }
+  if (item.ownership !== 'store') return { ok: false, requestId: ctx.requestId, code: 'OWNERSHIP_INVALID', message: '非门店自有实物不能登记返修', retryable: false, httpStatus: 422 }
+  if (item.availability !== 'quarantine' || item.inspectionStatus !== 'failed') {
+    return { ok: false, requestId: ctx.requestId, code: 'INSPECTION_REQUIRED', message: '只有待处理桶中的检测失败实物可以登记返修', retryable: false, httpStatus: 422 }
+  }
+  if (item.version !== input.expectedVersion) return { ok: false, requestId: ctx.requestId, code: 'VERSION_CONFLICT', message: '实物已被其他人更新，请刷新后重试', retryable: false, httpStatus: 409, currentVersion: item.version }
+  return runIdempotent(db, resolved, (operation) => planInspectionRework(db, operation, item, input))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1541,6 +1873,7 @@ interface RefurbishableItem {
   acquisitionCostCents: number | null
   costKnown: number
   inspectionRef: string | null
+  inspectionStatus: InspectionStatus
 }
 
 function validateRefurbishmentInput(input: RefurbishmentInput): string | null {
@@ -1564,7 +1897,7 @@ function validateMakeAvailableInput(input: MakeItemAvailableInput): string | nul
 
 async function loadRefurbishableItem(db: OperationsDb, storeId: number, stockItemId: string): Promise<RefurbishableItem | null> {
   const row = await db.prepare(
-    `SELECT si.id, si.availability, si.ownership, si.version, si.acquisition_cost_cents, si.cost_known, si.inspection_ref,
+    `SELECT si.id, si.availability, si.ownership, si.version, si.acquisition_cost_cents, si.cost_known, si.inspection_ref, si.inspection_status,
             ri.recovery_order_id, ro.state AS recovery_state
        FROM stock_items si
        JOIN recovery_items ri ON ri.stock_item_id = si.id AND ri.store_id = si.store_id
@@ -1572,11 +1905,12 @@ async function loadRefurbishableItem(db: OperationsDb, storeId: number, stockIte
       WHERE si.store_id = ? AND si.id = ?`,
   ).bind(storeId, stockItemId).first<{
     id: string; availability: string; ownership: string; version: number; acquisition_cost_cents: number | null; cost_known: number
-    inspection_ref: string | null; recovery_order_id: string; recovery_state: string
+    inspection_ref: string | null; inspection_status: InspectionStatus; recovery_order_id: string; recovery_state: string
   }>()
   if (!row) return null
   return { id: row.id, recoveryOrderId: row.recovery_order_id, recoveryState: row.recovery_state, availability: row.availability,
-    ownership: row.ownership, version: row.version, acquisitionCostCents: row.acquisition_cost_cents, costKnown: row.cost_known, inspectionRef: row.inspection_ref }
+    ownership: row.ownership, version: row.version, acquisitionCostCents: row.acquisition_cost_cents, costKnown: row.cost_known, inspectionRef: row.inspection_ref,
+    inspectionStatus: row.inspection_status }
 }
 
 function refurbishmentPlan(db: OperationsDb, ctx: OperationContext, item: RefurbishableItem, input: RefurbishmentInput): OperationPlan {
@@ -1632,7 +1966,7 @@ function makeAvailablePlan(db: OperationsDb, ctx: OperationContext, item: Refurb
   const now = nowIso(); const nextVersion = item.version + 1
   const statements: D1PreparedStatement[] = [
     guardStatement(db, 'VERSION_CONFLICT', `NOT EXISTS (SELECT 1 FROM recovery_orders WHERE store_id=? AND id=? AND state IN ('acquired','refurbishing'))`, ctx.storeId, item.recoveryOrderId, { diagnostic: 'RECOVERY_NOT_REFURBISHABLE' }),
-    guardStatement(db, 'INSPECTION_REQUIRED', `NOT EXISTS (SELECT 1 FROM stock_items WHERE store_id=? AND id=? AND inspection_ref IS NOT NULL AND acquisition_cost_cents IS NOT NULL AND cost_known=1)`, ctx.storeId, item.id, { diagnostic: 'LISTING_GATE_MISSING' }),
+    guardStatement(db, 'INSPECTION_REQUIRED', `NOT EXISTS (SELECT 1 FROM stock_items WHERE store_id=? AND id=? AND inspection_status='passed' AND acquisition_cost_cents IS NOT NULL AND cost_known=1)`, ctx.storeId, item.id, { diagnostic: 'LISTING_GATE_MISSING' }),
     guardStatement(db, 'VERSION_CONFLICT', `NOT EXISTS (SELECT 1 FROM stock_items WHERE store_id=? AND id=? AND version=?)`, ctx.storeId, item.id, input.expectedVersion, { diagnostic: 'EXPECTED_VERSION' }),
     db.prepare(`UPDATE stock_items SET condition_grade=?, sale_price_cents=?, disclosure_note=?, data_disposed=?, warranty_term=?, version=version+1, updated_at=? WHERE store_id=? AND id=?`)
       .bind(input.conditionGrade, input.salePriceCents, input.disclosureNote.trim(), input.dataDisposed ? 1 : 0, input.warrantyTerm, now, ctx.storeId, item.id),
@@ -1655,7 +1989,7 @@ export async function makeItemAvailable(db: OperationsDb, ctx: OperationContext,
   const item = await loadRefurbishableItem(db, ctx.storeId, stockItemId)
   if (!item) return { ok: false, requestId: ctx.requestId, code: 'ENTITY_NOT_FOUND', message: '回收实物不存在或不属于当前门店', retryable: false, httpStatus: 404 }
   if (item.ownership !== 'store' || !['acquired', 'refurbishing'].includes(item.recoveryState)) return { ok: false, requestId: ctx.requestId, code: 'OWNERSHIP_INVALID', message: '已拆件或未取得所有权的回收实物不能上架', retryable: false, httpStatus: 422 }
-  if (!item.inspectionRef || item.acquisitionCostCents === null || item.costKnown !== 1) return { ok: false, requestId: ctx.requestId, code: 'INSPECTION_REQUIRED', message: '上架前必须完成检测并确认逐件可归属成本', retryable: false, httpStatus: 422 }
+  if (item.inspectionStatus !== 'passed' || item.acquisitionCostCents === null || item.costKnown !== 1) return { ok: false, requestId: ctx.requestId, code: 'INSPECTION_REQUIRED', message: '上架前必须完成检测并确认逐件可归属成本', retryable: false, httpStatus: 422 }
   if (item.version !== input.expectedVersion) return { ok: false, requestId: ctx.requestId, code: 'VERSION_CONFLICT', message: '实物已被更新，请刷新后重试', retryable: false, httpStatus: 409, currentVersion: item.version }
   return runIdempotent(db, resolved, (operation) => makeAvailablePlan(db, operation, item, input))
 }
@@ -1715,6 +2049,7 @@ export interface InventoryItemRow {
   snNormalized: string | null
   ownership: 'store' | 'customer' | 'vendor'
   availability: StockBucket
+  inspectionStatus: InspectionStatus
   location: 'store' | 'customer' | 'external' | 'supplier'
   activeReservationRef: string | null
   acquisitionCostCents?: number | null
@@ -1746,6 +2081,25 @@ export interface InventoryListResult {
   filters: InventoryQuery
   nextCursor: string | null
   hasMore: boolean
+}
+
+export interface InventoryStockItemQuery {
+  q?: string | null
+  category?: string | null
+  condition?: StockCondition | null
+  availability?: InventoryOnHandBucket | null
+  inspectionStatus?: InspectionStatus | null
+  limit?: number | null
+  cursor?: string | null
+  quantityCursor?: string | null
+}
+
+/** 游标只适用于生成它的筛选集合；避免分类或关键词变化后沿用旧页位置。 */
+export class InventoryStockItemCursorError extends Error {
+  constructor() {
+    super('cursor 与当前筛选不匹配或格式无效，请从第一页重新读取')
+    this.name = 'InventoryStockItemCursorError'
+  }
 }
 
 export interface StockBatchRow {
@@ -1894,7 +2248,7 @@ export async function queryInventory(
   const itemRows = await db
     .prepare(
       `SELECT si.id, si.version, si.asset_code, si.condition, si.sn_raw, si.sn_normalized, si.remark,
-              si.ownership, si.availability, si.location,
+              si.ownership, si.availability, si.inspection_status, si.location,
               si.acquisition_cost_cents, si.estimated_acquisition_cost_cents, si.cost_known, si.cost_basis, si.cost_evidence_ref, si.cost_assessed_at,
               h.entity_id AS product_entity_id, h.name AS product_name,
               (SELECT sr.id FROM stock_reservations sr
@@ -1916,6 +2270,7 @@ export async function queryInventory(
       remark: string
       ownership: string
       availability: string
+      inspection_status: InspectionStatus
       location: string
       acquisition_cost_cents: number | null
       estimated_acquisition_cost_cents: number | null
@@ -1941,6 +2296,7 @@ export async function queryInventory(
       snNormalized: row.sn_normalized,
       ownership: row.ownership as InventoryItemRow['ownership'],
       availability: row.availability as StockBucket,
+      inspectionStatus: row.inspection_status,
       location: row.location as InventoryItemRow['location'],
       activeReservationRef: row.active_reservation_ref,
     }
@@ -2030,9 +2386,526 @@ export async function queryInventory(
   }
 }
 
+interface InventoryStockItemAggregateRow {
+  category: string
+  availability: InventoryOnHandBucket
+  tracking_mode: 'quantity' | 'item'
+  qty: number
+}
+
+interface InventoryStockItemRaw {
+  id: string
+  version: number
+  hardware_id: number
+  product_entity_id: string | null
+  product_name: string
+  category: string
+  brand_name: string | null
+  sku: string | null
+  asset_code: string
+  remark: string
+  condition: string
+  availability: string
+  inspection_status: InspectionStatus
+  acquisition_cost_cents?: number | null
+  estimated_acquisition_cost_cents?: number | null
+  cost_known?: number
+  cost_basis?: OpeningCostBasis | null
+  cost_evidence_ref?: string | null
+  cost_assessed_at?: string | null
+}
+
+interface InventoryQuantityProductRaw {
+  hardware_id: number
+  product_entity_id: string | null
+  product_name: string
+  category: string
+  brand_name: string | null
+  sku: string | null
+  available_qty: number
+  reserved_qty: number
+  quarantine_qty: number
+  total_cost_cents?: number | null
+  cost_known?: number
+}
+
+type InventoryStockItemCursorFilters = Pick<
+  InventoryStockItemReadFilters,
+  'q' | 'category' | 'condition' | 'availability' | 'inspectionStatus'
+>
+
+function emptyInventoryReadMetrics(): InventoryReadMetrics {
+  return {
+    ownOnHandQty: 0,
+    quantityTrackedQty: 0,
+    itemCount: 0,
+    availableQty: 0,
+    reservedQty: 0,
+    quarantineQty: 0,
+  }
+}
+
+function addInventoryReadMetric(metrics: InventoryReadMetrics, row: InventoryStockItemAggregateRow): void {
+  metrics.ownOnHandQty += row.qty
+  if (row.tracking_mode === 'quantity') metrics.quantityTrackedQty += row.qty
+  else metrics.itemCount += row.qty
+
+  if (row.availability === 'available') metrics.availableQty += row.qty
+  else if (row.availability === 'reserved') metrics.reservedQty += row.qty
+  else if (row.availability === 'quarantine') metrics.quarantineQty += row.qty
+}
+
+function encodeInventoryStockItemCursor(
+  item: Pick<InventoryStockItemRaw, 'asset_code' | 'id'>,
+  filters: InventoryStockItemCursorFilters,
+  storeId: number,
+): string {
+  return JSON.stringify({ v: 1, storeId, assetCode: item.asset_code, id: item.id, filters })
+}
+
+function decodeInventoryStockItemCursor(
+  cursor: string | null,
+  filters: InventoryStockItemCursorFilters,
+  storeId: number,
+): { assetCode: string; id: string } | null {
+  if (!cursor) return null
+  try {
+    const parsed = JSON.parse(cursor) as {
+      v?: unknown
+      storeId?: unknown
+      assetCode?: unknown
+      id?: unknown
+      filters?: Partial<InventoryStockItemReadFilters>
+    }
+    if (
+      parsed?.v !== 1
+      || parsed.storeId !== storeId
+      || typeof parsed.assetCode !== 'string'
+      || typeof parsed.id !== 'string'
+      || parsed.filters?.q !== filters.q
+      || parsed.filters?.category !== filters.category
+      || parsed.filters?.condition !== filters.condition
+      || parsed.filters?.availability !== filters.availability
+      || (parsed.filters?.inspectionStatus ?? null) !== filters.inspectionStatus
+    ) throw new InventoryStockItemCursorError()
+    return { assetCode: parsed.assetCode, id: parsed.id }
+  } catch (error) {
+    if (error instanceof InventoryStockItemCursorError) throw error
+    throw new InventoryStockItemCursorError()
+  }
+}
+
+function encodeInventoryQuantityCursor(
+  row: Pick<InventoryQuantityProductRaw, 'product_name' | 'hardware_id'>,
+  filters: InventoryStockItemCursorFilters,
+  storeId: number,
+): string {
+  return JSON.stringify({ v: 1, storeId, name: row.product_name, hardwareId: row.hardware_id, filters })
+}
+
+function decodeInventoryQuantityCursor(
+  cursor: string | null,
+  filters: InventoryStockItemCursorFilters,
+  storeId: number,
+): { name: string; hardwareId: number } | null {
+  if (!cursor) return null
+  try {
+    const parsed = JSON.parse(cursor) as {
+      v?: unknown
+      storeId?: unknown
+      name?: unknown
+      hardwareId?: unknown
+      filters?: Partial<InventoryStockItemReadFilters>
+    }
+    if (
+      parsed?.v !== 1
+      || parsed.storeId !== storeId
+      || typeof parsed.name !== 'string'
+      || !Number.isSafeInteger(parsed.hardwareId)
+      || parsed.filters?.q !== filters.q
+      || parsed.filters?.category !== filters.category
+      || parsed.filters?.condition !== filters.condition
+      || parsed.filters?.availability !== filters.availability
+      || (parsed.filters?.inspectionStatus ?? null) !== filters.inspectionStatus
+    ) throw new InventoryStockItemCursorError()
+    return { name: parsed.name, hardwareId: parsed.hardwareId as number }
+  } catch (error) {
+    if (error instanceof InventoryStockItemCursorError) throw error
+    throw new InventoryStockItemCursorError()
+  }
+}
+
+/**
+ * U01：分页读取门店自有逐件在库与数量型号汇总，并在同一个 D1 batch 中读取全量分类 / 状态统计。
+ *
+ * 数量库存只来自 stock_balances；逐件库存只来自真实的 stock_items。客户保管、在途、已售和
+ * 退役不计入本列表或自有在库统计。condition 只筛有数据库字段的逐件库存；数量库存没有成色字段，
+ * 所以指定 condition 时不会把数量余额猜成新品或二手。检测状态不从 availability / inspection_ref 推导。
+ */
+export async function queryInventoryStockItems(
+  db: OperationsDb,
+  storeId: number,
+  query: InventoryStockItemQuery = {},
+  options: { includeCost: boolean } = { includeCost: false },
+): Promise<InventoryStockItemPagePayload> {
+  const q = query.q?.trim() ?? ''
+  const category = query.category === '' ? null : (query.category ?? null)
+  const condition = query.condition ?? null
+  const availability = query.availability ?? null
+  const inspectionStatus = query.inspectionStatus ?? null
+  const limit = Math.min(Math.max(query.limit ?? 20, 1), 100)
+  const cursor = query.cursor ?? null
+  const quantityCursor = query.quantityCursor ?? null
+  const filters: InventoryStockItemReadFilters = { q, category, condition, availability, inspectionStatus, limit, cursor, quantityCursor }
+  const cursorFilters = { q, category, condition, availability, inspectionStatus }
+  const after = decodeInventoryStockItemCursor(cursor, cursorFilters, storeId)
+  const quantityAfter = decodeInventoryQuantityCursor(quantityCursor, cursorFilters, storeId)
+
+  const quantityConditions = [`h.store_id = ?`, `COALESCE(h.tracking_mode, 'quantity') = 'quantity'`]
+  const quantityParams: (string | number)[] = [storeId]
+  // quantity-mode rows have no condition field; never infer one from their category or availability.
+  if (condition) quantityConditions.push('1 = 0')
+  // Quantity-mode stock has no per-item inspection fact.
+  if (inspectionStatus !== null) quantityConditions.push('1 = 0')
+  if (q) {
+    quantityConditions.push(`(h.name LIKE ? OR COALESCE(h.sku, '') LIKE ? OR COALESCE(h.specs, '') LIKE ?)`)
+    quantityParams.push(`%${q}%`, `%${q}%`, `%${q}%`)
+  }
+
+  const itemConditions = [
+    `si.store_id = ?`,
+    `h.store_id = si.store_id`,
+    `h.tracking_mode = 'item'`,
+    `si.ownership = 'store'`,
+    `si.availability IN ('available', 'reserved', 'quarantine')`,
+  ]
+  const itemParams: (string | number)[] = [storeId]
+  if (category !== null) {
+    itemConditions.push(`h.category = ?`)
+    itemParams.push(category)
+  }
+  if (condition) {
+    itemConditions.push(`si.condition = ?`)
+    itemParams.push(condition)
+  }
+  if (availability) {
+    itemConditions.push(`si.availability = ?`)
+    itemParams.push(availability)
+  }
+  if (inspectionStatus) {
+    itemConditions.push(`si.inspection_status = ?`)
+    itemParams.push(inspectionStatus)
+  }
+  if (q) {
+    itemConditions.push(`(h.name LIKE ? OR COALESCE(h.sku, '') LIKE ? OR COALESCE(h.specs, '') LIKE ?
+      OR si.asset_code LIKE ? OR COALESCE(si.sn_normalized, '') LIKE ? OR si.remark LIKE ?)`)
+    itemParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${normalizeManufacturerSn(q)}%`, `%${q}%`)
+  }
+  if (after) {
+    itemConditions.push(`(si.asset_code > ? OR (si.asset_code = ? AND si.id > ?))`)
+    itemParams.push(after.assetCode, after.assetCode, after.id)
+  }
+
+  const itemAggregateConditions = [
+    `si.store_id = ?`,
+    `h.store_id = si.store_id`,
+    `h.tracking_mode = 'item'`,
+    `si.ownership = 'store'`,
+    `si.availability IN ('available', 'reserved', 'quarantine')`,
+  ]
+  const itemAggregateParams: (string | number)[] = [storeId]
+  if (condition) {
+    itemAggregateConditions.push(`si.condition = ?`)
+    itemAggregateParams.push(condition)
+  }
+  if (inspectionStatus) {
+    itemAggregateConditions.push(`si.inspection_status = ?`)
+    itemAggregateParams.push(inspectionStatus)
+  }
+  if (q) {
+    itemAggregateConditions.push(`(h.name LIKE ? OR COALESCE(h.sku, '') LIKE ? OR COALESCE(h.specs, '') LIKE ?
+      OR si.asset_code LIKE ? OR COALESCE(si.sn_normalized, '') LIKE ? OR si.remark LIKE ?)`)
+    itemAggregateParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${normalizeManufacturerSn(q)}%`, `%${q}%`)
+  }
+
+  const costSelect = options.includeCost
+    ? `, si.acquisition_cost_cents, si.estimated_acquisition_cost_cents, si.cost_known,
+         si.cost_basis, si.cost_evidence_ref, si.cost_assessed_at`
+    : ''
+  const aggregateStatement = db.prepare(`
+    WITH quantity_inventory AS (
+      SELECT h.category,
+             COALESCE(b.available_qty, 0) AS available_qty,
+             COALESCE(b.reserved_qty, 0) AS reserved_qty,
+             COALESCE(b.quarantine_qty, 0) AS quarantine_qty
+        FROM hardware h
+        LEFT JOIN stock_balances b
+          ON b.store_id = h.store_id AND b.product_id = h.id AND b.location_id = 'store'
+       WHERE ${quantityConditions.join(' AND ')}
+    ),
+    quantity_groups AS (
+      SELECT category, 'available' AS availability, SUM(available_qty) AS qty
+        FROM quantity_inventory GROUP BY category HAVING SUM(available_qty) > 0
+      UNION ALL
+      SELECT category, 'reserved' AS availability, SUM(reserved_qty) AS qty
+        FROM quantity_inventory GROUP BY category HAVING SUM(reserved_qty) > 0
+      UNION ALL
+      SELECT category, 'quarantine' AS availability, SUM(quarantine_qty) AS qty
+        FROM quantity_inventory GROUP BY category HAVING SUM(quarantine_qty) > 0
+    ),
+    item_groups AS (
+      SELECT h.category, si.availability, COUNT(*) AS qty
+        FROM stock_items si
+        JOIN hardware h ON h.id = si.product_id
+       WHERE ${itemAggregateConditions.join(' AND ')}
+       GROUP BY h.category, si.availability
+    ),
+    read_groups AS (
+      SELECT category, availability, 'quantity' AS tracking_mode, qty FROM quantity_groups
+      UNION ALL
+      SELECT category, availability, 'item' AS tracking_mode, qty FROM item_groups
+    )
+    SELECT category, availability, tracking_mode, qty
+      FROM read_groups
+     ORDER BY category COLLATE NOCASE, availability, tracking_mode
+  `)
+  const inspectionCountConditions = [
+    `si.store_id = ?`,
+    `h.store_id = si.store_id`,
+    `h.tracking_mode = 'item'`,
+    `si.ownership = 'store'`,
+    `si.availability IN ('available', 'reserved', 'quarantine')`,
+  ]
+  const inspectionCountParams: (string | number)[] = [storeId]
+  if (category !== null) {
+    inspectionCountConditions.push('h.category = ?')
+    inspectionCountParams.push(category)
+  }
+  if (condition) {
+    inspectionCountConditions.push('si.condition = ?')
+    inspectionCountParams.push(condition)
+  }
+  if (availability) {
+    inspectionCountConditions.push('si.availability = ?')
+    inspectionCountParams.push(availability)
+  }
+  if (q) {
+    inspectionCountConditions.push(`(h.name LIKE ? OR COALESCE(h.sku, '') LIKE ? OR COALESCE(h.specs, '') LIKE ?
+      OR si.asset_code LIKE ? OR COALESCE(si.sn_normalized, '') LIKE ? OR si.remark LIKE ?)`)
+    inspectionCountParams.push(`%${q}%`, `%${q}%`, `%${q}%`, `%${q}%`, `%${normalizeManufacturerSn(q)}%`, `%${q}%`)
+  }
+  const inspectionCountStatement = db.prepare(`
+    SELECT si.inspection_status, COUNT(*) AS item_count
+      FROM stock_items si JOIN hardware h ON h.id = si.product_id
+     WHERE ${inspectionCountConditions.join(' AND ')}
+     GROUP BY si.inspection_status
+  `).bind(...inspectionCountParams)
+  // Aggregate facets deliberately exclude category, availability and cursor predicates so both facets can
+  // show the full matching choices. The selected filters are applied in memory below to totals and each facet.
+  const aggregateQueryParams = [...quantityParams, ...itemAggregateParams]
+
+  const pageConditions = [...itemConditions]
+  const pageParams = [...itemParams]
+  const pageStatement = db.prepare(`
+    SELECT si.id, si.version, h.id AS hardware_id, h.entity_id AS product_entity_id,
+           h.name AS product_name, h.category, pb.name AS brand_name, h.sku,
+           si.asset_code, si.remark, si.condition, si.availability, si.inspection_status${costSelect}
+      FROM stock_items si
+      JOIN hardware h ON h.id = si.product_id AND h.store_id = si.store_id
+      LEFT JOIN product_brands pb ON pb.id = h.brand_id AND pb.store_id = h.store_id
+     WHERE ${pageConditions.join(' AND ')}
+     ORDER BY si.asset_code, si.id
+     LIMIT ?
+  `).bind(...pageParams, limit + 1)
+
+  const quantityPageConditions = [`h.store_id = ?`, `COALESCE(h.tracking_mode, 'quantity') = 'quantity'`]
+  const quantityPageParams: (string | number)[] = [storeId]
+  if (category !== null) {
+    quantityPageConditions.push('h.category = ?')
+    quantityPageParams.push(category)
+  }
+  // Quantity balances have no condition fact, so a condition filter returns only item-tracked stock.
+  if (condition) quantityPageConditions.push('1 = 0')
+  if (inspectionStatus !== null) quantityPageConditions.push('1 = 0')
+  if (q) {
+    quantityPageConditions.push(`(h.name LIKE ? OR COALESCE(h.sku, '') LIKE ? OR COALESCE(h.specs, '') LIKE ?)`)
+    quantityPageParams.push(`%${q}%`, `%${q}%`, `%${q}%`)
+  }
+  if (availability === 'available') quantityPageConditions.push('COALESCE(b.available_qty, 0) > 0')
+  else if (availability === 'reserved') quantityPageConditions.push('COALESCE(b.reserved_qty, 0) > 0')
+  else if (availability === 'quarantine') quantityPageConditions.push('COALESCE(b.quarantine_qty, 0) > 0')
+  else quantityPageConditions.push(`(COALESCE(b.available_qty, 0) + COALESCE(b.reserved_qty, 0) + COALESCE(b.quarantine_qty, 0)) > 0`)
+  if (quantityAfter) {
+    quantityPageConditions.push(`(h.name COLLATE NOCASE > ? OR (h.name COLLATE NOCASE = ? AND h.id > ?))`)
+    quantityPageParams.push(quantityAfter.name, quantityAfter.name, quantityAfter.hardwareId)
+  }
+  const quantityCostSelect = options.includeCost ? ', b.total_cost_cents, COALESCE(b.cost_known, 0) AS cost_known' : ''
+  const quantityPageStatement = db.prepare(`
+    SELECT h.id AS hardware_id, h.entity_id AS product_entity_id, h.name AS product_name,
+           h.category, pb.name AS brand_name, h.sku,
+           COALESCE(b.available_qty, 0) AS available_qty,
+           COALESCE(b.reserved_qty, 0) AS reserved_qty,
+           COALESCE(b.quarantine_qty, 0) AS quarantine_qty${quantityCostSelect}
+      FROM hardware h
+      LEFT JOIN product_brands pb ON pb.id = h.brand_id AND pb.store_id = h.store_id
+      LEFT JOIN stock_balances b
+        ON b.store_id = h.store_id AND b.product_id = h.id AND b.location_id = 'store'
+     WHERE ${quantityPageConditions.join(' AND ')}
+     ORDER BY h.name COLLATE NOCASE, h.id
+     LIMIT ?
+  `).bind(...quantityPageParams, limit + 1)
+
+  // One D1 batch keeps both pages and all status/category/bucket facets on the same read snapshot.
+  const batch = await db.batch<InventoryStockItemAggregateRow | InventoryStockItemRaw | InventoryQuantityProductRaw | { inspection_status: InspectionStatus; item_count: number }>([
+    aggregateStatement.bind(...aggregateQueryParams),
+    pageStatement,
+    quantityPageStatement,
+    inspectionCountStatement,
+  ])
+  const aggregateRows = (batch[0]?.results ?? []) as InventoryStockItemAggregateRow[]
+  const allItems = (batch[1]?.results ?? []) as InventoryStockItemRaw[]
+  const allQuantityProducts = (batch[2]?.results ?? []) as InventoryQuantityProductRaw[]
+  const inspectionCountRows = (batch[3]?.results ?? []) as { inspection_status: InspectionStatus; item_count: number }[]
+  const hasMore = allItems.length > limit
+  const pageItems = hasMore ? allItems.slice(0, limit) : allItems
+  const quantityHasMore = allQuantityProducts.length > limit
+  const pageQuantityProducts = quantityHasMore ? allQuantityProducts.slice(0, limit) : allQuantityProducts
+
+  const rowMetrics = new Map<string, InventoryReadMetrics>()
+  const statusMetrics = new Map<InventoryOnHandBucket, { quantityTrackedQty: number; itemCount: number; qty: number }>()
+  const totals = emptyInventoryReadMetrics()
+  for (const bucket of INVENTORY_ON_HAND_BUCKETS) {
+    statusMetrics.set(bucket, { quantityTrackedQty: 0, itemCount: 0, qty: 0 })
+  }
+  for (const row of aggregateRows) {
+    const categoryMetrics = rowMetrics.get(row.category) ?? emptyInventoryReadMetrics()
+    addInventoryReadMetric(categoryMetrics, row)
+    rowMetrics.set(row.category, categoryMetrics)
+
+    const status = statusMetrics.get(row.availability) as { quantityTrackedQty: number; itemCount: number; qty: number }
+    status.qty += row.qty
+    if (row.tracking_mode === 'quantity') status.quantityTrackedQty += row.qty
+    else status.itemCount += row.qty
+
+    if ((category === null || row.category === category) && (availability === null || row.availability === availability)) {
+      addInventoryReadMetric(totals, row)
+    }
+  }
+
+  const categoryCounts: InventoryCategoryCount[] = [...rowMetrics.entries()]
+    .map(([categoryName, allCategoryMetrics]) => {
+      if (!availability) return { category: categoryName, metrics: allCategoryMetrics }
+      const filtered = emptyInventoryReadMetrics()
+      for (const row of aggregateRows) {
+        if (row.category === categoryName && row.availability === availability) addInventoryReadMetric(filtered, row)
+      }
+      return { category: categoryName, metrics: filtered }
+    })
+    .filter((entry) => entry.metrics.ownOnHandQty > 0)
+    .sort((left, right) => left.category.localeCompare(right.category))
+
+  const availabilityCounts: InventoryAvailabilityCount[] = INVENTORY_ON_HAND_BUCKETS.map((bucket) => {
+    const status = statusMetrics.get(bucket) as { quantityTrackedQty: number; itemCount: number; qty: number }
+    if (!category) return { availability: bucket, ...status }
+    const filtered = { quantityTrackedQty: 0, itemCount: 0, qty: 0 }
+    for (const row of aggregateRows) {
+      if (row.category === category && row.availability === bucket) {
+        filtered.qty += row.qty
+        if (row.tracking_mode === 'quantity') filtered.quantityTrackedQty += row.qty
+        else filtered.itemCount += row.qty
+      }
+    }
+    return { availability: bucket, ...filtered }
+  })
+
+  const inspectionCountByStatus = new Map(inspectionCountRows.map((row) => [row.inspection_status, row.item_count]))
+  const inspectionCounts: InspectionStatusCount[] = INSPECTION_STATUSES.map((status) => ({
+    inspectionStatus: status,
+    itemCount: inspectionCountByStatus.get(status) ?? 0,
+  }))
+
+  const items: InventoryStockItemRow[] = pageItems.map((row) => {
+    const item: InventoryStockItemRow = {
+      id: row.id,
+      version: row.version,
+      productId: row.product_entity_id ?? `hardware-${row.hardware_id}`,
+      productName: row.product_name,
+      category: row.category,
+      brand: row.brand_name,
+      sku: row.sku,
+      assetCode: row.asset_code,
+      remark: row.remark,
+      condition: row.condition === 'used' ? 'used' : 'new',
+      availability: row.availability as InventoryOnHandBucket,
+      inspectionStatus: row.inspection_status,
+    }
+    if (options.includeCost) {
+      item.acquisitionCostCents = row.acquisition_cost_cents ?? null
+      item.assessedEstimateCents = row.estimated_acquisition_cost_cents ?? null
+      item.costKnown = row.cost_known === 1
+      item.acquisitionCostBasis = row.cost_basis ?? null
+      item.costEvidenceRef = row.cost_evidence_ref ?? null
+      item.costAssessedAt = row.cost_assessed_at ?? null
+    }
+    return item
+  })
+
+  const quantityProducts: InventoryQuantityProductRow[] = pageQuantityProducts.map((row) => {
+    const product: InventoryQuantityProductRow = {
+      id: row.product_entity_id ?? `hardware-${row.hardware_id}`,
+      name: row.product_name,
+      category: row.category,
+      sku: row.sku,
+      brand: row.brand_name,
+      trackingMode: 'quantity',
+      availableQty: row.available_qty,
+      reservedQty: row.reserved_qty,
+      quarantineQty: row.quarantine_qty,
+      ownOnHandQty: row.available_qty + row.reserved_qty + row.quarantine_qty,
+    }
+    if (options.includeCost) {
+      product.totalCostCents = row.total_cost_cents ?? null
+      product.costKnown = row.cost_known === 1
+    }
+    return product
+  })
+
+  const last = pageItems[pageItems.length - 1]
+  const lastQuantity = pageQuantityProducts[pageQuantityProducts.length - 1]
+  return {
+    items,
+    quantityProducts,
+    filters,
+    totals,
+    categoryCounts,
+    availabilityCounts,
+    inspectionCounts,
+    nextCursor: hasMore && last ? encodeInventoryStockItemCursor(last, cursorFilters, storeId) : null,
+    hasMore,
+    quantityNextCursor: quantityHasMore && lastQuantity ? encodeInventoryQuantityCursor(lastQuantity, cursorFilters, storeId) : null,
+    quantityHasMore,
+  }
+}
+
 export interface StockItemDetail {
   item: InventoryItemRow
   attachments: AttachmentView[]
+  inspectionEvents: {
+    id: string
+    eventType: 'inspection' | 'rework'
+    fromStatus: InspectionStatus
+    toStatus: InspectionStatus
+    result: InspectionResult | null
+    findings: string
+    evidence: string[]
+    occurredAt: string
+    recordedAt: string
+    actorId: number
+    requestId: string
+    stockItemVersion: number
+  }[]
+  backfill: { id: string; batchRef: string; lineRef: string; recordedAt: string } | null
+  sourceRecord: InventoryStockItemSourceRecord | null
   recoveryState: string | null
   /** 整备成本与凭据引用仅在有成本查看权限时返回。 */
   refurbishmentCosts?: {
@@ -2079,7 +2952,7 @@ export async function queryStockItem(
   const row = await db
     .prepare(
       `SELECT si.id, si.version, si.asset_code, si.condition, si.sn_raw, si.sn_normalized, si.remark,
-              si.ownership, si.availability, si.location, si.acquisition_ref,
+              si.ownership, si.availability, si.inspection_status, si.location, si.acquisition_ref,
               si.acquisition_cost_cents, si.estimated_acquisition_cost_cents, si.cost_known, si.cost_basis, si.cost_evidence_ref, si.cost_assessed_at,
               (SELECT ro.state FROM recovery_items ri JOIN recovery_orders ro ON ro.id = ri.recovery_order_id AND ro.store_id = ri.store_id WHERE ri.store_id = si.store_id AND ri.stock_item_id = si.id LIMIT 1) AS recovery_state,
               h.id AS hardware_id, h.entity_id, h.sku, h.name, COALESCE(h.tracking_mode,'quantity') AS tracking_mode
@@ -2098,6 +2971,7 @@ export async function queryStockItem(
       remark: string
       ownership: string
       availability: string
+      inspection_status: InspectionStatus
       location: string
       acquisition_ref: string | null
       acquisition_cost_cents: number | null
@@ -2118,6 +2992,18 @@ export async function queryStockItem(
 
   const attachments = await listAttachedForOwner(db, storeId, 'stock_item', stockItemId)
 
+  const inspectionEventRows = await db.prepare(
+    `SELECT id, event_type, from_status, to_status, result, findings, evidence_json, occurred_at,
+            recorded_at, actor_user_id, request_id, stock_item_version
+       FROM stock_inspection_events
+      WHERE store_id = ? AND stock_item_id = ?
+      ORDER BY recorded_at DESC, id DESC`,
+  ).bind(storeId, stockItemId).all<{
+    id: string; event_type: 'inspection' | 'rework'; from_status: InspectionStatus; to_status: InspectionStatus
+    result: InspectionResult | null; findings: string; evidence_json: string; occurred_at: string; recorded_at: string
+    actor_user_id: number; request_id: string; stock_item_version: number
+  }>()
+
   const reservation = await db
     .prepare(
       `SELECT id, order_ref, line_ref, status, created_at
@@ -2136,6 +3022,47 @@ export async function queryStockItem(
         .bind(storeId, row.acquisition_ref)
         .first<{ id: string; approved_count_ref: string; created_at: string }>()
     : null
+
+  const backfillRow = row.acquisition_ref
+    ? await db.prepare(`SELECT b.id, b.batch_ref, l.line_ref, b.recorded_at
+        FROM inventory_stock_backfills b
+        JOIN inventory_stock_backfill_lines l ON l.backfill_id = b.id AND l.store_id = b.store_id
+       WHERE b.store_id = ? AND b.id = ? AND l.stock_item_id = ? LIMIT 1`)
+      .bind(storeId, row.acquisition_ref, stockItemId)
+      .first<{ id: string; batch_ref: string; line_ref: string; recorded_at: string }>()
+    : null
+
+  const purchaseOrder = row.acquisition_ref
+    ? await db.prepare('SELECT id, purchase_no, created_at FROM purchase_orders WHERE store_id = ? AND id = ?')
+      .bind(storeId, row.acquisition_ref)
+      .first<{ id: string; purchase_no: string; created_at: string }>()
+    : null
+
+  const quickPurchaseReceipt = row.acquisition_ref
+    ? await db.prepare('SELECT id, quick_purchase_note, occurred_at FROM purchase_receipts WHERE store_id = ? AND id = ? AND purchase_id IS NULL')
+      .bind(storeId, row.acquisition_ref)
+      .first<{ id: string; quick_purchase_note: string | null; occurred_at: string }>()
+    : null
+
+  const recoveryOrder = row.acquisition_ref
+    ? await db.prepare('SELECT id, order_no, created_at FROM recovery_orders WHERE store_id = ? AND id = ?')
+      .bind(storeId, row.acquisition_ref)
+      .first<{ id: string; order_no: string; created_at: string }>()
+    : null
+
+  const sourceRecord: InventoryStockItemSourceRecord | null = opening
+    ? { kind: 'opening', recordId: opening.id, displayCode: opening.approved_count_ref, occurredAt: opening.created_at }
+    : backfillRow
+      ? { kind: 'stock_backfill', recordId: backfillRow.id, displayCode: backfillRow.batch_ref, occurredAt: backfillRow.recorded_at }
+      : purchaseOrder
+        ? { kind: 'purchase_order', recordId: purchaseOrder.id, displayCode: purchaseOrder.purchase_no, occurredAt: purchaseOrder.created_at }
+        : recoveryOrder
+          ? { kind: 'recovery_order', recordId: recoveryOrder.id, displayCode: recoveryOrder.order_no, occurredAt: recoveryOrder.created_at }
+          : quickPurchaseReceipt
+            ? { kind: 'quick_purchase', recordId: quickPurchaseReceipt.id, displayCode: quickPurchaseReceipt.quick_purchase_note, occurredAt: quickPurchaseReceipt.occurred_at }
+            : row.acquisition_ref
+              ? { kind: 'unresolved', recordId: row.acquisition_ref, displayCode: null, occurredAt: null }
+              : null
 
   const movementRows = await db
     .prepare(
@@ -2182,6 +3109,7 @@ export async function queryStockItem(
     snNormalized: row.sn_normalized,
     ownership: row.ownership as InventoryItemRow['ownership'],
     availability: row.availability as StockBucket,
+    inspectionStatus: row.inspection_status,
     location: row.location as InventoryItemRow['location'],
     activeReservationRef: reservation?.id ?? null,
   }
@@ -2197,6 +3125,22 @@ export async function queryStockItem(
   return {
     item,
     attachments,
+    inspectionEvents: (inspectionEventRows.results ?? []).map((event) => ({
+      id: event.id,
+      eventType: event.event_type,
+      fromStatus: event.from_status,
+      toStatus: event.to_status,
+      result: event.result,
+      findings: event.findings,
+      evidence: JSON.parse(event.evidence_json) as string[],
+      occurredAt: event.occurred_at,
+      recordedAt: event.recorded_at,
+      actorId: event.actor_user_id,
+      requestId: event.request_id,
+      stockItemVersion: event.stock_item_version,
+    })),
+    backfill: backfillRow ? { id: backfillRow.id, batchRef: backfillRow.batch_ref, lineRef: backfillRow.line_ref, recordedAt: backfillRow.recorded_at } : null,
+    sourceRecord,
     recoveryState: row.recovery_state,
     ...(refurbishmentRows ? {
       refurbishmentCosts: (refurbishmentRows.results ?? []).map((cost) => ({

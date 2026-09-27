@@ -42,7 +42,7 @@ const MP = {
   session: await loadTs('miniprogram/features/session.ts'),
   core: await loadTs('miniprogram/features/api-core.ts'),
 }
-const CONTRACT = JSON.parse(readFileSync(resolve(repoRoot, 'contracts/v1.1/errors.json'), 'utf8'))
+const CONTRACT = JSON.parse(readFileSync(resolve(repoRoot, 'contracts/v1.2/errors.json'), 'utf8'))
 
 const failures = []
 function check(name, ok, detail = '') {
@@ -345,7 +345,7 @@ for (const [fnName, inputs] of [
   check(`库存口径 ${fnName} 同输入同输出（${inputs.length} 组）`, diff === null, diff ?? '')
 }
 
-const v5Path = resolve(repoRoot, 'contracts/v1.1/fixtures.json')
+const v5Path = resolve(repoRoot, 'contracts/v1.2/fixtures.json')
 const v5 = JSON.parse(readFileSync(v5Path, 'utf8')).datasets?.V5
 if (!v5) {
   check('契约存在 V5 库存样本', false, 'fixtures.json 缺少 datasets.V5，无法实跑库存口径')

@@ -388,7 +388,7 @@ test('同一实物不能重复判定：已放行的件再判 → 422', async () 
   const repeated = await json(await a.post(inspectionPath('si-f2-pass'), {
     result: 'pass',
     findings: '想再判一次',
-    disposition: 'retired',
+    disposition: 'available',
     expectedVersion: 2,
     requestId: 'f2-repeat-1',
   }))
@@ -404,7 +404,7 @@ test('跨店：别店的实物判定返回 404，且不落任何账', async () =
   const { status, body } = await json(await a.post(inspectionPath(foreign), {
     result: 'pass',
     findings: '越店判定',
-    disposition: 'retired',
+    disposition: 'available',
     expectedVersion: 1,
     requestId: 'f2-cross-store',
   }))

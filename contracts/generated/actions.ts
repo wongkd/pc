@@ -1,6 +1,6 @@
-// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT
+// AUTO-GENERATED FROM contracts/v1.2 — DO NOT EDIT
 // 生成命令：node contracts/tools/generate-dto.mjs
-// 来源：contracts/v1.1/actions.json；动作码、路径、权限码的唯一来源。
+// 来源：contracts/v1.2/actions.json；动作码、路径、权限码的唯一来源。
 import type { ActionCode } from './enums'
 
 export interface ActionOperation {
@@ -55,6 +55,8 @@ export const ACTION_OPERATIONS: Record<ActionCode, readonly ActionOperation[]> =
   "B41": [{ method: "POST", path: "/service/orders/:id/payments", permission: "service/charge" }],
   "B45": [{ method: "POST", path: "/sales/quotes/:id/delete-draft", permission: "store/manage" }],
   "B46": [{ method: "GET", path: "/inventory/products/cleanup-candidates", permission: "store/manage" }, { method: "POST", path: "/inventory/products/:id/delete-unused", permission: "store/manage" }],
+  "B47": [{ method: "POST", path: "/inventory/backfills", permission: "inventory/stock-backfill" }],
+  "B48": [{ method: "POST", path: "/inventory/items/:id/inspection/rework", permission: "inventory/inspection" }],
 }
 
 export const ACTION_NAMES: Record<ActionCode, string> = {
@@ -102,6 +104,8 @@ export const ACTION_NAMES: Record<ActionCode, string> = {
   "B41": "售后收款",
   "B45": "清理未发出报价草稿",
   "B46": "清理未引用商品档案",
+  "B47": "同型号库存分批补录",
+  "B48": "返修后重新待检",
 }
 
 // ── 页面 → 该页可发起的动作（02 §5；每页至少一个，由契约校验脚本强制）──
@@ -109,7 +113,7 @@ export const PAGE_ACTIONS: Record<string, readonly ActionCode[]> = {
   "入库": ["B15"],
   "办理交付": ["B08","B09","B10"],
   "回收": ["B26","B27","B28","B29","B44","B35"],
-  "库存": ["B12","B13","B19","B30","B38"],
+  "库存": ["B12","B13","B19","B30","B38","B47","B48"],
   "换件 / 返厂": ["B23","B24"],
   "接修": ["B20","B35"],
   "整备 / 上架": ["B30"],
@@ -147,6 +151,7 @@ export type PermissionCode =
   | "inventory/sn-view"
   | "inventory/sn-edit"
   | "inventory/opening"
+  | "inventory/stock-backfill"
   | "inventory/purchase-create"
   | "inventory/purchase-cancel"
   | "inventory/supplier-return"
@@ -206,6 +211,7 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   { code: "inventory/sn-view", domain: "inventory", level: "action", desc: "查询序列号", grantPolicy: "default", legacySource: "library/view" },
   { code: "inventory/sn-edit", domain: "inventory", level: "action", desc: "绑定与修改序列号", grantPolicy: "default", legacySource: "library/edit" },
   { code: "inventory/opening", domain: "inventory", level: "action", desc: "录入期初数量、实物与成本", grantPolicy: "owner_only", legacySource: null },
+  { code: "inventory/stock-backfill", domain: "inventory", level: "action", desc: "把已有自有库存按批次补录到商品型号", grantPolicy: "default", legacySource: "library/edit" },
   { code: "inventory/purchase-create", domain: "inventory", level: "action", desc: "创建采购与到货计划", grantPolicy: "default", legacySource: "library/edit" },
   { code: "inventory/purchase-cancel", domain: "inventory", level: "action", desc: "取消采购未到部分", grantPolicy: "default", legacySource: "library/edit" },
   { code: "inventory/supplier-return", domain: "inventory", level: "action", desc: "退供", grantPolicy: "default", legacySource: "library/edit" },
@@ -259,4 +265,4 @@ export const SUPPLEMENTARY_ACTIONS: readonly SupplementaryAction[] = [
 ]
 
 // ── 动作编号全集（含补充动作）──
-export const ALL_ACTION_CODES: readonly string[] = ["B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B43","B19","B20","B21","B22","B23","B24","B25","B26","B27","B28","B29","B30","B44","B31","B32","B33","B34","B35","B36","B42","B37","B38","B41","B45","B46","B39","B40"]
+export const ALL_ACTION_CODES: readonly string[] = ["B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B43","B19","B20","B21","B22","B23","B24","B25","B26","B27","B28","B29","B30","B44","B31","B32","B33","B34","B35","B36","B42","B37","B38","B41","B45","B46","B47","B48","B39","B40"]

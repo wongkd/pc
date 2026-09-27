@@ -1,10 +1,11 @@
 {
   "contractVersion": "v2",
-  "inherits": "v1.1",
-  "scope": "D10 formal opening inventory and its inventory read metadata",
+  "inherits": "v1.2",
+  "scope": "D10 formal opening inventory, U01 inventory read metadata, U02 inspection/backfill operations, and U04 inventory source tracing",
   "moduleEnvelopeVersion": "v2; inventory operations not otherwise listed inherit the v1 payload shape",
   "routes": [
     "GET /api/v2/inventory",
+    "GET /api/v2/inventory/stock-items",
     "GET /api/v2/inventory/activity",
     "GET /api/v2/inventory/items/:id",
     "POST /api/v2/inventory/products",
@@ -12,10 +13,41 @@
     "POST /api/v2/inventory/items/:id/refurbishments",
     "POST /api/v2/inventory/items/:id/make-available",
     "POST /api/v2/inventory/items/:id/inspection",
+    "POST /api/v2/inventory/items/:id/inspection/rework",
+    "POST /api/v2/inventory/backfills",
     "POST /api/v2/inventory/counts",
     "POST /api/v2/inventory/counts/:id/approve",
     "GET /api/v2/operations/:requestId"
   ],
+  "inventoryStockItemsRead": {
+    "method": "GET",
+    "path": "/api/v2/inventory/stock-items",
+    "permission": "inventory/view",
+    "filters": ["q", "category", "condition", "availability", "inspectionStatus", "limit", "cursor", "quantityCursor"],
+    "searchFields": ["hardware.name", "hardware.sku", "hardware.specs", "stock_items.asset_code", "stock_items.sn_normalized", "stock_items.remark"],
+    "itemScope": "current-store ownership=store, availability in available/reserved/quarantine, tracking_mode=item",
+    "quantityScope": "current-store stock_balances at location=store, tracking_mode=quantity",
+    "quantityProductPage": "hardware plus current-store stock_balances; same category/q/availability filters; condition filters exclude quantity-mode rows because no condition field exists",
+    "pagination": {
+      "order": ["stock_items.asset_code", "stock_items.id"],
+      "cursorBoundTo": ["authenticated store", "q", "category", "condition", "availability", "inspectionStatus"],
+      "quantityProductOrder": ["hardware.name COLLATE NOCASE", "hardware.id"],
+      "quantityProductCursorOrder": ["hardware.name COLLATE NOCASE", "hardware.id"],
+      "quantityProductCursorBoundTo": ["authenticated store", "q", "category", "condition", "availability", "inspectionStatus"],
+      "maxLimit": 100,
+      "quantityProducts": "independent page and quantityCursor; only positive own on-hand balances; same limit as item page"
+    },
+    "facetRules": {
+      "totals": "all active filters; never limited by page cursor or limit",
+      "categoryCounts": "q/condition/availability/inspectionStatus; ignores selected category and page cursor/limit",
+      "availabilityCounts": "q/condition/category/inspectionStatus; ignores selected availability and page cursor/limit",
+      "inspectionCounts": "q/condition/category/availability; ignores selected inspectionStatus and page cursor/limit; quantity-mode balances are excluded because they have no per-item inspection status"
+    },
+    "excludedFromOwnOnHand": ["customer_custody", "in_transit", "sold", "retired"],
+    "conditionRule": "condition filters real stock_items.condition only; quantity balances have no condition and are not inferred",
+    "inspectionRule": "stock_items.inspection_status is returned directly; legacy rows default to unrecorded (历史未记录), never infer from availability or inspection_ref; failed items require completed rework and a new inspection before passing",
+    "costRule": "cost fields are omitted unless inventory/cost-view is granted"
+  },
   "openingWindow": {
     "ownerPermission": "inventory/opening",
     "activation": { "command": "open_window", "durationDays": { "min": 1, "max": 7 } },
@@ -34,7 +66,9 @@
     { "name": "OpeningCostBasis", "constant": "OPENING_COST_BASES", "values": ["known_actual", "assessed_estimate", "unknown", "zero_cost"] },
     { "name": "OpeningWindowMode", "constant": "OPENING_WINDOW_MODES", "values": ["disabled", "preview", "formal"] },
     { "name": "OpeningWindowState", "constant": "OPENING_WINDOW_STATES", "values": ["disabled", "preview", "not_started", "open", "expired", "closed"] },
-    { "name": "OpeningWindowCloseReason", "constant": "OPENING_WINDOW_CLOSE_REASONS", "values": ["first_business_movement"] }
+    { "name": "OpeningWindowCloseReason", "constant": "OPENING_WINDOW_CLOSE_REASONS", "values": ["first_business_movement"] },
+    { "name": "InventoryOnHandBucket", "constant": "INVENTORY_ON_HAND_BUCKETS", "values": ["available", "reserved", "quarantine"] },
+    { "name": "InspectionStatus", "constant": "INSPECTION_STATUSES", "values": ["unrecorded", "pending", "passed", "failed"] }
   ],
   "interfaces": [
     {
@@ -58,6 +92,109 @@
       "name": "InventoryActivityListPayload",
       "fields": [
         { "name": "items", "type": "InventoryActivityEntry[]" }
+      ]
+    },
+    {
+      "name": "InventoryReadMetrics",
+      "fields": [
+        { "name": "ownOnHandQty", "type": "number" },
+        { "name": "quantityTrackedQty", "type": "number" },
+        { "name": "itemCount", "type": "number" },
+        { "name": "availableQty", "type": "number" },
+        { "name": "reservedQty", "type": "number" },
+        { "name": "quarantineQty", "type": "number" }
+      ]
+    },
+    {
+      "name": "InventoryCategoryCount",
+      "fields": [
+        { "name": "category", "type": "string" },
+        { "name": "metrics", "type": "InventoryReadMetrics" }
+      ]
+    },
+    {
+      "name": "InventoryAvailabilityCount",
+      "fields": [
+        { "name": "availability", "type": "InventoryOnHandBucket" },
+        { "name": "quantityTrackedQty", "type": "number" },
+        { "name": "itemCount", "type": "number" },
+        { "name": "qty", "type": "number" }
+      ]
+    },
+    {
+      "name": "InspectionStatusCount",
+      "fields": [
+        { "name": "inspectionStatus", "type": "InspectionStatus" },
+        { "name": "itemCount", "type": "number" }
+      ]
+    },
+    {
+      "name": "InventoryStockItemReadFilters",
+      "fields": [
+        { "name": "q", "type": "string" },
+        { "name": "category", "type": "string | null" },
+        { "name": "condition", "type": "'new' | 'used' | null" },
+        { "name": "availability", "type": "InventoryOnHandBucket | null" },
+        { "name": "inspectionStatus", "type": "InspectionStatus | null" },
+        { "name": "limit", "type": "number" },
+        { "name": "cursor", "type": "string | null" },
+        { "name": "quantityCursor", "type": "string | null" }
+      ]
+    },
+    {
+      "name": "InventoryStockItemRow",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "version", "type": "number" },
+        { "name": "productId", "type": "string" },
+        { "name": "productName", "type": "string" },
+        { "name": "category", "type": "string" },
+        { "name": "brand", "type": "string | null" },
+        { "name": "sku", "type": "string | null" },
+        { "name": "assetCode", "type": "string" },
+        { "name": "remark", "type": "string" },
+        { "name": "condition", "type": "'new' | 'used'" },
+        { "name": "availability", "type": "InventoryOnHandBucket" },
+        { "name": "inspectionStatus", "type": "InspectionStatus" },
+        { "name": "acquisitionCostCents", "type": "number | null", "optional": true },
+        { "name": "assessedEstimateCents", "type": "number | null", "optional": true },
+        { "name": "costKnown", "type": "boolean", "optional": true },
+        { "name": "acquisitionCostBasis", "type": "OpeningCostBasis | null", "optional": true },
+        { "name": "costEvidenceRef", "type": "string | null", "optional": true },
+        { "name": "costAssessedAt", "type": "string | null", "optional": true }
+      ]
+    },
+    {
+      "name": "InventoryQuantityProductRow",
+      "fields": [
+        { "name": "id", "type": "string" },
+        { "name": "name", "type": "string" },
+        { "name": "category", "type": "string" },
+        { "name": "sku", "type": "string | null" },
+        { "name": "brand", "type": "string | null" },
+        { "name": "trackingMode", "type": "'quantity'" },
+        { "name": "availableQty", "type": "number" },
+        { "name": "reservedQty", "type": "number" },
+        { "name": "quarantineQty", "type": "number" },
+        { "name": "ownOnHandQty", "type": "number" },
+        { "name": "totalCostCents", "type": "number | null", "optional": true },
+        { "name": "costKnown", "type": "boolean", "optional": true }
+      ]
+    },
+    {
+      "name": "InventoryStockItemPagePayload",
+      "fields": [
+        { "name": "items", "type": "InventoryStockItemRow[]" },
+        { "name": "quantityProducts", "type": "InventoryQuantityProductRow[]" },
+        { "name": "filters", "type": "InventoryStockItemReadFilters" },
+        { "name": "totals", "type": "InventoryReadMetrics" },
+        { "name": "categoryCounts", "type": "InventoryCategoryCount[]" },
+        { "name": "availabilityCounts", "type": "InventoryAvailabilityCount[]" },
+        { "name": "inspectionCounts", "type": "InspectionStatusCount[]" },
+        { "name": "nextCursor", "type": "string | null" },
+        { "name": "hasMore", "type": "boolean" },
+        { "name": "quantityNextCursor", "type": "string | null" },
+        { "name": "quantityHasMore", "type": "boolean" }
       ]
     },
     {
@@ -114,6 +251,59 @@
         { "name": "note", "type": "string | null", "optional": true },
         { "name": "occurredAt", "type": "string | null", "optional": true },
         { "name": "lines", "type": "FormalOpeningLineInput[]" }
+      ]
+    },
+    {
+      "name": "InspectionInput",
+      "fields": [
+        { "name": "result", "type": "'pass' | 'fail'" },
+        { "name": "findings", "type": "string" },
+        { "name": "evidence", "type": "string[]" },
+        { "name": "disposition", "type": "'available' | 'quarantine' | 'retired'" },
+        { "name": "expectedVersion", "type": "number" },
+        { "name": "occurredAt", "type": "string | null", "optional": true }
+      ]
+    },
+    {
+      "name": "InspectionReworkInput",
+      "fields": [
+        { "name": "findings", "type": "string" },
+        { "name": "expectedVersion", "type": "number" },
+        { "name": "occurredAt", "type": "string | null", "optional": true }
+      ]
+    },
+    {
+      "name": "StockBackfillLineInput",
+      "fields": [
+        { "name": "lineRef", "type": "string" },
+        { "name": "productRef", "type": "string" },
+        { "name": "qty", "type": "number" },
+        { "name": "condition", "type": "'new' | 'used'", "optional": true },
+        { "name": "assetCode", "type": "string", "optional": true },
+        { "name": "snRaw", "type": "string | null", "optional": true },
+        { "name": "remark", "type": "string | null", "optional": true },
+        { "name": "costBasis", "type": "OpeningCostBasis" },
+        { "name": "unitCostCents", "type": "number | null", "optional": true },
+        { "name": "costEvidenceRef", "type": "string | null", "optional": true },
+        { "name": "costAssessedAt", "type": "string | null", "optional": true }
+      ]
+    },
+    {
+      "name": "StockBackfillInput",
+      "fields": [
+        { "name": "batchRef", "type": "string" },
+        { "name": "note", "type": "string | null", "optional": true },
+        { "name": "occurredAt", "type": "string | null", "optional": true },
+        { "name": "lines", "type": "StockBackfillLineInput[]" }
+      ]
+    },
+    {
+      "name": "InventoryStockItemSourceRecord",
+      "fields": [
+        { "name": "kind", "type": "'opening' | 'stock_backfill' | 'purchase_order' | 'quick_purchase' | 'recovery_order' | 'unresolved'" },
+        { "name": "recordId", "type": "string" },
+        { "name": "displayCode", "type": "string | null" },
+        { "name": "occurredAt", "type": "string | null" }
       ]
     },
     {

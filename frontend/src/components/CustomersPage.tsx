@@ -27,7 +27,11 @@ export function CustomersPage() {
   const [query, setQuery] = useState('')
   const [appliedQuery, setAppliedQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState('')
+  const [loadMoreError, setLoadMoreError] = useState('')
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const listRequestId = useRef(0)
 
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const [detail, setDetail] = useState<CustomerDetail | null>(null)
@@ -53,15 +57,26 @@ export function CustomersPage() {
    * 在 effect 里同步 setState 会触发级联渲染（lint 规则 react-hooks/set-state-in-effect），
    * 「正在加载」的状态由发起动作的那一方（effect 之外的事件处理）负责设置。
    */
-  const loadList = useCallback(async (keyword: string) => {
+  const loadList = useCallback(async (keyword: string, cursor?: string) => {
+    const requestId = ++listRequestId.current
+    if (cursor) setLoadingMore(true)
     try {
-      const rows = await fetchCustomers(keyword)
-      setList(rows)
+      const page = await fetchCustomers(keyword, cursor)
+      if (requestId !== listRequestId.current) return
+      setList((previous) => cursor ? [...previous, ...page.items] : page.items)
+      setNextCursor(page.nextCursor)
       setError('')
+      setLoadMoreError('')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : '客户台账加载失败')
+      if (requestId !== listRequestId.current) return
+      const message = err instanceof Error ? err.message : '客户台账加载失败'
+      if (cursor) setLoadMoreError(message)
+      else setError(message)
     } finally {
-      setLoading(false)
+      if (requestId === listRequestId.current) {
+        setLoading(false)
+        setLoadingMore(false)
+      }
     }
   }, [])
 
@@ -87,19 +102,21 @@ export function CustomersPage() {
   // 并且用 active 标志挡住卸载/重复调用后的回填。
   useEffect(() => {
     let active = true
+    const requestId = ++listRequestId.current
     void fetchCustomers('')
-      .then((rows) => {
-        if (!active) return
-        setList(rows)
+      .then((page) => {
+        if (!active || requestId !== listRequestId.current) return
+        setList(page.items)
+        setNextCursor(page.nextCursor)
         setError('')
         setLoading(false)
       })
       .catch((err: unknown) => {
-        if (!active) return
+        if (!active || requestId !== listRequestId.current) return
         setError(err instanceof Error ? err.message : '客户台账加载失败')
         setLoading(false)
       })
-    return () => { active = false }
+    return () => { active = false; listRequestId.current += 1 }
   }, [])
 
   /** 详情由点击驱动，不放进 effect：选中哪一行是用户动作，不是外部状态同步。 */
@@ -116,6 +133,10 @@ export function CustomersPage() {
   }
 
   const search = (keyword: string) => {
+    listRequestId.current += 1
+    setList([])
+    setNextCursor(null)
+    setLoadMoreError('')
     setLoading(true)
     void loadList(keyword)
   }
@@ -218,7 +239,7 @@ export function CustomersPage() {
         {appliedQuery ? (
           <button className="btn" type="button" onClick={() => { setQuery(''); setAppliedQuery(''); search('') }}>清除搜索</button>
         ) : null}
-        <span>{appliedQuery ? `「${appliedQuery}」匹配 ${list.length} 位客户` : `共 ${list.length} 位客户`}</span>
+        <span>{appliedQuery ? `「${appliedQuery}」已加载 ${list.length} 位客户` : `已加载 ${list.length} 位客户`}</span>
       </form>
 
       {notice ? <p className="customers-notice">{notice}</p> : null}
@@ -261,6 +282,14 @@ export function CustomersPage() {
                   ))}
                 </tbody>
               </table>
+              {nextCursor ? (
+                <div className="customers-load-more">
+                  {loadMoreError ? <span className="customers-error-text">{loadMoreError}</span> : null}
+                  <button className="btn" type="button" disabled={loadingMore} onClick={() => { void loadList(appliedQuery, nextCursor) }}>
+                    {loadingMore ? '正在加载…' : '加载更多客户'}
+                  </button>
+                </div>
+              ) : null}
             </div>
           )}
         </div>

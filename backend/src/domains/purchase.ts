@@ -62,6 +62,10 @@ export type InspectionDisposition = (typeof INSPECTION_DISPOSITIONS)[number]
 /** 会进入自有在库的去向：只有这两种会写库存副作用。 */
 const STOCKED_DISPOSITIONS: readonly InspectionDisposition[] = ['available', 'quarantine']
 
+/** 成色（enums.json StockCondition）：新品 / 二手。到货默认新品，买来的二手件必须显式给 used。 */
+export const STOCK_CONDITIONS = ['new', 'used'] as const
+export type StockCondition = (typeof STOCK_CONDITIONS)[number]
+
 /** 退供的起点桶（0014 的 CHECK）：只从可取或待处理出发，绝不从 reserved 退供。 */
 export const SUPPLIER_RETURN_BUCKETS = ['available', 'quarantine'] as const
 export type SupplierReturnBucket = (typeof SUPPLIER_RETURN_BUCKETS)[number]
@@ -115,6 +119,13 @@ export interface ReceiptLineInput {
   disposition: InspectionDisposition
   unitCostCents?: number | null
   costKnown?: boolean
+  /**
+   * 成色（enums.json StockCondition）：省略按新品。
+   * 为什么必须显式给：买来的二手件如果默认成新品，成本、报价披露和售后口径全都跟着错 ——
+   * 这是数据正确性问题，不是显示问题。回收路径的先例见 recovery.ts 的 `line.condition ?? 'used'`。
+   * 一行只有一个成色：同一行混新旧的场景不成立，要区分就分成两行。
+   */
+  condition?: StockCondition | null
   /** 逐件商品的每件信息（内部编号 / 厂商 SN）。数量件留空。 */
   items?: ReceiptItemInput[]
   batchRemark?: string | null
@@ -504,6 +515,10 @@ export function planRegisterReceipt(
     // 数量记在 qty_rejected 上并计入采购恒等式，所以也不留下「还在途」的假象。
     if (!stocked || productId === null) continue
 
+    // 成色：省略按新品。买来的二手件必须显式给 used —— 记成新品会让成本口径、报价披露
+    // 和后续售后一起错。回收路径同款写法见 recovery.ts 的 `line.condition ?? 'used'`。
+    const lineCondition: StockCondition = line.condition === 'used' ? 'used' : 'new'
+
     if (perItem) {
       const items = line.items ?? []
       let singleItemId: string | null = null
@@ -526,14 +541,15 @@ export function planRegisterReceipt(
               `INSERT INTO stock_items
                  (id, store_id, product_id, asset_code, condition, sn_raw, sn_normalized, remark, ownership, availability,
                   location, acquisition_ref, acquisition_cost_cents, refurbishment_cost_cents, cost_known,
-                  inspection_ref, warranty_snapshot, version, created_by)
-               VALUES (?, ?, ?, ?, 'new', ?, ?, ?, 'store', ?, 'store', ?, ?, NULL, ?, NULL, NULL, 1, ?)`,
+                  inspection_status, inspection_ref, warranty_snapshot, version, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'store', ?, 'store', ?, ?, NULL, ?, 'pending', NULL, NULL, 1, ?)`,
             )
             .bind(
               stockItemId,
               ctx.storeId,
               productId,
               assetCode,
+              lineCondition,
               snRaw,
               snNormalized,
               item?.remark?.trim() ?? '',
@@ -716,6 +732,15 @@ export async function registerReceipt(
       retryable: false,
       httpStatus: 404,
     }
+  }
+  const itemMarkedAvailable = input.lines.find((line) =>
+    (line.qtyReceived ?? 0) > 0
+    && STOCKED_DISPOSITIONS.includes(line.disposition)
+    && products.get(line.productRef)?.tracking_mode === 'item'
+    && line.disposition === 'available',
+  )
+  if (itemMarkedAvailable) {
+    return { ok: false, requestId: ctx.requestId, code: 'INSPECTION_REQUIRED', message: '逐件实物到货后先进入待处理，完成 B19 检测通过后才能进入可售', retryable: false, httpStatus: 422 }
   }
 
   const now = input.occurredAt && !Number.isNaN(new Date(input.occurredAt).getTime())

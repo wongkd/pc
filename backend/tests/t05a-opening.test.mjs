@@ -90,7 +90,7 @@ test('逐件期初：每件实物独立成行并带内部编号', async () => {
       sn_raw: 'sn-abc-17',
       sn_normalized: 'SN-ABC-17',
       ownership: 'store',
-      availability: 'available',
+      availability: 'quarantine',
       acquisition_cost_cents: 88000,
       cost_known: 1,
     },
@@ -100,13 +100,13 @@ test('逐件期初：每件实物独立成行并带内部编号', async () => {
       sn_raw: null,
       sn_normalized: null,
       ownership: 'store',
-      availability: 'available',
+      availability: 'quarantine',
       acquisition_cost_cents: 90000,
       cost_known: 1,
     },
   ])
   assert.equal(
-    await scalar(db, 'SELECT available_qty FROM stock_balances'),
+    await scalar(db, 'SELECT quarantine_qty FROM stock_balances'),
     2,
     '逐件实物的数量也要进余额，两件必须分别定位而不是被汇总吞掉',
   )
@@ -302,6 +302,6 @@ test('不从历史 SN 表推断期初：旧表有行，库存仍为 0', async ()
     ],
   })
   assert.equal(confirmed.ok, true, JSON.stringify(confirmed))
-  assert.equal(await scalar(db, 'SELECT available_qty FROM stock_balances'), 2, '库存等于实盘确认的 2 件，不是旧表的 4 件')
+  assert.equal(await scalar(db, 'SELECT quarantine_qty FROM stock_balances'), 2, '待检测库存等于实盘确认的 2 件，不是旧表的 4 件')
   assert.equal(await scalar(db, 'SELECT COUNT(*) FROM serial_numbers'), 4, '旧表原样保留，不被改写')
 })

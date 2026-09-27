@@ -135,6 +135,8 @@ export interface ReceiptLinePayload {
   qtyReceived: number
   qtyRejected?: number
   disposition: InspectionDisposition
+  /** 成色（enums.json StockCondition）。省略按新品；买来的二手件必须显式给 used。 */
+  condition?: 'new' | 'used'
   unitCostCents?: number | null
   costKnown?: boolean
   items?: { assetCode?: string | null; snRaw?: string | null }[]

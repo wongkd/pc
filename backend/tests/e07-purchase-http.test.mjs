@@ -289,7 +289,7 @@ test('放行证据：逐件商品必须给内部编号；来源成本与采购�
       purchaseLineId: lineId,
       productRef: product.entityId,
       qtyReceived: 3,
-      disposition: 'available',
+      disposition: 'quarantine',
       items: [{ assetCode: 'AC-P15-ITEM-1', snRaw: 'SN0001' }],
     }],
   }, 'p15-item-r0')
@@ -303,14 +303,14 @@ test('放行证据：逐件商品必须给内部编号；来源成本与采购�
       purchaseLineId: lineId,
       productRef: product.entityId,
       qtyReceived: 2,
-      disposition: 'available',
+      disposition: 'quarantine',
       items: [{ assetCode: 'AC-P15-ITEM-1' }, { snRaw: 'SN0002' }],
     }],
   }, 'p15-item-r1')
   assert.equal(noManufacturerSn.status, 200, JSON.stringify(noManufacturerSn.body))
 
   const row = await db.prepare(
-    `SELECT si.asset_code, si.sn_normalized, si.acquisition_cost_cents, si.cost_known, si.acquisition_ref, si.availability
+    `SELECT si.id, si.asset_code, si.sn_normalized, si.acquisition_cost_cents, si.cost_known, si.acquisition_ref, si.availability, si.inspection_status
      FROM stock_items si WHERE si.store_id = 1 AND si.product_id = ? ORDER BY si.asset_code`,
   ).bind(product.hardwareId).all()
   assert.equal(row.results.length, 2)
@@ -321,8 +321,14 @@ test('放行证据：逐件商品必须给内部编号；来源成本与采购�
     assert.equal(item.acquisition_cost_cents, 12_000, '来源成本必须落到实物上')
     assert.equal(item.cost_known, 1)
     assert.equal(item.acquisition_ref, purchaseId, '实物必须能回溯到来源采购单')
-    assert.equal(item.availability, 'available')
+    assert.equal(item.availability, 'quarantine', '新到逐件货必须待检测')
+    assert.equal(item.inspection_status, 'pending')
   }
+  const stockItem = row.results[0]
+  const stockDetail = await json(await a.get(`/api/v2/inventory/items/${encodeURIComponent(stockItem.id)}`))
+  assert.equal(stockDetail.status, 200, JSON.stringify(stockDetail.body))
+  assert.equal(stockDetail.body.data.sourceRecord.kind, 'purchase_order')
+  assert.equal(stockDetail.body.data.sourceRecord.recordId, purchaseId, '实物详情能回查采购来源')
 })
 
 test('B15：快速采购（不挂采购单）同样保留来源与成本；成本未知不写成 0', async () => {
@@ -355,16 +361,22 @@ test('B15：快速采购（不挂采购单）同样保留来源与成本；成�
     lines: [{
       productRef: productTwo.entityId,
       qtyReceived: 1,
-      disposition: 'available',
+      disposition: 'quarantine',
       items: [{ assetCode: 'AC-P15-UNK-1' }],
       costKnown: false,
     }],
   }, 'p15-unknown-r1')
   assert.equal(unknown.status, 200, JSON.stringify(unknown.body))
-  const item = await db.prepare('SELECT acquisition_cost_cents, cost_known FROM stock_items WHERE asset_code = ?')
+  const item = await db.prepare('SELECT id, acquisition_cost_cents, cost_known, availability, inspection_status, acquisition_ref FROM stock_items WHERE asset_code = ?')
     .bind('AC-P15-UNK-1').first()
   assert.equal(item.acquisition_cost_cents, null, '未知成本必须是 NULL，不是 0')
   assert.equal(item.cost_known, 0)
+  assert.equal(item.availability, 'quarantine')
+  assert.equal(item.inspection_status, 'pending')
+  const quickDetail = await json(await a.get(`/api/v2/inventory/items/${encodeURIComponent(item.id)}`))
+  assert.equal(quickDetail.status, 200, JSON.stringify(quickDetail.body))
+  assert.equal(quickDetail.body.data.sourceRecord.kind, 'quick_purchase')
+  assert.equal(quickDetail.body.data.sourceRecord.recordId, item.acquisition_ref, '快速采购来源保留到货记录编号')
 
   // 既没有采购单也没有快速采购说明 → 拒绝
   const neither = await receive(a, {
@@ -376,7 +388,7 @@ test('B15：快速采购（不挂采购单）同样保留来源与成本；成�
 
 // ─────────────────────────── B38 退供 ───────────────────────────
 
-test('B38：退供把可取件转为离店，减少可用量且不产生可用库存', async () => {
+test('B38：未检测的待处理件可退供离店，库存余额清零', async () => {
   const product = await seedProduct(db, { entityId: 'p38-item', name: '退供逐件', trackingMode: 'item', requiresSn: 0 })
   const created = await createPurchase(a, purchaseBody(product.entityId, 1), 'p38-item')
   const purchaseId = created.body.data.entityId
@@ -389,7 +401,7 @@ test('B38：退供把可取件转为离店，减少可用量且不产生可用�
       purchaseLineId: lineId,
       productRef: product.entityId,
       qtyReceived: 1,
-      disposition: 'available',
+      disposition: 'quarantine',
       items: [{ assetCode: 'AC-P38-1' }],
     }],
   }, 'p38-item-r1')
@@ -401,7 +413,7 @@ test('B38：退供把可取件转为离店，减少可用量且不产生可用�
     purchaseId,
     stockItemId,
     qty: 1,
-    fromBucket: 'available',
+    fromBucket: 'quarantine',
     reason: '点不亮，退回档口换新',
     supplierName: '华强北路 3 号档口',
   }))
@@ -492,4 +504,84 @@ test('E07 不抢库存模块的活：/api/v2/inventory 与 /inventory/items 仍�
 
   const unknown = await json(await a.get('/api/v2/inventory/nope'))
   assert.equal(unknown.status, 404)
+})
+
+// ─────────────────────────── 成色（二手到货的前置修复） ───────────────────────────
+
+test('B15：显式给 used 的到货件读回仍是二手；省略成色仍按新品并先待检', async () => {
+  const product = await seedProduct(db, { entityId: 'p15-used', name: '二手采购件', trackingMode: 'item' })
+
+  // 第一轮：明确是买来的二手件
+  const created = await createPurchase(a, purchaseBody(product.entityId, 2), 'p15-used-buy')
+  const purchaseId = created.body.data.entityId
+  const detail = await json(await a.get(`/api/v2/inventory/purchases/${encodeURIComponent(purchaseId)}`))
+  const lineId = detail.body.data.lines[0].id
+
+  const usedReceipt = await receive(a, {
+    purchaseId,
+    lines: [{
+      purchaseLineId: lineId,
+      productRef: product.entityId,
+      qtyReceived: 2,
+      disposition: 'quarantine',
+      condition: 'used',
+      items: [{ assetCode: 'AC-P15-USED-1', snRaw: 'SN9001' }, { assetCode: 'AC-P15-USED-2' }],
+    }],
+  }, 'p15-used-r1')
+  assert.equal(usedReceipt.status, 200, JSON.stringify(usedReceipt.body))
+
+  const usedRows = await db.prepare(
+    `SELECT condition FROM stock_items WHERE store_id = 1 AND product_id = ? ORDER BY asset_code`,
+  ).bind(product.hardwareId).all()
+  assert.deepEqual(
+    usedRows.results.map((row) => row.condition),
+    ['used', 'used'],
+    '买来的二手件不能被记成新品 —— 成本口径、报价披露和售后都跟着它',
+  )
+
+  // 第二轮：不传成色，保持旧行为（新品）。旧客户端不传字段，不能被这次改动改坏。
+  const plainPurchase = await createPurchase(a, purchaseBody(product.entityId, 1), 'p15-used-plain')
+  const plainDetail = await json(await a.get(`/api/v2/inventory/purchases/${encodeURIComponent(plainPurchase.body.data.entityId)}`))
+  const plainReceipt = await receive(a, {
+    purchaseId: plainPurchase.body.data.entityId,
+    lines: [{
+      purchaseLineId: plainDetail.body.data.lines[0].id,
+      productRef: product.entityId,
+      qtyReceived: 1,
+      disposition: 'quarantine',
+      items: [{ assetCode: 'AC-P15-PLAIN-1' }],
+    }],
+  }, 'p15-used-r2')
+  assert.equal(plainReceipt.status, 200, JSON.stringify(plainReceipt.body))
+  assert.equal(
+    await scalar(`SELECT condition FROM stock_items WHERE store_id = 1 AND asset_code = 'AC-P15-PLAIN-1'`),
+    'new',
+    '省略成色默认新品：旧请求语义不能被改掉',
+  )
+})
+
+test('B15：成色只接受 new / used，其他取值整笔拒绝且不写库存', async () => {
+  const product = await seedProduct(db, { entityId: 'p15-badcond', name: '成色校验件', trackingMode: 'item' })
+  const created = await createPurchase(a, purchaseBody(product.entityId, 1), 'p15-badcond-buy')
+  const purchaseId = created.body.data.entityId
+  const detail = await json(await a.get(`/api/v2/inventory/purchases/${encodeURIComponent(purchaseId)}`))
+
+  const bad = await receive(a, {
+    purchaseId,
+    lines: [{
+      purchaseLineId: detail.body.data.lines[0].id,
+      productRef: product.entityId,
+      qtyReceived: 1,
+      disposition: 'available',
+      condition: 'refurbished',
+      items: [{ assetCode: 'AC-P15-BAD-1' }],
+    }],
+  }, 'p15-badcond-r1')
+  assert.equal(bad.status, 400, JSON.stringify(bad.body))
+  assert.match(bad.body.error.message, /成色/)
+  assert.equal(
+    await scalar(`SELECT COUNT(*) FROM stock_items WHERE store_id = 1 AND asset_code = 'AC-P15-BAD-1'`),
+    0,
+    '成色非法时不得留下实物',
+  )
 })

@@ -228,7 +228,8 @@ test('实物详情：来源、有效占用、流水都能查到', async () => {
   assert.equal(detail.acquisition.approvedCountRef, '实盘单 D-1')
 
   assert.equal(detail.movements.length, 1)
-  assert.equal(detail.movements[0].toBucket, 'available')
+  assert.equal(detail.item.availability, 'quarantine')
+  assert.equal(detail.movements[0].toBucket, 'quarantine')
   assert.equal(detail.movements[0].source, 'opening_balance')
 
   // 无权时实物详情也不得带成本

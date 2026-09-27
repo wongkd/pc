@@ -35,6 +35,7 @@ import { appendReadableDiagnostic } from '../domains/operations'
 import {
   INSPECTION_DISPOSITIONS,
   PURCHASE_CANCEL_REASONS,
+  STOCK_CONDITIONS,
   cancelPurchase,
   createPurchase,
   queryPurchaseDetail,
@@ -47,6 +48,7 @@ import {
   type PurchaseLineInput,
   type ReceiptInput,
   type ReceiptLineInput,
+  type StockCondition,
   type SupplierReturnInput,
   type SupplierReturnBucket,
 } from '../domains/purchase'
@@ -200,6 +202,14 @@ function parseReceiptInput(body: Record<string, unknown>): { input: ReceiptInput
     if (typeof disposition !== 'string' || !(INSPECTION_DISPOSITIONS as readonly string[]).includes(disposition)) {
       return { input: null, problem: `${at}：处置去向只能是 ${INSPECTION_DISPOSITIONS.join(' / ')}` }
     }
+    // 成色：不传按新品。传了就必须是新 / 二手之一 —— 二手件被静默记成新品是数据错误，不是显示问题。
+    let condition: StockCondition | null = null
+    if (line.condition !== undefined && line.condition !== null && line.condition !== '') {
+      if (typeof line.condition !== 'string' || !(STOCK_CONDITIONS as readonly string[]).includes(line.condition)) {
+        return { input: null, problem: `${at}：成色只能是 ${STOCK_CONDITIONS.join(' / ')}` }
+      }
+      condition = line.condition as StockCondition
+    }
     const qtyReceived = asInt(line.qtyReceived) ?? 0
     const qtyRejected = asInt(line.qtyRejected) ?? 0
     if (qtyReceived < 0 || qtyRejected < 0) return { input: null, problem: `${at}：数量不能为负` }
@@ -223,6 +233,7 @@ function parseReceiptInput(body: Record<string, unknown>): { input: ReceiptInput
       qtyRejected,
       disposition: disposition as InspectionDisposition,
       unitCostCents,
+      condition,
       costKnown: line.costKnown === undefined || line.costKnown === null ? unitCostCents !== null : Boolean(line.costKnown),
       items,
       batchRemark: asText(line.batchRemark),

@@ -9,8 +9,15 @@ const json = async (response) => ({ status: response.status, body: await respons
 async function seedRecovered(id, state = 'acquired', inspectionRef = 'inspection-seed') {
   await db.prepare(`INSERT INTO recovery_orders (id, store_id, order_no, seller_snapshot, state, final_acquisition_cents, payable_cents, paid_cents, request_id, created_by, updated_by)
     VALUES (?, 1, ?, '{}', ?, 50000, 0, 50000, ?, 1, 1)`).bind(`recovery-${id}`, `REC-${id}`, state, `seed-${id}`).run()
-  await db.prepare(`INSERT INTO stock_items (id, store_id, product_id, asset_code, condition, ownership, availability, location, acquisition_cost_cents, cost_known, inspection_ref, version)
-    VALUES (?, 1, ?, ?, 'used', 'store', 'available', 'store', 50000, 1, ?, 1)`).bind(id, productId, `ASSET-${id}`, inspectionRef).run()
+  await db.prepare(`INSERT INTO stock_items (id, store_id, product_id, asset_code, condition, ownership, availability, location, acquisition_cost_cents, cost_known, inspection_ref, inspection_status, version)
+    VALUES (?, 1, ?, ?, 'used', 'store', 'available', 'store', 50000, 1, ?, ?, 1)`)
+    .bind(id, productId, `ASSET-${id}`, inspectionRef, inspectionRef ? 'passed' : 'unrecorded').run()
+  if (inspectionRef) {
+    await db.prepare(`INSERT INTO stock_inspection_events
+      (id, store_id, stock_item_id, event_type, from_status, to_status, result, findings, evidence_json, occurred_at, actor_user_id, request_id, stock_item_version)
+      VALUES (?, 1, ?, 'inspection', 'pending', 'passed', 'pass', '测试夹具：已完成检测', '["fixture-evidence"]', datetime('now'), 1, ?, 1)`)
+      .bind(`inspection-${id}`, id, `seed-${id}-inspection`).run()
+  }
   await db.prepare(`INSERT INTO recovery_items (id, store_id, recovery_order_id, stock_item_id, description, request_id)
     VALUES (?, 1, ?, ?, '回收主机', ?)`).bind(`ri-${id}`, `recovery-${id}`, id, `seed-${id}`).run()
 }

@@ -1,6 +1,6 @@
 # contracts · 跨端契约
 
-更新：2026-09-26。`v1` 保留为不可变历史快照；当前跨端契约为 [v1.1](v1.1/README.md)，新增 B45 未发出报价草稿清理和 B46 未引用商品档案清理。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。跨卡片未决项：[docs/OPEN-ITEMS.md](../docs/OPEN-ITEMS.md)。
+更新：2026-09-27。`v1` 与 `v1.1` 保留为不可变历史快照；当前跨端契约为 [v1.2](v1.2/README.md)，新增 U02 检测状态 / 事件、返修复检和同型号分批补录动作；v2 库存扩展涵盖 U01 逐件读页与 U02 检测状态查询。入口：[方案总览](../docs/plans/2026-09-17-web-wechat-plan/README.md)。跨卡片未决项：[docs/OPEN-ITEMS.md](../docs/OPEN-ITEMS.md)。
 
 本目录是电脑网页端与微信小程序共用的协议唯一来源。两端不得各自维护一份枚举、金额公式或错误码。
 
@@ -8,7 +8,8 @@
 
 | 路径 | 内容 | 冻结卡 |
 |---|---|---|
-| `v1.1/` | 当前契约修订：继承 V1 规则，新增 B45、B46 管理员安全清理动作 | T26a |
+| `v1.2/` | 当前契约：继承 V1.1，新增检测状态与追加事件、B47 补录、B48 返修复检 | U02 |
+| `v1.1/` | 历史契约快照：新增 B45、B46 管理员安全清理动作 | T26a |
 | `v1/conventions.json` | ID、金额、数量、时间、nullable、分页、响应信封、写入约定、兼容策略 | T01a |
 | `v1/enums.json` | 全部枚举取值、五个状态机、库存桶转换、待补枚举清单 | T01a |
 | `v1/objects.json` | 31 个对象的协议字段、类型、nullable、枚举引用、派生态与事实映射，以及待办读模型与工作台指标口径 | T01a（T01-rev1 修订） |
@@ -17,8 +18,8 @@
 | `v1/legacy-mapping.json` | 旧表 → 新模型映射、保留的数据库机制、单位换算、未决问题 | T01a |
 | `v1/actions.json` | B01–B36 动作目录、多路径操作的分别权限、49 个新权限码、11 个旧权限码映射、状态机缺口登记（含 `specBasis` 依据） | T01b（T01-rev1 修订） |
 | `v1/fixtures.json` | 06 §2 的 V1–V4 虚构样本、边界输入、预期结果、可机械重算的金额算例、DTO 生成配置 | T01c |
-| `v2/inventory-opening.json` | D10 期初成本分类和正式窗口的增量契约；继承 v1.1，不改写冻结文件 | 正式期初 |
-| `generated/` | 由 `tools/generate-dto.mjs` 从 v1.1 单向生成的端内枚举与类型。**生成物禁止手工编辑** | T01c |
+| `v2/inventory-opening.json` | D10 期初成本分类 / 正式窗口与 U01-U02 库存读取、检测和补录增量契约；继承 v1.2 | 正式期初、二手配件 U01-U02 |
+| `generated/` | 由 `tools/generate-dto.mjs` 从当前 v1.2 单向生成的端内枚举与类型。**生成物禁止手工编辑** | T01c |
 | `generated-v2/` 与端内 `v2/generated/` | 由 `tools/generate-d10-contract.mjs` 从 v2 增量契约生成的网页端与后端类型 | 正式期初 |
 | `tools/validate-contracts.mjs` | 契约自洽性校验脚本 | T01a + T01b + T01-rev1 + T01c |
 | `tools/generate-dto.mjs` | 端内 DTO 生成器（单向生成，带 `--check`） | T01c（T02a 修复未使用类型导入） |
@@ -56,7 +57,7 @@ node contracts/tools/validate-contracts.mjs
 
 ## 2.1 端内生成物与防漂移
 
-生成物从 `contracts/v1.1` 单向生成，中立产物在 `contracts/generated/`，各端在**自己的任务卡**里落地一份消费副本（`fixtures.dtoGeneration.targets` 冻结了路径）。
+生成物从当前 `contracts/v1.2` 单向生成，中立产物在 `contracts/generated/`，各端在**自己的任务卡**里落地一份消费副本（`fixtures.dtoGeneration.targets` 冻结了路径）。
 
 ```bash
 node contracts/tools/generate-dto.mjs            # 重生成中立产物
@@ -73,7 +74,7 @@ node contracts/tools/generate-d10-contract.mjs --check
 1. 已冻结文件**不原地改写**。需要变更时新增 `v1.x` 或 `v2` 目录并提升 `contractVersion`。
 2. 新增枚举值、错误码、字段、动作编号，都必须先改本目录，再改两端实现。
 3. 补充动作（采购取消、退供、报损、价格调整）已在 `actions.json` 的 `supplementaryActions` 中预留编号并标 `status: "reserved"`、`path: null`。对应任务补齐路径与载荷后改为 `frozen`，**不得由两端自行取名**，也不得用通用 `PUT status` 绕过业务。
-4. 生成物（端内枚举与 DTO）由 `node contracts/tools/generate-dto.mjs` 从当前契约（目前为 v1.1）**单向生成**到 `contracts/generated/`，**生成文件不得手工编辑**。改契约源文件 → 重新生成 → `node contracts/tools/generate-dto.mjs --check` 复验。端内目录（`frontend/src/contracts/generated`、小程序同名目录）由 T02a / T02b 建立后接同一份产物。
+4. 生成物（端内枚举与 DTO）由 `node contracts/tools/generate-dto.mjs` 从当前契约（目前为 v1.2）**单向生成**到 `contracts/generated/`，**生成文件不得手工编辑**。改契约源文件 → 重新生成 → `node contracts/tools/generate-dto.mjs --check` 复验。端内目录（`frontend/src/contracts/generated`、小程序同名目录）由 T02a / T02b 建立后接同一份产物。
 
 ## 4. 已知缺口（不要当成已完成）
 
@@ -125,6 +126,7 @@ node contracts/tools/generate-d10-contract.mjs --check
 | T01-rev1 | 2026-09-17 | 更正状态机缺口登记：`Purchase` 移出 gaps（在途为派生值）、`ReturnRecord` 重述为规格未定义；全部条目补 `specBasis` 与 `origin`；`objects.json` 补派生态与事实映射；校验脚本加第 11 节 | v1 不变（见下） |
 | T01c | 2026-09-17 | 新增 `v1/fixtures.json`（V1–V4 样本、边界输入、12 组金额算例、DTO 生成配置、5 项未决项）；新增 `tools/generate-dto.mjs` 与 `generated/`；校验脚本加第 12 节（样本重算 + 生成物防手改） | v1 不变（见下） |
 | T02a | 2026-09-17 | **修生成器**：`buildObjects()` 只导入正文实际引用的类型（原先全量导入导致前端 `noUnusedLocals` 编译失败）；`generated/objects.ts` 与 `manifest.json` 哈希随之更新并重新生成。契约规范性表面**未变** | v1 不变（见下） |
+| U01 | 2026-09-27 | v2 库存增量契约新增 `GET /api/v2/inventory/stock-items` 的筛选、逐件实物 / 数量型号双分页游标、全量分类 / 库存桶统计及成本权限字段；仅扩展读模型，不增加状态推断、写动作或迁移 | 沿用 v2 生成器同步后端与网页类型 |
 
 T01-rev1 **未变更任何规范性表面** —— 字段名、类型、枚举取值、动作编号、错误码均无变化，新增的 `derivedFields` / `factMapping` / `notStored` / `specBasis` / `originValues` 均为非规范性注解，故未提升 `contractVersion`，改为在原文件内留 `revisions` 记录。⚠️ **此判断属治理决策，须项目负责人裁定**；若要求严格按第 3 节第 1 条执行，应改建 `contracts/v2/`。
 

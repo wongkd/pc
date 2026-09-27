@@ -131,6 +131,7 @@ export const MOVEMENT_SOURCE_LABELS: Record<InventoryMovementSource, string> = {
   conversion: '拆件转换',
   inspection_quarantine: '检测隔离',
   inspection_release: '检机放行',
+  stock_backfill: '已有库存补录',
 }
 
 /** 计入自有在库量的三桶（03 §4 L84）。在途与客户保管不在其中。 */

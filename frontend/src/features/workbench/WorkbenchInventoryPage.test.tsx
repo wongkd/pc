@@ -40,7 +40,7 @@ vi.mock('./inventory-api', () => ({
   recordRefurbishment: mocks.recordRefurbishment,
 }))
 
-import { WorkbenchInventoryPage } from './WorkbenchInventoryPage'
+import { WorkbenchInventoryToolsPage as WorkbenchInventoryPage } from './WorkbenchInventoryPage'
 
 afterEach(cleanup)
 beforeEach(() => {

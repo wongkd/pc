@@ -42,6 +42,9 @@ backups/
 *.sqlite
 *.sqlite-shm
 *.sqlite-wal
+# Node 宿主夹具的运行产物（SQLite 库 + 假对象存储目录；2026-09-27）
+# 只忽略 *.sqlite 不够：假桶的元数据是 .json，会把夹具数据带进仓库。
+.node-host/
 
 # ── AI 工作区数据（由坚果云同步，不进 Git）─────────────────────
 .workbuddy/

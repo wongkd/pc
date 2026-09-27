@@ -1,6 +1,6 @@
-// AUTO-GENERATED FROM contracts/v1.1 — DO NOT EDIT
+// AUTO-GENERATED FROM contracts/v1.2 — DO NOT EDIT
 // 生成命令：node contracts/tools/generate-dto.mjs
-// 来源：contracts/v1.1/errors.json；程序分支只能依据 code，不得匹配 message 文本。
+// 来源：contracts/v1.2/errors.json；程序分支只能依据 code，不得匹配 message 文本。
 
 export const ERROR_CODES = {
   VALIDATION_ERROR: "VALIDATION_ERROR",

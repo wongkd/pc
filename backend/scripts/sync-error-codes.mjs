@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 从 contracts/v1.1/errors.json 生成后端错误码常量。
+ * 从 contracts/v1.2/errors.json 生成后端错误码常量。
  *
  * 为什么需要：契约是两端唯一协议来源；后端若手写一份错误码副本，
  * 早晚与契约漂移。这里做单向生成，生成物禁止手改（首行 DO NOT EDIT）。
@@ -19,7 +19,7 @@ import { fileURLToPath } from 'node:url'
 const here = dirname(fileURLToPath(import.meta.url))
 const backendRoot = resolve(here, '..')
 const repoRoot = resolve(backendRoot, '..')
-const source = join(repoRoot, 'contracts', 'v1.1', 'errors.json')
+const source = join(repoRoot, 'contracts', 'v1.2', 'errors.json')
 const target = join(backendRoot, 'src', 'generated', 'error-codes.ts')
 
 const checkOnly = process.argv.includes('--check')
@@ -32,7 +32,7 @@ if (!existsSync(source)) {
 const document = JSON.parse(readFileSync(source, 'utf8'))
 const raw = document.errors
 if (!Array.isArray(raw) || raw.length === 0) {
-  console.error('✗ contracts/v1.1/errors.json 的 errors 不是非空数组，拒绝生成')
+  console.error('✗ contracts/v1.2/errors.json 的 errors 不是非空数组，拒绝生成')
   process.exit(1)
 }
 const contractVersion = document.contractVersion ?? 'unknown'
@@ -67,7 +67,7 @@ const literal = raw
 const union = raw.map((e) => `  | ${quote(e.code)}`).join('\n')
 
 const output = `// DO NOT EDIT — 本文件由 backend/scripts/sync-error-codes.mjs 生成。
-// 来源：contracts/v1.1/errors.json（${contractVersion}，${frozenBy} 冻结，${raw.length} 个错误码）。
+// 来源：contracts/v1.2/errors.json（${contractVersion}，${frozenBy} 冻结，${raw.length} 个错误码）。
 // 重新生成：node backend/scripts/sync-error-codes.mjs
 // 校验漂移：node backend/scripts/sync-error-codes.mjs --check
 //
