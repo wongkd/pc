@@ -15,7 +15,19 @@
 -- Rollback: structural rollback requires restoring a verified pre-migration D1 export.
 -- ⚠️ 与其他迁移一样，本文件在明确授权前不得 apply 到任何远端环境。
 
-PRAGMA defer_foreign_keys = true;
+-- B16 盘点行可能指向已有 count_adjustment 流水。重建父表前先在迁移内暂存
+-- 引用并置空；迁移收尾再恢复，避免 DROP TABLE 触发 inventory_count_lines 的 FK 拒绝。
+-- 该暂存表只在本迁移期间存在，失败时由 D1 回滚，成功时立即删除。
+CREATE TABLE inventory_count_movement_links__0032 (
+  line_id TEXT PRIMARY KEY,
+  movement_id TEXT NOT NULL
+);
+INSERT INTO inventory_count_movement_links__0032 (line_id, movement_id)
+SELECT id, adjustment_movement_id
+FROM inventory_count_lines
+WHERE adjustment_movement_id IS NOT NULL;
+UPDATE inventory_count_lines SET adjustment_movement_id = NULL
+WHERE adjustment_movement_id IS NOT NULL;
 
 ALTER TABLE stock_items
   ADD COLUMN inspection_status TEXT NOT NULL DEFAULT 'unrecorded'
@@ -54,7 +66,7 @@ CREATE TABLE inventory_movements__new (
   FOREIGN KEY (store_id) REFERENCES stores(id),
   FOREIGN KEY (product_id) REFERENCES hardware(id),
   FOREIGN KEY (stock_item_id) REFERENCES stock_items(id),
-  FOREIGN KEY (reversal_of) REFERENCES inventory_movements(id)
+  FOREIGN KEY (reversal_of) REFERENCES inventory_movements__new(id)
 );
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -120,6 +132,15 @@ BEGIN
      SET closed_at = datetime('now'), close_reason = 'first_business_movement'
    WHERE store_id = NEW.store_id AND closed_at IS NULL;
 END;
+
+-- 恢复盘点行对调整流水的关系。ID 逐列保留，目标现为新表中的原流水行。
+UPDATE inventory_count_lines
+SET adjustment_movement_id = (
+  SELECT movement_id FROM inventory_count_movement_links__0032 refs
+  WHERE refs.line_id = inventory_count_lines.id
+)
+WHERE id IN (SELECT line_id FROM inventory_count_movement_links__0032);
+DROP TABLE inventory_count_movement_links__0032;
 
 -- 检测与返修均以追加事件表达；更新/删除由数据库层拒绝。
 CREATE TABLE stock_inspection_events (

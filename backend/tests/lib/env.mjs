@@ -43,10 +43,13 @@ export async function applySqlFile(db, path, label = path) {
 }
 
 /** 按文件名顺序应用 migrations 目录下的全部迁移，返回每个文件执行的语句数。 */
-export async function applyMigrations(db) {
-  const files = readdirSync(migrationsDir)
+export async function applyMigrations(db, { throughMigration } = {}) {
+  const allFiles = readdirSync(migrationsDir)
     .filter((name) => name.endsWith('.sql'))
     .sort()
+  const throughIndex = throughMigration === undefined ? allFiles.length - 1 : allFiles.indexOf(throughMigration)
+  if (throughIndex < 0) throw new Error(`测试迁移边界不存在：${throughMigration}`)
+  const files = allFiles.slice(0, throughIndex + 1)
   const applied = []
   for (const file of files) {
     const count = await applySqlFile(db, join(migrationsDir, file), file)
@@ -72,7 +75,7 @@ export async function seedStore(db, { storeId = 1, userId = 1 } = {}) {
  * 起一个隔离环境。
  * @param {{ demo?: boolean }} options demo=true 时额外建测试专用表并打包演示动作
  */
-export async function createTestEnv({ demo = true } = {}) {
+export async function createTestEnv({ demo = true, throughMigration } = {}) {
   const miniflare = new Miniflare({
     modules: true,
     script: 'export default { async fetch() { return new Response("ok") } }',
@@ -82,7 +85,7 @@ export async function createTestEnv({ demo = true } = {}) {
   })
 
   const db = await miniflare.getD1Database('DB')
-  const migrations = await applyMigrations(db)
+  const migrations = await applyMigrations(db, { throughMigration })
   let demoModule = null
   if (demo) {
     await applySqlFile(db, demoSchemaPath, 'demo-schema.sql')

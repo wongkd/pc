@@ -1009,6 +1009,15 @@
       "status": "ok"
     },
     {
+      "table": "inventory_count_movement_links__0032",
+      "definedIn": "0032_stock_inspection_and_backfills.sql（U02 重建流水时暂存 B16 盘点行的外键关系，迁移内创建并删除）",
+      "targetObjects": [],
+      "action": "keep",
+      "codeUsage": "迁移中暂存 inventory_count_lines.adjustment_movement_id，保护既有盘点差异流水关联；迁移完成后删除，不承载运行时记录。",
+      "notes": ["只在迁移期间保存原盘点行 ID 与流水 ID；恢复链接后立即删除该表。"],
+      "status": "ok"
+    },
+    {
       "table": "stock_inspection_events",
       "definedIn": "0032_stock_inspection_and_backfills.sql（U02 新增，无旧表对应）",
       "targetObjects": ["StockInspectionEvent"],
