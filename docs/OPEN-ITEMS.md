@@ -1,6 +1,6 @@
 # 未决项
 
-更新：2026-09-26。只列尚未解决/待核实事项；当前完成度见[STATUS](STATUS.md)。[经营规则 D01–D10 已冻结](plans/2026-09-23-owner-decisions/README.md)，用户已授权采纳推荐；后续是实现/验收或明确暂缓，不再等待老板填写。
+更新：2026-09-27。只列尚未解决/待核实事项；当前完成度见[STATUS](STATUS.md)。[经营规则 D01–D10 已冻结](plans/2026-09-23-owner-decisions/README.md)，用户已授权采纳推荐；后续是实现/验收或明确暂缓，不再等待老板填写。
 本表保留旧编号用于追溯，详细旧背景见[整理前台账](archive/2026-09-22-before-maintenance/docs/OPEN-ITEMS.md)。
 历史表中的“待做”不覆盖后来的实现与证据。
 
@@ -8,6 +8,7 @@
 
 | 编号 | 剩余问题与下一处理 |
 |---|---|
+| INV-USED-01 | [二手配件仓库重规划](plans/2026-09-27-used-parts-inventory/README.md)：U00–U05 与迁移 0032 已部署；员工登录后的仓库、逐件登记与采购 / 回收 / 报价衔接仍待只读验收，生产备份恢复 / Worker 回退未演练。见[本次发布回执](verification/2026-09-27-warehouse-customer-release/README.md)。 |
 | Q-01 / Q-09 | 顾客身份、报价归属及撤销/过期/版本守卫尚需闭环；quote.ts 已有分享签发，不重复实现。按 MP 身份/报价卡接入 |
 | Q-02 | 真实支付未接；需服务端回调、金额核验、幂等和主动查询 |
 | Q-03 | [D05 已定](plans/2026-09-23-owner-decisions/README.md#d05配送阶梯)：≤10/20/30km 为0/30/50元，超出/异常人工报价；自动距离计费暂缓。新报价拒绝条款中隐藏的正配送费；配送距离证据、费用快照与改址补退差尚未形成完整履约链。人工明确报价行不代表自动计费已接 |
@@ -37,7 +38,7 @@
 | D-I | Product.specs 的数组/字符串协议冲突，当前实现 string；修协议时明确 |
 | G-01～G-10 | [D09 经营例外已定](plans/2026-09-23-owner-decisions/README.md#d09状态机契约口径)，逐域契约/守卫待收敛；未知结果不是回滚，已付款预留到期复核；Attachment 已由 F1 关闭 |
 | G-11 / G-13 / G-14 / G-15 | 供应商页归属、排序/逾期样本、金额宽度规格按对应页面处理 |
-| G-16 / G-17 / G-18 | [D10 已定](plans/2026-09-23-owner-decisions/README.md#d10期初成本与流水)，[生产发布回执](verification/2026-09-26-d10-production-release/README.md)：0029 客户来源与 0030 D10 已应用，Worker 已 100% 上线，正式模式已启用；生产期初窗口仍未开启，也没有录入真实库存。若要开始建账，先取得审核后的门店盘点表和店主选定的 1–7 天期限。未知成本销售例外、估值毛利单列报表、关窗后追加调整尚未实现，保持为独立事项；取得日未知则库龄未知 |
+| G-16 / G-17 / G-18 | [轻量化库存登记](plans/2026-09-26-lightweight-stock-entry/README.md)已取消限时窗口前置，旧 D10 开窗要求不再适用于当前正式登记；逐商品已有库存事实的重复限制仍在。U02 的 B47 同型号分批补录与 U03 页面已随 0032 上线；未知成本销售例外、估值毛利单列报表和正式追加纠错仍为独立待办；取得日未知则库龄未知。历史 D10 回执不代替当前状态，见[本次发布回执](verification/2026-09-27-warehouse-customer-release/README.md)。 |
 | G-19 | 员工绑定入口限流，数据层计数不等于完整防护 |
 | G-Q01-CUSTOMER-DEVICE | 报价客户外键与选择已实现；quote_lines.customer_device_ref 的类型/外键和维修归属仍需核对 |
 | T-08 | 后端入口及大领域文件仍长；按[代码地图](engineering/CODE-MAP.md)在触及业务时逐步拆分，不能机械改入口行号 |
@@ -50,11 +51,11 @@
 | 编号 | 未验证范围 |
 |---|---|
 | T-03 / T-05 / 平台条件 | 当前 Worker 保留 `JWT_SECRET`、`DEEPSEEK_KEY` 加密 secret；PDD 旧变量已从线上运行配置移除。此前 Dashboard 曾明文显示 PDD client secret，供应商侧旧密钥仍需管理员轮换。主体、AppID、商户和小程序接入条件仍按接入时事实核验，不记录密钥值 |
-| T-06 / T-07 | 生产 `pc-db` 已应用 0029 与 0030，`d1_migrations` 为 `0000–0030` 共 31 条且无待迁移；外键检查为空，见[D10 / E04 生产回执](verification/2026-09-26-d10-production-release/README.md)。迁移前完整导出已在隔离本地 D1 恢复核验；Cloudflare 生产恢复和 Worker 代码回退仍未演练，见 V-03 |
+| T-06 / T-07 | 生产 pc-db 已应用 0000–0033 共 34 条迁移，无待迁移、外键检查为空，见[最新发布回执](verification/2026-09-27-warehouse-customer-release/README.md)。Time Travel 书签与迁移自动备份可用；恢复及 Worker 代码回退仍未演练。 |
 | T-13 | 隔离环境的 Wrangler R2 读写、合成 D1+R2 恢复与 SHA 已完成；生产 Dashboard 已确认 `BUCKET → pc-attachments`、`DB → pc-db`。应用附件 API 的 `storageKind=r2` / `storagePersistent=true`、授权下载、应用层内容校验与跨实例读取仍未验；生产当前附件计数为 0，浏览器停在登录页，不能做真实上传 canary。隔离 Worker/S3 清单不一致仍需复核，见[隔离演练](plans/2026-09-25-data-attachment-go-live/drill-20260925/README.md)及[生产续验](verification/2026-09-25-production-runtime-browser-followup/README.md) |
 | V-01 | 全部异常态、键盘、缩放与对比度未完整验收 |
 | V-02 | 专用环境的迁移、合成 D1+R2 一致点恢复、SHA 和外键核对已通过；跨实例并发与完整隔离 R2 清单待 Workers.dev 可访问后实测。生产 D1 已迁移，生产存量回填未做；完整生产备份恢复未验 |
-| V-03 | [生产续验](verification/2026-09-25-production-runtime-browser-followup/README.md)记录清理后的基线；最新[D10 / E04 生产回执](verification/2026-09-26-d10-production-release/README.md)确认 Worker `a9b78a73-6b17-4de5-ba82-c1dbc4858187` 为 100% 流量，ERP 首页资源匹配，D1/R2 绑定正常，迁移 `0000–0030`、外键检查通过。生产登录后的客户来源/库存正式入口、员工页面权限、应用 R2 canary、Cloudflare 备份恢复与 Worker 代码回退仍未验；生产业务/RC 不放行 |
+| V-03 | 最新 Worker `3d9ad66b-5609-4a7e-bd5a-27f789b54a26` 已 100% 部署，D1/R2/Assets 绑定保持，生产迁移到 0033，见[仓库与客户查询发布回执](verification/2026-09-27-warehouse-customer-release/README.md)。生产登录后的业务、员工页面权限、应用 R2 canary、备份恢复和代码回退仍未验；生产业务/RC 不放行。 |
 
 已关闭不再列待办：Q-04/Q-08/C-01/G-23/G-24/G-25（后端）/G-28（后端）/E03-视觉/错误诊断 T-11。
 依据分别见[验证索引](verification/README.md)及[报价与数量预留补洞](verification/2026-09-21-E06E07-gapfix/README.md)。

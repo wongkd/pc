@@ -2,6 +2,7 @@
 
 - 日期：2026-09-27。
 - 状态：U03/U04 本地实现完成；U05 隔离 Worker/API、约 480px 窄屏、2560×1306 桌面视口及完整键盘登记路径验收完成。生产未部署，迁移 0032 未应用。
+- 发布后补记：本地验收后的仓库 V2 与 0032 已发布生产；员工登录后的业务验收和备份 / 回退验证仍待完成，见[集成发布回执](../2026-09-27-warehouse-customer-release/README.md)。原状态保留为 U05 本地验收时的记录。
 - 入口：[总体方案](../../plans/2026-09-27-used-parts-inventory/README.md)、[实施记录](../../plans/2026-09-27-used-parts-inventory/implementation.md)、[U02 后续补记](../2026-09-27-U02-inventory-semantics/README.md)。
 
 ## 本地实现与浏览器证据

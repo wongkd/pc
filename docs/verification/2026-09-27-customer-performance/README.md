@@ -2,6 +2,7 @@
 
 - 日期：2026-09-27。
 - 状态：客户列表修复与本地复测完成；迁移 `0033` 尚未应用到远端，代码尚未部署。
+- 发布后补记：客户分页、报价选客搜索与 `0033` 已随集成版本发布生产；本地基准和弱网样本边界不变。部署、线上资源核对及未登录鉴权结果见[集成发布回执](../2026-09-27-warehouse-customer-release/README.md)。本行原状态保留为本地复测完成时的记录。
 - 入口：[客户列表实现](../../../backend/src/index.ts)、[迁移](../../../backend/migrations/0033_customer_list_indexes.sql)、[查询基准结果](customer-query-benchmark.json)、[浏览器弱网结果](browser-measure.json)。
 
 ## 修复内容
