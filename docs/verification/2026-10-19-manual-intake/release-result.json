@@ -1,0 +1,197 @@
+{
+  "date": "2026-10-19",
+  "target": "https://erp.huangqidong.cn",
+  "codeCommit": "2f56979",
+  "workerVersion": "af9e1f51-5285-4136-b6a9-eee87248434c",
+  "verifiedAtUtc": "2026-10-18T21:27:17.131Z",
+  "assets": [
+    {
+      "path": "index.html",
+      "status": 200,
+      "sha256": "5925a767928f4f71450c21f5d73fa72541467a5f5743bf4db36925dd546f957c"
+    },
+    {
+      "path": "assets/AttachmentPanel-DStQ0gcJ.js",
+      "status": 200,
+      "sha256": "21543f70931a24588582d8c66848f0342b50f6eb2cf11e9cfcae5484c218689f"
+    },
+    {
+      "path": "assets/CatalogPage-BReqOYJT.js",
+      "status": 200,
+      "sha256": "ea53ab7c138d58ec740c8f01b7f2e47381bb1e7cefed4e793081164eb9f9ca06"
+    },
+    {
+      "path": "assets/CatalogPage-_EDCiN4E.css",
+      "status": 200,
+      "sha256": "8843e7b7bc379c00818277d4652532a14837e3718870e4786fdb4b5f39d7cf16"
+    },
+    {
+      "path": "assets/CustomersPage-9oMHSfMV.js",
+      "status": 200,
+      "sha256": "780b45c02b346cfc6790c7541b40aceb6fe979b89180a8e98f26249c92884575"
+    },
+    {
+      "path": "assets/CustomersPage-geYKWEEx.css",
+      "status": 200,
+      "sha256": "9a80d41d627167906abaddb8ff6aa07597bbf5e8fac346ffcc365be81b5689e2"
+    },
+    {
+      "path": "assets/index-C6l1LkRn.css",
+      "status": 200,
+      "sha256": "f8b3a773b7726febe3372908ba24bc2d8e822ae48ddecc41223e6451eaaaa02c"
+    },
+    {
+      "path": "assets/index-w_KoVdb5.js",
+      "status": 200,
+      "sha256": "b7f867a4655b7f6b4ec45bfc0c191ed7f80ecdad4d32701c51388349ee0f8452"
+    },
+    {
+      "path": "assets/inventory-api-BALe0dbB.js",
+      "status": 200,
+      "sha256": "d8da847b7ac6c928906bc8580edb0fff13d738969d50be4ec186c700aa604924"
+    },
+    {
+      "path": "assets/inventory-view-BTttSfQ9.js",
+      "status": 200,
+      "sha256": "4328e9d3b99d2563e33424ca54fa163c1d675eba3abfced97b4848a28bec64de"
+    },
+    {
+      "path": "assets/jsx-runtime-BHwPObl3.js",
+      "status": 200,
+      "sha256": "6ed7416c915e185e73374bf284befc5f202ef32181e7815e51b6d13555021d33"
+    },
+    {
+      "path": "assets/ProductManagementPage-BjLJBhq3.js",
+      "status": 200,
+      "sha256": "18e1392078bc1892894b7c24745e2a4a49dd9405acdddbf0ecc7649f3ae85749"
+    },
+    {
+      "path": "assets/quote-api-CDEqc9oS.js",
+      "status": 200,
+      "sha256": "4d3d6843c433e07770f05172ae0f80bdc3eb10152f8e13872733865255de40c2"
+    },
+    {
+      "path": "assets/sales-api-CAL2BgO5.js",
+      "status": 200,
+      "sha256": "158469630f12162f6a369c810d75b75bde40b563538682184bef888203f3a1fa"
+    },
+    {
+      "path": "assets/SerialNumberPage-BTdiwQvs.js",
+      "status": 200,
+      "sha256": "69efe0ef7308a0593590446fb937f244a0f0aab782af0178749794c961558e14"
+    },
+    {
+      "path": "assets/SystemSettingsPage-CTd6WjrU.js",
+      "status": 200,
+      "sha256": "a28ab75bcd0901e91822892480b775ef40454467c0822b63531c5f4b3962b274"
+    },
+    {
+      "path": "assets/TestDataCleanupPage-CTOGJrNc.js",
+      "status": 200,
+      "sha256": "244362519e947afa34f4314aa7f80d0708fb75ab24d6f0c03535cf2c5762e4bd"
+    },
+    {
+      "path": "assets/TestDataCleanupPage-DNWcJb54.css",
+      "status": 200,
+      "sha256": "7137dc94472024b535c51f1e8cd3c300a454faf3e1a33a74e7d60ffccf5d4cba"
+    },
+    {
+      "path": "assets/WorkbenchFinancePage-Rj02NAwK.js",
+      "status": 200,
+      "sha256": "fb3e317ca695a40c1bccefc2526a998a8d3c112b42cb7e8e02b4655f7df84134"
+    },
+    {
+      "path": "assets/WorkbenchFulfillmentPage-B6-s1wsZ.js",
+      "status": 200,
+      "sha256": "6d8d18a9799941d588c3d61cc9cdd93347d1b7b78e4ef7dc63aa947ebafb7679"
+    },
+    {
+      "path": "assets/WorkbenchFulfillmentPage-v0cczvaP.css",
+      "status": 200,
+      "sha256": "1b82549454792d6937065537dc3e6973b7ffb6cf94542c390db43af5f83a704f"
+    },
+    {
+      "path": "assets/WorkbenchInventoryPage-BhpIq-XS.js",
+      "status": 200,
+      "sha256": "4edfb3d09760a5f42feda9f24018cd1f5093ee0bae460fc5785d6103cea51b1c"
+    },
+    {
+      "path": "assets/WorkbenchInventoryPage-DQcic55f.css",
+      "status": 200,
+      "sha256": "573e57962c83796f9523774c0ed336fd0707b95a12feb219caccc085a6a8330a"
+    },
+    {
+      "path": "assets/WorkbenchPurchasePage-BsQcaKgb.js",
+      "status": 200,
+      "sha256": "e5607177e9d932e8a1b2d9c5657377ce60ae04304a3ca753d65c47c54a025a60"
+    },
+    {
+      "path": "assets/WorkbenchPurchasePage-CROn9U9s.css",
+      "status": 200,
+      "sha256": "ee6b94504ef35880b8ba0c20af45375d2491c92cb625b12d7e2a578959519ab0"
+    },
+    {
+      "path": "assets/WorkbenchQuotePage-B9a9wYrZ.js",
+      "status": 200,
+      "sha256": "09c67c15b7cab32333adff463e4dcdc00f0cf42639bd24af76262c9f33428d5b"
+    },
+    {
+      "path": "assets/WorkbenchQuotePage-DKj0k1ab.css",
+      "status": 200,
+      "sha256": "69a6a80b914d0e9fe94da1bcdc0d0014f1187bbaffd065a6bfab20d0ed7e084c"
+    },
+    {
+      "path": "assets/WorkbenchRecoveryPage-CeJtyqL1.css",
+      "status": 200,
+      "sha256": "338d9b4f9eb598f0443c20192d221d05d47377bd06e26ef4d9786623044c1b1a"
+    },
+    {
+      "path": "assets/WorkbenchRecoveryPage-DNlmMjb3.js",
+      "status": 200,
+      "sha256": "bbb0e4290636092a771c48ae437bdaa37f21c5f23c29def2dfc4f66cb04cd968"
+    },
+    {
+      "path": "assets/WorkbenchSalesPage-BQPuX_ef.js",
+      "status": 200,
+      "sha256": "0d5e82e361e56962b7d1807b02db048d064c935767a46e7146a6bd18344ff4fd"
+    },
+    {
+      "path": "assets/WorkbenchServicePage-BAamdElw.css",
+      "status": 200,
+      "sha256": "fcbd2e4d25339e4418c4835e0ebdcc603ecf31f5b42bd4098ee65589011ec97d"
+    },
+    {
+      "path": "assets/WorkbenchServicePage-xAkiH97M.js",
+      "status": 200,
+      "sha256": "1ce2e89a5720f37455c98a4f393913caeb62381d83a8356b3935ec4a8be6d95f"
+    },
+    {
+      "path": "assets/WorkspaceLandingPage-5Wfz8EJz.css",
+      "status": 200,
+      "sha256": "e64a5188d29f8efb30c7af91dd4fad5888828807fc29398eb4c592dc8a82215a"
+    },
+    {
+      "path": "assets/WorkspaceLandingPage-BmGUqA6x.js",
+      "status": 200,
+      "sha256": "9cb0d7d7a2e24b3152478264b2d1da6758f341959f39b01c6f4cd5e9157c1896"
+    }
+  ],
+  "endpoints": [
+    {
+      "path": "/after-sales?action=intake",
+      "status": 200
+    },
+    {
+      "path": "/api/auth/me",
+      "status": 401
+    },
+    {
+      "path": "/api/v2/service/orders",
+      "status": 401
+    }
+  ],
+  "manualIntakeShortcutInMatchingAsset": true,
+  "manualIntakeFormInMatchingAsset": true,
+  "productionBusinessWrites": false,
+  "authenticatedProductionAcceptance": false
+}
