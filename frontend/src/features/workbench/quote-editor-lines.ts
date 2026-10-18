@@ -34,7 +34,8 @@ export function validateQuoteEditorLine(line: QuoteEditorLine, context: QuoteLin
     if (!line.priceYuan.trim()) errors.push(`${prefix}：请填写单价`)
     else if (parseYuan(line.priceYuan) === null) errors.push(`${prefix}：单价必须是非负且最多两位小数的有效金额`)
   }
-  if (line.source === 'used' && !line.stockItemId.trim()) errors.push(`${prefix}：二手件要指定具体实物`)
+  // 报价阶段允许先写一个未建档的二手配置；成交前再补选具体实物。
+  // 这样“只是报价”不需要先把型号录入库存，也与 QuoteVersion 的临时行规则一致。
   return errors
 }
 

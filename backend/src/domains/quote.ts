@@ -104,7 +104,7 @@ export interface QuoteLineInput {
   unitPriceCents: number
   /** 商品引用（hardware.entity_id）。报价阶段允许为空 —— 临时行在成交前才必须映射。 */
   productRef?: string | null
-  /** 二手件必须指定具体实物（QuoteVersion.rules）。它是引用，不是占用。 */
+  /** 二手件可在报价阶段暂不关联；成交前必须补齐具体实物引用。它是引用，不是占用。 */
   stockItemId?: string | null
   /** 客供件的来源设备（customer_devices.id 的字符串形式）。 */
   customerDeviceRef?: string | null
@@ -222,7 +222,7 @@ export function validateQuoteDraft(input: QuoteDraftInput, options: { requireLin
     if (!isNonNegativeInt(line.unitPriceCents)) return `${at}：单价必须是非负整数分`
 
     if (line.source === 'used') {
-      if (!line.stockItemId) return `${at}：二手件必须指定具体实物（哪一台）`
+      // 报价可以先描述尚未建档的二手配置；B03 转销售单时再由订单域要求补齐实物。
       if (line.qty !== 1) return `${at}：逐件跟踪的来源数量只能是 1`
     } else if (line.stockItemId) {
       return `${at}：只有二手件才能指定具体实物`

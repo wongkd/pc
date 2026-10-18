@@ -404,11 +404,18 @@ test('客供件不允许带价，且必须指出来源设备', async () => {
   assert.equal(noDevice.status, 400)
 })
 
-test('二手件必须指定具体实物，且数量只能是 1', async () => {
+test('二手报价可以暂不关联具体实物，但数量仍只能是 1', async () => {
   const noItem = await json(await a.post('/api/v2/sales/quotes', {
     requestId: 'r-rule-used-1', title: '二手无实物', lines: [line({ source: 'used' })],
   }))
-  assert.equal(noItem.status, 400)
+  assert.equal(noItem.status, 200, JSON.stringify(noItem.body))
+  const quoteId = noItem.body.data.entityId
+  const saved = await db.prepare('SELECT stock_item_id FROM quote_lines WHERE quote_id = ?').bind(quoteId).first()
+  assert.equal(saved.stock_item_id, null)
+  const issued = await json(await a.post(`/api/v2/sales/quotes/${encodeURIComponent(quoteId)}/issue`, {
+    requestId: 'r-rule-used-1-issue', expectedVersion: 1,
+  }))
+  assert.equal(issued.status, 200, JSON.stringify(issued.body))
 
   const twoItems = await json(await a.post('/api/v2/sales/quotes', {
     requestId: 'r-rule-used-2', title: '二手两件', lines: [line({ source: 'used', stockItemId: 'si-x', qty: 2 })],

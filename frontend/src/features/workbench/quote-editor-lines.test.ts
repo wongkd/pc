@@ -49,12 +49,13 @@ describe('quote editor lines', () => {
     expect(serializeQuoteEditorLines([row({ qty: '2', priceYuan: '50000000000000' })])).toMatchObject({ ok: false })
   })
 
-  it('enforces customer and used references, while allowing an unreferenced new item', () => {
+  it('enforces customer references while allowing unlinked used and new quote rows', () => {
     const customer = row({ source: 'customer', customerDeviceRef: '', priceYuan: '' })
     expect(validateQuoteEditorLine(customer)).toEqual(['CPU：客供件要先选客户', 'CPU：客供件要选来源设备'])
     expect(validateQuoteEditorLine({ ...customer, customerDeviceRef: 'device-1' }, { customerId: '7' })).toEqual([])
     expect(serializeQuoteEditorLines([{ ...customer, customerDeviceRef: 'device-1' }], { customerId: '7' })).toMatchObject({ ok: true, lines: [{ unitPriceCents: 0 }] })
-    expect(validateQuoteEditorLine(row({ source: 'used', stockItemId: '' }))).toContain('CPU：二手件要指定具体实物')
+    expect(validateQuoteEditorLine(row({ source: 'used', stockItemId: '' }))).toEqual([])
+    expect(serializeQuoteEditorLines([row({ source: 'used', stockItemId: '' })])).toMatchObject({ ok: true, lines: [{ stockItemId: null }] })
     expect(serializeQuoteEditorLines([row({ productRef: '' })])).toMatchObject({ ok: true })
   })
 

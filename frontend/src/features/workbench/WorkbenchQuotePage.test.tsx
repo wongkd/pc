@@ -7,7 +7,7 @@
  *   · 列表按服务端给的状态显示：已过期 / 即将到期是服务端算出来的，本页只渲染；
  *   · 无权限时不渲染「新建装机报价」，只有查看权限时按钮隐藏（显隐依据与后端同源的旧码）；
  *   · 金额以整数分提交：界面按元输入，提交前换算（2599.00 元 → 259900 分）；
- *   · 客供件单价锁 0、二手件必须选实物 —— 客户端先拦，服务端仍为权威；
+ *   · 客供件单价锁 0；二手件报价阶段可暂不关联实物，成交前再补选；
  *   · 发出成功后展示「只此一次」的分享凭证明文，并明确标注顾客端页面尚未开通；
  *   · 「结果未知」不报成功、不清表单，给出用原 requestId 查询的入口。
  */
@@ -368,8 +368,9 @@ describe('新建报价', () => {
     expect((screen.getByLabelText('第 1 行名称') as HTMLInputElement).value).toBe('CPU')
   })
 
-  it('二手行没选实物时提交被客户端拦下，不发请求', async () => {
+  it('二手行没选实物时仍可先保存报价草稿', async () => {
     mocks.fetchQuotes.mockResolvedValue(listPayload([]))
+    mocks.createQuoteDraft.mockResolvedValue(okPayload({ operationId: 'r-used-unlinked', entityId: 'q-used-unlinked', entityVersion: 1, state: 'draft', effects: { revision: 1 }, summary: '已保存报价草稿' }))
     render(<WorkbenchQuotePage permissions={['*']} />)
 
     await waitFor(() => expect(screen.getByRole('button', { name: '新建装机报价' })).toBeTruthy())
@@ -381,8 +382,8 @@ describe('新建报价', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '创建草稿' }))
 
-    expect(await screen.findByText(/二手件要指定具体实物/)).toBeTruthy()
-    expect(mocks.createQuoteDraft).not.toHaveBeenCalled()
+    await waitFor(() => expect(mocks.createQuoteDraft).toHaveBeenCalled())
+    expect(mocks.createQuoteDraft.mock.calls[0][0].lines[0]).toMatchObject({ source: 'used', stockItemId: null })
   })
 
   it('报价二手选件逐件显示类别、内部编号、成色和检测状态', async () => {

@@ -1078,7 +1078,7 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
                     </label>
                     {line.source === 'used' ? (
                       <label className="wb-quote-field wb-quote-field--reference">
-                        <span>关联二手实物</span>
+                        <span>关联二手实物（可选）</span>
                         {stockOptions.length ? (
                           <select
                             aria-label={`第 ${index + 1} 行实物`}
@@ -1100,6 +1100,7 @@ export default function WorkbenchQuotePage({ permissions, onConverted }: { permi
                             placeholder="填写实物编号"
                           />
                         )}
+                        <span className="wb-form-hint">只是报价可以先不关联；成交前再补选具体实物。</span>
                       </label>
                     ) : null}
                     {line.source === 'new' ? (

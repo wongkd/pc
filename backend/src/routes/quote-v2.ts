@@ -280,7 +280,7 @@ function guidanceFor(code: string, message: string): string | null {
   if (code !== 'VALIDATION_ERROR') return null
   if (message !== GENERIC_VALIDATION_MEANING) return null
   return '报价单没有通过校验。最常见的三种：优惠金额超过了小计；某一行数量或单价不是正整数分；'
-    + '这台的引用与行来源对不上（二手件必须指定具体实物、客供件必须指出来源设备）'
+    + '这台的引用与行来源对不上（客供件必须指出来源设备；二手件可先不关联库存，成交前再补选具体实物）'
 }
 
 interface WriteOutcome {
