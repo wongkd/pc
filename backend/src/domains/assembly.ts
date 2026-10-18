@@ -40,7 +40,7 @@
  *     属库存域 B19「待检件判定」，不在本卡。
  *   · CustomerDevice（交付后设备归属）：0010 的 customer_devices 不是契约的 CustomerDevice
  *     （无 custodyLocation / stockItemRef / originalOrderId），归属结构归 E10。本卡不建。
- *   · 检测附件（resultEvidence）：Attachment 仍无落地结构（B35 未实现），收到非空引用明确拒绝。
+ *   · 检测照片复用B35已完成附件，逐检测版本保留引用；不自动完成上传。
  */
 
 import {
@@ -67,6 +67,8 @@ import {
   type RunResult,
 } from './operations'
 import { QUOTE_SETTINGS } from './quote'
+import { listAttachedForOwner, type AttachmentView } from './attachment'
+import type { FulfillmentCreditApproval } from '../generated/standalone-erp-v2'
 import {
   containsExtensionWarrantyCommitment,
   EXTENSION_WARRANTY_DEFERRED_MESSAGE,
@@ -876,13 +878,12 @@ export async function saveAssemblyChecks(
     }
   }
   const evidence = input.resultEvidence ?? []
-  if (evidence.length > 0) {
-    return fail(
-      ctx.requestId,
-      'VALIDATION_ERROR',
-      '检测附件（resultEvidence）依赖 B35 附件上传，尚未实现；先不要提交照片引用',
-      400,
-    )
+  if (!Array.isArray(evidence) || evidence.length > 20 || evidence.some((id) => typeof id !== 'string' || !id.trim()) || new Set(evidence).size !== evidence.length) {
+    return fail(ctx.requestId, 'VALIDATION_ERROR', '检测照片须为最多20个不重复的附件引用', 400)
+  }
+  for (const id of evidence) {
+    const attached = await db.prepare(`SELECT id FROM attachments WHERE id=? AND store_id=? AND owner_entity_type='sale_order' AND owner_entity_id=? AND upload_state='attached' AND purpose='delivery_evidence' AND content_type LIKE 'image/%'`).bind(id, ctx.storeId, orderId).first()
+    if (!attached) return fail(ctx.requestId, 'VALIDATION_ERROR', '照片尚未完成上传，或不属于本店当前销售单', 400)
   }
 
   const order = await readOrder(db, ctx.storeId, orderId)
@@ -983,8 +984,8 @@ export async function saveAssemblyChecks(
         .prepare(
           `INSERT INTO sale_checklists
              (id, store_id, sale_order_id, checklist_version, template_version, configuration_version,
-              items_json, result, performed_at, performed_by, version, request_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`,
+              items_json, result, performed_at, performed_by, version, request_id, result_evidence_json)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
         )
         .bind(
           checklistId,
@@ -998,6 +999,7 @@ export async function saveAssemblyChecks(
           now,
           context.actorUserId,
           context.requestId,
+          JSON.stringify(evidence),
         ),
       // 检查单版本唯一：并发提交时后到的一批整批回滚，重新读取再提交。
       guardStatement(
@@ -1011,6 +1013,7 @@ export async function saveAssemblyChecks(
       ),
     ]
 
+    for (const id of evidence) statements.push(guardStatement(db, 'VALIDATION_ERROR', `NOT EXISTS (SELECT 1 FROM attachments WHERE id=? AND store_id=? AND owner_entity_type='sale_order' AND owner_entity_id=? AND upload_state='attached' AND purpose='delivery_evidence' AND content_type LIKE 'image/%')`, id, context.storeId, order.id))
     if (toState) {
       statements.push(
         db
@@ -1325,14 +1328,14 @@ export async function deliverSaleOrder(
       )
     }
     const approval = await db
-      .prepare(`SELECT id FROM sale_credit_approvals WHERE store_id = ? AND id = ? AND sale_order_id = ?`)
-      .bind(ctx.storeId, creditRef, orderId)
+      .prepare(`SELECT id FROM sale_credit_approvals WHERE store_id = ? AND id = ? AND sale_order_id = ? AND balance_cents = ?`)
+      .bind(ctx.storeId, creditRef, orderId, balance)
       .first<{ id: string }>()
     if (!approval) {
       return fail(
         ctx.requestId,
         'VALIDATION_ERROR',
-        '欠款批准凭证不存在，或不属于这张单；请老板先执行「批准欠款交付」',
+        '欠款批准凭证不存在、不属于这张单或批准金额已变化；请老板重新批准欠款交付',
         400,
       )
     }
@@ -1416,7 +1419,8 @@ export async function deliverSaleOrder(
               `EXISTS (SELECT 1 FROM sale_orders
                        WHERE store_id = ? AND id = ? AND balance_cents > 0
                          AND NOT EXISTS (SELECT 1 FROM sale_credit_approvals
-                                         WHERE store_id = ? AND id = ? AND sale_order_id = ?))`,
+                                         WHERE store_id = ? AND id = ? AND sale_order_id = ?
+                                           AND balance_cents = sale_orders.balance_cents))`,
               context.storeId,
               order.id,
               context.storeId,
@@ -1597,6 +1601,7 @@ export interface FulfillmentChecklistRow {
   failCount: number
   performedAt: string
   performedByName: string
+  resultEvidence: string[]
 }
 
 export interface FulfillmentBoard {
@@ -1618,6 +1623,8 @@ export interface FulfillmentBoard {
   gaps: CoverageGap[]
   missingSnItems: string[]
   checklists: FulfillmentChecklistRow[]
+  creditApprovals: FulfillmentCreditApproval[]
+  attachments: AttachmentView[]
   latestChecklist: {
     id: string
     checklistVersion: number
@@ -1655,7 +1662,7 @@ export async function queryFulfillmentBoard(
   const checklistRows = await db
     .prepare(
       `SELECT c.id, c.checklist_version, c.template_version, c.configuration_version,
-              c.items_json, c.result, c.performed_at, u.email AS performed_by_email
+              c.items_json, c.result, c.performed_at, c.result_evidence_json, u.email AS performed_by_email
        FROM sale_checklists c LEFT JOIN users u ON u.id = c.performed_by
        WHERE c.store_id = ? AND c.sale_order_id = ?
        ORDER BY c.checklist_version DESC`,
@@ -1670,6 +1677,7 @@ export async function queryFulfillmentBoard(
       result: string
       performed_at: string
       performed_by_email: string | null
+      result_evidence_json: string
     }>()
 
   const checklists: FulfillmentChecklistRow[] = []
@@ -1692,6 +1700,7 @@ export async function queryFulfillmentBoard(
       failCount: items.filter((item) => item.state === 'fail').length,
       performedAt: row.performed_at,
       performedByName: row.performed_by_email ?? '',
+      resultEvidence: JSON.parse(row.result_evidence_json || '[]') as string[],
     }
     checklists.push(entry)
     if (!latestChecklist) {
@@ -1730,7 +1739,11 @@ export async function queryFulfillmentBoard(
     customerName = ''
   }
 
+  const approvalRows = await db.prepare(`SELECT a.id, a.balance_cents, a.due_date, a.reason, a.created_at, u.email AS approved_by_name FROM sale_credit_approvals a LEFT JOIN users u ON u.id=a.approved_by WHERE a.store_id=? AND a.sale_order_id=? ORDER BY a.created_at DESC, a.id DESC`).bind(storeId, orderId).all<{ id: string; balance_cents: number; due_date: string; reason: string; created_at: string; approved_by_name: string | null }>()
+  const creditApprovals: FulfillmentCreditApproval[] = (approvalRows.results ?? []).map((row) => ({ id: row.id, balanceCents: row.balance_cents, dueDate: row.due_date, reason: row.reason, approvedByName: row.approved_by_name ?? '', createdAt: row.created_at, valid: order.balance_cents > 0 && row.balance_cents === order.balance_cents && order.trade_state === 'confirmed' && order.fulfillment_state !== 'delivered' }))
   return {
+    creditApprovals,
+    attachments: await listAttachedForOwner(db, storeId, 'sale_order', orderId),
     order: {
       id: order.id,
       orderNo: order.order_no,

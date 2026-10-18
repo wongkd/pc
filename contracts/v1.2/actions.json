@@ -81,6 +81,7 @@
       { "code": "inventory/inspection", "domain": "inventory", "level": "action", "desc": "待检件判定为可卖或继续隔离", "legacySource": "library/edit", "grantPolicy": "default" },
       { "code": "inventory/refurbish", "domain": "inventory", "level": "action", "desc": "整备成本记录与上架门槛达成", "legacySource": "library/edit", "grantPolicy": "default" },
       { "code": "inventory/damage", "domain": "inventory", "level": "action", "desc": "报损", "legacySource": null, "grantPolicy": "owner_only" },
+      { "code": "inventory/price-adjust", "domain": "inventory", "level": "action", "desc": "调整商品挂牌价", "legacySource": null, "grantPolicy": "owner_only" },
       { "code": "inventory/cost-view", "domain": "inventory", "level": "field", "desc": "响应中返回采购成本与逐件成本字段", "legacySource": "cost/view", "grantPolicy": "default" },
       { "code": "inventory/margin-view", "domain": "inventory", "level": "field", "desc": "响应中返回毛利字段", "legacySource": "margin/view", "grantPolicy": "default" },
       { "code": "service/view", "domain": "service", "level": "action", "desc": "查看维修工单、方案与费用", "legacySource": "quote/view", "grantPolicy": "default" },
@@ -864,6 +865,21 @@
       ]
     },
     {
+      "code": "B40",
+      "name": "商品挂牌价调整",
+      "domain": "inventory",
+      "entity": "Product",
+      "stateMachine": null,
+      "status": "frozen",
+      "operations": [{ "method": "PATCH", "path": "/inventory/products/:id/price", "permission": "inventory/price-adjust" }],
+      "inputs": ["newPriceCents:cents!", "reason:ProductPriceAdjustmentReason!", "note:string?", "expectedVersion:int!"],
+      "result": "更新商品挂牌价并记录老板审批审计；只影响之后新开的报价，历史报价与销售单价格快照不变。",
+      "effects": ["Product", "AuditEvent"],
+      "errors": ["PERMISSION_DENIED", "ENTITY_NOT_FOUND", "VERSION_CONFLICT", "IDEMPOTENCY_MISMATCH", "VALIDATION_ERROR"],
+      "uiRefs": ["库存"],
+      "notes": ["B40 由 reserved 提升为正式动作；B12 普通商品编辑仍不得改既有商品售价。"]
+    },
+    {
       "code": "B45",
       "name": "清理未发出报价草稿",
       "domain": "sales",
@@ -950,18 +966,6 @@
       "permission": "inventory/damage",
       "reason": "不得复用采购入库伪造差异（05 T06c）；老板权限（03 §8）。",
       "source": "05 T06c；03 §8 欠款交付、退款冲销、报损盘差行"
-    },
-    {
-      "code": "B40",
-      "name": "普通价格调整",
-      "domain": "inventory",
-      "status": "reserved",
-      "owner": null,
-      "path": null,
-      "permission": null,
-      "reason": "04 §5 末段列为未明确补充动作，但未指定归属任务卡，也未说明作用于商品售价还是报价行。归属与权限码待定，不得由两端自行取名。",
-      "source": "04 §5 末段",
-      "blockedBy": "Q07"
     }
   ],
   "authActions": [

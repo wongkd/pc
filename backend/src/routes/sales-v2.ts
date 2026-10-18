@@ -334,9 +334,8 @@ function parseChecksInput(body: Record<string, unknown>): { input: SaveChecksInp
       stockItemId: asText(value.stockItemId),
     })
   }
-  const evidence = Array.isArray(body.resultEvidence)
-    ? body.resultEvidence.filter((item): item is string => typeof item === 'string')
-    : undefined
+  if (body.resultEvidence !== undefined && (!Array.isArray(body.resultEvidence) || body.resultEvidence.some((item) => typeof item !== 'string'))) return { input: null, problem: 'resultEvidence 必须是附件引用字符串数组' }
+  const evidence = body.resultEvidence as string[] | undefined
   return { input: { templateVersion, configurationVersion, items, resultEvidence: evidence }, problem: null }
 }
 

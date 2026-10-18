@@ -141,15 +141,11 @@ export function InventoryPartsWorkspace({
   const readToken = useRef(0)
   const detailReadToken = useRef(0)
 
-  const loadPage = useCallback(async (page: { cursor?: string | null; quantityCursor?: string | null } = {}) => {
+  const readPage = useCallback((page: { cursor?: string | null; quantityCursor?: string | null } = {}) => {
     const token = ++readToken.current
     const extending = Boolean(page.cursor || page.quantityCursor)
     const previous = payloadRef.current
-    if (extending && previous) setLoadingMore(true)
-    else setListState('loading')
-    setListError('')
-    try {
-      const result = await fetchInventoryStockItems({
+    return fetchInventoryStockItems({
         q: appliedQuery,
         category,
         condition,
@@ -158,9 +154,10 @@ export function InventoryPartsWorkspace({
         limit: PAGE_SIZE,
         cursor: page.cursor ?? undefined,
         quantityCursor: page.quantityCursor ?? undefined,
-      })
+      }).then((result) => {
       if (token !== readToken.current) return
       if (result.ok) {
+        setListError('')
         const next = extending && previous ? {
           ...result.data,
           items: page.cursor ? [...previous.items, ...result.data.items] : previous.items,
@@ -173,20 +170,27 @@ export function InventoryPartsWorkspace({
         if (!previous || !extending) setListState('error')
         setListError(result.message || '库存暂时无法读取，请重试。')
       }
-    } catch {
+    }).catch(() => {
       if (token !== readToken.current) return
       if (!previous || !extending) setListState('error')
       setListError('库存暂时无法读取，请重试。')
-    } finally {
+    }).finally(() => {
       if (token === readToken.current) setLoadingMore(false)
-    }
+    })
   }, [appliedQuery, category, condition, availability, inspectionStatus])
 
-  useEffect(() => { void loadPage() }, [loadPage])
+  const loadPage = (page: { cursor?: string | null; quantityCursor?: string | null } = {}) => {
+    if (page.cursor || page.quantityCursor) setLoadingMore(true)
+    else setListState('loading')
+    setListError('')
+    return readPage(page)
+  }
+  useEffect(() => { const tracker = readToken; void readPage(); return () => { tracker.current++ } }, [readPage])
 
   useEffect(() => {
     if (!entryOpen) return
     const dialog = entryDialogRef.current
+    const trigger = entryTriggerRef.current
     if (!dialog) return
 
     const focusableElements = () => Array.from(dialog.querySelectorAll<HTMLElement>(
@@ -221,7 +225,7 @@ export function InventoryPartsWorkspace({
     document.addEventListener('keydown', keepFocusInDialog, true)
     return () => {
       document.removeEventListener('keydown', keepFocusInDialog, true)
-      if (entryTriggerRef.current?.isConnected) entryTriggerRef.current.focus()
+      if (trigger?.isConnected) trigger.focus()
     }
   }, [entryOpen])
 

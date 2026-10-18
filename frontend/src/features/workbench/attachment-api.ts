@@ -18,7 +18,7 @@ type Envelope<T> = { data: T } | { error?: { message?: string } }
 
 export interface AttachmentUploadSession {
   file: File
-  ownerEntityType: 'service_order' | 'recovery_order' | 'stock_item'
+  ownerEntityType: 'service_order' | 'recovery_order' | 'stock_item' | 'sale_order'
   ownerEntityId: string
   intentRequestId: string
   completeRequestId: string
@@ -34,6 +34,17 @@ export class AttachmentUploadError extends Error {
     this.retryable = retryable
     this.name = 'AttachmentUploadError'
   }
+}
+
+/** 读取时由业务权限授权，不在URL传会话或直暴露对象key。 */
+export async function downloadBusinessAttachment(id: string): Promise<Blob> {
+  const token = inventoryClient.session.getToken()
+  const response = await fetch(`/api/v2/attachments/${encodeURIComponent(id)}/content`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  if (!response.ok) {
+    const body = await response.json().catch(() => null) as { error?: { message?: string } } | null
+    throw new Error(body?.error?.message || `附件读取失败（${response.status}）`)
+  }
+  return response.blob()
 }
 
 function requestId(): string {
@@ -73,9 +84,10 @@ export function createAttachmentUploadSession(file: File, ownerEntityType: Attac
 
 export async function uploadBusinessAttachment(session: AttachmentUploadSession): Promise<AttachmentView> {
   const { file, ownerEntityType, ownerEntityId } = session
+  const purpose = ownerEntityType === 'service_order' ? 'service_intake' : ownerEntityType === 'sale_order' ? 'delivery_evidence' : 'recovery_evidence'
   if (!session.intent) {
     session.intent = await send<{ entityId: string; uploadPath: string; uploadToken: string }>('/api/v2/attachments/upload-intents', 'POST', JSON.stringify({
-      requestId: session.intentRequestId, ownerEntityType, ownerEntityId, purpose: ownerEntityType === 'service_order' ? 'service_intake' : 'recovery_evidence',
+      requestId: session.intentRequestId, ownerEntityType, ownerEntityId, purpose,
       mime: file.type, byteSize: file.size, visibility: 'internal',
     }), 'application/json')
     session.stage = 'blob'
@@ -103,5 +115,5 @@ export async function uploadBusinessAttachment(session: AttachmentUploadSession)
   await send(`/api/v2/attachments/upload-intents/${encodeURIComponent(intent.entityId)}/complete`, 'POST', JSON.stringify({
     requestId: session.completeRequestId, ownerEntityType, ownerEntityId,
   }), 'application/json')
-  return { id: intent.entityId, purpose: ownerEntityType === 'service_order' ? 'service_intake' : 'recovery_evidence', visibility: 'internal', contentType: file.type, byteSize: file.size, width: null, height: null, sha256: null, uploadState: 'attached', createdAt: new Date().toISOString() }
+  return { id: intent.entityId, purpose, visibility: 'internal', contentType: file.type, byteSize: file.size, width: null, height: null, sha256: null, uploadState: 'attached', createdAt: new Date().toISOString() }
 }

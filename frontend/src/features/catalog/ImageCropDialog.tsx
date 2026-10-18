@@ -8,12 +8,15 @@ export function ImageCropDialog({ file, preset, onCancel, onSave }: {
 }) {
   const dialog = useRef<HTMLDialogElement>(null)
   const image = useRef<HTMLImageElement>(null)
-  const [src, setSrc] = useState(''); const [crop, setCrop] = useState<PercentCrop>()
+  const [crop, setCrop] = useState<PercentCrop>()
   const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const [small, setSmall] = useState(false)
   const size = CATALOG_IMAGE_PRESETS[preset]
   useEffect(() => {
-    const url = URL.createObjectURL(file); setSrc(url); dialog.current?.showModal()
-    return () => URL.revokeObjectURL(url)
+    const url = URL.createObjectURL(file)
+    const img = image.current
+    if (img) img.src = url
+    dialog.current?.showModal()
+    return () => { URL.revokeObjectURL(url); if (img) img.removeAttribute('src') }
   }, [file])
   const save = async () => {
     const img = image.current
@@ -38,7 +41,7 @@ export function ImageCropDialog({ file, preset, onCancel, onSave }: {
     {small && <p role="status">原图较小，放大后可能不清晰，建议更换高清原图。</p>}
     <ReactCrop crop={crop} aspect={size.width / size.height} onChange={(_, percent) => setCrop(percent)} disabled={busy} keepSelection
       ariaLabels={{ cropArea: '使用方向键移动裁切区域', nwDragHandle: '使用方向键调整左上角', nDragHandle: '使用方向键调整上边缘', neDragHandle: '使用方向键调整右上角', eDragHandle: '使用方向键调整右边缘', seDragHandle: '使用方向键调整右下角', sDragHandle: '使用方向键调整下边缘', swDragHandle: '使用方向键调整左下角', wDragHandle: '使用方向键调整左边缘' }}>
-      <img ref={image} src={src} alt="待裁切原图" onError={() => setError('图片无法解码，请选择有效的 JPG、PNG 或 WebP 图片')} onLoad={e => {
+      <img ref={image} alt="待裁切原图" onError={() => setError('图片无法解码，请选择有效的 JPG、PNG 或 WebP 图片')} onLoad={e => {
         const img = e.currentTarget
         if (img.naturalWidth * img.naturalHeight > 40000000) { setError('原图超过4000万像素，请先缩小图片'); return }
         setSmall(img.naturalWidth < size.width || img.naturalHeight < size.height)

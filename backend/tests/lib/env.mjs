@@ -12,7 +12,6 @@
  *   · 每个测试文件独立起一个环境（内存库），互不干扰。
  */
 
-import { Miniflare, Log, LogLevel } from 'miniflare'
 import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -76,6 +75,10 @@ export async function seedStore(db, { storeId = 1, userId = 1 } = {}) {
  * @param {{ demo?: boolean }} options demo=true 时额外建测试专用表并打包演示动作
  */
 export async function createTestEnv({ demo = true, throughMigration } = {}) {
+  // ⚠️ miniflare 只在测试路径用，是 devDependency（还带 workerd 二进制），不在生产部署包里。
+  // 写成顶层 import 会让 node-host.mjs（只借用 applyMigrations）在启动时 ERR_MODULE_NOT_FOUND，
+  // 2026-09-29 部署实测踩到（旧版是动态加载，属于 09-28 引入的回归）。所以这里保持按需加载。
+  const { Miniflare, Log, LogLevel } = await import('miniflare')
   const miniflare = new Miniflare({
     modules: true,
     script: 'export default { async fetch() { return new Response("ok") } }',

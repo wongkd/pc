@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Member, Role, Store } from '../utils/api'
 import { deleteMember, fetchMembers, fetchRoles, fetchCurrentStore, inviteMember, updateCurrentStore, updateMember } from '../utils/api'
+import { has } from '../utils/permissions'
 
 interface Props { permissions: string[]; currentStore: Store | null; onStoreChanged: (store: Store) => void }
-export const has = (permissions: string[], permission: string) => permissions.includes('*') || permissions.includes(permission)
 const list = (value: string | string[] | null) => Array.isArray(value) ? value : value ? value.split(',').filter(Boolean) : []
 
 export function SystemSettingsPage({ permissions, currentStore, onStoreChanged }: Props) {
@@ -12,6 +12,8 @@ export function SystemSettingsPage({ permissions, currentStore, onStoreChanged }
   const canManageStore = has(permissions, 'store/manage')
   const canViewRoles = has(permissions, 'role/view')
   const [store, setStore] = useState(currentStore)
+  const [storeSource, setStoreSource] = useState(currentStore)
+  if (storeSource !== currentStore) { setStoreSource(currentStore); setStore(currentStore) }
   const [members, setMembers] = useState<Member[]>([])
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,10 +26,8 @@ export function SystemSettingsPage({ permissions, currentStore, onStoreChanged }
   const [editing, setEditing] = useState<Member | null>(null)
   const [roleIds, setRoleIds] = useState<number[]>([])
 
-  useEffect(() => { setStore(currentStore) }, [currentStore])
   useEffect(() => {
     let active = true
-    setLoading(true); setError('')
     const jobs: Promise<unknown>[] = [fetchCurrentStore().then((value) => { if (active) setStore(value) })]
     if (canManageMembers) jobs.push(fetchMembers().then((value) => { if (active) setMembers(value) }))
     if (canViewRoles) jobs.push(fetchRoles().then((value) => { if (active) setRoles(value) }))

@@ -9,11 +9,12 @@
  *   · 未付款不预留 —— 零售单同样要先收款、确认成交，才能备料与交付；
  *   · 检测结论由服务端按检查项派生，本页只让店员逐项记 pass / fail，不提供「整单通过」按钮；
  *   · 交付才扣库，扣库一次；「结果未知」进待确认状态，不当失败、不重复提交；
- *   · 欠款交付（B09）尚未实现，界面如实说明，不提供绕过入口。
+ *   · 欠款交付引用老板已批准且金额仍一致的凭据，服务端事务复核。
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { formatYuan } from './inventory-view'
+import { AttachmentPanel } from './AttachmentPanel'
 import { fetchSaleOrders } from './sales-api'
 import type { SaleOrderListPayload, SaleTradeState } from './sales-api'
 import {
@@ -182,13 +183,14 @@ export function WorkbenchFulfillmentPage({ permissions }: { permissions: string[
 
   const handleSaveChecks = useCallback(async () => {
     if (!board || items.length === 0) return
-    const done = await runWrite('保存检测结果', () => saveAssemblyChecks(board.order.id, items))
+    const done = await runWrite('保存检测结果', () => saveAssemblyChecks(board.order.id, items, 'asm-v1', (board.attachments ?? []).filter((attachment) => attachment.purpose === 'delivery_evidence').map((attachment) => attachment.id)))
     if (done) await refreshDetail()
   }, [board, items, runWrite, refreshDetail])
 
   const handleDeliver = useCallback(async () => {
     if (!board) return
-    const done = await runWrite('确认交付', () => deliverOrder(board.order.id, deliveryNote, receivedByNote || null))
+    const approvalRef = board.order.balanceCents > 0 ? board.creditApprovals?.find((approval) => approval.valid)?.id ?? null : null
+    const done = await runWrite('确认交付', () => deliverOrder(board.order.id, deliveryNote, receivedByNote || null, approvalRef))
     if (done) {
       setDeliveryNote('')
       setReceivedByNote('')
@@ -511,6 +513,7 @@ export function WorkbenchFulfillmentPage({ permissions }: { permissions: string[
                   <p className="wb-caption">当前账号没有备料与检测的权限。</p>
                 )}
 
+                <AttachmentPanel key={board.order.id} attachments={board.attachments ?? []} ownerType="sale_order" ownerId={board.order.id} canUpload={canAssemble && hasAny(permissions, ['attachment/upload', 'library/edit']) && board.order.fulfillmentState !== 'delivered'} onUploaded={() => { void refreshDetail() }} />
                 {board.checklists.length > 0 ? (
                   <div className="wb-quote-table-scroll">
                     <table className="wb-quote-table">
@@ -563,6 +566,7 @@ export function WorkbenchFulfillmentPage({ permissions }: { permissions: string[
                         </li>
                       ))}
                     </ul>
+                    {board.order.balanceCents > 0 ? <div className="wb-inv-toolbar"><h3>老板欠款批准凭据</h3>{(board.creditApprovals ?? []).length ? <ul>{board.creditApprovals?.map((approval) => <li key={approval.id}><strong>{approval.valid ? '有效，将用于本次交付' : '金额已变化或订单已结束'}</strong> · ¥{(approval.balanceCents / 100).toFixed(2)} · 到期 {approval.dueDate} · {approval.reason}<small>批准人 {approval.approvedByName} · 凭据 {approval.id}</small></li>)}</ul> : <p>还没有批准凭据。请到销售单由老板批准后刷新本页。</p>}</div> : null}
                     <div className="wb-inv-toolbar wb-form">
                       <div className="wb-form-actions">
                         <label className="wb-field">
@@ -591,7 +595,7 @@ export function WorkbenchFulfillmentPage({ permissions }: { permissions: string[
                         </button>
                         <p className="wb-form-hint">
                           交付与收款是两次独立动作：交付失败不会动已经收过的钱；重复提交由服务端幂等兜底，不会扣两次库存。
-                          尾款没结清时服务端会拒绝 —— 欠款交付需要老板批准（B09，尚未实现）。
+                          尾款没结清时必须挂有效的老板欠款批准凭据。
                         </p>
                       </div>
                     </div>

@@ -1,6 +1,10 @@
 {
   "scripts": {
     "dev:local": "node scripts/dev-server.mjs",
+    "host:build": "node scripts/build-node.mjs",
+    "host:migrate": "node scripts/migrate-host.mjs",
+    "host:bootstrap": "node scripts/bootstrap-host.mjs",
+    "host:start": "node scripts/node-host.mjs",
     "test": "node --test --test-concurrency=1 \"tests/*.test.mjs\"",
     "check:error-codes": "node scripts/sync-error-codes.mjs --check",
     "check:migrations": "node scripts/check-migration-sequence.mjs"

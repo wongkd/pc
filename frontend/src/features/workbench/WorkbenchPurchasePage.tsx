@@ -180,12 +180,12 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
     }
     setListState('error')
     setActionError(result.message)
-  }, [])
+  }, [setList, setListState, setActionError])
 
   const refresh = useCallback(() => {
     setListState('loading')
     void loadList(scope, keyword)
-  }, [loadList, scope, keyword])
+  }, [loadList, scope, keyword, setListState])
 
   const openDetail = useCallback(async (purchaseId: string) => {
     setView('detail')
@@ -210,7 +210,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
     }
     setDetailState('error')
     setActionError(result.message)
-  }, [])
+  }, [setView, setDetailState, setDetail, setActionError, setNotice, setReceiptLineId, setReceiptQty, setReceiptRejected])
 
   useEffect(() => {
     if (!canView) return
@@ -267,7 +267,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
       setActionError(result.message ?? '操作失败')
       return null
     },
-    [],
+    [setBusy, setActionError, setUnknownWrite, setNotice],
   )
 
   const checkUnknownWrite = useCallback(async () => {
@@ -344,7 +344,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
       // 提示放在刷新之后：openDetail 会清掉上一轮提示，先设会被自己的刷新抹掉。
       setNotice({ kind: 'ok', text: done.summary || '已建采购单' })
     }
-  }, [draftLines, supplierName, supplierNote, expectedAt, runWrite, loadList, scope, keyword, openDetail])
+  }, [draftLines, supplierName, supplierNote, expectedAt, runWrite, loadList, scope, keyword, openDetail, setActionError, setSupplierName, setSupplierNote, setExpectedAt, setDraftLines, setNotice])
 
   const handleCancel = useCallback(async () => {
     if (!detail) return
@@ -359,7 +359,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
       await openDetail(detail.purchase.id)
       setNotice({ kind: 'ok', text: done.summary || '已取消未到数量' })
     }
-  }, [detail, cancelQuantities, cancelReason, cancelNote, runWrite, openDetail])
+  }, [detail, cancelQuantities, cancelReason, cancelNote, runWrite, openDetail, setActionError, setNotice])
 
   const handleReceipt = useCallback(async () => {
     if (!detail) return
@@ -411,7 +411,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
       await openDetail(detail.purchase.id)
       setNotice({ kind: 'ok', text: done.summary || '已登记到货' })
     }
-  }, [detail, receiptLineId, receiptQty, receiptRejected, receiptDisposition, receiptCondition, receiptItems, receiptBatchRemark, receiptItemRemark, runWrite, loadList, scope, keyword, openDetail])
+  }, [detail, receiptLineId, receiptQty, receiptRejected, receiptDisposition, receiptCondition, receiptItems, receiptBatchRemark, receiptItemRemark, runWrite, loadList, scope, keyword, openDetail, setActionError, setReceiptRejected, setNotice])
 
   const handleReturn = useCallback(async () => {
     if (!detail || !returnLineId) return
@@ -438,7 +438,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
       await openDetail(detail.purchase.id)
       setNotice({ kind: 'ok', text: done.summary || '已退供' })
     }
-  }, [detail, returnLineId, returnQty, returnBucket, returnReason, runWrite, loadList, scope, keyword, openDetail])
+  }, [detail, returnLineId, returnQty, returnBucket, returnReason, runWrite, loadList, scope, keyword, openDetail, setActionError, setNotice])
 
   const handlePayment = useCallback(async () => {
     if (!detail) return
@@ -461,7 +461,7 @@ export function WorkbenchPurchasePage({ permissions }: { permissions: string[] }
       await openDetail(detail.purchase.id)
       setNotice({ kind: 'ok', text: done.summary || '已登记采购付款' })
     }
-  }, [detail, paymentAmount, paymentMethod, paymentRemark, runWrite, loadList, scope, keyword, openDetail])
+  }, [detail, paymentAmount, paymentMethod, paymentRemark, runWrite, loadList, scope, keyword, openDetail, setActionError, setNotice])
 
   if (!canView) {
     return (

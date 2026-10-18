@@ -31,6 +31,7 @@ import {
   INSPECTION_STATUSES,
   STOCK_BUCKETS,
   approveCount,
+  adjustProductPrice,
   createCount,
   createOpening,
   createStockBackfill,
@@ -60,6 +61,7 @@ import {
   type OpeningCostBasis,
   type OpeningLineInput,
   type ProductWriteInput,
+  type ProductPriceAdjustmentInput,
   type MakeItemAvailableInput,
   type RefurbishmentInput,
   type StockBucket,
@@ -102,6 +104,7 @@ const COUNTS_PATH = '/api/v2/inventory/counts'
 const INVENTORY_ACTIVITY_PATH = `${PREFIX}/inventory/activity`
 const PRODUCT_CLEANUP_CANDIDATES_PATH = '/api/v2/inventory/products/cleanup-candidates'
 const DELETE_UNUSED_PRODUCT_PATH = /^\/api\/v2\/inventory\/products\/([^/]+)\/delete-unused$/
+const PRODUCT_PRICE_PATH = /^\/api\/v2\/inventory\/products\/([^/]+)\/price$/
 const OPERATION_PATH = /^\/api\/v2\/operations\/([^/]+)$/
 
 // ────────────────────────────── 契约信封 ──────────────────────────────
@@ -248,6 +251,16 @@ function parseProductInput(body: Record<string, unknown>): { input: ProductWrite
     },
     problem: null,
   }
+}
+
+function parseProductPriceAdjustmentInput(body: Record<string, unknown>, productRef: string): { input: ProductPriceAdjustmentInput | null; problem: string | null } {
+  const newPriceCents = asInt(body.newPriceCents)
+  const reason = asText(body.reason)
+  const expectedVersion = asInt(body.expectedVersion)
+  if (newPriceCents === null || newPriceCents < 0) return { input: null, problem: '新挂牌价必须是非负整数分' }
+  if (!reason || !['cost_change', 'market_change', 'correction', 'other'].includes(reason)) return { input: null, problem: '改价原因无效' }
+  if (expectedVersion === null || expectedVersion < 1) return { input: null, problem: 'expectedVersion 必须是正整数' }
+  return { input: { productRef, newPriceCents, reason: reason as ProductPriceAdjustmentInput['reason'], note: asText(body.note), expectedVersion }, problem: null }
 }
 
 function parseOpeningInput(body: Record<string, unknown>): { input: OpeningInput | null; problem: string | null } {
@@ -805,6 +818,21 @@ async function handleProductWrite(req: Request, env: InventoryRouteEnv, context:
   return writeResponse(result, 'product')
 }
 
+async function handleProductPriceAdjustment(req: Request, env: InventoryRouteEnv, context: InventoryRouteContext, rawProductRef: string): Promise<Response> {
+  const denied = requireGrant(context, INVENTORY_PERMISSIONS.priceAdjust)
+  if (denied) return denied
+  let productRef: string
+  try { productRef = decodeURIComponent(rawProductRef) } catch { return fail('VALIDATION_ERROR', '商品编号无法解析', 400) }
+  let body: Record<string, unknown>
+  try { body = (await req.json()) as Record<string, unknown> } catch { return fail('VALIDATION_ERROR', '请求体不是合法 JSON', 400) }
+  const requestId = requireRequestId(body, req)
+  if (!requestId) return fail('VALIDATION_ERROR', '缺少 requestId，或与 Idempotency-Key 头不一致', 400)
+  const { input, problem } = parseProductPriceAdjustmentInput(body, productRef)
+  if (!input) return fail('VALIDATION_ERROR', problem ?? '改价数据无效', 400, { requestId })
+  const result = await adjustProductPrice(env.DB, { storeId: context.storeId, actorUserId: context.userId, requestId, action: 'B40', payloadHash: '' }, input)
+  return writeResponse(result, 'product')
+}
+
 async function handleUnusedProductCandidates(env: InventoryRouteEnv, context: InventoryRouteContext): Promise<Response> {
   const denied = requireGrant(context, 'store/manage')
   if (denied) return denied
@@ -1251,6 +1279,12 @@ export async function routeInventoryV2(req: Request, env: InventoryRouteEnv, con
   if (deleteUnusedProductMatch) {
     if (req.method !== 'POST') return fail('VALIDATION_ERROR', '该方法不支持', 405)
     return handleUnusedProductDelete(req, env, context, deleteUnusedProductMatch[1])
+  }
+
+  const productPriceMatch = PRODUCT_PRICE_PATH.exec(path)
+  if (productPriceMatch) {
+    if (req.method !== 'PATCH') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    return handleProductPriceAdjustment(req, env, context, productPriceMatch[1])
   }
 
   // B30/B19/B48 子路径必须排在实物详情之前：ITEM_PATH 的 (.+) 会贪婪吞掉子路径。

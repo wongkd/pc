@@ -53,6 +53,7 @@ export const ACTION_OPERATIONS: Record<ActionCode, readonly ActionOperation[]> =
   "B37": [{ method: "POST", path: "/inventory/purchases/:id/cancel", permission: "inventory/purchase-cancel" }],
   "B38": [{ method: "POST", path: "/inventory/supplier-returns", permission: "inventory/supplier-return" }],
   "B41": [{ method: "POST", path: "/service/orders/:id/payments", permission: "service/charge" }],
+  "B40": [{ method: "PATCH", path: "/inventory/products/:id/price", permission: "inventory/price-adjust" }],
   "B45": [{ method: "POST", path: "/sales/quotes/:id/delete-draft", permission: "store/manage" }],
   "B46": [{ method: "GET", path: "/inventory/products/cleanup-candidates", permission: "store/manage" }, { method: "POST", path: "/inventory/products/:id/delete-unused", permission: "store/manage" }],
   "B47": [{ method: "POST", path: "/inventory/backfills", permission: "inventory/stock-backfill" }],
@@ -102,6 +103,7 @@ export const ACTION_NAMES: Record<ActionCode, string> = {
   "B37": "取消采购",
   "B38": "退供",
   "B41": "售后收款",
+  "B40": "商品挂牌价调整",
   "B45": "清理未发出报价草稿",
   "B46": "清理未引用商品档案",
   "B47": "同型号库存分批补录",
@@ -113,7 +115,7 @@ export const PAGE_ACTIONS: Record<string, readonly ActionCode[]> = {
   "入库": ["B15"],
   "办理交付": ["B08","B09","B10"],
   "回收": ["B26","B27","B28","B29","B44","B35"],
-  "库存": ["B12","B13","B19","B30","B38","B47","B48"],
+  "库存": ["B12","B13","B19","B30","B38","B40","B47","B48"],
   "换件 / 返厂": ["B23","B24"],
   "接修": ["B20","B35"],
   "整备 / 上架": ["B30"],
@@ -161,6 +163,7 @@ export type PermissionCode =
   | "inventory/inspection"
   | "inventory/refurbish"
   | "inventory/damage"
+  | "inventory/price-adjust"
   | "inventory/cost-view"
   | "inventory/margin-view"
   | "service/view"
@@ -221,6 +224,7 @@ export const PERMISSIONS: readonly PermissionDefinition[] = [
   { code: "inventory/inspection", domain: "inventory", level: "action", desc: "待检件判定为可卖或继续隔离", grantPolicy: "default", legacySource: "library/edit" },
   { code: "inventory/refurbish", domain: "inventory", level: "action", desc: "整备成本记录与上架门槛达成", grantPolicy: "default", legacySource: "library/edit" },
   { code: "inventory/damage", domain: "inventory", level: "action", desc: "报损", grantPolicy: "owner_only", legacySource: null },
+  { code: "inventory/price-adjust", domain: "inventory", level: "action", desc: "调整商品挂牌价", grantPolicy: "owner_only", legacySource: null },
   { code: "inventory/cost-view", domain: "inventory", level: "field", desc: "响应中返回采购成本与逐件成本字段", grantPolicy: "default", legacySource: "cost/view" },
   { code: "inventory/margin-view", domain: "inventory", level: "field", desc: "响应中返回毛利字段", grantPolicy: "default", legacySource: "margin/view" },
   { code: "service/view", domain: "service", level: "action", desc: "查看维修工单、方案与费用", grantPolicy: "default", legacySource: "quote/view" },
@@ -261,8 +265,7 @@ export interface SupplementaryAction {
 }
 export const SUPPLEMENTARY_ACTIONS: readonly SupplementaryAction[] = [
   { code: "B39", name: "报损", status: "reserved", path: null, permission: "inventory/damage", owner: "T06c" },
-  { code: "B40", name: "普通价格调整", status: "reserved", path: null, permission: null, owner: null },
 ]
 
 // ── 动作编号全集（含补充动作）──
-export const ALL_ACTION_CODES: readonly string[] = ["B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B43","B19","B20","B21","B22","B23","B24","B25","B26","B27","B28","B29","B30","B44","B31","B32","B33","B34","B35","B36","B42","B37","B38","B41","B45","B46","B47","B48","B39","B40"]
+export const ALL_ACTION_CODES: readonly string[] = ["B01","B02","B03","B04","B05","B06","B07","B08","B09","B10","B11","B12","B13","B14","B15","B16","B17","B18","B43","B19","B20","B21","B22","B23","B24","B25","B26","B27","B28","B29","B30","B44","B31","B32","B33","B34","B35","B36","B42","B37","B38","B41","B40","B45","B46","B47","B48","B39"]

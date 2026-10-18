@@ -26,22 +26,20 @@ export function TestDataCleanupPage({ permissions }: { permissions: string[] }) 
   const [unknownRequest, setUnknownRequest] = useState<UnknownRequest | null>(null)
   const [checking, setChecking] = useState(false)
 
-  const reload = useCallback(async () => {
-    setLoadState('loading')
-    setError('')
-    const [quoteResult, productResult] = await Promise.all([
+  const reload = useCallback(() => Promise.all([
       fetchQuotes({ status: 'draft', limit: 100 }),
       fetchUnusedProducts(),
-    ])
+    ]).then(([quoteResult, productResult]) => {
     if (!quoteResult.ok || !productResult.ok) {
       setError(!quoteResult.ok ? quoteResult.message : !productResult.ok ? productResult.message : '读取失败')
       setLoadState('error')
       return
     }
     setQuotes(quoteResult.data.quotes)
+    setError('')
     setProducts(productResult.data.products)
     setLoadState('ready')
-  }, [])
+  }), [])
 
   useEffect(() => {
     if (canManageStore) void reload()
@@ -139,7 +137,7 @@ export function TestDataCleanupPage({ permissions }: { permissions: string[] }) 
           <p className="wb-caption">这里只能删除未发出的报价草稿和没有业务引用的商品档案。库存实物、资金、顾客交接与历史单据保留并按业务流程更正。</p>
         </div>
         <div className="wb-page-head-actions">
-          <button type="button" className="wb-btn" onClick={() => void reload()} disabled={loadState === 'loading'}>刷新</button>
+          <button type="button" className="wb-btn" onClick={() => { setLoadState('loading'); setError(''); void reload() }} disabled={loadState === 'loading'}>刷新</button>
         </div>
       </header>
 

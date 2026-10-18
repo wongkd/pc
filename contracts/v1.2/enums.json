@@ -242,10 +242,10 @@
         "B19", "B20", "B21", "B22", "B23", "B24",
         "B25", "B26", "B27", "B28", "B29", "B30",
         "B31", "B32", "B33", "B34", "B35", "B36",
-        "B37", "B38", "B41", "B42", "B43", "B44", "B45", "B46", "B47", "B48"
+        "B37", "B38", "B40", "B41", "B42", "B43", "B44", "B45", "B46", "B47", "B48"
       ],
-      "desc": "动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B39（报损）、B40（价格调整）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit；B45（清理未发出报价草稿）、B46（清理未引用商品档案）为 2026-09-26 v1.1 契约修订新增，权限 store/manage；B47（同型号库存分批补录）、B48（返修后重新待检）为 2026-09-27 U02 v1.2 契约修订新增。",
-      "pending": ["B39 / B40 补充动作编号"]
+      "desc": "动作编号语义见 04 §5；路径、请求与响应结构、权限映射由 T01b 冻结。补充动作（采购取消、报损、退供、价格调整、盘点等）由对应任务先补入本枚举再实现。B42（记录顾客确认）为 2026-09-19 E05b 契约修订新增；B38（退供）为 2026-09-21 E07 契约修订由 supplementaryActions 提升为正式动作，路径 /inventory/supplier-returns、权限 inventory/supplier-return。B37（取消采购）为 2026-09-22 F3 契约修订由 supplementaryActions 的 reserved 提升为正式动作，路径 /inventory/purchases/:id/cancel、权限 inventory/purchase-cancel；B40（商品挂牌价调整）已由本轮契约修订提升为正式动作，路径 /inventory/products/:id/price、权限 inventory/price-adjust；B39（报损）仍在 supplementaryActions 保持 reserved；B43（批准退货贷项）为 2026-09-21 E09 契约修订新增，路径 /sales/returns/:id/approve-credit、权限 sales/refund。B41（售后收款）为 2026-09-21 E10 契约修订由 supplementaryActions 的 specified 提升为正式动作，路径 /service/orders/:id/payments、权限 service/charge，复用 B08 资金字段（method 用 CashMethod 枚举）；B44（拆件入库）为 2026-09-21 E10 契约修订新增，路径 /recovery/orders/:id/teardown、权限 recovery/edit；B45（清理未发出报价草稿）、B46（清理未引用商品档案）为 2026-09-26 v1.1 契约修订新增，权限 store/manage；B47（同型号库存分批补录）、B48（返修后重新待检）为 2026-09-27 U02 v1.2 契约修订新增。",
+      "pending": ["B39 报损动作"]
     },
     "CustomerClaimStatus": {
       "values": ["unclaimed", "claimed", "rejected"],
@@ -358,6 +358,7 @@
       { "from": "in_transit", "to": "quarantine", "reason": "实到但需待检（B15）" },
       { "from": "quarantine", "to": "available", "reason": "待检通过（B19）；不再新增一次总库存" },
       { "from": "quarantine", "to": "retired", "reason": "拒收退供或报废（B19 + 后续补入的报损 / 退供动作）" },
+      { "from": "available", "to": "retired", "reason": "在库可卖件主动报损（B39）或其他老板批准的离店处置" },
       { "from": "available", "to": "reserved", "reason": "成交预留（B05）" },
       { "from": "reserved", "to": "available", "reason": "未交付取消（B11）；不增加在库总量" },
       { "from": "reserved", "to": "quarantine", "reason": "待检预留件故障：撤销占用后转待处理，原订单重新形成缺口；不得既在已订又在待处理" },
@@ -377,6 +378,11 @@
       "name": "StockAdjustmentReason",
       "forObject": "InventoryMovement / 报损 / 盘差",
       "reason": "03 §4 要求原因、责任和来源事件；T06c 补齐报损动作时一并冻结"
+    },
+    {
+      "name": "ProductPriceAdjustmentReason",
+      "values": ["cost_change", "market_change", "correction", "other"],
+      "desc": "商品挂牌价调整原因；只影响新报价，历史单据保留价格快照"
     },
     {
       "name": "PurchaseCancelReason",

@@ -6,10 +6,11 @@ import { ImageCropDialog } from './ImageCropDialog'
 import './catalog.css'
 
 function ProductImage({ id }: { id: string | null }) {
-  const [url, setUrl] = useState('')
+  const [image, setImage] = useState({ id, url: '' })
+  const url = image.id === id ? image.url : ''
   useEffect(() => {
-    let active = true; let objectUrl = ''; setUrl('')
-    if (id) void catalogImageUrl(id).then(value => { objectUrl = value; if (active) setUrl(value); else URL.revokeObjectURL(value) }).catch(() => {})
+    let active = true; let objectUrl = ''
+    if (id) void catalogImageUrl(id).then(value => { objectUrl = value; if (active) setImage({ id, url: value }); else URL.revokeObjectURL(value) }).catch(() => {})
     return () => { active = false; if (objectUrl) URL.revokeObjectURL(objectUrl) }
   }, [id])
   return url ? <img className="catalog-image" src={url} alt="商品图片预览" /> : <span className="catalog-image-empty">{id ? '图片暂不可见，可重新上传' : '尚未上传图片'}</span>
@@ -23,13 +24,13 @@ export function CatalogPage({ permissions }: { permissions: string[] }) {
   const [saving, setSaving] = useState(false); const [formError, setFormError] = useState('')
   const [cropping, setCropping] = useState<{ file: File; preset: 'cover' | 'hero' } | null>(null)
   const pending = useRef<CatalogWrite | null>(null); const inFlight = useRef(false); const generation = useRef(0)
-  const load = useCallback(async () => {
-    const request = ++generation.current; setLoading(true); setError('')
-    try { const data = await listCatalog(page); if (request === generation.current) { setItems(data.items); setMore(data.hasMore) } }
-    catch (e) { if (request === generation.current) setError(e instanceof Error ? e.message : '商品加载失败') }
-    finally { if (request === generation.current) setLoading(false) }
+  const load = useCallback(() => {
+    const request = ++generation.current
+    return listCatalog(page).then(data => { if (request === generation.current) { setItems(data.items); setMore(data.hasMore); setError('') } })
+      .catch((e: unknown) => { if (request === generation.current) setError(e instanceof Error ? e.message : '商品加载失败') })
+      .finally(() => { if (request === generation.current) setLoading(false) })
   }, [page])
-  useEffect(() => { void load(); return () => { generation.current++ } }, [load])
+  useEffect(() => { const tracker = generation; void load(); return () => { tracker.current++ } }, [load])
   const open = (item?: CatalogProduct) => {
     setDraft(item || { id: defaultRequestId(), title: '', category: '整机', description: '', priceCents: 0, coverImageId: null, heroImageId: null, status: 'draft', version: 0 })
     setPrice(item ? (item.priceCents / 100).toFixed(2) : ''); setFormError(''); pending.current = null

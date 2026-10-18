@@ -187,12 +187,9 @@ export function WorkbenchTodayPage() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    setLoadError('')
-    try {
-      const result = await fetchWorkbench()
+  const load = useCallback(() => fetchWorkbench().then((result) => {
       if (result.ok) {
+        setLoadError('')
         setTasks(result.data.tasks)
         setMetrics(result.data.metrics)
       } else {
@@ -200,14 +197,13 @@ export function WorkbenchTodayPage() {
         setMetrics(null)
         setLoadError(result.message || '今天待办加载失败，请检查网络后重试。')
       }
-    } catch (error) {
+    }).catch((error: unknown) => {
       setTasks([])
       setMetrics(null)
       setLoadError(error instanceof Error ? error.message : '今天待办加载失败，请检查网络后重试。')
-    } finally {
+    }).finally(() => {
       setLoading(false)
-    }
-  }, [])
+    }), [])
 
   useEffect(() => { void load() }, [load])
 
@@ -335,7 +331,7 @@ export function WorkbenchTodayPage() {
 
       <div className="wb-workbench-body">
         <div className="wb-list-pane">
-          {loadError ? <div className="wb-inv-notice wb-inv-notice--warn">{loadError}<button type="button" className="wb-btn" disabled={loading} onClick={() => void load()}>重试</button></div> : null}
+          {loadError ? <div className="wb-inv-notice wb-inv-notice--warn">{loadError}<button type="button" className="wb-btn" disabled={loading} onClick={() => { setLoading(true); setLoadError(''); void load() }}>重试</button></div> : null}
           <div className="wb-list-head">
             <h2>待办事项</h2>
             <span className="wb-tabular">{loading || loadError ? '—' : filtered.length} 项</span>

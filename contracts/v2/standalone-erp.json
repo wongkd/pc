@@ -1,0 +1,18 @@
+{
+  "contractVersion": "v2-standalone-erp-1",
+  "inherits": "v1.2",
+  "date": "2026-10-18",
+  "endpoints": [{ "method": "GET", "path": "/attachments/:id/content", "permission": "按归属业务读取权限(service/view,recovery/view,inventory/view,sales/order-view)", "response": "核对数据库字节数与SHA后返回已完成附件；同店隔离、鉴权、private no-store" }],
+  "scope": "独立网页ERP增量；v1/v1.1/v1.2历史冻结文件保持不变",
+  "interfaces": [
+    { "name": "FulfillmentCreditApproval", "fields": {
+      "id": "string", "balanceCents": "number", "dueDate": "string", "reason": "string", "approvedByName": "string", "createdAt": "string", "valid": "boolean"
+    } },
+    { "name": "AssemblyEvidenceInput", "fields": { "resultEvidence": "string[]" } }
+  ],
+  "rules": [
+    "B09批准余额快照与当前余额一致才有效；B10在事务内再次校验同店同订单同余额；结清不传批准引用",
+    "B07最多20张已attached的同店同销售单delivery_evidence图片，保存不可变检测版本的附件引用；新版本不覆盖旧记录",
+    "附件上传完成、授权下载继续走B35，检测保存不能自动把pending附件变为attached"
+  ]
+}

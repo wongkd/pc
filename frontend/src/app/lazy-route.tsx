@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, useState, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react'
+import { Component, Suspense, createElement, lazy, useState, type ComponentType, type LazyExoticComponent, type ReactNode } from 'react'
 
 /**
  * 业务页面按需加载的薄封装（2026-09-26 P01）。
@@ -117,7 +117,7 @@ interface LazyRouteProps<P extends object> {
 export function LazyRoute<P extends object>({ load, label, props, onReload }: LazyRouteProps<P>) {
   const [attempt, setAttempt] = useState(0)
   // load 必须是模块级常量。每次渲染都新建函数会让 lazy 拿到新的组件类型，页面被反复卸载重建。
-  const Page = getPage(load)
+  const page = createElement(getPage(load), props)
   const reload = onReload ?? (() => window.location.reload())
   return (
     <PageLoadBoundary
@@ -127,7 +127,7 @@ export function LazyRoute<P extends object>({ load, label, props, onReload }: La
       onReload={reload}
     >
       <Suspense fallback={<div className="settings-state">正在加载{label}…</div>}>
-        <Page {...props} />
+        {page}
       </Suspense>
     </PageLoadBoundary>
   )

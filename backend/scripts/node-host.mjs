@@ -32,11 +32,11 @@
 import { existsSync, mkdirSync, rmSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { dirname, join, resolve } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 
-import { bundleModule } from '../tests/lib/build.mjs'
-import { applyMigrations } from '../tests/lib/env.mjs'
-import { login, seedOwner } from '../tests/lib/worker.mjs'
+import { hostConfig } from './lib/host-config.mjs'
+import { migrateHost } from './lib/host-migrations.mjs'
+import { bootstrapOwner } from './lib/host-bootstrap.mjs'
 import { createLocalD1 } from './lib/d1-sqlite.mjs'
 import { createLocalBucket } from './lib/local-bucket.mjs'
 
@@ -78,22 +78,6 @@ function openDatabase(dbPath, fresh) {
   return { db: createLocalD1(absolute), applied: !existed, existed, path: absolute }
 }
 
-/** 与 wrangler.toml 的绑定对齐；密钥一律用「明确不是真密钥」的占位值。 */
-function buildEnv({ db, bucket }) {
-  return {
-    DB: db,
-    BUCKET: bucket,
-    JWT_SECRET: 'node-host-secret-not-a-real-secret',
-    DEEPSEEK_KEY: '',
-    PDD_CLIENT_ID: '',
-    PDD_CLIENT_SECRET: '',
-    PDD_PID: '',
-    INVENTORY_OPENING_MODE: 'preview',
-    // 与生产同口径：强制走持久化存储分支，缺绑定就该失败而不是静默降级。
-    REQUIRE_PERSISTENT_STORAGE: 'true',
-  }
-}
-
 // ────────────────────────────── HTTP 桥接 ──────────────────────────────
 
 /** IncomingMessage → Request。Node 的 headers 已小写化，可直接喂给 Headers。 */
@@ -112,7 +96,12 @@ async function toRequest(req, port) {
   let body
   if (!withoutBody) {
     const chunks = []
-    for await (const chunk of req) chunks.push(chunk)
+    let size = 0
+    for await (const chunk of req) {
+      size += chunk.length
+      if (size > 21 * 1024 * 1024) throw Object.assign(new Error('请求体超过21MiB'), { status: 413 })
+      chunks.push(chunk)
+    }
     body = Buffer.concat(chunks)
   }
   return new Request(url, { method, headers, body: withoutBody ? undefined : body })
@@ -211,25 +200,35 @@ function handleHostControl(req, res, state, extra) {
 // ────────────────────────────── 主流程 ──────────────────────────────
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2))
-
-  const workerModule = await bundleModule('src/index.ts', 'worker-node-entry')
+  const args = hostConfig(parseArgs(process.argv.slice(2)), process.env, backendRoot)
+  if (args.fresh) throw new Error('宿主不再接受 --fresh；隔离测试请显式选择新的数据库路径')
+  let entry = args.entry
+  if (!entry) {
+    // 开发可按需构建；正式启动只读取预构建文件，不依赖esbuild或tests/lib。
+    entry = join(backendRoot, '.node-host/build/worker.mjs')
+    const { default: esbuild } = await import('esbuild')
+    await esbuild.build({ entryPoints: [join(backendRoot, 'src/index.ts')], outfile: entry, bundle: true, format: 'esm', platform: 'neutral', target: 'es2022', logLevel: 'warning' })
+  }
+  const workerModule = await import(pathToFileURL(entry).href)
   const worker = workerModule.default
   if (!worker || typeof worker.fetch !== 'function') {
     throw new Error('Worker 入口未导出 default.fetch —— 宿主与入口形态不匹配')
   }
 
   const { db, existed, path } = openDatabase(args.db, args.fresh)
-  let migrations = 0
-  if (!existed) {
-    const applied = await applyMigrations(db)
-    migrations = applied.length
-  }
+  const migrations = migrateHost(db, join(backendRoot, 'migrations'))
 
   const bucket = createLocalBucket(args.dataDir)
-  const env = buildEnv({ db, bucket })
+  const env = { ...args.bindings, DB: db, BUCKET: bucket }
 
-  if (args.seed) await seedOwner(db)
+  // ⚠️ 只在「库是新建的」时播种。seedOwner 是纯 INSERT，对已有库重播会
+  //    UNIQUE constraint failed: users.id，配合 systemd Restart=on-failure 变成重启崩溃循环。
+  //    2026-09-29 在帷云测试机部署时实测踩到。
+  let seeded = false
+  if (args.seed && !existed) {
+    await bootstrapOwner(db, { email: 'owner@local.test', password: 'local-preview-pass', storeName: '合成本地预览门店' })
+    seeded = true
+  }
 
   // 峰值采样：请求高峰只持续几十毫秒，事后再查只能拿到回落值，必须后台持续采。
   const hostState = createHostState()
@@ -245,7 +244,15 @@ async function main() {
   const server = createServer((req, res) => {
     const started = performance.now()
     // 控制面先拦：`/__host/*` 不能落到 Worker（那边只会 404，读起来像是 bug）。
-    if (req.url?.startsWith('/__host/')) return handleHostControl(req, res, hostState, extraStats)
+    if (!args.production && req.url?.startsWith('/__host/')) return handleHostControl(req, res, hostState, extraStats)
+    if (req.url === '/healthz' && req.method === 'GET') {
+      try {
+        db.db.prepare('SELECT 1').get()
+        res.writeHead(200, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ status: 'ok', mode: args.mode, migration: migrations.latest }))
+      } catch { res.writeHead(503); res.end('{"status":"unavailable"}') }
+      return
+    }
     toRequest(req, args.port)
       .then(async (request) => {
         const response = await worker.fetch(request, env)
@@ -258,32 +265,25 @@ async function main() {
       .catch((error) => {
         // 这里只兜「桥接层」的错。业务错应当由 Worker 自己转成响应返回，
         // 若走到这里说明是宿主问题，必须暴露而不是吞掉。
-        console.error(`[宿主异常] ${req.method} ${req.url}`, error)
+        console.error(`[宿主异常] ${req.method} ${new URL(req.url, 'http://localhost').pathname}`)
         hostState.errors += 1
-        if (!res.headersSent) res.writeHead(500, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: { code: 'HOST_BRIDGE_ERROR', message: String(error?.message ?? error) } }))
+        if (!res.headersSent) res.writeHead(error.status ?? 500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: { code: 'HOST_BRIDGE_ERROR', message: '请求未完成，请核对操作结果后重试' } }))
       })
   })
 
-  await new Promise((done) => server.listen(args.port, '127.0.0.1', done))
+  await new Promise((done, reject) => { server.once('error', reject); server.listen(args.port, '127.0.0.1', done) })
 
   const coercions = db.coercions
   console.log('── Node 宿主已就绪 ──')
   console.log(`Worker 入口   : src/index.ts（真实入口，esbuild 打包）`)
   console.log(`监听          : http://127.0.0.1:${args.port}`)
   console.log(`数据库        : ${path ?? '内存库（进程退出即丢）'}`)
-  console.log(`迁移          : ${existed ? '沿用已有库，未重放' : `${migrations} 个迁移文件已应用`}`)
+  console.log(`迁移          : 本次${migrations.applied.length}，累计${migrations.total}，最新${migrations.latest}`)
   console.log(`附件目录      : ${resolve(backendRoot, args.dataDir)}`)
-  console.log(`已播种老板账号: ${args.seed ? '是（owner@local.test / local-preview-pass）' : '否'}`)
+  console.log(`合成账号初始化: ${seeded ? '是（仅开发）' : '否'}`)
   // 参数强制转换次数不为 0，说明本地比原生 node:sqlite 宽松，存在与 D1 的口径差异。
   console.log(`参数强转次数  : undefined→null ${coercions.undefinedToNull}，boolean→int ${coercions.booleanToInt}${coercions.undefinedToNull || coercions.booleanToInt ? '  ⚠️ 出现强转，上生产前须复核' : ''}`)
-
-  // 供压测脚本调用：验证登录链路真的通。
-  const call = (path2, init) => fetch(`http://127.0.0.1:${args.port}${path2}`, init)
-  if (args.seed) {
-    const token = await login(call, { email: 'owner@local.test', password: 'local-preview-pass' })
-    console.log(`登录自检      : 通过（token ${token.length} 字符）`)
-  }
 
   const shutdown = () => {
     server.close(() => {

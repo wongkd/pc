@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-18",
+  "scope": "isolated-local-node-sqlite-http",
+  "passed": true,
+  "miniprogramStarted": false,
+  "anonymousWorkbenchStatus": 401,
+  "loginBeforeAndAfterRestartStatus": 200,
+  "authenticatedWorkbenchStatus": 200,
+  "syntheticCustomerWriteAndRead": true,
+  "syntheticCustomerReadAfterHostRestart": true,
+  "isolatedNewDatabase": true,
+  "isolatedAttachmentDirectory": true,
+  "attachmentPersistenceTested": false,
+  "browserTested": false,
+  "remoteAccess": false,
+  "realCustomerData": false,
+  "productionAcceptance": false,
+  "runner": ".validation-2026-10-18-erp-audit/standalone-smoke.mjs",
+  "localDetailedReport": ".validation-2026-10-18-erp-audit/standalone-smoke-report.json"
+}

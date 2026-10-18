@@ -17,6 +17,8 @@ import {
   type SaleOrderDetailPayload,
 } from './sales-api'
 import type { ApiResult } from '../../api/core.ts'
+import type { FulfillmentCreditApproval } from '../../contracts/v2/generated/standalone-erp'
+import type { AttachmentView } from './attachment-api'
 
 export type {
   SaleOrderListPayload,
@@ -60,9 +62,12 @@ export interface ChecklistRowPayload {
   failCount: number
   performedAt: string
   performedByName: string
+  resultEvidence?: string[]
 }
 
 export interface FulfillmentBoardPayload {
+  creditApprovals?: FulfillmentCreditApproval[]
+  attachments?: AttachmentView[]
   order: {
     id: string
     orderNo: string
@@ -138,11 +143,12 @@ export function saveAssemblyChecks(
   orderId: string,
   items: CheckItemPayload[],
   templateVersion = 'asm-v1',
+  resultEvidence: string[] = [],
 ): Promise<ApiResult<FulfillmentWriteOutcome>> {
   return salesClient.client.write<FulfillmentWriteOutcome>(`/sales/orders/${encodeURIComponent(orderId)}/checks`, {
     action: 'B07',
     entityId: orderId,
-    payload: { templateVersion, configurationVersion: 0, items },
+    payload: { templateVersion, configurationVersion: 0, items, resultEvidence },
   })
 }
 
@@ -151,11 +157,12 @@ export function deliverOrder(
   orderId: string,
   deliveryNote: string,
   receivedByNote?: string | null,
+  creditApprovalRef?: string | null,
 ): Promise<ApiResult<FulfillmentWriteOutcome>> {
   return salesClient.client.write<FulfillmentWriteOutcome>(`/sales/orders/${encodeURIComponent(orderId)}/deliver`, {
     action: 'B10',
     entityId: orderId,
-    payload: { configurationVersion: 0, checklistVersion: null, deliveryNote, receivedByNote: receivedByNote ?? null },
+    payload: { configurationVersion: 0, checklistVersion: null, deliveryNote, receivedByNote: receivedByNote ?? null, creditApprovalRef: creditApprovalRef ?? null },
   })
 }
 

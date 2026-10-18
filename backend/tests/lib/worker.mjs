@@ -13,7 +13,6 @@
  * 目录名带 `.validation-` 前缀，匹配 .gitignore，不会进仓库。
  */
 
-import { Miniflare, Log, LogLevel } from 'miniflare'
 import esbuild from 'esbuild'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { webcrypto } from 'node:crypto'
@@ -73,6 +72,9 @@ export async function buildWorkerBundle({ cache = false } = {}) {
  */
 export async function createWorkerEnv({ bindings = {}, migrations = true, bundleCache = false, d1Name, withR2 = false } = {}) {
   const { source } = await buildWorkerBundle({ cache: bundleCache })
+  // 同 env.mjs：miniflare 是测试专用依赖（devDependency），改成按需加载，
+  // 否则 node-host.mjs 只 import 本文件的 login/seedOwner 也会一起启动失败。
+  const { Miniflare, Log, LogLevel } = await import('miniflare')
   const miniflare = new Miniflare({
     modules: true,
     script: source,

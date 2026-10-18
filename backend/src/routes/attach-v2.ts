@@ -24,7 +24,7 @@ import {
   type CompleteInput,
   type UploadIntentInput,
 } from '../domains/attachment'
-import { MAX_ATTACHMENT_BYTES, resolveStorage, type StorageEnv } from '../domains/storage'
+import { MAX_ATTACHMENT_BYTES, resolveStorage, sha256Hex, type StorageEnv } from '../domains/storage'
 
 /** 只声明本模块用到的绑定，避免与入口的 Env 定义互相耦合。 */
 export interface AttachRouteEnv extends StorageEnv {
@@ -332,6 +332,7 @@ async function handleComplete(
 const INTENTS_PATH = `${PREFIX}/attachments/upload-intents`
 const BLOB_PATH = /^\/api\/v2\/attachments\/upload-intents\/([^/]+)\/blob$/
 const COMPLETE_PATH = /^\/api\/v2\/attachments\/upload-intents\/([^/]+)\/complete$/
+const CONTENT_PATH = /^\/api\/v2\/attachments\/([^/]+)\/content$/
 
 export async function routeAttachV2(
   req: Request,
@@ -340,6 +341,23 @@ export async function routeAttachV2(
 ): Promise<Response | null> {
   const path = new URL(req.url).pathname
   if (!path.startsWith(`${PREFIX}/attachments`)) return null
+
+  const contentMatch = CONTENT_PATH.exec(path)
+  if (contentMatch) {
+    if (req.method !== 'GET') return fail('VALIDATION_ERROR', '该方法不支持', 405)
+    const attachment = await env.DB.prepare(`SELECT object_key, owner_entity_type, content_type, byte_size, sha256 FROM attachments WHERE store_id=? AND id=? AND upload_state='attached'`).bind(context.storeId, contentMatch[1]).first<{ object_key: string; owner_entity_type: string; content_type: string; byte_size: number; sha256: string }>()
+    if (!attachment) return fail('ENTITY_NOT_FOUND', '附件不存在或不属于本店', 404)
+    const permission = ({ service_order: 'service/view', recovery_order: 'recovery/view', stock_item: 'inventory/view', sale_order: 'sales/order-view' } as Record<string, string>)[attachment.owner_entity_type]
+    if (!permission || !grants(context, permission)) return fail('PERMISSION_DENIED', '没有该业务附件的读取权限', 403)
+    try {
+      const storage = resolveStorage(env)
+      const object = await storage.get(attachment.object_key)
+      if (!object) return fail('ENTITY_NOT_FOUND', '附件内容暂不可用，请核对备份或重试', 404)
+      const hash = await sha256Hex(object.bytes)
+      if (object.bytes.byteLength !== attachment.byte_size || hash !== attachment.sha256) return fail('SERVICE_UNAVAILABLE', '附件完整性校验失败', 503)
+      return new Response(object.bytes as unknown as BodyInit, { headers: { 'Content-Type': attachment.content_type, 'Content-Length': String(object.bytes.byteLength), 'Cache-Control': 'private, no-store', 'X-Content-Type-Options': 'nosniff', 'X-Content-SHA256': hash, 'X-Storage-Kind': storage.kind, 'X-Storage-Persistent': String(storage.persistent) } })
+    } catch { return fail('SERVICE_UNAVAILABLE', '附件存储暂不可用，请重试', 503) }
+  }
 
   if (path === INTENTS_PATH) {
     if (req.method === 'POST') return handleCreateIntent(req, env, context)

@@ -28,20 +28,20 @@
   ],
   "generatedFrom": {
     "contracts/v1.2/conventions.json": "0f38ad9d9e04043513eca5d902991c9d04de3c5a9f385eccae3a1a2c5b971f2d",
-    "contracts/v1.2/enums.json": "b258b0f9f6ec47d91e4f40bcd64a888cf1efb78ee7d2a4bd22ddf9f29818a2ad",
+    "contracts/v1.2/enums.json": "899274480f228e579c652b7c439872f13c1d9df6fb92e5c04d3fd9e133f4b245",
     "contracts/v1.2/objects.json": "4391f3bfa6979d08952a7c429c4eb8f7ff38392bd7c726eda2f09e35fc73b46e",
     "contracts/v1.2/errors.json": "5254bb092afb92163b762eb4a784c29425be0b5bc33b6170a5bf245fa1b0cc5d",
     "contracts/v1.2/money-rules.json": "1b996cdfdb993429d25c8dcca853c98aae5a1ffa770e87276caac816ce8f88e6",
-    "contracts/v1.2/actions.json": "6f0c47be5bab38d0c0814b76fbe8f78d4752587cefbd306f452a2052dc80df8c"
+    "contracts/v1.2/actions.json": "6e2e6a6ff5856d9a70c16495c071f4785c04307b8800c3e9ff8cf52926a4d665"
   },
   "artifacts": [
     {
       "file": "actions.ts",
-      "sha256": "93e69ccfb018c195886682f22f1b42bd349e5baa845a4138fac065d57ac0e389"
+      "sha256": "4345154bc6eba3513c4458c97265c884a86cfcce61436aeed541e988f95d8e41"
     },
     {
       "file": "enums.ts",
-      "sha256": "272c8d0ea3471f5198e169d3beb451f91975709397df386b98878dd66605690f"
+      "sha256": "732c873493b169f0e7e079d4144807def033463877e40121795af805d71c292c"
     },
     {
       "file": "errors.ts",

@@ -142,6 +142,8 @@ export const INVENTORY_PERMISSIONS = {
   countApprove: 'inventory/count-approve',
   /** B30 整备记录与上架（旧 library/edit 的映射）。 */
   refurbish: 'inventory/refurbish',
+  /** B40 商品挂牌价调整；老板专属，不由旧商品编辑权限自动获得。 */
+  priceAdjust: 'inventory/price-adjust',
 } as const
 
 /**
@@ -461,6 +463,56 @@ export async function writeProduct(
   }
   const resolved: OperationContext = { ...ctx, payloadHash: await hashPayload(input) }
   return runIdempotent(db, resolved, (context) => planProductWrite(db, context, input))
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// B40 · 商品挂牌价调整（PATCH /inventory/products/:id/price）
+// B12 的商品编辑故意不能改已有商品售价；B40 单独记录原因、版本和审计，
+// 只影响之后新开的报价，历史报价/销售快照不回写。
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type ProductPriceAdjustmentReason = 'cost_change' | 'market_change' | 'correction' | 'other'
+
+export interface ProductPriceAdjustmentInput {
+  productRef: string
+  newPriceCents: number
+  reason: ProductPriceAdjustmentReason
+  note?: string | null
+  expectedVersion: number
+}
+
+const PRODUCT_PRICE_ADJUSTMENT_REASONS: readonly ProductPriceAdjustmentReason[] = ['cost_change', 'market_change', 'correction', 'other']
+
+export function validateProductPriceAdjustmentInput(input: ProductPriceAdjustmentInput): string | null {
+  if (!input.productRef.trim()) return '缺少商品编号'
+  if (!Number.isInteger(input.newPriceCents) || input.newPriceCents < 0) return '新挂牌价必须是非负整数分'
+  if (!(PRODUCT_PRICE_ADJUSTMENT_REASONS as readonly string[]).includes(input.reason)) return '改价原因无效'
+  if (input.note != null && (typeof input.note !== 'string' || input.note.trim().length > 500)) return '改价备注不能超过 500 个字符'
+  if (!Number.isInteger(input.expectedVersion) || input.expectedVersion < 1) return 'expectedVersion 必须是正整数'
+  return null
+}
+
+export function planProductPriceAdjustment(db: OperationsDb, ctx: OperationContext, input: ProductPriceAdjustmentInput): OperationPlan {
+  const nextVersion = input.expectedVersion + 1
+  const note = input.note?.trim() || null
+  const statements: D1PreparedStatement[] = [
+    guardStatement(db, 'ENTITY_NOT_FOUND', 'NOT EXISTS (SELECT 1 FROM hardware WHERE store_id = ? AND entity_id = ?)', ctx.storeId, input.productRef),
+    guardStatement(db, 'VERSION_CONFLICT', 'NOT EXISTS (SELECT 1 FROM hardware WHERE store_id = ? AND entity_id = ? AND version = ?)', ctx.storeId, input.productRef, input.expectedVersion),
+    db.prepare(`UPDATE hardware SET default_price_cents = ?, version = version + 1, updated_by = ?, updated_at = datetime('now')
+      WHERE store_id = ? AND entity_id = ? AND version = ?`).bind(input.newPriceCents, ctx.actorUserId, ctx.storeId, input.productRef, input.expectedVersion),
+    assertRowVersionStatement(db, 'VERSION_CONFLICT', 'hardware', 'entity_id', input.productRef, nextVersion),
+    bumpVersionStatement(db, ctx, 'Product', input.productRef, nextVersion),
+    db.prepare(`INSERT INTO audit_logs (store_id, actor_user_id, action, entity_type, entity_id, details)
+      VALUES (?, ?, 'inventory_price_adjust', 'Product', ?, ?)`).bind(ctx.storeId, ctx.actorUserId, input.productRef, JSON.stringify({ newPriceCents: input.newPriceCents, reason: input.reason, note, expectedVersion: input.expectedVersion, version: nextVersion })),
+  ]
+  return { statements, outcome: { entityType: 'Product', entityId: input.productRef, version: nextVersion, summary: `商品挂牌价已调整为 ${input.newPriceCents} 分`, effects: { newPriceCents: input.newPriceCents, reason: input.reason, note } } }
+}
+
+export async function adjustProductPrice(db: OperationsDb, ctx: OperationContext, input: ProductPriceAdjustmentInput): Promise<RunResult> {
+  const invalid = validateProductPriceAdjustmentInput(input)
+  if (invalid) return { ok: false, requestId: ctx.requestId, code: 'VALIDATION_ERROR', message: invalid, retryable: false, httpStatus: 400 }
+  const resolved: OperationContext = { ...ctx, action: 'B40', payloadHash: await hashPayload(input) }
+  return runIdempotent(db, resolved, (operation) => planProductPriceAdjustment(db, operation, input))
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

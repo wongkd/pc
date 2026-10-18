@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { acceptInvitation, createProduct, fetchProductCategories, fetchProducts, fetchProfile, selectStore, updateProductStatus } from './api'
-import { has } from '../components/SystemSettingsPage'
+import { has } from './permissions'
 
 const createStorage = () => {
   const store = new Map<string, string>()

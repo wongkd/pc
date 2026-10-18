@@ -1971,6 +1971,7 @@ export async function approveCreditDelivery(
     const statements: D1PreparedStatement[] = [
       guardStatement(db, 'ENTITY_NOT_FOUND', 'NOT EXISTS (SELECT 1 FROM sale_orders WHERE store_id = ? AND id = ?)', context.storeId, order.id),
       // 服务端复算：批准时余额必须仍为正（欠款才有意义），且未被取消。
+      guardStatement(db, 'VERSION_CONFLICT', 'NOT EXISTS (SELECT 1 FROM sale_orders WHERE store_id=? AND id=? AND version=? AND balance_cents=?)', context.storeId, order.id, order.version, order.balance_cents),
       guardStatement(
         db,
         'VALIDATION_ERROR',

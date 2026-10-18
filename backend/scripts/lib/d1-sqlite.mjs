@@ -97,14 +97,14 @@ class LocalStatement {
     }
   }
 
-  async _read() {
+  _read() {
     const started = performance.now()
     const stmt = this._prepared()
     const results = stmt.all(...this._bound())
     return { results, success: true, meta: this._meta(stmt, 0, 0, performance.now() - started) }
   }
 
-  async _write() {
+  _write() {
     const started = performance.now()
     const stmt = this._prepared()
     const info = stmt.run(...this._bound())
@@ -113,7 +113,7 @@ class LocalStatement {
     return { results: [], success: true, meta: this._meta(stmt, lastRowId, changes, performance.now() - started) }
   }
 
-  async _runLikeD1() {
+  _runLikeD1() {
     const stmt = this._prepared()
     return this._returnsRows(stmt) ? this._read() : this._write()
   }
@@ -175,7 +175,8 @@ export class LocalD1Database {
         if (!(statement instanceof LocalStatement)) {
           throw new TypeError('batch() 只接受本适配器 prepare() 出来的语句')
         }
-        results.push(await statement._runLikeD1())
+        // SQLite是同步连接，事务内不能await让另一个请求插入同一事务。
+        results.push(statement._runLikeD1())
       }
       this.db.exec('COMMIT')
     } catch (error) {

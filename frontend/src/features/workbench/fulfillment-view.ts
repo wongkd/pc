@@ -149,10 +149,12 @@ export function deliveryGates(board: FulfillmentBoardPayload): DeliveryGate[] {
     {
       key: 'money',
       label: '款项已结清',
-      ok: order.balanceCents <= 0,
+      ok: order.balanceCents <= 0 || Boolean(board.creditApprovals?.some((approval) => approval.valid)),
       hint: order.balanceCents <= 0
         ? '尾款已结清。'
-        : `尾款还有 ¥${(order.balanceCents / 100).toFixed(2)}；欠款交付需要老板批准（B09，尚未实现）。`,
+        : board.creditApprovals?.some((approval) => approval.valid)
+          ? `老板已批准当前欠款 ¥${(order.balanceCents / 100).toFixed(2)}；交付时将引用该凭据。`
+          : `尾款还有 ¥${(order.balanceCents / 100).toFixed(2)}；请先到销售单由老板批准欠款交付。`,
     },
   ]
 }

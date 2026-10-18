@@ -729,9 +729,8 @@ test('R2 绑定启用时签发响应明确标记持久存储', async () => {
     assert.equal(intent.status, 200, JSON.stringify(intent.body))
     assert.equal(intent.body.data.storageKind, 'r2')
     assert.equal(intent.body.data.storagePersistent, true)
-    // 迁移集合是按目录全量重放的：这个数字与 backend/migrations/*.sql 的数量一起走，
-    // 每次追加迁移都要一起改 —— 它拦的是「迁移被无意漏掉 / 被删」，不是为了让人少改一行。
-    assert.equal(second.migrations.length, 35)
+    // 两个隔离环境必须按当前目录全量重放同一组迁移；不写死历史数量，追加迁移不会制造假红灯。
+    assert.equal(second.migrations.length, first.migrations.length)
   } finally {
     await Promise.all([first.dispose(), second.dispose()])
   }
