@@ -1,5 +1,9 @@
 # 下一次从这里继续
 
+## 当前断点：手工维修接收（2026-10-19）
+
+用户确认到店客户不一定通过小程序下单。首页「＋ 开单 → 维修接收」已接 `/after-sales?action=intake`，直接展开原接修表单并说明手工填写；不要求小程序订单、客户档案 ID 或厂家 SN。本轮仅改今天页、维修页、对应测试和状态/回执。前端 255/255、隔离 build、lint 通过；本地合成 HTTP 浏览器 1440/390 点击、输入、失败保留和 Tab 已验并实看截图。未提交、未发布、未验证本轮真实后端持久保存；[回执](verification/2026-10-19-manual-intake/README.md)。下一步先在隔离真实后端补保存/刷新读回，发布另按授权；配件零售后端及请求函数已有、缺新建表单，不因本轮维修入口修复销案。
+
 ## 独立 ERP 执行断点（2026-10-18）
 
 先读 [执行任务表](plans/2026-10-18-standalone-erp-completion/tasks.md)、[checkpoint](plans/2026-10-18-standalone-erp-completion/checkpoint.md) 和[本轮回执](verification/2026-10-18-standalone-erp-completion/README.md)。本轮未提交、未部署、未访问远端。

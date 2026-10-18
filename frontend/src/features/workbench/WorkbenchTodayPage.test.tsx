@@ -214,6 +214,14 @@ function failure(message = '工作台接口暂时不可用') {
 }
 
 describe('今天工作台（R02 接口响应）', () => {
+  it('维修接收直接进入手工接修表单', async () => {
+    fetchWorkbenchMock.mockResolvedValue(success())
+    renderWorkbench()
+    fireEvent.click(screen.getByRole('button', { name: '＋ 开单' }))
+    fireEvent.click(screen.getByRole('menuitem', { name: /维修接收/ }))
+    expect(screen.getByTestId('location').textContent).toBe('/after-sales?action=intake')
+  })
+
   it('渲染 GET /api/v2/workbench 的业务指标与待办，不依赖 DEMO 样本', async () => {
     fetchWorkbenchMock.mockResolvedValue(success(makeTask()))
     renderWorkbench()

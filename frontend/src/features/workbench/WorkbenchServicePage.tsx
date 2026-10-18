@@ -146,7 +146,7 @@ export function WorkbenchServicePage({ permissions }: { permissions: string[] })
   const [actionError, setActionError] = useState('')
 
   // 接修表单
-  const [showIntake, setShowIntake] = useState(false)
+  const [showIntake, setShowIntake] = useState(() => canEdit && new URLSearchParams(window.location.search).get('action') === 'intake')
   const [intake, setIntake] = useState({ customerName: '', manufacturerSn: '', symptom: '', accessories: '', appearance: '' })
   const [deviceQuery, setDeviceQuery] = useState('')
   const [appliedDeviceQuery, setAppliedDeviceQuery] = useState('')
@@ -426,10 +426,11 @@ export function WorkbenchServicePage({ permissions }: { permissions: string[] })
             </div>
           </section>
 
-          {showIntake ? (
+          {showIntake && canEdit ? (
             <section className="wb-service-intake">
               <fieldset>
                 <legend>接修登记</legend>
+                <p className="wb-caption">到店客户可直接手工登记，无需小程序下单。客户称呼和故障描述必填，厂家 SN 可留空。</p>
                 <div className="wb-service-intake-grid">
                   <label className="wb-field"><span>客户称呼</span><input value={intake.customerName} onChange={(e) => setIntake({ ...intake, customerName: e.target.value })} placeholder="散客必填，如 陈先生" /></label>
                   <label className="wb-field"><span>厂家 SN（可选，可扫码）</span><input value={intake.manufacturerSn} onChange={(e) => setIntake({ ...intake, manufacturerSn: e.target.value })} placeholder="留空也会自动生成内部设备编号" /></label>

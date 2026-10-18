@@ -1,0 +1,19 @@
+{
+  "environment": "local build + synthetic HTTP responses; no business persistence",
+  "results": [
+    {
+      "width": 1440,
+      "overflow": false,
+      "name": "合成到店客户",
+      "symptom": "无法开机",
+      "error": "合成环境：暂时无法登记，请重试"
+    },
+    {
+      "width": 390,
+      "overflow": false,
+      "name": "合成到店客户",
+      "symptom": "无法开机",
+      "error": "合成环境：暂时无法登记，请重试"
+    }
+  ]
+}

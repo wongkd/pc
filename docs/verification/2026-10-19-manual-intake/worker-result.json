@@ -1,0 +1,11 @@
+{
+  "scope": "local real Worker + isolated in-memory D1",
+  "created": 200,
+  "readback": 200,
+  "withoutCustomerId": true,
+  "withoutOriginalOrder": true,
+  "manufacturerSnBlank": true,
+  "automaticDeviceCode": true,
+  "idempotentRetry": true,
+  "productionWrites": false
+}

@@ -276,9 +276,9 @@ export function WorkbenchTodayPage() {
                   配件零售
                   <small>未接通（T08）</small>
                 </button>
-                <button type="button" role="menuitem" onClick={() => startNewOrder('维修接收', null)}>
+                <button type="button" role="menuitem" onClick={() => startNewOrder('维修接收', '/after-sales?action=intake')}>
                   维修接收
-                  <small>未接通（T12）</small>
+                  <small>手工登记客户与故障</small>
                 </button>
                 <button type="button" role="menuitem" onClick={() => startNewOrder('回收 / 置换', '/recovery')}>
                   回收 / 置换
